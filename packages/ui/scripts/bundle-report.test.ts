@@ -77,17 +77,14 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/palette/CommandPalette.tsx",
       "/Kibo/packages/ui/src/pages/TicketTab.tsx",
       "/Kibo/packages/ui/src/shell/TicketDetail.tsx",
-      "/Kibo/packages/ui/src/shell/PresenceAvatars.tsx",
-      "/Kibo/packages/ui/src/shell/ProjectPresence.tsx",
-      "/Kibo/packages/ui/src/i18n/fr-presence.ts",
       pkg("@tauri-apps/plugin-updater", "dist-js/index.js"),
       pkg("@tauri-apps/api", "app.js"),
       "/Kibo/packages/ui/src/updates/UpdateCard.tsx",
       "/Kibo/packages/ui/src/updates/update-store.ts",
       "/Kibo/packages/ui/src/i18n/fr-updates.ts",
       "/Kibo/packages/ui/src/settings/AppearancePage.tsx",
-      "/Kibo/packages/ui/src/settings/SecurityPage.tsx",
-      "/Kibo/packages/ui/src/settings/WebAccessCard.tsx",
+      "/Kibo/packages/ui/src/i18n/fr-appearance.ts",
+      "/Kibo/packages/ui/src/shell/Unpaired.tsx",
       "/Kibo/packages/ui/src/shell/DaemonUnreachable.tsx",
       "/Kibo/packages/ui/src/i18n/fr-startup.ts",
       "/Kibo/packages/ui/src/files/FileToolbar.tsx",
@@ -100,8 +97,6 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/files/upload.ts",
       "/Kibo/packages/ui/src/files/slug.ts",
       "/Kibo/packages/ui/src/i18n/fr-files.ts",
-      "/Kibo/packages/ui/src/settings/SyncEmptyState.tsx",
-      "/Kibo/packages/ui/src/i18n/fr-sync-page.ts",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
@@ -276,15 +271,6 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
-  test("the security and sync texts are forbidden in the entry, not the shell texts", () => {
-    const texts = ["security", "collab"].map((n) => `/x/packages/ui/src/i18n/fr-${n}.ts`);
-    for (const p of texts) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr.ts"))).toBe(false);
-    const security = "/x/packages/ui/src/i18n/fr-security.ts";
-    const chunks = [chunk("index.js", { isEntry: true, moduleIds: [security] })];
-    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
-    expect(report.forbidden).toEqual([{ file: "index.js", module: security }]);
-  });
   test("the agents dock, the feed, their texts, the mention and the hover card are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/i18n/fr-moments.ts",

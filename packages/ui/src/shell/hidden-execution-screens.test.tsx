@@ -43,14 +43,21 @@ const screenView = (execution: AgentExecution, current: Screen) =>
       config={configFixture()}
       onOpenTicket={noop}
       onFile={noop}
-      onOpen={noop}
-      onShare={noop}
-      onDeleteProject={noop}
       onNewTicket={noop}
     />,
   );
 
-const RETIRED = ["agents", "queue", "skills", "creations", "components", "sources", "domains"] as const;
+const RETIRED = [
+  "agents",
+  "queue",
+  "skills",
+  "creations",
+  "components",
+  "sources",
+  "domains",
+  "sync",
+  "security",
+] as const;
 
 test("the agent-era screens render nothing, whatever the setting", () => {
   for (const execution of ["hidden", "shown"] as const)

@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { compactInstances } from "../lib/format-grid";
-import { PresenceAvatars } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
@@ -48,15 +47,6 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
   return (
     <PageContext.Provider value={state}>
       <div className="flex h-full min-h-0 flex-col">
-        {project.sync.shared && (
-          <PageActions>
-            <PresenceAvatars
-              project={{ id: projectId, name: project.meta.name }}
-              pages={project.pages}
-              pageId={page.id}
-            />
-          </PageActions>
-        )}
         {editable && <NewTicketAction pageId={page.id} instances={instances} />}
         {layoutMode && !editing && (
           <PageActions>

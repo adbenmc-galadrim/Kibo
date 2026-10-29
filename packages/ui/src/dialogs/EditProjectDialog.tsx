@@ -21,7 +21,6 @@ import { client } from "../api";
 import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
-import { isRemoteView } from "../lib/remote-view";
 import { DescriptionField } from "./DescriptionField";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { GuidelinesField } from "./GuidelinesField";
@@ -34,7 +33,6 @@ import { TrackingSection } from "./TrackingSection";
 type Props = {
   project: ProjectSummary;
   onClose(): void;
-  remote?: boolean;
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
   config?: WorkspaceConfig | null;
@@ -51,16 +49,7 @@ export function editFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({
-  project,
-  onClose,
-  remote = isRemoteView(),
-  canBrowse,
-  pick,
-  config,
-  go,
-  focus,
-}: Props) {
+export function EditProjectDialog({ project, onClose, canBrowse, pick, config, go, focus }: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -77,14 +66,14 @@ export function EditProjectDialog({
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const showWorktree = !remote && folder.trim().length > 0;
+  const showWorktree = folder.trim().length > 0;
   const patch = projectPatch(saved, {
     name,
     color,
     description,
     tracking,
-    folder: remote ? (project.folder ?? "") : folder,
-    ...(!remote && { storybook }),
+    folder,
+    storybook,
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
   const storybookInvalid = storybook !== null && storybookProblem(storybook) !== null;
@@ -161,32 +150,28 @@ export function EditProjectDialog({
             }}
             onError={setError}
           />
-          {!remote && (
-            <div className="grid gap-1.5">
-              <Label htmlFor={folderId}>{t.folder}</Label>
-              <FolderField
-                id={folderId}
-                value={folder}
-                onChange={setFolder}
-                describedBy={folderHelpId}
-                canBrowse={canBrowse}
-                pick={pick}
-                onError={setError}
-                autoFocus={focus === "folder"}
-              />
-              <p id={folderHelpId} className="text-xs text-muted-foreground">
-                {t.folderHelp}
-              </p>
-            </div>
-          )}
-          {!remote && (
-            <StorybookFields
-              value={storybook}
-              onChange={setStorybook}
-              withPortEnv={showWorktree}
-              disabled={busy}
+          <div className="grid gap-1.5">
+            <Label htmlFor={folderId}>{t.folder}</Label>
+            <FolderField
+              id={folderId}
+              value={folder}
+              onChange={setFolder}
+              describedBy={folderHelpId}
+              canBrowse={canBrowse}
+              pick={pick}
+              onError={setError}
+              autoFocus={focus === "folder"}
             />
-          )}
+            <p id={folderHelpId} className="text-xs text-muted-foreground">
+              {t.folderHelp}
+            </p>
+          </div>
+          <StorybookFields
+            value={storybook}
+            onChange={setStorybook}
+            withPortEnv={showWorktree}
+            disabled={busy}
+          />
           {config && go && (
             <GuidelinesField
               project={project}

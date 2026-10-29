@@ -74,8 +74,6 @@ export const frCode = {
     saved: "Enregistré",
     plainText: "Texte brut",
     languageFailed: "Coloration indisponible pour ce fichier.",
-    localOnly:
-      "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",
   },
   time: {
     now: "à l'instant",

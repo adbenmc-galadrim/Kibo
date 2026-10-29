@@ -15,6 +15,8 @@ const RETIRED_ROUTES: readonly string[] = [
   "/settings/sources",
   "/settings/components",
   "/settings/domains",
+  "/settings/sync",
+  "/settings/security",
   "/code",
 ];
 

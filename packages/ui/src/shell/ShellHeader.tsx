@@ -1,9 +1,9 @@
 import type { AgentsState, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import { ProjectAgentButton } from "./lazy-screens";
+import { OfflineChip } from "./nav/OfflineChip";
 import { SidebarToggle } from "./nav/SidebarToggle";
-import { SyncChip } from "./nav/SyncChip";
-import { PageActionsSlot, PagePresenceSlot } from "./page-actions";
+import { PageActionsSlot } from "./page-actions";
 
 type Props = {
   active: TabTarget | null;
@@ -42,8 +42,7 @@ export function ShellHeader({
           {gitError}
         </p>
       )}
-      <SyncChip project={project} />
-      <PagePresenceSlot />
+      <OfflineChip />
       <PageActionsSlot />
       {project && agentPanel.available && (
         <ProjectAgentButton

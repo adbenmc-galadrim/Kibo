@@ -78,10 +78,8 @@ function sidebar(
           onNewPage={noop}
           onRenamePage={noop}
           onDeletePage={noop}
-          onShare={noop}
           onEditProject={noop}
           onDeleteProject={noop}
-          onJoin={noop}
         />
       </SidebarProvider>
     </AppSettingsProvider>,

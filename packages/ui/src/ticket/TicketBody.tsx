@@ -26,7 +26,6 @@ type Props = {
   ticket: TicketView;
   domains?: Domain[];
   viewer: string;
-  notice?: ReactNode;
   heading(title: ReactNode, label: string): ReactNode;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
@@ -37,7 +36,6 @@ export function TicketBody({
   ticket: t,
   domains,
   viewer,
-  notice,
   heading,
   onOpenFile,
   onOpenTicket,
@@ -53,7 +51,6 @@ export function TicketBody({
   const label = stepTitle(t, project.tickets.find((x) => x.id === t.parentId) ?? null);
   return (
     <div className="grid grid-cols-1 gap-4 px-6 pt-[18px] pb-6">
-      {notice}
       <BlockedBanner
         ticket={t}
         questions={project.questions}

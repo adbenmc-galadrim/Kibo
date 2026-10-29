@@ -9,7 +9,6 @@ import {
   INBOX_ID,
   type ProjectSnapshot,
   type RpcRequest,
-  type SyncStatus,
   type TabTarget,
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -161,16 +160,6 @@ const snapshots = new Map([
   ["p3", readOnly],
   ["p4", sharedProject],
 ]);
-const unconfigured: SyncStatus = {
-  state: "unconfigured",
-  serverUrl: null,
-  user: null,
-  deviceId: null,
-  retryAt: null,
-  lastError: null,
-  projects: [],
-};
-let syncStatus: SyncStatus = unconfigured;
 const saved: RpcRequest[] = [];
 const code: CodeRequest[] = [];
 let statusPending = false;
@@ -235,9 +224,6 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
         if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
-        if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
-        if (req.method === "getPresence") return Promise.resolve([]);
-        if (req.method === "setPresence") return Promise.resolve(null);
         if (req.method === "getProjectAgent")
           return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
         if (req.method === "listSignals") return Promise.resolve(signalsView());
@@ -316,7 +302,6 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  syncStatus = unconfigured;
   agents = null;
   localStorage.removeItem("kibo.projectAgent.open");
   saved.length = 0;
@@ -701,66 +686,12 @@ test("openView hands any other intent to the page it opens, outside the address"
   expect(pageIntents.take("9@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
 });
 
-test("a read-only project hides page and ticket creation and shows the banner", async () => {
+test("a read-only project hides page and ticket creation", async () => {
   renderShell();
   await go("#/p/p3/");
-  const banner = await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
-  expect(screen.getAllByRole("status")).toContain(banner);
-  expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
   expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
   expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
-});
-
-test("Rejoindre un projet appears only once a server is configured", async () => {
-  const { unmount } = renderShell();
-  await go("#/p/p1/");
-  await userEvent.click(await screen.findByRole("button", { name: "Ajouter un projet" }));
-  expect(await screen.findByRole("menuitem", { name: "Nouveau projet" })).toBeTruthy();
-  expect(screen.queryByRole("menuitem", { name: "Rejoindre un projet" })).toBeNull();
-  unmount();
-  syncStatus = { ...syncStatus, state: "online", serverUrl: "wss://sync.kibo.test" };
-  renderShell();
-  await userEvent.click(await screen.findByRole("button", { name: "Ajouter un projet" }));
-  expect(await screen.findByRole("menuitem", { name: "Rejoindre un projet" })).toBeTruthy();
-});
-
-test("a suspended project stays editable and explains why it no longer syncs", async () => {
-  syncStatus = {
-    ...unconfigured,
-    state: "online",
-    serverUrl: "wss://sync.kibo.test",
-    projects: [
-      {
-        projectId: "p4",
-        name: "Partagé",
-        role: "owner",
-        lastSyncAt: null,
-        lastError: "TOO_LARGE",
-        accessRevoked: false,
-      },
-    ],
-  };
-  renderShell();
-  await go("#/p/p4/");
-  const banner = await screen.findByText(
-    "Sync suspendue : données trop volumineuses — Modifiable sur cette machine, mais plus synchronisé.",
-  );
-  expect(screen.getAllByRole("status")).toContain(banner);
-  expect(screen.getByRole("button", { name: "Nouvelle page" })).toBeTruthy();
-});
-
-test("the project menu opens the share dialog", async () => {
-  renderShell();
-  await go("#/p/p1/");
-  expect(screen.queryByRole("button", { name: "Partager" })).toBeNull();
-  await userEvent.click(await screen.findByRole("button", { name: "Actions de Kibo" }));
-  await userEvent.click(await screen.findByRole("menuitem", { name: "Partager" }));
-  expect(await screen.findByRole("dialog", { name: "Partager « Kibo »" })).toBeTruthy();
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  await userEvent.click(screen.getByRole("button", { name: "Actions de Portfolio" }));
-  await userEvent.click(await screen.findByRole("menuitem", { name: "Partager" }));
-  expect(await screen.findByRole("dialog", { name: "Partager « Portfolio »" })).toBeTruthy();
 });
 
 test("the project agent opens from the header and ⌘J, follows the project pages and closes without project", async () => {
@@ -784,7 +715,7 @@ test("the project agent opens from the header and ⌘J, follows the project page
 test("a read-only project has no project agent: no button, ⌘J does nothing", async () => {
   renderShell();
   await go("#/p/p3/");
-  await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
+  await screen.findByText("Cette page est vide : ajoute un composant pour commencer.");
   expect(screen.queryByRole("button", { name: /^Agent de projet/ })).toBeNull();
   fireEvent.keyDown(window, { key: "j", metaKey: isMac(), ctrlKey: !isMac() });
   await act(async () => {});

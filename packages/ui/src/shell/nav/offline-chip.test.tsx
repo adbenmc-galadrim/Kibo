@@ -1,7 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { useSyncExternalStore } from "react";
-import { kiboProject } from "../../lib/fixtures";
 
 let online = true;
 const listeners = new Set<() => void>();
@@ -17,7 +16,7 @@ mock.module("../../state/use-agents", () => ({
   useDaemonOnline: () => useSyncExternalStore(subscribe, () => online),
 }));
 
-const { SyncChip } = await import("./SyncChip");
+const { OfflineChip } = await import("./OfflineChip");
 
 afterEach(() => {
   cleanup();
@@ -30,17 +29,17 @@ const setOnline = (value: boolean) =>
     for (const listener of listeners) listener();
   });
 
-test("the daemon stopped: the chip says Hors connexion · reconnexion…, even on an unshared project", () => {
-  render(<SyncChip project={kiboProject()} />);
-  expect(screen.queryByText(/Hors connexion/)).toBeNull();
-  setOnline(false);
-  expect(screen.getByText("Hors connexion · reconnexion…")).toBeTruthy();
-  setOnline(true);
-  expect(screen.queryByText(/Hors connexion/)).toBeNull();
+test("nothing is rendered while the daemon answers", () => {
+  const { container } = render(<OfflineChip />);
+  expect(container.innerHTML).toBe("");
+  expect(screen.queryByRole("status")).toBeNull();
 });
 
-test("the daemon stopped on the home screen: the chip shows too", () => {
-  online = false;
-  render(<SyncChip project={null} />);
-  expect(screen.getByText("Hors connexion · reconnexion…")).toBeTruthy();
+test("Hors connexion · reconnexion… with role status when the daemon is unreachable", () => {
+  render(<OfflineChip />);
+  setOnline(false);
+  const chip = screen.getByRole("status", { name: "Hors connexion · reconnexion…" });
+  expect(chip.textContent).toBe("Hors connexion · reconnexion…");
+  setOnline(true);
+  expect(screen.queryByRole("status")).toBeNull();
 });

@@ -21,20 +21,13 @@ type Props = {
   activeRuns: number;
   onClose(): void;
   onDeleted(projectId: string): void;
-  onShare(): void;
 };
-export type DeleteVariant = "busy" | "shared-owner" | "leave" | "delete";
+export type DeleteVariant = "busy" | "delete";
 
 const t = frProject.remove;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
 
-export function deleteVariant(snapshot: ProjectSnapshot | null, activeRuns: number): DeleteVariant {
-  if (activeRuns > 0) return "busy";
-  const sync = snapshot?.sync;
-  if (!sync?.shared) return "delete";
-  if (sync.role === "owner" && sync.access !== "revoked") return "shared-owner";
-  return "leave";
-}
+export const deleteVariant = (activeRuns: number): DeleteVariant => (activeRuns > 0 ? "busy" : "delete");
 
 export const nameMatches = (typed: string, name: string): boolean => typed.trim() === name;
 
@@ -44,14 +37,9 @@ export function deleteFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-type BlockedProps = {
-  title: string;
-  text: string;
-  action?: { label: string; run(): void };
-  onClose(): void;
-};
+type BlockedProps = { title: string; text: string; onClose(): void };
 
-function Blocked({ title, text, action, onClose }: BlockedProps) {
+function Blocked({ title, text, onClose }: BlockedProps) {
   return (
     <>
       <DialogHeader>
@@ -62,17 +50,12 @@ function Blocked({ title, text, action, onClose }: BlockedProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           {t.cancel}
         </Button>
-        {action && (
-          <Button type="button" onClick={action.run}>
-            {action.label}
-          </Button>
-        )}
       </DialogFooter>
     </>
   );
 }
 
-type ConfirmProps = { project: ProjectSummary; snapshot: ProjectSnapshot | null; leaving: boolean } & Pick<
+type ConfirmProps = { project: ProjectSummary; snapshot: ProjectSnapshot | null } & Pick<
   Props,
   "onClose" | "onDeleted"
 >;
@@ -129,7 +112,7 @@ function ConfirmDemo({
   );
 }
 
-function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: ConfirmProps) {
+function ConfirmByName({ project, snapshot, onClose, onDeleted }: ConfirmProps) {
   const id = useId();
   const [typed, setTyped] = useState("");
   const { busy, error, remove } = useDeletion(project.id, onDeleted);
@@ -140,13 +123,10 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
     if (matches) void remove();
   };
 
-  const summary =
-    snapshot && !leaving
-      ? t.summary(snapshot.tickets.length, snapshot.pages.length, snapshot.instances.length)
-      : null;
-  const keeps = leaving ? (
-    t.leaveHelp
-  ) : project.folder ? (
+  const summary = snapshot
+    ? t.summary(snapshot.tickets.length, snapshot.pages.length, snapshot.instances.length)
+    : null;
+  const keeps = project.folder ? (
     <>
       {t.keepsFolder} <span className="break-all">{project.folder}</span> {t.keepsAfter}
     </>
@@ -157,7 +137,7 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
   return (
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle>{leaving ? t.leaveTitle(project.name) : t.title(project.name)}</DialogTitle>
+        <DialogTitle>{t.title(project.name)}</DialogTitle>
         <DialogDescription className="grid min-w-0 gap-1">
           {summary && <span>{summary}</span>}
           <span>{keeps}</span>
@@ -180,38 +160,24 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
           {t.cancel}
         </Button>
         <Button type="submit" variant="destructive" disabled={busy || !matches}>
-          {leaving ? t.leave : t.confirm}
+          {t.confirm}
         </Button>
       </DialogFooter>
     </form>
   );
 }
 
-export function DeleteProjectDialog({ project, snapshot, activeRuns, onClose, onDeleted, onShare }: Props) {
-  const variant = deleteVariant(snapshot, activeRuns);
+export function DeleteProjectDialog({ project, snapshot, activeRuns, onClose, onDeleted }: Props) {
+  const variant = deleteVariant(activeRuns);
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         {variant === "busy" && <Blocked title={t.busyTitle} text={t.busy(activeRuns)} onClose={onClose} />}
-        {variant === "shared-owner" && (
-          <Blocked
-            title={t.sharedTitle}
-            text={t.sharedOwner}
-            action={{ label: t.openShare, run: onShare }}
-            onClose={onClose}
-          />
-        )}
         {variant === "delete" && project.demo && (
           <ConfirmDemo project={project} onClose={onClose} onDeleted={onDeleted} />
         )}
-        {((variant === "delete" && !project.demo) || variant === "leave") && (
-          <ConfirmByName
-            project={project}
-            snapshot={snapshot}
-            leaving={variant === "leave"}
-            onClose={onClose}
-            onDeleted={onDeleted}
-          />
+        {variant === "delete" && !project.demo && (
+          <ConfirmByName project={project} snapshot={snapshot} onClose={onClose} onDeleted={onDeleted} />
         )}
       </DialogContent>
     </Dialog>

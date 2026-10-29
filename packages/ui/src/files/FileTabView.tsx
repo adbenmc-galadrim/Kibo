@@ -6,7 +6,6 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
-import { isRemoteView } from "../lib/remote-view";
 import { CodeEditor } from "./CodeEditor";
 import { CodeLines } from "./CodeLines";
 import { FileToolbar } from "./FileToolbar";
@@ -16,10 +15,10 @@ import { useFileContent } from "./use-file-content";
 import { useFileFind } from "./use-file-find";
 import { useWrap } from "./wrap-pref";
 
-type Props = { fileRef: FileRef; startEditing: boolean; remote?: boolean };
+type Props = { fileRef: FileRef; startEditing: boolean };
 
-export function FileTabView({ fileRef, startEditing, remote = isRemoteView() }: Props) {
-  const [editing, setEditing] = useState(startEditing && !remote);
+export function FileTabView({ fileRef, startEditing }: Props) {
+  const [editing, setEditing] = useState(startEditing);
   const file = useFileContent(fileRef, !editing);
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -84,35 +83,33 @@ export function FileTabView({ fileRef, startEditing, remote = isRemoteView() }: 
           <span className="text-muted-foreground">{dir}</span>
           {name}
         </h1>
-        {!remote && (
-          <div className="ml-auto flex items-center gap-1">
-            {editing ? (
-              <Button size="sm" disabled={saving || draft === null} onClick={save}>
-                <Save />
-                {saving ? fr.file.saving : fr.file.save}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditing(true)}
-                disabled={c?.content == null}
-              >
-                <Pencil />
-                {fr.file.edit}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={fr.file.external}
-              title={fr.file.external}
-              onClick={openExternal}
-            >
-              <SquareTerminal />
+        <div className="ml-auto flex items-center gap-1">
+          {editing ? (
+            <Button size="sm" disabled={saving || draft === null} onClick={save}>
+              <Save />
+              {saving ? fr.file.saving : fr.file.save}
             </Button>
-          </div>
-        )}
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing(true)}
+              disabled={c?.content == null}
+            >
+              <Pencil />
+              {fr.file.edit}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={fr.file.external}
+            title={fr.file.external}
+            onClick={openExternal}
+          >
+            <SquareTerminal />
+          </Button>
+        </div>
       </header>
       <FileToolbar
         path={fileRef.path}
@@ -124,7 +121,6 @@ export function FileTabView({ fileRef, startEditing, remote = isRemoteView() }: 
         onCloseFind={finder.close}
         searchable={!editing}
       />
-      {remote && <p className="px-4 py-2 text-xs text-muted-foreground">{fr.file.localOnly}</p>}
       {file.error && (
         <div role="alert" className="flex items-center gap-3 px-4 py-2 text-sm text-destructive">
           {file.error}

@@ -63,7 +63,7 @@ test("saving the project dialog sends updateProject with the tracking settings",
   if (!first) throw new Error("expected a project");
   const project: ProjectSummary = { ...first, folder: null, tracking: null };
   const user = userEvent.setup();
-  render(<EditProjectDialog project={project} onClose={() => {}} remote />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   await pick(user, "4");
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   await waitFor(() =>

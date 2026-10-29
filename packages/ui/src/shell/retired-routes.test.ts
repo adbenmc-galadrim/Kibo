@@ -19,6 +19,13 @@ test("the eight routes of the agent era lead back home", () => {
     expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
 });
 
+test("the sync and security settings of the remote era lead back home", () => {
+  for (const hash of ["#/settings/sync", "#/settings/security", "#/settings/sync/"])
+    expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
+  expect(isRetiredScreen("sync")).toBe(true);
+  expect(isRetiredScreen("security")).toBe(true);
+});
+
 test("their real hashes, sub-paths and run, skill and changes tabs lead back home too", () => {
   for (const hash of [
     "#/agents/queue",

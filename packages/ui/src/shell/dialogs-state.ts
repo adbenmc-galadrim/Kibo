@@ -14,8 +14,6 @@ export type DialogsState = {
   newTicket: NewTicketRequest | null;
   fileTicket: { ticketId: string } | null;
   preview: FileRef | null;
-  share: string | null;
-  join: boolean;
   renamePage: Page | null;
   deletePage: Page | null;
   editProject: string | null;
@@ -36,8 +34,6 @@ export const NO_DIALOG: DialogsState = {
   newTicket: null,
   fileTicket: null,
   preview: null,
-  share: null,
-  join: false,
   renamePage: null,
   deletePage: null,
   editProject: null,

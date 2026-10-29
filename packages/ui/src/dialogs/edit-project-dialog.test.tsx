@@ -107,9 +107,7 @@ beforeEach(() => {
 test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
   const closed = mock(() => {});
   const go = mock((_target: TabTarget) => {});
-  render(
-    <EditProjectDialog project={project} remote={false} onClose={closed} config={configFixture()} go={go} />,
-  );
+  render(<EditProjectDialog project={project} onClose={closed} config={configFixture()} go={go} />);
   expect(screen.getByText("6 fichiers .md · 2 domaines")).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
   expect(closed).toHaveBeenCalledTimes(1);
@@ -117,31 +115,31 @@ test("the guidelines section closes the dialog and opens the project's folder (s
 });
 
 test("asked on its folder field, the dialog puts the focus there instead of the name", () => {
-  render(<EditProjectDialog project={project} remote={false} focus="folder" onClose={() => {}} />);
+  render(<EditProjectDialog project={project} focus="folder" onClose={() => {}} />);
   expect(document.activeElement).toBe(screen.getByLabelText("Dossier"));
 });
 
 test("without the configuration the guidelines section is not shown", () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(screen.queryByRole("heading", { name: "Guidelines" })).toBeNull();
 });
 
 test("a writable project shows its question recipients (screen 187d)", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(await screen.findByRole("list", { name: "Destinataires des questions" })).toBeTruthy();
   expect(screen.getByText("Moi (technique)")).toBeTruthy();
 });
 
 test("a read-only project hides the question recipients", async () => {
   access = "read-only";
-  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   await act(() => new Promise((r) => setTimeout(r, 20)));
   expect(screen.queryByText("Destinataires des questions")).toBeNull();
 });
 
 test("shows the current values and saves only the changed fields, then the icon (screen 107)", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   expect(screen.getByRole("dialog", { name: "Modifier le projet" })).toBeTruthy();
   expect((screen.getByLabelText("Nom") as HTMLInputElement).value).toBe("Kibo");
   expect((screen.getByLabelText("Dossier") as HTMLInputElement).value).toBe("/Users/adam/code/kibo");
@@ -173,7 +171,7 @@ test("shows the current values and saves only the changed fields, then the icon 
 
 test("removing the image alone sends only setIcon with null", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Retirer l'image" }));
   await user.click(saveButton());
@@ -182,7 +180,7 @@ test("removing the image alone sends only setIcon with null", async () => {
 });
 
 test("nothing changed keeps the button disabled; a blank name is refused before any call", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(saveButton().hasAttribute("disabled")).toBe(true);
   const user = userEvent.setup();
   await user.clear(screen.getByLabelText("Nom"));
@@ -195,7 +193,7 @@ test("nothing changed keeps the button disabled; a blank name is refused before 
 test("a busy folder explains itself and keeps the dialog open with the old name on screen", async () => {
   fail = new KiboError("CONFLICT", "project kibo has active runs");
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Dossier"), "2");
   await user.click(saveButton());
@@ -221,20 +219,9 @@ test("a busy folder explains itself and keeps the dialog open with the old name 
   expect(closed).not.toHaveBeenCalled();
 });
 
-test("a remote session has no folder field and never sends a folder", async () => {
-  const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote onClose={closed} />);
-  expect(screen.queryByLabelText("Dossier")).toBeNull();
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Nom"), " 2");
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { name: "Kibo 2" } }]);
-});
-
 test("a folder picker error then a save error leave a single alert, the latest one", async () => {
   const pick = mock(() => Promise.reject(new Error("dialog plugin down")));
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} canBrowse pick={pick} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} canBrowse pick={pick} />);
   const user = userEvent.setup({ applyAccept: false });
   await user.click(screen.getByRole("button", { name: "Parcourir…" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'ouvrir le sélecteur de dossier.");
@@ -263,25 +250,21 @@ const storybookSection = () => screen.queryByRole("group", { name: "Storybook" }
 const ORIGIN = "Adresse";
 const PORT_ENV = "Variable du port dans .env des worktrees";
 
-test("the storybook section shows the defaults, never remote (screen 182)", () => {
-  const local = render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+test("the storybook section shows the defaults (screen 182)", () => {
+  const local = render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(storybookSection()).toBeTruthy();
   expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["http://localhost:6006", "STORYBOOK_PORT"]);
   expect(saveButton().hasAttribute("disabled")).toBe(true);
   local.unmount();
-  const noFolder = render(
-    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
-  );
+  const noFolder = render(<EditProjectDialog project={{ ...project, folder: null }} onClose={() => {}} />);
   expect(field(ORIGIN).value).toBe("http://localhost:6006");
   expect(screen.queryByLabelText(PORT_ENV)).toBeNull();
   noFolder.unmount();
-  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(storybookSection()).toBeNull();
 });
 
 test("a deployed storybook is saved with the default port variable", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "https://sb.example.com");
@@ -297,7 +280,7 @@ test("a deployed storybook is saved with the default port variable", async () =>
 });
 
 test("an insecure address or a bad variable name is explained and blocks the save", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "http://sb.example.com");
@@ -319,7 +302,7 @@ test("an insecure address or a bad variable name is explained and blocks the sav
 test("clearing both storybook fields forgets the settings", async () => {
   const closed = mock(() => {});
   const storybook = { origin: "https://sb.example.com", portEnv: "SB_PORT" };
-  render(<EditProjectDialog project={{ ...project, storybook }} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={{ ...project, storybook }} onClose={closed} />);
   expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["https://sb.example.com", "SB_PORT"]);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
@@ -330,17 +313,17 @@ test("clearing both storybook fields forgets the settings", async () => {
 });
 
 test("the defaults typed back over an empty setting send no patch", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   const user = userEvent.setup();
   await user.clear(field(PORT_ENV));
   await user.type(field(PORT_ENV), "STORYBOOK_PORT");
   expect(saveButton().hasAttribute("disabled")).toBe(true);
 });
 
-test("the description is saved trimmed, and emptied it is saved as null (remote too)", async () => {
+test("the description is saved trimmed, and emptied it is saved as null", async () => {
   const closed = mock(() => {});
   const described = { ...project, description: "App terrain des chefs de centre" };
-  render(<EditProjectDialog project={described} remote onClose={closed} />);
+  render(<EditProjectDialog project={described} onClose={closed} />);
   const field = screen.getByLabelText("Description") as HTMLInputElement;
   expect(field.value).toBe("App terrain des chefs de centre");
   expect(field.maxLength).toBe(200);
@@ -352,7 +335,7 @@ test("the description is saved trimmed, and emptied it is saved as null (remote 
   expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { description: null } }]);
   cleanup();
   calls.length = 0;
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   await user.type(screen.getByLabelText("Description"), "  Suivi des contrats ");
   await user.click(saveButton());
   await waitFor(() =>
@@ -366,7 +349,7 @@ const sections = async (execution: "hidden" | "shown") => {
   const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
   render(
     <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
-      <EditProjectDialog project={project} remote={false} onClose={() => {}} />
+      <EditProjectDialog project={project} onClose={() => {}} />
     </AppSettingsProvider>,
   );
   return Array.from(document.querySelectorAll("fieldset > legend"), (l) => l.textContent ?? "");

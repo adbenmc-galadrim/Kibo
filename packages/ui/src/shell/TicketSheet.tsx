@@ -11,10 +11,8 @@ import {
 } from "@kibo/sdk/ui/sheet";
 import { X } from "lucide-react";
 import { frFeature, frGroup } from "../i18n/fr-group";
-import { frPresence } from "../i18n/fr-presence";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
 import { canEdit } from "../state/access";
-import { usePresencePeers } from "../state/use-presence";
 import { findTicket } from "../tabs/target-hash";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
@@ -54,9 +52,6 @@ export function TicketSheet({
   onDeleted,
 }: Props) {
   const t = findTicket(project.tickets, ticketId);
-  const peers = usePresencePeers(project.sync.shared ? project.meta.id : null).filter(
-    (p) => !p.self && p.ticketId === t?.id,
-  );
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
   if (!t) return null;
@@ -92,17 +87,11 @@ export function TicketSheet({
         </SheetContent>
       </Sheet>
     );
-  const notice = peers.map((p) => (
-    <p key={p.deviceId} className="rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
-      {frPresence.watching(p.name)}
-    </p>
-  ));
   if (isGroup(t))
     return (
       <Sheet open onOpenChange={(o) => !o && onClose()}>
         <SheetContent className="w-full overflow-x-hidden overflow-y-auto sm:max-w-[min(90vw,560px)]">
           <SheetHeader>
-            {notice}
             <div className="flex items-center gap-2">
               <SheetDescription className="font-mono text-xs">{frGroup.kicker(t.keyLabel)}</SheetDescription>
               <GithubRefs ticket={t} />
@@ -150,7 +139,6 @@ export function TicketSheet({
           ticket={t}
           domains={domains}
           viewer={viewer}
-          notice={notice}
           heading={(title, label) => (
             <SheetTitle
               className="text-[22px] font-semibold tracking-[-0.3px]"

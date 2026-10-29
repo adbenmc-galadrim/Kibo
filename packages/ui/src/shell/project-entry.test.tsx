@@ -42,7 +42,6 @@ const show = (project: ProjectSummary) =>
             onNewPage={() => {}}
             onRenamePage={() => {}}
             onDeletePage={() => {}}
-            onShare={() => {}}
             onEdit={() => {}}
             onDelete={() => {}}
           />

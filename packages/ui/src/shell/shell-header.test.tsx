@@ -67,8 +67,8 @@ test("the project agent button toggles the panel and carries a dot while a batch
   expect(toggled).toEqual(["toggle", "show"]);
 });
 
-test("the header keeps the breadcrumb, the sync state and the actions; share, ticket and account live elsewhere", async () => {
-  const project = { ...kiboProject(), sync: { ...kiboProject().sync, shared: true } };
+test("the header keeps the breadcrumb and the actions, without any sync state while online", async () => {
+  const project = kiboProject();
   render(
     <SidebarProvider>
       <ShellHeader
@@ -83,7 +83,9 @@ test("the header keeps the breadcrumb, the sync state and the actions; share, ti
       />
     </SidebarProvider>,
   );
-  expect(await screen.findByText(/^Synchronisé/)).toBeTruthy();
+  expect(await screen.findByRole("navigation", { name: "Fil d'Ariane" })).toBeTruthy();
+  expect(screen.queryByText(/Synchronisé/)).toBeNull();
+  expect(screen.queryByRole("status")).toBeNull();
   for (const name of ["Partager", /^Ticket/, /^Menu de/, "Afficher ou masquer la barre latérale"])
     expect(screen.queryByRole("button", { name })).toBeNull();
 });

@@ -28,7 +28,7 @@ import {
   RenamePageDialog,
   TicketSheet,
 } from "./lazy-dialogs";
-import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-screens";
+import { FilePreviewSheet } from "./lazy-screens";
 import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
@@ -71,7 +71,6 @@ export function ShellDialogs({
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
   const helpOpened = useOpened(state.about || state.whatsNew || state.shortcutsHelp || state.report);
-  const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject
     ? (projects.find((x) => x.id === state.deleteProject) ?? null)
@@ -185,9 +184,6 @@ export function ShellDialogs({
           onFiled={(projectId, ticketId) => set({ fileTicket: null, sheet: { projectId, ticketId } })}
         />
       )}
-      {shareProject && (
-        <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
-      )}
       {editing && (
         <EditProjectDialog
           project={editing}
@@ -211,10 +207,8 @@ export function ShellDialogs({
             set({ deleteProject: null });
             p.onCloseProject(projectId);
           }}
-          onShare={() => set({ deleteProject: null, share: doomedProject.id })}
         />
       )}
-      {state.join && <JoinProjectDialog open onOpenChange={(o) => !o && set({ join: false })} />}
       {preview && (
         <FilePreviewSheet
           fileRef={preview}

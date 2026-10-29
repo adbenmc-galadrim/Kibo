@@ -23,7 +23,7 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { useProjectGit } from "./git/use-project-git";
 import { HostProvider } from "./Host";
-import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { ProjectAgentPanel } from "./lazy-screens";
 import { RetiredRedirect } from "./nav/lazy-nav";
 import { WorkspaceFrame } from "./nav/WorkspaceFrame";
 import { PageActionsProvider } from "./page-actions";
@@ -116,12 +116,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
           describe={describe}
           isDirty={isDirty}
           onNewTab={() => setPalette({ newTab: true })}
-          presence={(place) =>
-            project?.sync.shared && (
-              <ProjectPresence project={project} active={active} sheet={dialogs.sheet} avatars={place} />
-            )
-          }
-          pageShowsPresence={active?.kind === "page"}
         >
           <AppSidebar
             className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"
@@ -151,9 +145,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
               agentPanel={agentPanel}
               onOpen={(t, keep) => go(t, false, keep)}
             />
-            {project?.sync.shared && (
-              <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
-            )}
             <RetiredRedirect target={active} onHome={goHome} />
             <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
               {screen ? (
@@ -166,9 +157,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
                   config={config}
                   onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                   onFile={(ticketId) => set({ fileTicket: { ticketId } })}
-                  onOpen={(t) => go(t)}
-                  onShare={(projectId) => set({ share: projectId })}
-                  onDeleteProject={(projectId) => set({ deleteProject: projectId })}
                   onNewTicket={() => set({ newTicket: {} })}
                 />
               ) : (

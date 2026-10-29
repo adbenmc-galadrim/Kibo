@@ -13,14 +13,6 @@ export const AppearancePage = lazyPanel(
   () => import("../settings/AppearancePage").then((m) => m.AppearancePage),
   fr.lazy,
 );
-export const SecurityPage = lazyPanel(
-  () => import("../settings/SecurityPage").then((m) => m.SecurityPage),
-  fr.lazy,
-);
-export const SyncSettingsPage = lazyPanel(
-  () => import("../settings/SyncSettingsPage").then((m) => m.SyncSettingsPage),
-  fr.lazy,
-);
 export const ShortcutsPage = lazyPanel(
   () => import("../settings/ShortcutsPage").then((m) => m.ShortcutsPage),
   fr.lazy,
@@ -55,41 +47,14 @@ export const WorkspaceMenuItems = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
-const shareEntry = () => import("./share-entry");
 const hidden = { fallback: "sr-only" } as const;
 
-export const ProjectStatusBanner = lazyPanel(
-  () => shareEntry().then((m) => m.ProjectStatusBanner),
+export const ProjectHeaderMenu = lazyPanel(
+  () => import("./ProjectHeaderMenu").then((m) => m.ProjectHeaderMenu),
   fr.lazy,
-  hidden,
+  { fallback: "children" },
 );
-export const ProjectHeaderMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectHeaderMenu), fr.lazy, {
-  fallback: "children",
-});
-export const ProjectAddItems = lazyPanel(() => shareEntry().then((m) => m.ProjectAddItems), fr.lazy, hidden);
-export const ShareProjectDialog = lazyPanel(
-  () => shareEntry().then((m) => m.ShareProjectDialog),
-  fr.lazy,
-  hidden,
-);
-export const JoinProjectDialog = lazyPanel(
-  () => shareEntry().then((m) => m.JoinProjectDialog),
-  fr.lazy,
-  hidden,
-);
-const presenceEntry = () => import("./presence-entry");
-
-export const ProjectPresence = lazyPanel(
-  () => presenceEntry().then((m) => m.ProjectPresence),
-  fr.lazy,
-  hidden,
-);
-export const PresenceAvatars = lazyPanel(
-  () => presenceEntry().then((m) => m.PresenceAvatars),
-  fr.lazy,
-  hidden,
-);
-export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
+export const Unpaired = lazyPanel(() => import("./Unpaired").then((m) => m.Unpaired), fr.lazy);
 export const UserMenuContent = lazyPanel(
   () => import("./UserMenuContent").then((m) => m.UserMenuContent),
   fr.lazy,
@@ -115,7 +80,3 @@ export const PageInstanceMenu = lazyPanel(
   fr.lazy,
   { fallback: "children" },
 );
-
-export const SyncLabel = lazyPanel(() => import("./nav/SyncLabel").then((m) => m.SyncLabel), fr.lazy, {
-  fallback: "children",
-});

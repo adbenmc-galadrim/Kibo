@@ -20,7 +20,6 @@ const project = {
 };
 const actions = () => ({
   newPage: () => {},
-  share: () => {},
   edit: () => {},
   remove: () => {},
 });
@@ -57,21 +56,20 @@ test("the ⋯ action is a sibling of the project button and shifts when a + foll
   expect(more.className).toContain("right-7");
 });
 
-test("⋯ and right click render the same entries, share labelled by frShare", async () => {
+test("⋯ and right click render the same entries", async () => {
   mount(true, false);
   await userEvent.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   const names = () => screen.getAllByRole("menuitem").map((m) => m.textContent);
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
+  expect(names()).toEqual(["Nouvelle page", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
   await userEvent.keyboard("{Escape}");
   fireEvent.contextMenu(screen.getByRole("button", { name: "Kibo" }));
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
+  expect(names()).toEqual(["Nouvelle page", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
 });
 
-test("a non editable project only shares and removes", () => {
+test("a non editable project only lists its files and removes", () => {
   mount(false, false);
   fireEvent.contextMenu(screen.getByRole("button", { name: "Kibo" }));
   expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
-    "Partager",
     "Fichiers du projet…",
     "Supprimer…",
   ]);
@@ -83,7 +81,6 @@ test("a project without its Vue d'ensemble page offers to add it after « Nouvel
   expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
     "Nouvelle page",
     "Ajouter la page Vue d'ensemble",
-    "Partager",
     "Modifier…",
     "Fichiers du projet…",
     "Supprimer…",

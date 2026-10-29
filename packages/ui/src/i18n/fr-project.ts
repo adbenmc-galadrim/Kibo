@@ -1,5 +1,6 @@
 export const frProject = {
   files: "Fichiers du projet…",
+  menu: (name: string) => `Actions de ${name}`,
   edit: {
     title: "Modifier le projet",
     name: "Nom",
@@ -73,33 +74,24 @@ export const frProject = {
   },
   remove: {
     title: (name: string) => `Supprimer le projet ${name} ?`,
-    leaveTitle: (name: string) => `Quitter le projet ${name} ?`,
     summary: (tickets: number, pages: number, widgets: number) =>
       `${tickets} ticket${tickets > 1 ? "s" : ""}, ${pages} page${pages > 1 ? "s" : ""} et ${widgets} widget${widgets > 1 ? "s" : ""} seront supprimés.`,
     keepsFolder: "Le dossier",
     keepsAfter:
       "et ses fichiers ne sont pas touchés ; les notes restent sur le disque ; l'historique des runs est conservé.",
     keepsNoFolder: "Les notes restent sur le disque ; l'historique des runs est conservé.",
-    leaveHelp:
-      "Ta copie locale sera supprimée. Le projet reste sur le serveur : il te faudra une nouvelle invitation pour y revenir.",
     confirmLabel: (name: string) => `Tape ${name} pour confirmer`,
     confirm: "Supprimer",
     demoTitle: "Supprimer le projet de démonstration ?",
     demoHelp: "Ses tickets, ses pages et ses notes disparaissent. Tes autres projets ne sont pas touchés.",
     demoConfirm: "Supprimer la démo",
-    leave: "Quitter le projet",
     cancel: "Annuler",
     busyTitle: "Des agents travaillent sur ce projet",
     busy: (n: number) =>
       `${n} run${n > 1 ? "s" : ""} en cours ou en file : arrête-les avant de supprimer le projet.`,
-    sharedTitle: "Ce projet est partagé",
-    sharedOwner:
-      "Tu en es propriétaire : arrête d'abord le partage, ce qui le supprime du serveur pour tout le monde.",
-    openShare: "Ouvrir le partage",
     failed: "Impossible de supprimer le projet.",
     errors: {
-      CONFLICT:
-        "Un run du projet est en cours, ou tu en es propriétaire alors qu'il est partagé : arrête les runs ou le partage d'abord.",
+      CONFLICT: "Un run du projet est en cours : arrête-le d'abord.",
       FORBIDDEN: "Supprimer un projet n'est possible que depuis l'ordinateur où tourne Kibo.",
       NOT_FOUND: "Ce projet n'existe plus.",
     },

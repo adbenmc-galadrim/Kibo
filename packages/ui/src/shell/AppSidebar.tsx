@@ -43,10 +43,8 @@ type Props = {
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
-  onShare(projectId: string): void;
   onEditProject(projectId: string): void;
   onDeleteProject(projectId: string): void;
-  onJoin(): void;
 };
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
@@ -57,8 +55,6 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "general",
   "appearance",
   "integrations",
-  "security",
-  "sync",
   "shortcuts",
   "workspace",
 ]);
@@ -134,7 +130,7 @@ export function AppSidebar(p: Props) {
             />
           </li>
         </ul>
-        <ProjectsHeader onNewProject={p.onNewProject} onJoin={p.onJoin} />
+        <ProjectsHeader onNewProject={p.onNewProject} />
         <SidebarMenu className="scroll-shadow min-h-0 flex-1 gap-[2px] overflow-y-auto">
           {p.projects.map((project) => {
             const current = active?.meta.id === project.id;
@@ -167,7 +163,6 @@ export function AppSidebar(p: Props) {
                   onNewPage={p.onNewPage}
                   onRenamePage={p.onRenamePage}
                   onDeletePage={p.onDeletePage}
-                  onShare={() => p.onShare(project.id)}
                   onEdit={() => p.onEditProject(project.id)}
                   onDelete={() => p.onDeleteProject(project.id)}
                 />

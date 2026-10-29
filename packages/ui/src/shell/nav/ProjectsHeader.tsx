@@ -1,22 +1,27 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@kibo/sdk/ui/dropdown-menu";
 import { Plus } from "lucide-react";
-import { useState } from "react";
 import { fr } from "../../i18n/fr";
-import { ProjectAddItems } from "../lazy-screens";
 
-type Props = { onNewProject(): void; onJoin(): void };
+type Props = { onNewProject(): void };
 
-export function ProjectsHeader({ onNewProject, onJoin }: Props) {
-  const [open, setOpen] = useState(false);
+export function ProjectsHeader({ onNewProject }: Props) {
   return (
     <div className="k-label">
       <h2>{fr.nav.projects}</h2>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenu>
         <DropdownMenuTrigger aria-label={fr.nav.addProject} className="k-focus">
           <Plus size={13} absoluteStrokeWidth className="k-13" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
-          {open && <ProjectAddItems onNewProject={onNewProject} onJoin={onJoin} />}
+          <DropdownMenuItem onSelect={onNewProject}>
+            <Plus aria-hidden />
+            {fr.nav.newProject}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

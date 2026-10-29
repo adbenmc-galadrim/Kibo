@@ -47,10 +47,7 @@ export const fr = {
     search: "Rechercher",
     toggleSidebar: "Afficher ou masquer la barre latérale",
     addProject: "Ajouter un projet",
-    synced: "Synchronisé",
-    syncOffline: "Hors ligne",
-    syncError: "Erreur de sync",
-    syncReconnecting: "Hors connexion · reconnexion…",
+    offline: "Hors connexion · reconnexion…",
     openNewTab: "Ouvrir dans un nouvel onglet",
     rename: "Renommer…",
     moveUp: "Monter",
@@ -81,7 +78,6 @@ export const fr = {
     reply: "Répondre",
     userMenu: (user: string) => `Menu de ${user}`,
     theme: "Thème",
-    sessions: "Sessions",
     settings: "Paramètres",
     help: "Aide",
     helpShortcuts: "Raccourcis clavier",
@@ -89,7 +85,6 @@ export const fr = {
     helpWhatsNew: "Quoi de neuf",
     helpReport: "Signaler un problème",
     helpAbout: "À propos de Kibo",
-    account: (name: string, host: string) => `${name} · ${host}`,
     creations: (awaiting: number, running: number) => {
       const parts = [
         ...(awaiting > 0 ? [`${awaiting} ${awaiting > 1 ? "attendent" : "attend"} une action`] : []),
@@ -97,18 +92,6 @@ export const fr = {
       ];
       return parts.length > 0 ? `Créations · ${parts.join(", ")}` : "Créations";
     },
-  },
-  pairing: {
-    title: "Appairer ce navigateur",
-    help: "Dans l'app Kibo : Paramètres › Sécurité › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",
-    code: "Code d'appairage",
-    digit: (n: number) => `Caractère ${n} sur 6`,
-    validity: "Code valable 5 minutes · usage unique",
-    submit: "Appairer",
-    invalid: "Code invalide ou expiré.",
-    rateLimited: "Trop d'essais : génère un nouveau code dans l'app Kibo.",
-    security:
-      "Le démon n'écoute que sur 127.0.0.1. Le code est échangé contre un cookie HttpOnly, révocable dans Paramètres › Sécurité.",
   },
   overview: {
     greeting: (user: string) => `Bonjour ${user}`,
@@ -303,15 +286,7 @@ export const fr = {
   },
   integrations: { rows: frIntegrationRows },
   marketSources: { title: "Sources de composants" },
-  sync: {
-    title: "Synchronisation",
-    indicator: {
-      synced: "synchronisé",
-      syncing: "synchronisation…",
-      offline: "sync hors ligne",
-      error: "erreur de sync",
-    },
-  },
+  sync: { title: "Synchronisation" },
   ...frCode,
   ...frComponents,
   common: {

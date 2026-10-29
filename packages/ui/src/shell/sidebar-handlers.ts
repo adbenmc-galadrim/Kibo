@@ -13,8 +13,6 @@ export const sidebarHandlers = (set: Set, setPalette: (request: PaletteRequest |
   onNewPage: (parentId: string | null) => set({ newPageParent: parentId }),
   onRenamePage: (page: Page) => set({ renamePage: page }),
   onDeletePage: (page: Page) => set({ deletePage: page }),
-  onShare: (projectId: string) => set({ share: projectId }),
   onEditProject: (projectId: string) => set({ editProject: projectId }),
   onDeleteProject: (projectId: string) => set({ deleteProject: projectId }),
-  onJoin: () => set({ join: true }),
 });

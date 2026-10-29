@@ -55,7 +55,6 @@ mock.module("../api", () =>
 );
 
 const { ProjectHome } = await import("../pages/ProjectHome");
-const { PairingScreen } = await import("./PairingScreen");
 const { ContentView } = await import("./ContentView");
 const { NewProjectDialog } = await import("../dialogs/NewProjectDialog");
 
@@ -108,13 +107,6 @@ test("ProjectHome names the created project and its folder", () => {
   render(<ProjectHome project={empty} onNewPage={() => {}} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Projet créé : Kibo");
   expect(screen.getByText("~/goinfre/Kibo")).toBeTruthy();
-});
-
-test("PairingScreen shows the logo, a centred title and the security notice", () => {
-  render(<PairingScreen onPaired={() => {}} />);
-  expect(screen.getByRole("img", { name: "Kibo" })).toBeTruthy();
-  expect(screen.getByText("Appairer ce navigateur")).toBeTruthy();
-  expect(screen.getByText(/révocable dans Paramètres › Sécurité/)).toBeTruthy();
 });
 
 const contentProps = {

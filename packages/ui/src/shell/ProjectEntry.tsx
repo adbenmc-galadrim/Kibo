@@ -28,7 +28,6 @@ export type ProjectEntryProps = {
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
   onDeletePage(page: Page): void;
-  onShare(): void;
   onEdit(): void;
   onDelete(): void;
 };
@@ -64,7 +63,7 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
         editable={p.menuEditable}
         onPlanningAdded={onPlanningAdded}
         onOverviewAdded={onOverviewAdded}
-        actions={{ newPage, share: p.onShare, edit: p.onEdit, remove: p.onDelete }}
+        actions={{ newPage, edit: p.onEdit, remove: p.onDelete }}
       >
         <NavRow
           label={project.name}

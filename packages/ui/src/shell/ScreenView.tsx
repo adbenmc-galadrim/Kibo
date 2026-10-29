@@ -3,7 +3,6 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type Screen,
-  type TabTarget,
   type WorkspaceConfig,
 } from "@kibo/schema";
 import { withInbox } from "../lib/inbox";
@@ -13,9 +12,7 @@ import {
   InboxPage,
   IntegrationsPage,
   MyTicketsPage,
-  SecurityPage,
   ShortcutsPage,
-  SyncSettingsPage,
   WorkspacePage,
 } from "./lazy-screens";
 
@@ -27,28 +24,14 @@ type Props = {
   config: WorkspaceConfig | null;
   onOpenTicket(projectId: string, ticketId: string): void;
   onFile(ticketId: string): void;
-  onOpen(target: TabTarget): void;
-  onShare(projectId: string): void;
-  onDeleteProject(projectId: string): void;
   onNewTicket(): void;
 };
 
 export function ScreenView(props: Props) {
-  const { screen, projects, config, onOpen, onShare, onDeleteProject, onNewTicket, ...p } = props;
+  const { screen, projects, config, onNewTicket, ...p } = props;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;
-  if (screen === "security") return <SecurityPage />;
-  if (screen === "sync")
-    return (
-      <SyncSettingsPage
-        viewer={p.viewer}
-        projects={projects}
-        onOpen={(projectId) => onOpen({ kind: "project", projectId })}
-        onShare={onShare}
-        onDeleteProject={onDeleteProject}
-      />
-    );
   if (screen === "shortcuts") return <ShortcutsPage />;
   if (screen === "mine")
     return (
