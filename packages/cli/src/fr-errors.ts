@@ -1,4 +1,5 @@
 import type { KiboError } from "@kibo/schema";
+import { PLAN_FILE_ERRORS } from "./fr-plan";
 
 export type FrError = { code?: KiboError["code"]; match: RegExp; text: (m: RegExpMatchArray) => string };
 
@@ -45,4 +46,5 @@ export const FR_ERRORS: readonly FrError[] = [
     match: /^(\S+) is a step of (\S+): give the feature$/,
     text: (m) => `${m[1]} est une étape de ${m[2]} : donnez la fonctionnalité.`,
   },
+  ...PLAN_FILE_ERRORS,
 ];

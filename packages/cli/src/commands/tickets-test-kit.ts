@@ -2,6 +2,8 @@ import { tmpdir } from "node:os";
 import {
   DEFAULT_WORKFLOW,
   type DeclareTicketRefResult,
+  type PlanOutcome,
+  type PlanPreview,
   type ProjectCommand,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -89,6 +91,7 @@ export type FakeDaemonOptions = {
   declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
   raw?(body: Record<string, unknown>): unknown;
   onCommand?(command: ProjectCommand): unknown;
+  plan?: { preview?: PlanPreview; apply?: PlanOutcome };
 };
 
 const unchanged = (_req: Declare, ticket: TicketView): DeclareTicketRefResult => ({
@@ -114,6 +117,8 @@ export function fakeDaemon(
       if (sent.method === "getProject") return fakeSnapshot([...state.tickets], [...state.sprints]) as never;
       if (sent.method === "command")
         return (options.onCommand?.(sent.command) ?? fakeCommandResult(sent.command, state)) as never;
+      if (sent.method === "previewPlan" && options.plan?.preview) return options.plan.preview as never;
+      if (sent.method === "applyPlan" && options.plan?.apply) return options.plan.apply as never;
       if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;
       if (sent.method === "listNotes") return [] as never;
       if (sent.method === "declareTicketRef") {
