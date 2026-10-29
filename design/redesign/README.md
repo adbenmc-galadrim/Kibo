@@ -194,7 +194,6 @@ Exports : `exports/choix-<n>-<slug>-{dark,light}.png` (`await storage.exportChoi
 | P1 bis · Vue d'ensemble | `exports/proposition-vue-ensemble-v2-{dark,light}.png` | 1 440 × 1 260 px |
 | P2 · Planning | `exports/proposition-planning-{dark,light}.png` | 1 440 × 1 000 px |
 | P3 · Fonctionnalité | `exports/proposition-fonctionnalite-{dark,light}.png` | 1 440 × 1 000 px |
-| P4 · Tickets | `exports/proposition-tickets-{dark,light}.png` | 1 440 × 1 000 px |
 | P5b · Graphe, Fonctionnalités | `exports/proposition-graphe-fonctionnalites-{dark,light}.png` (référence pixel de « graphe » ; exports P5 retirés en phase 30, P5 reste page 35 du fichier « Kibo ») | 1 440 × 1 000 px |
 
 P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. Les tableaux de choix font 1 200 × 560 px.
