@@ -20,7 +20,7 @@ const sprint = (id: string, code: string, start: string, end: string): SprintVie
 
 const snapshot = project({
   tickets: [
-    ticket({ id: "t5", key: "SILO-5", sprintId: "s42" }),
+    ticket({ id: "t5", key: "SILO-5", shortKey: "F2", sprintId: "s42" }),
     ticket({ id: "t6", key: "SILO-6", parentId: "t5" }),
     ticket({ id: "t9", key: "SILO-9" }),
   ],
@@ -50,7 +50,10 @@ describe("sprint actions at validation", () => {
       ),
     ).toEqual([]);
     expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "SILO-6", sprint: "S43" }))).toEqual([
-      "#1 sprint set on the root ticket",
+      "#1 le sprint d'une étape vient de sa fonctionnalité : pose S43 sur F2",
+    ]);
+    expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "SILO-6", sprint: null }))).toEqual([
+      "#1 le sprint d'une étape vient de sa fonctionnalité : retire-le de F2",
     ]);
     expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "SILO-5", sprint: "S99" }))).toEqual([
       "#1 sprint inconnu « S99 » : crée-le plus tôt dans le lot par createSprint",
@@ -65,7 +68,16 @@ describe("sprint actions at validation", () => {
           { id: 2, why, type: "setSprint", ticket: "new:1", sprint: "S43" },
         ),
       ),
-    ).toEqual(["#2 sprint set on the root ticket"]);
+    ).toEqual(["#2 le sprint d'une étape vient de sa fonctionnalité : pose S43 sur F2"]);
+    expect(
+      problems(
+        batch(
+          { id: 1, why, type: "createTicket", ref: "new:1", title: "Racine" },
+          { id: 2, why, type: "createTicket", ref: "new:2", title: "Étape", parent: "new:1" },
+          { id: 3, why, type: "setSprint", ticket: "new:2", sprint: "S43" },
+        ),
+      ),
+    ).toEqual(["#3 le sprint d'une étape vient de sa fonctionnalité : pose S43 sur new:1"]);
   });
 
   test("a sprint created earlier in the batch can be targeted, not one created later", () => {

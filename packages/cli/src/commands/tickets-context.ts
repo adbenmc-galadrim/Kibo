@@ -12,6 +12,7 @@ export type TicketsContext = {
   snapshot: ProjectSnapshot;
   flags: Parsed["flags"];
   io: SessionIo;
+  cwd: string;
 };
 
 export function summaryOf(snapshot: ProjectSnapshot, id: string): TicketSummary {

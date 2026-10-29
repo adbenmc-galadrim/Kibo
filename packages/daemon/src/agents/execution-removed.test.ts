@@ -48,7 +48,7 @@ const TICKET_EXECUTION_FILES: ReadonlySet<string> = new Set([
   "delivery/bootstrap.ts",
   "delivery/deliver.ts",
   "delivery/delivery-ops.ts",
-  "project-agent/apply-batch.ts",
+  "project-agent/apply-actions.ts",
   "project-agent/types.ts",
   "ai/testing/harness.ts",
 ]);

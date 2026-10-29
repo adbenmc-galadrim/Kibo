@@ -54,6 +54,7 @@ export const ProposedAction = z.discriminatedUnion("type", [
     blockedReason: z.string().optional(),
     labels: Labels.optional(),
     parent: TicketRef.optional(),
+    feature: z.boolean().optional(),
   }),
   z.object({
     ...base,

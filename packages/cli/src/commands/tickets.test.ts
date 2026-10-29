@@ -268,6 +268,18 @@ describe("kibo tickets against a real daemon", () => {
     expect(t.err.at(-1)).toBe("Ticket introuvable : C9-9");
   });
 
+  test("rpc sends a raw request and closes its session", async () => {
+    const sessions = async () => (await seed.rpc({ method: "listSessions" })).length;
+    const before = await sessions();
+    const t = cli(home);
+    const body = JSON.stringify({ method: "getProject", projectId });
+    expect(await runCli(["rpc", body], t.io)).toBe(0);
+    expect(JSON.parse(t.out.join("\n"))).toMatchObject({ meta: { key: "SILO", name: "Silo" } });
+    expect(await runCli(["rpc", '{"method":"getProject","projectId":"p-nope"}'], t.io)).toBe(1);
+    expect(t.err.at(-1)).toStartWith("Erreur NOT_FOUND : ");
+    expect(await sessions()).toBe(before);
+  });
+
   test("never prints the token and closes its session", async () => {
     const token = readFileSync(join(home, "token"), "utf8").trim();
     const sessions = async () => (await seed.rpc({ method: "listSessions" })).length;

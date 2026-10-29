@@ -91,3 +91,25 @@ test("keeps the original error when getAppInfo answers garbage", async () => {
     /^Erreur NOT_FOUND : ticket SILO-33 \(démon \/\S+kibo-cli-old-\S+, version inconnue\)$/,
   );
 });
+
+test("a known refusal is explained in French", async () => {
+  const d = fakeOldDaemon((m) => {
+    if (m === "getAppInfo") return ok(APP_INFO);
+    if (m === "command") return refused("INVALID_INPUT", "a hold needs a step (a feature cannot be held)");
+    return null;
+  });
+  expect(await d.run("tickets", "set", "SILO-30", "hold=attente client")).toBe(1);
+  expect(d.err).toEqual(["Une attente se pose sur une étape, pas sur une fonctionnalité."]);
+});
+
+test("an old daemon without applyPlan is explained for kibo plan apply", async () => {
+  const d = fakeOldDaemon((m) => (m === "getAppInfo" ? ok(APP_INFO) : null));
+  const folder = mkdtempSync(join(tmpdir(), "kibo-cli-plan-"));
+  cleanups.push(() => rmSync(folder, { recursive: true, force: true }));
+  const plan = join(folder, "plan.yaml");
+  writeFileSync(plan, "actions:\n  - type: addRecipient\n    name: dsi\n");
+  expect(await d.run("plan", "apply", plan, "--project", "SILO")).toBe(1);
+  expect(d.err).toEqual([
+    "Le démon ~/.kibo (0.23.0-alpha.3) est trop ancien pour kibo plan apply : mets Kibo à jour, puis réessaie.",
+  ]);
+});

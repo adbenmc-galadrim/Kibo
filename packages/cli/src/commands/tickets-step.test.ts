@@ -23,6 +23,9 @@ function fakeClient(fail: KiboError | null = null) {
       const delivery = req.method === "setDeliveryStep" ? { ...req, at: 1, runId: null } : null;
       return { key: "SILO-15", delivery } as never;
     },
+    async raw() {
+      throw new Error("unexpected raw");
+    },
     async close() {},
   };
   return { client, calls };

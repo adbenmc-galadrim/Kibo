@@ -51,6 +51,9 @@ function fakeClient() {
       if (sent.method === "getProject") return { meta: sent.projectId === SILO.id ? SILO : KIBO } as never;
       throw new Error(`unexpected ${sent.method}`);
     },
+    async raw() {
+      throw new Error("unexpected raw");
+    },
     async close() {},
   };
   return { client, calls };

@@ -16,6 +16,7 @@ import type { OnHold } from "./on-hold";
 import { OVERLAP_RPC, type OverlapRpcResult } from "./overlap-rpc";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
+import { PLAN_RPC, type PlanRpcResult } from "./plan-rpc";
 import type { ProjectMeta } from "./project";
 import { PROJECT_AGENT_RPC, type ProjectAgentRpcResult } from "./project-agent-rpc";
 import type { Question } from "./question";
@@ -102,6 +103,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...DELIVERY_RPC,
   ...SUBAGENT_RPC,
   ...TRACKING_RPC,
+  ...PLAN_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -119,7 +121,8 @@ export type RpcResult = CoreRpcResult &
   SkillRpcResult &
   DeliveryRpcResult &
   SubagentRpcResult &
-  TrackingRpcResult;
+  TrackingRpcResult &
+  PlanRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

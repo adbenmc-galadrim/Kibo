@@ -5,8 +5,20 @@ import { type Check, nodeOf, type Scan, touch } from "./validate-scan";
 const knownCode = (scan: Scan, code: string): boolean =>
   scan.sprintCodes.some((c) => sameSprintCode(c, code));
 
+function featureLabel(scan: Scan, parent: string): string {
+  const ticket = scan.ctx.project.tickets.find((t) => t.id === parent);
+  return ticket ? (ticket.shortKey ?? ticket.keyLabel) : parent;
+}
+
+const stepSprintProblem = (scan: Scan, parent: string, code: string | null): string => {
+  const feature = featureLabel(scan, parent);
+  const fix = code === null ? `retire-le de ${feature}` : `pose ${code} sur ${feature}`;
+  return `le sprint d'une étape vient de sa fonctionnalité : ${fix}`;
+};
+
 const setSprint: Check<"setSprint"> = (scan, a) => {
-  if ((scan.parents.get(nodeOf(scan, a.ticket)) ?? null) !== null) return ["sprint set on the root ticket"];
+  const parent = scan.parents.get(nodeOf(scan, a.ticket)) ?? null;
+  if (parent !== null) return [stepSprintProblem(scan, parent, a.sprint)];
   if (a.sprint !== null && !knownCode(scan, a.sprint))
     return [`sprint inconnu « ${a.sprint} » : crée-le plus tôt dans le lot par createSprint`];
   return touch(scan, `${a.ticket}.sprintId`);

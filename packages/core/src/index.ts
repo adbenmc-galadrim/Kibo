@@ -10,6 +10,7 @@ export * from "./commit-message";
 export * from "./external-refs";
 export * from "./instance-data";
 export * from "./instances";
+export * from "./key-forecast";
 export * from "./keys";
 export * from "./links";
 export * from "./moments/fold-moments";

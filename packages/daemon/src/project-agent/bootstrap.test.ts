@@ -1,11 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
 import {
+  PLAN_METHODS,
+  type PlanAction,
   PROJECT_AGENT_REF,
   type ProjectAgentSummary,
   type ProjectEventInput,
   type RunView,
 } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
+import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { startProjectAgent } from "./bootstrap";
 import { type Harness, harness } from "./fakes.test-helper";
 
@@ -91,4 +94,22 @@ test("with a journal, only the batch left at the end of the turn is journaled, a
   expect(events.map((e) => [e.kind, e.data])).toEqual([["batch_proposed", { seq: 2, actions: 1 }]]);
   started.stop();
   expect(listeners.size).toBe(0);
+});
+
+test("the plan rpc is wired to the same project data", async () => {
+  const { h, started } = boot();
+  const actions: PlanAction[] = [
+    { id: 1, why: "", type: "createTicket", ref: "new:1", title: "Tournée", feature: true },
+  ];
+  expect(new Set<string>(started.plan.rpc.methods)).toEqual(new Set(PLAN_METHODS));
+  expect(
+    await started.plan.rpc.handle({ method: "previewPlan", projectId: h.project.id, actions }, LOCAL_CONTEXT),
+  ).toEqual({ ok: true, keys: { "new:1": "F1" } });
+  const outcome = await started.plan.rpc.handle(
+    { method: "applyPlan", projectId: h.project.id, actions },
+    LOCAL_CONTEXT,
+  );
+  expect(outcome).toMatchObject({ problems: [], stoppedAt: null, created: [{ ref: "new:1", key: "F1" }] });
+  expect(h.data.project(h.project.id).tickets.map((t) => t.title)).toEqual(["Tournée"]);
+  started.stop();
 });

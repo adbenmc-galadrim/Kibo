@@ -8,6 +8,9 @@ import {
 import type { Notice } from "../agents/notifier";
 import type { AgentDataPort, Orchestrator } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
+import { planRpc } from "../plan/plan-rpc";
+import { createPlanService } from "../plan/plan-service";
+import type { RpcExtension } from "../rpc-extensions";
 import type { Service } from "../service";
 import { ready } from "../service-ports";
 import { applyBatch } from "./apply-batch";
@@ -23,7 +26,7 @@ import type {
   ProjectAgentSignalsPort,
 } from "./types";
 
-export type ProjectAgentBoot = { agent: ProjectAgentService; stop(): void };
+export type ProjectAgentBoot = { agent: ProjectAgentService; plan: { rpc: RpcExtension }; stop(): void };
 
 export type ProjectAgentBootInput = {
   home: string;
@@ -116,6 +119,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
   const detach = service.attachProjectAgent(agent);
   return {
     agent,
+    plan: { rpc: planRpc(createPlanService({ data, events: input.events })) },
     stop() {
       detach();
       journal?.close();

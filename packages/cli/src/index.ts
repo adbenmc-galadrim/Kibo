@@ -1,10 +1,12 @@
 import { join, resolve } from "node:path";
 import { resolveToolchain, type Toolchain } from "@kibo/devkit";
 import { KiboError, Template } from "@kibo/schema";
-import { type Parsed, parseArgs } from "./args";
+import { type FlagValue, type Parsed, parseArgs } from "./args";
 import { startDevServer } from "./commands/dev";
+import { featuresCommand } from "./commands/features";
 import { type MarketCliDeps, runMarketCommand } from "./commands/market";
 import { type ComponentKind, newCommand } from "./commands/new";
+import { planCommand } from "./commands/plan";
 import { projectsCommand } from "./commands/projects";
 import {
   connectOrExplain,
@@ -12,11 +14,18 @@ import {
   type PublishStrategy,
   publishCommand,
 } from "./commands/publish";
+import { questionsCommand } from "./commands/questions";
+import { rpcCommand } from "./commands/rpc";
 import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
 import { DaemonError, isUnknownMethod } from "./daemon-client";
-import { fr, frTickets } from "./fr";
+import { explainError } from "./error-text";
+import { fr, frRpc, frTickets } from "./fr";
+import { frPlan } from "./fr-plan";
+import { frQuestions } from "./fr-questions";
+import { frSprints } from "./fr-sprints";
+import { frFeatures } from "./fr-write";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
 
@@ -32,7 +41,7 @@ export function cliIo(): CliIo {
 const kindOf = (flags: Parsed["flags"]): ComponentKind =>
   flags.kind === "view" || flags.kind === "both" ? flags.kind : "widget";
 
-function templateOf(flag: string | true | undefined): Template {
+function templateOf(flag: FlagValue | undefined): Template {
   if (flag === undefined) return "blank";
   const parsed = Template.safeParse(flag);
   if (!parsed.success) throw new KiboError("INVALID_INPUT", `unknown template ${String(flag)}`);
@@ -94,6 +103,8 @@ function marketDeps(io: CliIo): MarketCliDeps {
 }
 
 function errorText(e: KiboError, command: string): string {
+  const explained = explainError(e);
+  if (explained !== null) return explained;
   if (!(e instanceof DaemonError) || e.daemon === null) return fr.error(e.code, e.detail);
   const { home, version } = e.daemon;
   if (isUnknownMethod(e)) return fr.daemonTooOld(fr.daemonName(home, version), command);
@@ -113,10 +124,31 @@ async function reportingErrors(io: CliIo, run: () => Promise<number>, command = 
 const withHome = (io: CliIo, flags: Parsed["flags"]): CliIo =>
   typeof flags.home === "string" ? { ...io, home: resolve(flags.home) } : io;
 
+const SCOPE_USAGE = new Map<string | undefined, string>([
+  ["tickets", frTickets.usage],
+  ["features", frFeatures.usage],
+  ["sprints", frSprints.usage],
+  ["questions", frQuestions.usage],
+  ["plan", frPlan.usage],
+  ["rpc", frRpc.usage],
+]);
+
 function help(scope: string | undefined, io: CliIo): number {
-  io.out(scope === "tickets" ? frTickets.usage : fr.usage);
+  io.out(SCOPE_USAGE.get(scope) ?? fr.usage);
   return 0;
 }
+
+type ScopeCommand = (positional: string[], flags: Parsed["flags"], io: CliIo) => Promise<number>;
+
+const SCOPES = new Map<string | undefined, ScopeCommand>([
+  ["tickets", (positional, flags, io) => runTicketsCommand(positional.slice(1), flags, io)],
+  ["features", (positional, flags, io) => featuresCommand(positional.slice(1), flags, io)],
+  ["sprints", (positional, flags, io) => sprintsCommand(positional.slice(1), flags, io)],
+  ["questions", (positional, flags, io) => questionsCommand(positional.slice(1), flags, io)],
+  ["plan", (positional, flags, io) => planCommand(positional.slice(1), flags, io)],
+  ["projects", (positional, flags, io) => projectsCommand(positional.slice(1), flags, io)],
+  ["rpc", (positional, flags, io) => rpcCommand(positional, flags, io)],
+]);
 
 export async function runCli(argv: string[], given: CliIo): Promise<number> {
   const { positional, flags } = parseArgs(argv);
@@ -126,12 +158,8 @@ export async function runCli(argv: string[], given: CliIo): Promise<number> {
   if (flags.help === true) return help(scope, io);
   if (scope === "market")
     return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
-  if (scope === "tickets")
-    return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io), label);
-  if (scope === "sprints")
-    return reportingErrors(io, () => sprintsCommand(positional.slice(1), flags, io), label);
-  if (scope === "projects")
-    return reportingErrors(io, () => projectsCommand(positional.slice(1), flags, io), label);
+  const scoped = SCOPES.get(scope);
+  if (scoped !== undefined) return reportingErrors(io, () => scoped(positional, flags, io), label);
   if (scope !== "component" || !command || !target) {
     io.err(fr.usage);
     return 2;

@@ -10,7 +10,7 @@ import {
   sprintState,
   type TicketView,
 } from "@kibo/schema";
-import { isContainer, type LoroDoc } from "loro-crdt";
+import { isContainer, type LoroDoc, type LoroTreeNode } from "loro-crdt";
 import { stored, valid } from "./config-store";
 import { getNode, walkDepthFirst } from "./tree";
 
@@ -65,9 +65,21 @@ export function deleteSprint(doc: LoroDoc, sprintId: string): null {
   return null;
 }
 
+function featureLabel(feature: LoroTreeNode): string {
+  const shortKey = feature.data.get("shortKey");
+  const key = feature.data.get("key");
+  if (typeof shortKey === "string") return shortKey;
+  return typeof key === "string" ? key : feature.id;
+}
+
 export function setTicketSprint(doc: LoroDoc, ticketId: string, sprintId: string | null): void {
   const node = getNode(doc.getTree("tickets"), ticketId);
-  if (node.parent() !== undefined) throw new KiboError("INVALID_INPUT", "sprint set on the root ticket");
+  const feature = node.parent();
+  if (feature !== undefined)
+    throw new KiboError(
+      "INVALID_INPUT",
+      `a step inherits the sprint of its feature: set it on ${featureLabel(feature)}`,
+    );
   if (sprintId !== null) readSprint(doc, sprintId);
   node.data.set("sprintId", sprintId);
   doc.commit();

@@ -2,72 +2,20 @@ import { tmpdir } from "node:os";
 import {
   DEFAULT_WORKFLOW,
   type DeclareTicketRefResult,
-  EMPTY_PROGRESS,
-  type ExternalRef,
-  type Hold,
-  NOT_STARTED_STATUSES,
-  type OnHold,
+  type PlanOutcome,
+  type PlanPreview,
+  type ProjectCommand,
   type ProjectMeta,
   type ProjectSnapshot,
   type RpcRequest,
   type SprintView,
-  type StartReason,
-  type StatusId,
   type TicketView,
 } from "@kibo/schema";
 import type { DaemonClient } from "../daemon-client";
+import { type FakeState, fakeCommandResult } from "./fake-command-results";
+import { fakeTicket } from "./fake-ticket";
 
-type TicketInput = {
-  id: string;
-  key: string;
-  statusId?: StatusId;
-  parentId?: string;
-  sprintId?: string;
-  effectiveSprintId?: string;
-  shortKey?: string;
-  optional?: boolean;
-  children?: number;
-  refs?: ExternalRef[];
-  startable?: boolean;
-  startReason?: StartReason | null;
-  hold?: Hold | null;
-  onHold?: OnHold | null;
-};
-
-export function fakeTicket(input: TicketInput): TicketView {
-  return {
-    id: input.id,
-    key: input.key,
-    pendingSeq: null,
-    hold: input.hold ?? null,
-    title: `Titre ${input.key}`,
-    description: "",
-    statusId: input.statusId ?? "todo",
-    blockedReason: null,
-    domainId: null,
-    assignee: null,
-    parentId: input.parentId ?? null,
-    externalRefs: input.refs ?? [],
-    labels: [],
-    agentProgress: EMPTY_PROGRESS,
-    delivery: null,
-    sprintId: input.sprintId ?? null,
-    optional: input.optional ?? false,
-    shortKey: input.shortKey ?? null,
-    effectiveSprintId: input.effectiveSprintId ?? input.sprintId ?? null,
-    session: null,
-    updatedAt: null,
-    feature: null,
-    progress: { done: 0, total: input.children ?? 0 },
-    waitingOn: [],
-    keyLabel: input.key,
-    openQuestions: 0,
-    startable:
-      input.startable ?? (NOT_STARTED_STATUSES.includes(input.statusId ?? "todo") && !input.children),
-    startReason: input.startReason ?? null,
-    onHold: input.onHold ?? null,
-  };
-}
+export { fakeTicket };
 
 const sprint = (
   id: string,
@@ -141,6 +89,9 @@ type Declare = Extract<RpcRequest, { method: "declareTicketRef" }>;
 export type FakeDaemonOptions = {
   projects?: ProjectMeta[];
   declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
+  raw?(body: Record<string, unknown>): unknown;
+  onCommand?(command: ProjectCommand): unknown;
+  plan?: { preview?: PlanPreview; apply?: PlanOutcome };
 };
 
 const unchanged = (_req: Declare, ticket: TicketView): DeclareTicketRefResult => ({
@@ -153,25 +104,38 @@ export function fakeDaemon(
   sprints: SprintView[] = SPRINTS,
   options: FakeDaemonOptions = {},
 ) {
+  const state: FakeState = { tickets: [...tickets], sprints: [...sprints], seq: 0 };
   const calls: RpcRequest[] = [];
+  const raws: Record<string, unknown>[] = [];
+  let closes = 0;
   const declared = options.declared ?? unchanged;
   const client: DaemonClient = {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
       if (sent.method === "listProjects") return (options.projects ?? [SILO_META]) as never;
-      if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
-      if (sent.method === "command") return {} as never;
+      if (sent.method === "getProject") return fakeSnapshot([...state.tickets], [...state.sprints]) as never;
+      if (sent.method === "command")
+        return (options.onCommand?.(sent.command) ?? fakeCommandResult(sent.command, state)) as never;
+      if (sent.method === "previewPlan" && options.plan?.preview) return options.plan.preview as never;
+      if (sent.method === "applyPlan" && options.plan?.apply) return options.plan.apply as never;
       if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;
       if (sent.method === "listNotes") return [] as never;
       if (sent.method === "declareTicketRef") {
-        const ticket = tickets.find((t) => t.key === sent.ticketKey);
+        const ticket = state.tickets.find((t) => t.key === sent.ticketKey);
         if (!ticket) throw new Error(`unknown ${sent.ticketKey}`);
         return declared(sent, ticket) as never;
       }
       throw new Error(`unexpected ${sent.method}`);
     },
-    async close() {},
+    async raw(body) {
+      raws.push(body);
+      if (!options.raw) throw new Error("unexpected raw");
+      return options.raw(body);
+    },
+    async close() {
+      closes += 1;
+    },
   };
   const out: string[] = [];
   const err: string[] = [];
@@ -179,5 +143,6 @@ export function fakeDaemon(
   const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
   const declarations = () =>
     calls.flatMap((c) => (c.method === "declareTicketRef" ? [{ ticketKey: c.ticketKey, ref: c.ref }] : []));
-  return { client, calls, commands, declarations, out, err, io, connect: async () => client };
+  const closed = () => closes;
+  return { client, calls, raws, closed, commands, declarations, out, err, io, connect: async () => client };
 }

@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { KiboError } from "@kibo/schema";
 import { parseArgs } from "../args";
 import { runTicketsCommand } from "./tickets";
-import { fakeDaemon, fakeTicket, SILO_META, SPRINTS } from "./tickets-test-kit";
+import { fakeDaemon, fakeTicket, SILO_META, SPRINTS, TICKETS } from "./tickets-test-kit";
 
 async function listIn(d: ReturnType<typeof fakeDaemon>, args: string[]) {
   const { flags } = parseArgs(["--project", "SILO", ...args]);
@@ -167,5 +168,68 @@ describe("kibo tickets list without --project", () => {
     const none = fakeDaemon(undefined, undefined, { projects: [] });
     expect(await runTicketsCommand(["list"], {}, none.io, none.connect)).toBe(2);
     expect(none.err.join("\n")).toContain("kibo tickets list --project");
+  });
+});
+
+describe("kibo tickets list --feature, --label", () => {
+  const labelled = TICKETS.map((t) =>
+    t.key === "SILO-33"
+      ? { ...t, labels: ["area:web"] }
+      : t.key === "SILO-50"
+        ? { ...t, labels: ["area:api", "x"] }
+        : t,
+  );
+
+  test("--feature F5 keeps the feature and its steps", async () => {
+    expect((await list("--feature", "F5")).keys).toEqual(["SILO-30", "SILO-33", "SILO-34"]);
+    expect((await list("--feature", "silo-40")).keys).toEqual(["SILO-40", "SILO-41"]);
+  });
+
+  test("--feature with a step key is refused", async () => {
+    await expect(list("--feature", "SILO-33")).rejects.toThrow(
+      new KiboError("INVALID_INPUT", "SILO-33 is a step of F5: give the feature"),
+    );
+    const unknown = await list("--feature", "F99");
+    expect(unknown.code).toBe(1);
+    expect(unknown.err).toEqual(["Ticket introuvable : F99"]);
+  });
+
+  test("--label area:web keeps tickets having one of the labels", async () => {
+    const pick = async (...args: string[]) => (await listIn(fakeDaemon(labelled), args)).keys;
+    expect(await pick("--label", "area:web")).toEqual(["SILO-33"]);
+    expect(await pick("--label", "area:web,area:api")).toEqual(["SILO-33", "SILO-50"]);
+    expect(await pick("--label", "area:web", "--feature", "F7")).toEqual([]);
+  });
+
+  test("no match lists the given filters", async () => {
+    const d = await list("--feature", "F5", "--label", "x");
+    expect(d.code).toBe(0);
+    expect(d.out).toEqual(["Aucun ticket pour ces filtres : --feature F5 --label x"]);
+  });
+});
+
+describe("kibo tickets list --fields", () => {
+  test("--fields key,status,sprint prints tab-separated columns in that order", async () => {
+    const d = await list("--fields", "key,status,sprint", "--feature", "F7");
+    expect(d.code).toBe(0);
+    expect(d.out).toEqual(["key\tstatus\tsprint", "SILO-40\ttodo\t-", "SILO-41\twip\t-"]);
+  });
+
+  test("--fields with --json prints reduced objects", async () => {
+    const d = await list("--fields", "key,feature,sprint", "--json", "--feature", "F5");
+    expect(JSON.parse(d.out.join("\n"))).toEqual([
+      { key: "SILO-30", feature: "F5", sprint: "S42" },
+      { key: "SILO-33", feature: "F5", sprint: "S42" },
+      { key: "SILO-34", feature: "F5", sprint: "S42" },
+    ]);
+  });
+
+  test("an unknown field prints the usage with the field list", async () => {
+    const d = await list("--fields", "key,colour");
+    expect(d.code).toBe(2);
+    expect(d.out).toEqual([]);
+    expect(d.err[0]).toStartWith("Champ inconnu : colour. Champs : id, key,");
+    expect(d.err[0]).toContain("sprint");
+    expect(d.err.join("\n")).toContain("kibo tickets list --project");
   });
 });

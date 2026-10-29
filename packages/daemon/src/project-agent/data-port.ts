@@ -1,4 +1,4 @@
-import { agentSummary, readProject } from "@kibo/core";
+import { agentSummary, keyForecast, readProject } from "@kibo/core";
 import {
   type Agent,
   type Guideline,
@@ -89,5 +89,6 @@ export function createProjectAgentDataPort(deps: ProjectAgentDataDeps): ProjectA
     isDemoProject: (projectId) => isDemoProject(deps.settings, projectId),
     ...notesPort(deps.notes),
     runCommand: (projectId, command) => docs.run(projectId, command, USER_COMMAND),
+    forecast: (projectId) => keyForecast(docs.project(projectId)),
   };
 }

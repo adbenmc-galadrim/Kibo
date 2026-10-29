@@ -13,6 +13,11 @@ Ce dossier est aussi le dossier de notes du projet Kibo dans Kibo (page Notes) :
 - [Sync](superpowers/specs/2026-09-26-kibo-sync.md) (phase 7, spec G)
 - [Marketplace](superpowers/specs/2026-09-26-kibo-marketplace.md) (phase 7, spec H)
 
+## Guides
+
+- [Installation](installation.md)
+- [CLI `kibo`](cli.md) : lire et écrire depuis un terminal, appliquer un plan ([exemple](cli-plan-exemple.yaml)), l'API du démon.
+
 ## Feuille de route et plans
 
 - [Feuille de route](superpowers/plans/2026-09-25-kibo-feuille-de-route.md)

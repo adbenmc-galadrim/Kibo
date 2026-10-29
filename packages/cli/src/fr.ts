@@ -1,4 +1,9 @@
 import { liveReview, type OnHold, type PrChecks, type PrReview } from "@kibo/schema";
+import { PLAN_USAGE } from "./fr-plan";
+import { QUESTIONS_USAGE } from "./fr-questions";
+import { SPRINTS_USAGE } from "./fr-sprints";
+import { DAEMON_HELP, PROJECT_HINT, usageText } from "./fr-usage";
+import { FEATURES_USAGE, TICKETS_WRITE_USAGE } from "./fr-write";
 import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
 import type { AssigneeSummary, BranchSummary, PrSummary, TicketRef } from "./tickets/ticket-view";
 
@@ -8,21 +13,18 @@ const MARKET_USAGE = [
   "  kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clés>]",
 ];
 
-const DAEMON_HELP = "Démon : $KIBO_HOME/daemon.json (défaut ~/.kibo), ou --home <dossier>";
-const PROJECT_HINT =
-  "Projet de get et set : --project, sinon le préfixe de la clé (SILO-12), sinon le dossier courant.";
-
 const TICKETS_USAGE = [
-  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
+  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--feature <F|clé>] [--label <a[,b]>] [--fields key,title,status,sprint] [--json]",
   "  kibo tickets get <clé|id du plan> [--project <p>] [--json]",
   "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] [hold=<raison>|off] [--project <p>] [--json]",
   "  kibo tickets step <clé> <0-11> [note] [--update] [--json]",
   "  kibo tickets session [<clé>] <start|ping|stop> [--tool <nom>] [--project <p>] [--json]",
+  ...TICKETS_WRITE_USAGE,
 ];
 
-const SPRINTS_USAGE = ["  kibo sprints list --project <clé|nom|id> [--json]"];
-
 const PROJECTS_USAGE = ["  kibo projects list [--json]", "  kibo projects get <clé|nom|id> [--json]"];
+
+const RPC_USAGE = ["  kibo rpc '<json>' | @fichier | @-"];
 
 const REVIEW_LABELS: Record<PrReview, string | null> = {
   none: null,
@@ -54,7 +56,7 @@ const precise = (keys: readonly string[]) =>
   keys.length === 1 ? `précise --project ${keys[0]}` : `précise --project parmi ${keys.join(", ")}`;
 
 export const frTickets = {
-  usage: ["Usage :", ...TICKETS_USAGE, "", PROJECT_HINT, DAEMON_HELP].join("\n"),
+  usage: usageText(TICKETS_USAGE, PROJECT_HINT, DAEMON_HELP),
   precise,
   featureNeedsProject: (keys: readonly string[]) => `clé de fonctionnalité : ${precise(keys)}`,
   notRunning: "Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.",
@@ -143,10 +145,6 @@ const agreed = (n: number, word: string) => `${word}${n > 1 ? "s" : ""}`;
 const recipeSummary = ({ copy, after }: { copy: readonly string[]; after: readonly string[] }) =>
   `${plural(copy.length, "fichier")} ${agreed(copy.length, "copié")}, ${plural(after.length, "commande")} après`;
 
-export const frSprints = {
-  usage: ["Usage :", ...SPRINTS_USAGE].join("\n"),
-};
-
 export const frProjects = {
   usage: ["Usage :", ...PROJECTS_USAGE].join("\n"),
   title: (key: string, name: string) => `${key} · ${name}`,
@@ -159,6 +157,12 @@ export const frProjects = {
     `Livraison : ${d ? `agent ${d.agent ?? "aucun"} · dossier ${d.root ?? "aucun"}` : "non configurée"}`,
 };
 
+export const frRpc = {
+  usage: usageText(RPC_USAGE, "Envoie la requête telle quelle à POST /api/rpc.", DAEMON_HELP),
+  unreadable: (reason: string) => `JSON illisible : ${reason}`,
+  noMethod: "La requête doit être un objet JSON avec une méthode (« method »).",
+};
+
 export const fr = {
   usage: [
     "Usage :",
@@ -168,9 +172,13 @@ export const fr = {
     "  kibo component publish <id> [--update-all|--new-version]",
     "  kibo component publish <id> --to <source> [--publisher <nom>]",
     ...MARKET_USAGE,
+    ...FEATURES_USAGE,
     ...TICKETS_USAGE,
     ...SPRINTS_USAGE,
+    ...QUESTIONS_USAGE,
+    ...PLAN_USAGE,
     ...PROJECTS_USAGE,
+    ...RPC_USAGE,
     "",
     DAEMON_HELP,
   ].join("\n"),

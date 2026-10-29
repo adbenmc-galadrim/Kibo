@@ -32,6 +32,9 @@ function fakeClient(answer: Answer = ALIVE, projects: readonly ProjectMeta[] = [
       if (sent.method !== "setTicketSession") throw new Error(`unexpected ${sent.method}`);
       return answer(sent) as never;
     },
+    async raw() {
+      throw new Error("unexpected raw");
+    },
     async close() {},
   };
   const sessions = () => calls.filter((c) => c.method === "setTicketSession");
