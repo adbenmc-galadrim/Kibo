@@ -47,7 +47,7 @@ Kibo lance Claude Code en local (`claude -p`, sur ton abonnement) : installe le 
 - Tout run passe par la file (**Files d'attente**) : créneaux hôte, créneaux du profil, seuils CPU 85 % et RAM 90 %.
 - Un run qui pose une question attend ta réponse dans la barre des agents, sans occuper de créneau.
 - Les guidelines (**Paramètres › Domaines & guidelines**) sont injectées dans l'ordre workspace → projet → domaine → profil.
-- Les tests n'utilisent jamais le vrai CLI : `packages/daemon/src/agents/fake-claude.ts` le remplace.
+- Les tests n'utilisent jamais le vrai CLI : `packages/daemon/src/runs/fake-claude.ts` le remplace.
 - Instance de test avec le vrai CLI : `KIBO_CLAUDE_ISOLATED=1` (avec un `KIBO_HOME` temporaire) lance `claude` avec `--setting-sources project,local --strict-mcp-config` (ni réglages, plugins, hooks ni MCP de `~/.claude`) et écrit agents et skills sous `$KIBO_HOME/claude` ; la connexion de `claude` reste celle d'Adam.
 
 ## Où trouver quoi
