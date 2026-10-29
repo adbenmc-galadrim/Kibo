@@ -27,17 +27,11 @@ const NewTicketAction = lazyPanel(
   { fallback: "sr-only" },
 );
 const EditLayout = lazyPanel(() => import("./EditLayout").then((m) => m.EditLayout), fr.lazy);
-const PublishDialog = lazyPanel(
-  () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
-  fr.lazy,
-  { fallback: "sr-only" },
-);
 
 type Props = { project: ProjectSnapshot; page: Page; viewer: string; spotlight?: Spotlight | null };
 export function PageView({ project, page, viewer, spotlight = null }: Props) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [publishing, setPublishing] = useState<string | null>(null);
   const wide = useWideGrid();
   const projectId = project.meta.id;
   const instances = project.instances.filter((i) => i.pageId === page.id);
@@ -132,12 +126,10 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             taken={instances.map((i) => i.layout)}
             open
             onOpenChange={setAdding}
-            onPublishDraft={(id) => setPublishing(id)}
             workflow={project.workflow}
             linked={linkedRepos(project)}
           />
         )}
-        {publishing && <PublishDialog id={publishing} open onOpenChange={(o) => !o && setPublishing(null)} />}
       </div>
     </PageContext.Provider>
   );

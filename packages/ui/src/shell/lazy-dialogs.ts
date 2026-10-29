@@ -38,16 +38,6 @@ export const ConfirmDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const NotesDirDialog = lazyPanel(
-  () => import("../dialogs/NotesDirDialog").then((m) => m.NotesDirDialog),
-  fr.lazy,
-  hidden,
-);
-export const TrustDialog = lazyPanel(
-  () => import("../dialogs/TrustDialog").then((m) => m.TrustDialog),
-  fr.lazy,
-  hidden,
-);
 export const OpenViewDialog = lazyPanel(
   () => import("../dialogs/OpenViewDialog").then((m) => m.OpenViewDialog),
   fr.lazy,

@@ -64,7 +64,6 @@ describe("bundle report", () => {
       pkg("@shikijs/langs", "dist/tsx.mjs"),
       pkg("sonner", "dist/index.mjs"),
       pkg("next-themes", "dist/index.mjs"),
-      "/Kibo/packages/ui/src/components-page/ComponentsPage.tsx",
       "/Kibo/packages/ui/src/mine/MyTicketsPage.tsx",
       "/Kibo/packages/ui/src/files/FileTabView.tsx",
       "/Kibo/packages/ui/src/files/FilePreviewSheet.tsx",
@@ -72,14 +71,11 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/pages/SourceHeader.tsx",
       "/Kibo/components/graph/src/GraphView.tsx",
       "/Kibo/components/kanban/src/Kanban.tsx",
-      "/Kibo/components/notes/src/NotesView.tsx",
-      "/Kibo/components/mcp-source/src/McpSource.tsx",
       "/Kibo/packages/ui/src/dialogs/NewProjectDialog.tsx",
       "/Kibo/packages/ui/src/dialogs/NewPageDialog.tsx",
       "/Kibo/packages/ui/src/dialogs/NewTicketDialog.tsx",
       "/Kibo/packages/ui/src/shell/TicketSheet.tsx",
       "/Kibo/packages/ui/src/palette/CommandPalette.tsx",
-      "/Kibo/packages/ui/src/components-page/PublishDialog.tsx",
       "/Kibo/packages/ui/src/pages/TicketTab.tsx",
       "/Kibo/packages/ui/src/shell/TicketDetail.tsx",
       "/Kibo/packages/ui/src/shell/PresenceAvatars.tsx",
@@ -110,10 +106,8 @@ describe("bundle report", () => {
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
-      "/Kibo/components/notes/src/NotesWidget.tsx",
       "/Kibo/components/graph/src/GraphWidget.tsx",
       "/Kibo/packages/ui/src/shell/use-update-schedule.ts",
-      "/Kibo/components/mcp-source/src/config.ts",
       "/Kibo/packages/ui/src/shell/Startup.tsx",
       "/Kibo/packages/ui/src/shell/RootBoundary.tsx",
     ])
@@ -127,7 +121,6 @@ describe("bundle report", () => {
       "/x/packages/ui/src/pages/LayoutToolbar.tsx",
       "/x/packages/ui/src/pages/FormatMenu.tsx",
       "/x/packages/ui/src/i18n/fr-layout.ts",
-      "/x/packages/ui/src/i18n/fr-creations.ts",
       "/x/packages/sdk/src/mock.ts",
       "/x/packages/sdk/src/mock-calls.ts",
       "/x/packages/sdk/src/mock-notes.ts",
@@ -211,24 +204,8 @@ describe("bundle report", () => {
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
   });
 
-  test("three and the sdk 3d and game kits never reach the entry", () => {
-    const three = pkg("three", "build/three.module.js");
-    const chunks = [
-      chunk("index.js", { isEntry: true, moduleIds: [three] }),
-      chunk("Viewer3d.js", { moduleIds: [pkg("three", "examples/jsm/loaders/GLTFLoader.js")] }),
-    ];
-    const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
-    expect(report.forbidden).toEqual([{ file: "index.js", module: three }]);
-    const paths = [
-      "/x/packages/sdk/src/three/ThreeCanvas.tsx",
-      "/x/packages/sdk/src/three/index.ts",
-      "/x/packages/sdk/src/game/loop.ts",
-      "/x/packages/sdk/src/fixtures-glb.ts",
-    ];
-    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(
-      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/node_modules/.bun/threejs-x@1/node_modules/threejs-x/a.js")),
-    ).toBe(false);
+  test("the sdk glb fixtures never reach the entry", () => {
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/sdk/src/fixtures-glb.ts"))).toBe(true);
   });
 
   test("core and loro fail the build in any chunk of the main graph, initial or lazy", () => {
@@ -258,7 +235,7 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
-  test("the project agent, the pending trust screen and the creations indicator are forbidden in the entry", () => {
+  test("the project agent is forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/project-agent/ProjectAgentButton.tsx",
       "/x/packages/ui/src/project-agent/ProjectAgentPanel.tsx",
@@ -266,8 +243,6 @@ describe("bundle report", () => {
       "/x/packages/ui/src/project-agent/conversation.ts",
       "/x/packages/ui/src/project-agent/use-project-agent.ts",
       "/x/packages/ui/src/i18n/fr-project-agent.ts",
-      "/x/packages/ui/src/pages/PendingTrust.tsx",
-      "/x/packages/ui/src/pages/OtherVersionMenu.tsx",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(
@@ -302,14 +277,14 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
-  test("the marketplace, security and sync texts are forbidden in the entry, not the shell texts", () => {
-    const texts = ["market", "security", "collab"].map((n) => `/x/packages/ui/src/i18n/fr-${n}.ts`);
+  test("the security and sync texts are forbidden in the entry, not the shell texts", () => {
+    const texts = ["security", "collab"].map((n) => `/x/packages/ui/src/i18n/fr-${n}.ts`);
     for (const p of texts) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr.ts"))).toBe(false);
-    const market = "/x/packages/ui/src/i18n/fr-market.ts";
-    const chunks = [chunk("index.js", { isEntry: true, moduleIds: [market] })];
+    const security = "/x/packages/ui/src/i18n/fr-security.ts";
+    const chunks = [chunk("index.js", { isEntry: true, moduleIds: [security] })];
     const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
-    expect(report.forbidden).toEqual([{ file: "index.js", module: market }]);
+    expect(report.forbidden).toEqual([{ file: "index.js", module: security }]);
   });
   test("the agents dock, the feed, their texts, the mention and the hover card are forbidden in the entry", () => {
     const paths = [

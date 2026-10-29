@@ -16,15 +16,7 @@ import { targetToHash } from "../tabs/target-hash";
 
 export type SettingsScreen = Extract<
   Screen,
-  | "general"
-  | "appearance"
-  | "domains"
-  | "integrations"
-  | "sync"
-  | "security"
-  | "sources"
-  | "shortcuts"
-  | "workspace"
+  "general" | "appearance" | "integrations" | "sync" | "security" | "shortcuts" | "workspace"
 >;
 type Item = { id: string; label: string; icon: LucideIcon; screen: SettingsScreen };
 
