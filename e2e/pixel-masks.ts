@@ -85,13 +85,6 @@ const user = (y: number): PixelMask => ({
 });
 const USER = user(956);
 
-const syncAge = (x: number): PixelMask => ({
-  x,
-  y: 16,
-  w: 133,
-  h: 16,
-  why: "« Synchronisé · il y a 1 min » : âge relatif de la synchronisation, aucun serveur de sync semé",
-});
 const clockTime = (x: number, y: number, w: number, h: number, what: string): PixelMask => ({
   x,
   y,
@@ -101,10 +94,9 @@ const clockTime = (x: number, y: number, w: number, h: number, what: string): Pi
 });
 
 const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
-  planning: [USER, syncAge(987)],
+  planning: [USER],
   fonctionnalite: [
     USER,
-    syncAge(1124),
     clockTime(665, 563, 40, 16, "« 42 min », durée en cours de SILO-33 sur la fiche"),
     clockTime(453, 385, 54, 15, "« hier 18:22 » de la PR #19"),
     clockTime(393, 485, 32, 15, "« 15:04 » de la PR #22"),
@@ -116,7 +108,6 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   ],
   "vue-ensemble": [
     user(1216),
-    syncAge(671),
     clockTime(1018, 251, 42, 16, "« 42 min », durée en cours de SILO-33"),
     clockTime(1021, 288, 38, 16, "« 18 min », durée en cours de SILO-45"),
     clockTime(279, 1074, 40, 16, "« 15:04 » de l'activité"),
@@ -136,7 +127,6 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   ],
   graphe: [
     USER,
-    syncAge(1124),
     {
       x: 1134,
       y: 64,
@@ -145,7 +135,7 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
       why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
     },
   ],
-  "graphe-prs": [USER, syncAge(1124)],
+  "graphe-prs": [USER],
   "apercu-maquette": [],
   "nouveau-projet": [],
   kanban: [],
@@ -165,7 +155,6 @@ const ATTENTE_VUE_MASKS: readonly PixelMask[] = [
 
 const ATTENTE_FEATURE_MASKS: readonly PixelMask[] = [
   USER,
-  syncAge(1124),
   clockTime(453, 385, 54, 15, "« hier 18:22 » de la PR #19"),
   clockTime(393, 485, 32, 15, "« 15:04 » de la PR #22"),
   clockTime(1178, 392, 26, 14, "« hier » de Q16"),

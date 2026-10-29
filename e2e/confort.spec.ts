@@ -46,25 +46,6 @@ async function dragBelow(page: Page, source: Locator, key: string, target: Locat
   await page.mouse.up();
 }
 
-test("synchronisation : état vide et connexion d'un autre appareil", async ({ page }, info) => {
-  await pair(page);
-  await page.goto("/#/settings/sync");
-  await expect(page.getByText("Partage tes projets entre tes appareils et avec ton équipe.")).toBeVisible();
-  await expect(page.getByText("Se connecter à un serveur")).toBeVisible();
-  await expect(page.getByText("C'est mon autre appareil")).toBeVisible();
-  await shot(page, info, "ecran-119");
-  await page.getByRole("button", { name: "Entrer le code" }).click();
-  const dialog = page.getByRole("dialog", { name: "Se connecter à un serveur" });
-  await expect(dialog.getByLabel("Adresse du serveur")).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Options avancées" })).toHaveAttribute(
-    "aria-expanded",
-    "false",
-  );
-  await shot(page, info, "ecran-120");
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
-});
-
 test("Kanban filtré et réordonné", async ({ page }, info) => {
   await pair(page);
   const { projectId, board } = await seed(page);

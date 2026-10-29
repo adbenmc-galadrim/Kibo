@@ -42,7 +42,7 @@ export async function openPixelPage(page: Page, url: string, height: number): Pr
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   await expect(sidebar.getByText("Galadrim", { exact: true })).toBeVisible();
   await expect(sidebar.getByText("Nimbus", { exact: true })).toBeVisible();
-  await expect(page.getByText(/^Synchronisé/).first()).toBeVisible();
+  await expect(page.getByRole("status", { name: /hors connexion/i })).toHaveCount(0);
 }
 
 export async function settlePointer(page: Page, height: number): Promise<void> {

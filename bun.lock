@@ -267,7 +267,6 @@
       "version": "0.0.0",
       "devDependencies": {
         "@kibo/sdk": "workspace:*",
-        "@kibo/sync-server": "workspace:*",
         "@playwright/test": "1.55.0",
         "fast-check": "4.3.0",
       },

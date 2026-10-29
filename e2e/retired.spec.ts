@@ -51,6 +51,8 @@ const RETIRED_URLS = [
   "/#/settings/components",
   "/#/settings/sources",
   "/#/settings/domains",
+  "/#/settings/sync",
+  "/#/settings/security",
   "/#/code",
   "/#/runs/r1",
   "/#/p/silo/changes",
