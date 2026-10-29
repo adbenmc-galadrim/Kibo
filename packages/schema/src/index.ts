@@ -82,6 +82,8 @@ export * from "./overview";
 export * from "./page";
 export * from "./permissions";
 export * from "./phase14-rpc";
+export * from "./plan";
+export * from "./plan-rpc";
 export * from "./pr-checks";
 export * from "./progress";
 export * from "./project";
