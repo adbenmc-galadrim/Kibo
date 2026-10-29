@@ -162,6 +162,9 @@ describe("commandsFor", () => {
       }),
     ).toEqual([{ method: "createTicket", title: "Neuf", statusId: "todo", parentId: "t1" }]);
     expect(
+      commands({ id: 1, why, type: "createTicket", ref: "new:1", title: "Tournée", feature: true }),
+    ).toEqual([{ method: "createTicket", title: "Tournée", feature: true, parentId: null }]);
+    expect(
       commands({ id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "T", labels: ["ui"] }),
     ).toEqual([{ method: "updateTicket", ticketId: "t1", title: "T", labels: ["ui"] }]);
     expect(

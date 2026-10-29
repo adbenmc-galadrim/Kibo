@@ -162,9 +162,11 @@ export function commandsFor(
 ): ProjectCommand[] {
   switch (action.type) {
     case "createTicket": {
-      const { title, description, statusId, blockedReason, labels, parent } = action;
+      const { title, description, statusId, blockedReason, labels, parent, feature } = action;
       const parentId = parent === undefined ? null : idOf(ids, parent);
-      return [{ method: "createTicket", title, description, statusId, blockedReason, labels, parentId }];
+      return [
+        { method: "createTicket", title, description, statusId, blockedReason, labels, feature, parentId },
+      ];
     }
     case "updateTicket":
       return updateCommands(action, ids, project);

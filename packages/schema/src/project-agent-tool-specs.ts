@@ -59,6 +59,10 @@ const ACTION = object(
     },
     labels,
     parent: { ...ticketRef, description: "Ticket parent." },
+    feature: {
+      type: "boolean",
+      description: "createTicket : true pour une fonctionnalité (clé F<n>, ticket racine, sans parent).",
+    },
     profileId: { type: "string", description: "Agent assignable : son id (list_profiles)." },
     brief: text("Consigne pour l'agent.", ACTION_BRIEF_MAX),
     fresh: { type: "boolean" },

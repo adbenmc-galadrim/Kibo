@@ -249,4 +249,9 @@ describe("holds in a batch", () => {
     expect(JSON.stringify(batch?.inputSchema)).toContain('"reason":{"type":["string","null"],"maxLength":80');
     expect(TOOL_SPECS.find((s) => s.name === "list_tickets")?.description).toContain("en attente (hold)");
   });
+
+  test("the batch tool lets createTicket make a feature", () => {
+    const batch = TOOL_SPECS.find((s) => s.name === "propose_batch");
+    expect(JSON.stringify(batch?.inputSchema)).toContain('"feature":{"type":"boolean"');
+  });
 });

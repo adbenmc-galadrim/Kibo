@@ -347,3 +347,42 @@ describe("validateBatch with the agent execution hidden", () => {
     ]);
   });
 });
+
+describe("validateBatch and features", () => {
+  test("a feature with a parent is refused", () => {
+    expect(
+      problems(
+        batch({
+          id: 1,
+          why,
+          type: "createTicket",
+          ref: "new:1",
+          title: "F",
+          feature: true,
+          parent: "SILO-3",
+        }),
+      ),
+    ).toEqual(["#1 une fonctionnalité est un ticket racine"]);
+  });
+
+  test("a feature created in the batch is a root for setSprint", () => {
+    expect(
+      problems(
+        batch(
+          {
+            id: 1,
+            why,
+            type: "createSprint",
+            code: "S43",
+            name: "S43",
+            start: "2026-11-02",
+            end: "2026-11-06",
+          },
+          { id: 2, why, type: "createTicket", ref: "new:1", title: "Tournée", feature: true },
+          { id: 3, why, type: "createTicket", ref: "new:2", title: "Dépôt", parent: "new:1" },
+          { id: 4, why, type: "setSprint", ticket: "new:1", sprint: "S43" },
+        ),
+      ),
+    ).toEqual([]);
+  });
+});

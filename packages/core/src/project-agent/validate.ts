@@ -95,6 +95,7 @@ function existingLink(scan: Scan, kind: "blocks" | "relates", from: string, to: 
 const checks: { [T in ActionType]: Check<T> } = {
   createTicket(scan, a, i) {
     if (scan.declared.get(a.ref) !== i) return [`référence ${a.ref} déclarée deux fois`];
+    if (a.feature === true && a.parent !== undefined) return ["une fonctionnalité est un ticket racine"];
     const problems = statusProblems(scan, a.statusId, a.blockedReason);
     if (problems.length === 0)
       scan.parents.set(a.ref, a.parent === undefined ? null : nodeOf(scan, a.parent));
