@@ -1,7 +1,8 @@
 import { type SprintView, sortSprints, type TicketView } from "@kibo/schema";
 import type { Parsed } from "../args";
 import type { DaemonClient } from "../daemon-client";
-import { frSprints, frTickets } from "../fr";
+import { frTickets } from "../fr";
+import { frSprints } from "../fr-sprints";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
 import { missingProject } from "./project-hint";
 

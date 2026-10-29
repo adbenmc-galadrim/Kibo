@@ -14,14 +14,29 @@ import {
 import { type Connect, printJson, type SessionIo, withClient } from "./daemon-session";
 import { missingProject } from "./project-hint";
 import { chooseProject, notFound, summaryOf, type TicketsContext } from "./tickets-context";
+import { linkCommand, unlinkCommand } from "./tickets-link";
 import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
 import { ticketsStep } from "./tickets-step";
+import { createCommand, moveCommand, updateCommand } from "./tickets-write";
 
 export type TicketsIo = SessionIo;
 type Flags = Parsed["flags"];
 
-const SUBCOMMANDS = new Set(["list", "get", "set"]);
+const SUBCOMMANDS = new Set(["list", "get", "set", "create", "update", "move", "link", "unlink"]);
+const VALUE_FLAGS = [
+  "project",
+  "sprint",
+  "feature",
+  "label",
+  "labels",
+  "fields",
+  "title",
+  "description",
+  "append",
+  "prepend",
+  "blocks",
+];
 
 const givenFilters = (flags: Flags): string[] => [
   ...(flags.ready === true ? ["--ready"] : []),
@@ -72,14 +87,32 @@ async function getCommand(ident: string, { client, snapshot, flags, io }: Ticket
   return 0;
 }
 
-function isUsage(sub: string | undefined, ident: string | undefined, flags: Flags): boolean {
+const needsFeature = (sub: string): boolean => sub === "create" || sub === "move";
+
+function isUsage(
+  sub: string | undefined,
+  ident: string | undefined,
+  other: string | undefined,
+  flags: Flags,
+): boolean {
   return (
     sub === undefined ||
     !SUBCOMMANDS.has(sub) ||
-    flags.project === true ||
-    flags.sprint === true ||
-    (sub !== "list" && !ident)
+    VALUE_FLAGS.some((name) => flags[name] === true) ||
+    (sub !== "list" && !ident) ||
+    (needsFeature(sub) && flags.feature === undefined) ||
+    (sub === "link" && flags.blocks === undefined) ||
+    (sub === "unlink" && !other)
   );
+}
+
+function subcommand(sub: string, ident: string, other: string, ctx: TicketsContext): Promise<number> {
+  if (sub === "create") return createCommand(ident, ctx);
+  if (sub === "update") return updateCommand(ident, ctx);
+  if (sub === "move") return moveCommand(ident, ctx);
+  if (sub === "link") return linkCommand(ident, ctx);
+  if (sub === "unlink") return unlinkCommand(ident, other, ctx);
+  return getCommand(ident, ctx);
 }
 
 export async function runTicketsCommand(
@@ -93,7 +126,7 @@ export async function runTicketsCommand(
   if (sub === "step") return ticketsStep(positional.slice(1), flags, io, connect);
   if (sub === "session") return ticketsSession(positional.slice(1), flags, io, connect);
   const project = typeof flags.project === "string" ? flags.project : undefined;
-  if (isUsage(sub, ident, flags)) {
+  if (isUsage(sub, ident, rest[0], flags)) {
     io.err(frTickets.usage);
     return 2;
   }
@@ -103,16 +136,17 @@ export async function runTicketsCommand(
   return withClient(
     io,
     async (client) => {
-      const choice = chooseProject(await client.rpc({ method: "listProjects" }), ident ?? "", project, cwd);
+      const projects = await client.rpc({ method: "listProjects" });
+      const choice = chooseProject(projects, sub === "create" ? "" : (ident ?? ""), project, cwd);
       if ("problem" in choice) {
         io.err(choice.problem);
         return choice.code;
       }
       const snapshot = await client.rpc({ method: "getProject", projectId: choice.project.id });
-      const ctx = { client, snapshot, flags, io };
+      const ctx = { client, snapshot, flags, io, cwd };
       if (sub === "list") return listCommand(ctx);
       if (request !== null) return applySet(request, ident ?? "", ctx);
-      return getCommand(ident ?? "", ctx);
+      return subcommand(sub ?? "get", ident ?? "", rest[0] ?? "", ctx);
     },
     connect,
   );
