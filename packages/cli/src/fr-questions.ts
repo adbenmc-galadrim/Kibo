@@ -8,4 +8,12 @@ export const QUESTIONS_USAGE = [
 
 export const frQuestions = {
   usage: usageText(QUESTIONS_USAGE, PROJECT_HINT, TEXT_HINT, DAEMON_HELP),
+  blocking: "bloquante",
+  none: (ticket: string) => `Aucune question sur ${ticket}.`,
+  added: (label: string, ticket: string) => `✓ Question ${label} ajoutée sur ${ticket}`,
+  answered: (label: string, answer: string) => `✓ Question ${label} répondue : ${answer}`,
+  notFound: (ident: string) => `Question introuvable : ${ident}`,
+  provisionalOutside: "Le choix provisoire doit être une des options.",
+  unknownRecipient: (raw: string, names: readonly string[]) =>
+    `Destinataire inconnu : ${raw}. Destinataires : ${names.join(", ")}`,
 };
