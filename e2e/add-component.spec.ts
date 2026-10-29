@@ -77,8 +77,8 @@ test("ajouter un composant : deux volets, pied visible avec quinze composants", 
   await expect(list.getByRole("radio", { name: "Source MCP" })).toHaveCount(0);
   await expect(list.getByRole("radio", { name: "Vue d'ensemble" })).toBeVisible();
   const submit = dialog.getByRole("button", { name: "Ajouter à la page" });
-  const create = list.getByRole("button", { name: "Créer un composant (code ou IA)" });
-  for (const fixed of [submit, dialog.getByRole("button", { name: "Annuler" }), create])
+  await expect(list.getByRole("button", { name: "Créer un composant (code ou IA)" })).toHaveCount(0);
+  for (const fixed of [submit, dialog.getByRole("button", { name: "Annuler" })])
     await expectInViewport(fixed, VIEWPORT.width, VIEWPORT.height);
 
   await list.getByRole("radio", { name: "Composant perso 7" }).click();

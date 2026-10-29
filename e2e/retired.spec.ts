@@ -50,6 +50,8 @@ const RETIRED_URLS = [
   "/#/settings/components",
   "/#/settings/domains",
   "/#/code",
+  "/#/runs/r1",
+  "/#/p/silo/changes",
 ];
 
 test("les anciennes URL des écrans retirés ramènent à l'Accueil", async ({ page }) => {

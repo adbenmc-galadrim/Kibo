@@ -41,7 +41,7 @@ export async function openAgentList(panel: Locator): Promise<Locator> {
 }
 
 export async function sayToAgent(panel: Locator, message: string): Promise<void> {
-  await panel.getByRole("combobox", { name: "Message à l'agent de projet" }).fill(message);
+  await panel.getByRole("textbox", { name: "Message à l'agent de projet" }).fill(message);
   await panel.getByRole("button", { name: "Envoyer" }).click();
 }
 
