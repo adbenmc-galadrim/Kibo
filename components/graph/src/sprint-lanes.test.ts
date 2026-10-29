@@ -310,7 +310,7 @@ test("a step refused for its status or its hold is not startable", () => {
       refused("Écran d'import", {
         startReason: {
           kind: "onHold",
-          hold: { source: "own", key: "SILO-53", reason: "Théo", since: "2026-10-16" },
+          hold: { source: "own", key: "SILO-53", reason: "Retour du client", since: "2026-10-16" },
         },
       }),
     );
