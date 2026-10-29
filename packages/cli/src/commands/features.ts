@@ -1,30 +1,19 @@
-import { type SprintView, sameSprintCode } from "@kibo/schema";
 import type { Parsed } from "../args";
 import { frTickets } from "../fr";
 import { frFeatures, frWrite } from "../fr-write";
+import { findSprint } from "../tickets/find-sprint";
 import { type Connect, type SessionIo, withClient } from "./daemon-session";
 import { chooseProject } from "./tickets-context";
 import { createTicket, editOf, labelsOf, report, send, usage, type WriteContext } from "./write-support";
 
 const VALUE_FLAGS = ["project", "sprint", "description", "labels"];
 
-function sprintOf(sprints: readonly SprintView[], raw: string): SprintView | null {
-  const wanted = raw.trim();
-  const folded = wanted.toLowerCase();
-  return (
-    sprints.find((s) => s.id === wanted) ??
-    sprints.find((s) => sameSprintCode(s.code, wanted)) ??
-    sprints.find((s) => s.name.toLowerCase() === folded) ??
-    null
-  );
-}
-
 async function createFeature(title: string, ctx: WriteContext): Promise<number> {
   const edit = editOf(ctx);
   if (edit !== null && ("usage" in edit || edit.kind !== "replace"))
     return usage(ctx, "usage" in edit ? edit.usage : null, frFeatures.usage);
   const wanted = typeof ctx.flags.sprint === "string" ? ctx.flags.sprint : null;
-  const sprint = wanted === null ? null : sprintOf(ctx.snapshot.sprints, wanted);
+  const sprint = wanted === null ? null : findSprint(ctx.snapshot.sprints, wanted);
   if (wanted !== null && sprint === null) {
     ctx.io.err(frTickets.sprintNotFound(wanted));
     return 1;

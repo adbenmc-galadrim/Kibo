@@ -29,6 +29,7 @@ import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
 import { ticketsStep } from "./tickets-step";
 import { createCommand, moveCommand, updateCommand } from "./tickets-write";
+import { targetOf } from "./write-support";
 
 export type TicketsIo = SessionIo;
 type Flags = Parsed["flags"];
@@ -68,7 +69,8 @@ function listText(tickets: readonly TicketSummary[], flags: Flags, fields: ListF
   return [filters.length === 0 ? frTickets.noTickets : frTickets.noMatch(filters.join(" "))];
 }
 
-function listFilters({ snapshot, flags, io }: TicketsContext): TicketFilter[] | number {
+function listFilters(ctx: TicketsContext): TicketFilter[] | number {
+  const { snapshot, flags, io } = ctx;
   const wanted = typeof flags.status === "string" ? statusFilter(flags.status) : null;
   const inSprint = typeof flags.sprint === "string" ? sprintSelector(flags.sprint, snapshot.sprints) : null;
   if (typeof flags.sprint === "string" && inSprint === null) {
@@ -76,8 +78,9 @@ function listFilters({ snapshot, flags, io }: TicketsContext): TicketFilter[] | 
     return 1;
   }
   const feature = flagText(flags, "feature");
-  const inFeature = feature === null ? null : featureFilter(snapshot.tickets, feature);
-  if (feature !== null && inFeature === null) return notFound(feature, io);
+  const root = feature === null ? null : targetOf(ctx, feature);
+  if (typeof root === "number") return root;
+  const inFeature = root === null ? null : featureFilter(root);
   const label = flagText(flags, "label");
   return [
     (t) => flags.ready !== true || t.startable,
