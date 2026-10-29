@@ -36,83 +36,6 @@ export const TICKETS: DesiredTicket[] = [
     ),
   },
   {
-    title: "Étudier le chiffrement de bout en bout de la sync",
-    domain: "Sync",
-    description: risk(
-      "Le serveur kibo-sync lit les données en clair (spec G §8 et §12). Chiffrer de bout en bout, ou documenter le modèle de confiance retenu.",
-    ),
-  },
-  {
-    title: "Faire accepter localement une liaison attribuée",
-    domain: "Sync",
-    description: risk(
-      "Un serveur compromis peut attribuer une liaison d'intégration à un membre ; l'acceptation locale est hors v1.0 (D46). Demander au membre de confirmer une liaison avant de l'exécuter.",
-    ),
-  },
-  {
-    title: "Éprouver tls.ca du client WebSocket de Bun",
-    domain: "Sync",
-    description: risk(
-      "L'option tls.ca du client WebSocket de Bun est peu éprouvée. Tester la connexion à un serveur auto-hébergé avec une CA propre (caFile) et le refus d'un certificat inconnu.",
-    ),
-  },
-  {
-    title: "Réduire le coût des updates reçus en sync",
-    domain: "Sync",
-    description: risk(
-      "Copie complète du doc à chaque update reçu (D45) côté démon et fork() par lot côté serveur : coûteux sur un gros projet actif. Mesurer, puis valider sans copie complète.",
-    ),
-  },
-  {
-    title: "Une clé d'appareil par démon au trousseau",
-    domain: "Sync",
-    description: risk(
-      "La clé d'appareil est rangée au trousseau sous un nom fixe : deux démons sur une même machine se l'écrasent. Dériver le nom du KIBO_HOME ou de l'identifiant d'appareil.",
-    ),
-  },
-  {
-    title: "Présence : retrait perdu si l'horloge avance",
-    domain: "Sync",
-    description: risk(
-      "Le retrait immédiat de présence est perdu si l'horloge du démon avance sur celle du serveur (repli : expiration à 30 s). Ne plus dépendre de l'horloge du démon pour l'effacement.",
-    ),
-  },
-  {
-    title: "Jonction : code consommé puis refusé",
-    domain: "Sync",
-    description: risk(
-      "Un code d'invitation consommé puis refusé localement laisse un membre sans copie locale ; la seule sortie est retrait puis réinvitation. Rendre la jonction reprenable.",
-    ),
-  },
-  {
-    title: "Limites par IP derrière un NAT partagé",
-    domain: "Sync",
-    description: risk(
-      "Un NAT partagé peut occuper les places non authentifiées ou bloquer l'IP 5 minutes. Revoir les limites par IP du serveur (par appareil une fois authentifié).",
-    ),
-  },
-  {
-    title: "Détecter les homoglyphes d'une seule écriture",
-    domain: "Marketplace",
-    description: risk(
-      "Les homoglyphes d'une seule écriture ne sont pas détectés dans les noms de composants ou d'éditeurs ; le rempart actuel est l'empreinte affichée à l'écran 30.",
-    ),
-  },
-  {
-    title: "Quota de stockage par éditeur",
-    domain: "Marketplace",
-    description: risk(
-      "La source d'équipe n'a pas de quota de stockage par éditeur. En ajouter un, refusé en clair.",
-    ),
-  },
-  {
-    title: "SIGNATURE_INVALID : montrer l'empreinte reçue",
-    domain: "Marketplace",
-    description: risk(
-      "Le refus SIGNATURE_INVALID n'affiche que l'empreinte attendue. Afficher aussi l'empreinte reçue pour comparer.",
-    ),
-  },
-  {
     title: "Lecture seule dans la fiche ticket et les composants",
     domain: "UI",
     description: risk(
@@ -137,11 +60,6 @@ export const TICKETS: DesiredTicket[] = [
     title: "Découper AddComponentDialog.tsx",
     domain: "UI",
     description: risk("AddComponentDialog.tsx dépasse 300 lignes (règle du projet) : le découper."),
-  },
-  {
-    title: "Découper packages/sdk/src/mock.ts",
-    domain: "Devkit et SDK",
-    description: risk("packages/sdk/src/mock.ts dépasse 300 lignes (règle du projet) : le découper."),
   },
   {
     title: "Ajouter timeout-minutes au job E2E",

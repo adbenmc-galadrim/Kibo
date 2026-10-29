@@ -28,12 +28,9 @@ export const PAGES: DesiredPage[] = [
 ];
 
 export const DOMAINS: { name: string; file: string }[] = [
-  { name: "Sync", file: "sync.md" },
-  { name: "Marketplace", file: "marketplace.md" },
   { name: "UI", file: "ui.md" },
   { name: "Démon", file: "demon.md" },
   { name: "Sécurité", file: "securite.md" },
-  { name: "Devkit et SDK", file: "devkit-sdk.md" },
   { name: "Desktop", file: "desktop.md" },
   { name: "Agents", file: "agents.md" },
   { name: "CI", file: "ci.md" },
