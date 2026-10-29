@@ -5,11 +5,11 @@ import { basename, dirname, join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { AppInfo, isAppVersion, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
-import { aiScenarioPath } from "./agents/fake-claude-ai";
-import { FAKE_CLAUDE } from "./agents/fake-claude-scenario";
 import { startDaemon } from "./daemon";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
+import { aiScenarioPath } from "./runs/fake-claude-ai";
+import { FAKE_CLAUDE } from "./runs/fake-claude-scenario";
 
 const Envelope = z.object({ ok: z.literal(true), result: z.unknown() });
 const cleanups: (() => Promise<void> | void)[] = [];

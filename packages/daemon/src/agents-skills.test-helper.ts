@@ -14,11 +14,11 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
-import { FAKE_CLAUDE, scenarioPath } from "./agents/fake-claude-scenario";
-import { cleanupTmp, repo } from "./agents/git-test-kit";
 import { type Daemon, startDaemon } from "./daemon";
+import { FAKE_CLAUDE, scenarioPath } from "./runs/fake-claude-scenario";
 import { SESSION_COOKIE } from "./sessions/cookie";
 import { openSessionStore } from "./sessions/session-store";
+import { cleanupTmp, repo } from "./testing/git-test-kit";
 
 const cleanups: (() => Promise<void>)[] = [];
 

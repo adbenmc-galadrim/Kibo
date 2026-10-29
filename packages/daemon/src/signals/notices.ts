@@ -1,5 +1,5 @@
 import type { RunView, Signal } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
+import type { Notice } from "../runs/notifier";
 
 export function blockerNotice(
   run: Pick<RunView, "label">,

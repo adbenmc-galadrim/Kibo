@@ -12,7 +12,7 @@ import type {
   ProjectSnapshot,
   RunView,
 } from "@kibo/schema";
-import type { Orchestrator } from "../agents/orchestrator-types";
+import type { Orchestrator } from "../runs/orchestrator-types";
 import type { SignalService } from "../signals/service";
 
 export type ProjectAgentDataPort = {

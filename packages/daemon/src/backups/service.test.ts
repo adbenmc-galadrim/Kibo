@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BACKUP_EVERY_MS, type Phase7Event } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import { openRunStore } from "../runs/run-store";
 import { openLocalSettings } from "../settings";
 import { openStore } from "../store";
 import { readBackups } from "./backup-fs";

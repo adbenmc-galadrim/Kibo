@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import { DEFAULT_DUPLICATION_SETTINGS } from "@kibo/schema";
-import { cleanupTmp, repo } from "./agents/git-test-kit";
 import {
   assign,
   contextsOf,
@@ -16,6 +15,7 @@ import {
   wrote,
 } from "./overlaps/integration.test-helper";
 import { postMcp, runToken, stopDaemons } from "./project-agent/integration.test-helper";
+import { cleanupTmp, repo } from "./testing/git-test-kit";
 
 afterEach(async () => {
   await stopDaemons();

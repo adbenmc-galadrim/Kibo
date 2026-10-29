@@ -8,8 +8,8 @@ import {
   WORKTREE_DEFAULTS,
   type WorktreeSettings,
 } from "@kibo/schema";
-import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
-import { type GitRunner, runGit } from "./workspace-prep";
+import { type GitRunner, runGit } from "../runs/workspace-prep";
+import { cleanupTmp, commit, git, repo, tmp } from "../testing/git-test-kit";
 import {
   assertWorktreeSettings,
   FETCH_TIMEOUT_MS,

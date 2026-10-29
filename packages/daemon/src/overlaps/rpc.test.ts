@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { KiboError, OVERLAP_RPC, type OverlapDetail, type ParallelWork, type RpcRequest } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { overlapRpc } from "./rpc";
 import { openOverlapStore } from "./store";
 

@@ -1,5 +1,5 @@
 import type { RunView } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
+import type { Notice } from "../runs/notifier";
 
 export type TurnEnd = { onTurnEnd(run: RunView): Promise<void> };
 

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { WORKTREE_DEFAULTS } from "@kibo/schema";
-import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
+import { cleanupTmp, commit, git, repo, tmp } from "../testing/git-test-kit";
 import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
 
 cleanHarness();

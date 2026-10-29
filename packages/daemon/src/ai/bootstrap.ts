@@ -3,12 +3,20 @@ import { mkdirSync, realpathSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import { type Toolchain, toolchainModules } from "@kibo/devkit";
 import { type AgentRef, type AppInfo, type IntegrationStatus, KiboError, systemAgentRef } from "@kibo/schema";
-import type { Orchestrator } from "../agents/orchestrator-types";
-import { resolveClaudeBin } from "../agents/runner";
 import { editorCommand, openInEditor } from "../code/editor";
 import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import { createProjectSettings } from "../notes/settings";
+import {
+  assistantArgs,
+  type ClaudeProbe,
+  createAiAvailability,
+  generatorArgs,
+  parseHelp,
+  probeClaude,
+} from "../runs/claude-cli";
+import type { Orchestrator } from "../runs/orchestrator-types";
+import { resolveClaudeBin } from "../runs/runner";
 import {
   createExecPort,
   githubConnected,
@@ -17,14 +25,6 @@ import {
   systemClock,
   writeKiboShim,
 } from "./adapters";
-import {
-  assistantArgs,
-  type ClaudeProbe,
-  createAiAvailability,
-  generatorArgs,
-  parseHelp,
-  probeClaude,
-} from "./claude-cli";
 import { createDraftLifecycle } from "./draft-lifecycle";
 import { createDraftPreview, type DraftAssets } from "./draft-preview";
 import { createDraftPublisher } from "./draft-publish";

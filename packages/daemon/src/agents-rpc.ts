@@ -7,10 +7,10 @@ import {
   type RunProgressSummary,
   type RunView,
 } from "@kibo/schema";
-import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { answerFromDrawer, type DeliveryDeps } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
 import { runTallies } from "./questions/run-tallies";
+import type { AgentDataPort, Orchestrator } from "./runs/orchestrator";
 import type { SignalService } from "./signals/service";
 
 export type AgentsPort = Pick<

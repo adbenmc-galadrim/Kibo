@@ -1,13 +1,13 @@
 import { homedir } from "node:os";
 import { osSandbox } from "@kibo/devkit";
 import { BACKUP_TICK_MS, type ChangeMessage } from "@kibo/schema";
-import { openRunStore, type RunStore } from "./agents/run-store";
 import { appVersion } from "./app-version";
 import { loadOrCreateToken } from "./auth";
 import { startBackupSchedule } from "./backups/schedule";
 import { type BackupsService, createBackupsService } from "./backups/service";
 import type { Closer } from "./daemon-shutdown";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { openRunStore, type RunStore } from "./runs/run-store";
 import { createSandboxService, type SandboxService } from "./sandbox/sandbox-service";
 import { openLocalSettings } from "./settings";
 import { openStore, type Store } from "./store";

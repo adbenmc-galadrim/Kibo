@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { createProjectDoc, executeProjectCommand, readProject } from "@kibo/core";
 import { type ProjectCommand, type RunView, type Step, Ticket } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
 import type { CommandMeta } from "../docs";
 import { runView } from "../questions/questions.test-helper";
+import type { GitRunner } from "../runs/workspace-prep";
 import { createProgressService, type ProgressTrace } from "./service";
 
 const PLAN: Step[] = [

@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import type { RunView } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { NOW, ticketRun } from "./peek-fakes.test-helper";
 import { createSpaces } from "./spaces";
 import type { WorkspaceRef } from "./workspace";

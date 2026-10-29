@@ -5,7 +5,7 @@ import {
   type ReminderKind,
   type RunView,
 } from "@kibo/schema";
-import type { HookSink } from "./hook-route";
+import type { HookSink } from "../runs/hook-route";
 
 export const PLAN_REMINDER =
   "Kibo : déclare ton plan avec mcp__kibo__ticket_progress avant de modifier des fichiers, puis tiens-le à jour à chaque étape.";

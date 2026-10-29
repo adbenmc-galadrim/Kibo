@@ -1,5 +1,5 @@
 import type { HookPayload, RunView } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import type { SubagentTracker } from "../subagents/tracker";
 import type { TraceService } from "./trace-service";
 

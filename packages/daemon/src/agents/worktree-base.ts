@@ -1,5 +1,5 @@
 import { type BaseFallback, KiboError, splitRemote, WORKTREE_DEFAULTS } from "@kibo/schema";
-import type { GitRunner } from "./workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 
 export const FETCH_TIMEOUT_MS = 60_000;
 export type BaseStart = { start: string; fallback: BaseFallback | null };

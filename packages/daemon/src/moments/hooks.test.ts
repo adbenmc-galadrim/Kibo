@@ -1,6 +1,6 @@
 import { expect, spyOn, test } from "bun:test";
 import type { HookPayload, HookReply, RunView } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import { withTrace } from "./hooks";
 import type { TraceService } from "./trace-service";
 

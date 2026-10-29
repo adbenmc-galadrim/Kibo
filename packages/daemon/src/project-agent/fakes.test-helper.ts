@@ -18,12 +18,12 @@ import {
   type StatusId,
   Ticket,
 } from "@kibo/schema";
-import { testAgent } from "../agents/agents-port.test-helper";
 import type { TicketExecution } from "../agents/execution-removed";
-import type { AssignInput } from "../agents/orchestrator-types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { runView } from "../questions/questions.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
+import type { AssignInput } from "../runs/orchestrator-types";
 import { call, createService, type Service } from "../service";
 import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { openStore } from "../store";

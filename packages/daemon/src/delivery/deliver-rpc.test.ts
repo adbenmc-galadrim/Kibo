@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { EMPTY_DELIVERY, INBOX_ID, KiboError } from "@kibo/schema";
-import { testAgent } from "../agents/agents-port.test-helper";
 import { runView } from "../questions/questions.test-helper";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
+import { testAgent } from "../runs/agents-port.test-helper";
 import type { DeliverDeps } from "./deliver";
 import { deliverRpc } from "./deliver-rpc";
 

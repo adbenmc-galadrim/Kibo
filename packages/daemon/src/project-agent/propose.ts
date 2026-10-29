@@ -5,8 +5,8 @@ import {
   validateBatch,
 } from "@kibo/core/project-agent/validate";
 import { KiboError, ProposeBatchInput, type RunView } from "@kibo/schema";
-import { batchNotice } from "../agents/notifier";
-import { guarded } from "../agents/orchestrator-support";
+import { batchNotice } from "../runs/notifier";
+import { guarded } from "../runs/orchestrator-support";
 import type { AgentContext } from "./context";
 import { projectOfRun } from "./sessions";
 import { signalRefs } from "./signal-refs";

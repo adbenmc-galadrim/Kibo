@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import type { RunAction } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import { openRunStore } from "../runs/run-store";
 import { cleanSkillDirs, tempDir } from "./fakes.test-helper";
 import { createSkillUses } from "./uses-store";
 

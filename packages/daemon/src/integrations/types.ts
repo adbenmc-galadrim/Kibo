@@ -20,11 +20,11 @@ import type {
   Ticket,
   Worktree,
 } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 import type { EmbedGate } from "../embed/types";
 import type { ProjectSettings } from "../notes/settings";
+import type { Notice } from "../runs/notifier";
 
 export type { DesignGate } from "../design/gate";
 export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";

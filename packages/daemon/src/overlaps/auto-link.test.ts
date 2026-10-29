@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { executeProjectCommand, readProject } from "@kibo/core";
 import { KiboError } from "@kibo/schema";
-import { cleanupTmp } from "../agents/git-test-kit";
+import { cleanupTmp } from "../testing/git-test-kit";
 import {
   exporting,
   importing,

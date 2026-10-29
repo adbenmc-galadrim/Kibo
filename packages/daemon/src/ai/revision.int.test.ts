@@ -1,8 +1,8 @@
 import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { fakeToolUses } from "../agents/fake-claude-ai";
-import { fakeCalls } from "../agents/fake-claude-scenario";
+import { fakeToolUses } from "../runs/fake-claude-ai";
+import { fakeCalls } from "../runs/fake-claude-scenario";
 import { draftPaths } from "./draft-files";
 import { type AiHarness, startAiHarness } from "./testing/harness";
 import type { CreateDraftInput } from "./testing/lifecycle-fixture";

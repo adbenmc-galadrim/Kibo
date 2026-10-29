@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DUPLICATION_LIMITS } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { localPeekFs, screenOf } from "./peek-fakes.test-helper";
 import { readPeekFile, resolvePeekPath } from "./peek-path";
 

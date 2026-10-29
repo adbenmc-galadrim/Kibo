@@ -4,8 +4,6 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { resolveToolchain } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
-import { createLoadSampler, fixedLoadSampler } from "./agents/host-load";
-import { stdoutNotifier } from "./agents/notifier";
 import { sandboxPortFor } from "./components/daemon-info";
 import { cliStatus, installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
@@ -15,6 +13,8 @@ import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
 import { loginShellPath, runLoginShell } from "./login-path";
 import { kiboHome } from "./paths";
+import { createLoadSampler, fixedLoadSampler } from "./runs/host-load";
+import { stdoutNotifier } from "./runs/notifier";
 import { DaemonRunning } from "./single-instance";
 import { fatalLine, REUSED_EXIT_CODE, reuseLines } from "./startup-lines";
 

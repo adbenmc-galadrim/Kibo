@@ -8,7 +8,7 @@ import {
   presetPatch,
 } from "@kibo/schema";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
-import { testAgent } from "./agents-port.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
 import { agentPresetRpc, applyAgentPreset } from "./presets";
 
 const HOME = "/Users/a";

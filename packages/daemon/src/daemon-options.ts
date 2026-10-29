@@ -1,13 +1,13 @@
 import type { Toolchain } from "@kibo/devkit";
 import { type HostLoad, KiboError, type Session } from "@kibo/schema";
 import type { TicketExecution } from "./agents/execution-removed";
-import type { AgentSource } from "./agents/neutral-agents";
-import type { Notice } from "./agents/notifier";
 import { type Clock, createClock, parseFixedNow } from "./clock";
 import type { ComponentsDeps } from "./components/service";
 import type { IntegrationFlags } from "./integrations/bootstrap";
 import type { Redactor } from "./integrations/redact";
 import type { LogBuffer } from "./log-buffer";
+import type { AgentSource } from "./runs/neutral-agents";
+import type { Notice } from "./runs/notifier";
 import type { Probe } from "./single-instance";
 import type { CodeTrackingOptions } from "./tracking/bootstrap";
 

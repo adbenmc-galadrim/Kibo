@@ -3,9 +3,9 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type ComponentCall, DesignFrame } from "@kibo/schema";
-import { cleanupTmp, git, repo, tmp } from "../agents/git-test-kit";
 import { bootEmbedDaemon, type EmbedDaemon } from "../embed/embed-daemon.test-helper";
 import { type FakeStorybook, startFakeStorybook } from "../testing/fake-storybook";
+import { cleanupTmp, git, repo, tmp } from "../testing/git-test-kit";
 
 const STORY = "screens-home--default";
 

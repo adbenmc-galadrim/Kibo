@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { Agent, AgentsState, ProjectMeta, RunView, Ticket, WorkspaceStrategy } from "@kibo/schema";
-import { type TestAgentSource, testAgent, testAgentSource } from "../agents/agents-port.test-helper";
-import { FAKE_CLAUDE } from "../agents/fake-claude-scenario";
 import { type Daemon, startDaemon } from "../daemon";
+import { type TestAgentSource, testAgent, testAgentSource } from "../runs/agents-port.test-helper";
+import { FAKE_CLAUDE } from "../runs/fake-claude-scenario";
 
 const cleanups: (() => Promise<void>)[] = [];
 

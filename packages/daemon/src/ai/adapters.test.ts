@@ -9,7 +9,7 @@ import {
   type IntegrationStatus,
   type RunState,
 } from "@kibo/schema";
-import type { TaskInput } from "../agents/orchestrator-types";
+import type { TaskInput } from "../runs/orchestrator-types";
 import {
   catalogEntries,
   createExecPort,

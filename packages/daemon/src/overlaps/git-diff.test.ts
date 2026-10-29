@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
-import { cleanupTmp, commit, git, repo } from "../agents/git-test-kit";
-import { type GitRunner, runGit } from "../agents/workspace-prep";
+import { type GitRunner, runGit } from "../runs/workspace-prep";
+import { cleanupTmp, commit, git, repo } from "../testing/git-test-kit";
 import { addedLinesOf, gitDiffSummary } from "./git-diff";
 
 afterEach(cleanupTmp);

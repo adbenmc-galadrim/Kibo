@@ -9,7 +9,7 @@ import {
   type Step,
   type WorkspaceIndex,
 } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 import type { PathScreen, PeekFs } from "./peek-path";
 import type { WorkspaceRef } from "./workspace";
 

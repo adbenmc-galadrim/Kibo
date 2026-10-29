@@ -1,7 +1,7 @@
 import type { AgentsState } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
-import { type QuestionHookDeps, withAgentQuestions } from "../agents/hook-sink";
-import { type Notice, questionNotice } from "../agents/notifier";
+import type { HookSink } from "../runs/hook-route";
+import { type QuestionHookDeps, withAgentQuestions } from "../runs/hook-sink";
+import { type Notice, questionNotice } from "../runs/notifier";
 
 type AgentHooks = { hooks: HookSink; state(): Pick<AgentsState, "runs"> };
 

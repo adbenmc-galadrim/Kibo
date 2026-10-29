@@ -36,9 +36,9 @@ const TEST_FILE = /\.(test|int\.test|integration\.test|property\.test|test-helpe
 
 const TICKET_EXECUTION_FILES: ReadonlySet<string> = new Set([
   "agents-rpc.ts",
-  "agents/orchestrator.ts",
+  "runs/orchestrator.ts",
   "agents/orchestrator-assign.ts",
-  "agents/orchestrator-types.ts",
+  "runs/orchestrator-types.ts",
   "agents/question-delivery.ts",
   "agents/execution-removed.ts",
   "daemon.ts",

@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { WakeReply } from "@kibo/core";
 import type { MomentData, RunMoment, RunView, SignalKind, Ticket } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
 import { type Harness, harness } from "../project-agent/fakes.test-helper";
 import { runView } from "../questions/questions.test-helper";
+import type { Notice } from "../runs/notifier";
 import { createSignalService, type SignalService } from "./service";
 import { openSignalStore, type SignalStore } from "./store";
 

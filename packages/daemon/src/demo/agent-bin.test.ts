@@ -9,6 +9,6 @@ test("in a compiled binary the demo agent sits next to the executable", () => {
 
 test("in development the demo agent is the fake claude script", () => {
   expect(demoAgentBin("/usr/local/bin/bun", "/repo/packages/daemon/src/demo")).toBe(
-    "/repo/packages/daemon/src/agents/fake-claude.ts",
+    "/repo/packages/daemon/src/runs/fake-claude.ts",
   );
 });

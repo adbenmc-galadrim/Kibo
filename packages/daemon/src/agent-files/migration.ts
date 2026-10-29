@@ -16,7 +16,7 @@ import {
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { z } from "zod";
-import type { RunStore } from "../agents/run-store";
+import type { RunStore } from "../runs/run-store";
 import { AGENT_FILE } from "./catalog";
 import type { FileHistory } from "./file-history";
 import { contentHash, readWithHash } from "./guarded-write";

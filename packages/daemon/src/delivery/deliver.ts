@@ -17,7 +17,7 @@ import {
   updateDeliveryBrief,
 } from "@kibo/schema";
 import { assertTicketExecution } from "../agents/execution-removed";
-import type { Orchestrator } from "../agents/orchestrator-types";
+import type { Orchestrator } from "../runs/orchestrator-types";
 
 export const NO_DELIVERY_AGENT = "aucun agent de livraison : choisis-le dans Modifier le projet";
 

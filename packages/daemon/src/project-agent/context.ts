@@ -1,7 +1,7 @@
 import type { NoteHash } from "@kibo/core/project-agent/fingerprint";
 import type { AgentExecution, ProjectFingerprint } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
-import type { Orchestrator } from "../agents/orchestrator";
+import type { Notice } from "../runs/notifier";
+import type { Orchestrator } from "../runs/orchestrator";
 import type { ProjectAgentStore } from "./store";
 import type {
   ProjectAgentAgentsPort,

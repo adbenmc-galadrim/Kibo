@@ -3,10 +3,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProjectMeta } from "@kibo/schema";
-import { git } from "../agents/git-test-kit";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
+import { git } from "../testing/git-test-kit";
 import { applyDeliveryImport, type DeliveryImportDeps, importDelivery } from "./delivery-import";
 
 const dirs: string[] = [];

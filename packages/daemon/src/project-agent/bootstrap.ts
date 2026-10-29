@@ -5,12 +5,12 @@ import {
   type ProjectEventSink,
   type ProjectFingerprint,
 } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
-import type { AgentDataPort, Orchestrator } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
 import { planRpc } from "../plan/plan-rpc";
 import { createPlanService } from "../plan/plan-service";
 import type { RpcExtension } from "../rpc-extensions";
+import type { Notice } from "../runs/notifier";
+import type { AgentDataPort, Orchestrator } from "../runs/orchestrator-types";
 import type { Service } from "../service";
 import { ready } from "../service-ports";
 import { applyBatch } from "./apply-batch";

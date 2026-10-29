@@ -13,7 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { FakeRoutes, FakeScenario } from "../agents/fake-claude-scenario";
+import { FakeRoutes, FakeScenario } from "../runs/fake-claude-scenario";
 import { demoAgentEnv } from "./agent-env";
 import { DEMO_FIXTURES, DEMO_ROUTES, DEMO_SCENARIOS, ensureDemoAgentFiles } from "./agent-scenarios";
 

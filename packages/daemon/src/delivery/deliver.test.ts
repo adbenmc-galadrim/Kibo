@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { type Agent, EMPTY_DELIVERY, KiboError, type ProjectDelivery, type RunView } from "@kibo/schema";
-import { testAgent } from "../agents/agents-port.test-helper";
 import type { TicketExecution } from "../agents/execution-removed";
-import type { AssignInput } from "../agents/orchestrator-types";
 import { runView } from "../questions/questions.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
+import type { AssignInput } from "../runs/orchestrator-types";
 import { type DeliverDeps, type DeliveryProject, deliver, NO_DELIVERY_AGENT } from "./deliver";
 
 type Row = DeliveryProject["tickets"][number];

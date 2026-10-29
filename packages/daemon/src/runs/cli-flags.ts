@@ -1,5 +1,5 @@
 import { KiboError } from "@kibo/schema";
-import { CLAUDE_BUILTIN_TOOLS } from "../ai/claude-cli";
+import { CLAUDE_BUILTIN_TOOLS } from "./claude-cli";
 
 export type CliFallbacks = {
   agentsInline: boolean;

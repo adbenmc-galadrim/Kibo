@@ -1,8 +1,6 @@
 import { homedir } from "node:os";
 import { ticketRuns } from "@kibo/schema";
-import { lateAgentSource } from "./agents/agent-source";
 import { allowsTicketExecution } from "./agents/execution-removed";
-import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
@@ -32,6 +30,8 @@ import { agentQuestionHooks } from "./questions/agent-hooks";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
+import { lateAgentSource } from "./runs/agent-source";
+import type { Orchestrator } from "./runs/orchestrator";
 import { sandboxRpc } from "./sandbox/rpc";
 import { startServer } from "./server";
 import { createService } from "./service";

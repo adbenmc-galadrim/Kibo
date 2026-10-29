@@ -13,9 +13,9 @@ import {
   type RunView,
 } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
+import { CLAUDE_DENIAL_TEXT } from "../runs/fake-claude-transcript";
 import { createDenialQuestion, type DenialQuestionDeps } from "./denial-question";
 import { denialStore } from "./denial-store";
-import { CLAUDE_DENIAL_TEXT } from "./fake-claude-transcript";
 
 const HOME = "/Users/dev";
 const CWD = `${HOME}/Documents/silo-feat-15`;

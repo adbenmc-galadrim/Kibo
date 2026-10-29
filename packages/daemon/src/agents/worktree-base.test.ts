@@ -1,8 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { type BaseFallback, type GitBranchRef, WORKTREE_DEFAULTS, type WorktreeSettings } from "@kibo/schema";
-import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
-import { runGit } from "./workspace-prep";
+import { runGit } from "../runs/workspace-prep";
+import { cleanupTmp, commit, git, repo, tmp } from "../testing/git-test-kit";
 import { prepareWorktree, runShell, type WorktreeInput } from "./worktree-prep";
 
 afterEach(cleanupTmp);

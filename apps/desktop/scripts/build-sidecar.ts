@@ -49,9 +49,9 @@ const daemon: Binary = {
   loadsToolchain: true,
   define: { "process.env.KIBO_VERSION": JSON.stringify(appVersionOfTauriConf()) },
 };
-const hook: Binary = { entrypoints: ["packages/daemon/src/agents/kibo-hook.ts"], loadsToolchain: false };
+const hook: Binary = { entrypoints: ["packages/daemon/src/runs/kibo-hook.ts"], loadsToolchain: false };
 const demoAgent: Binary = {
-  entrypoints: ["packages/daemon/src/agents/fake-claude.ts"],
+  entrypoints: ["packages/daemon/src/runs/fake-claude.ts"],
   loadsToolchain: false,
 };
 

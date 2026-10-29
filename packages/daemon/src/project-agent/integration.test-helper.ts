@@ -14,17 +14,17 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
-import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
+import { type Daemon, startDaemon } from "../daemon";
+import type { DaemonOptions } from "../daemon-options";
+import { testAgent, testAgentSource } from "../runs/agents-port.test-helper";
 import {
   FAKE_CLAUDE,
   type FakeCall,
   type FakeScenarioName,
   fakeCalls,
   scenarioPath,
-} from "../agents/fake-claude-scenario";
-import type { Notice } from "../agents/notifier";
-import { type Daemon, startDaemon } from "../daemon";
-import type { DaemonOptions } from "../daemon-options";
+} from "../runs/fake-claude-scenario";
+import type { Notice } from "../runs/notifier";
 
 export type Rpc = <T>(body: Record<string, unknown>) => Promise<T>;
 

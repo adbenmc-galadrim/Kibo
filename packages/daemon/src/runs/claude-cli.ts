@@ -1,5 +1,5 @@
 import type { AiStatus } from "@kibo/schema";
-import type { AiAvailability, ClaudeCapabilities, Exec } from "./ports";
+import type { AiAvailability, ClaudeCapabilities, Exec } from "../ai/ports";
 
 export type ClaudeProbe = {
   found: boolean;

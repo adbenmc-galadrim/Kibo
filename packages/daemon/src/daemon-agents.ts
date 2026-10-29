@@ -1,8 +1,3 @@
-import { defaultHookLauncher } from "./agents/hook-launcher";
-import { createLoadSampler, readHostInfo } from "./agents/host-load";
-import { createOrchestrator } from "./agents/orchestrator";
-import type { Orchestrator, OrchestratorOptions } from "./agents/orchestrator-types";
-import type { RunStore } from "./agents/run-store";
 import type { AgentsPort } from "./agents-rpc";
 import { type AiBootstrapDeps, type StartedAi, startAi } from "./ai/bootstrap";
 import type { RunSource } from "./collab/bootstrap";
@@ -11,6 +6,11 @@ import type { Closer } from "./daemon-shutdown";
 import { demoAgentBin } from "./demo/agent-bin";
 import { demoAgentEnv } from "./demo/agent-env";
 import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
+import { defaultHookLauncher } from "./runs/hook-launcher";
+import { createLoadSampler, readHostInfo } from "./runs/host-load";
+import { createOrchestrator } from "./runs/orchestrator";
+import type { Orchestrator, OrchestratorOptions } from "./runs/orchestrator-types";
+import type { RunStore } from "./runs/run-store";
 import type { Service } from "./service";
 import { call } from "./service";
 

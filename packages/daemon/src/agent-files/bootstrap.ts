@@ -1,8 +1,8 @@
 import type { Database } from "bun:sqlite";
 import { listProjects } from "@kibo/core";
 import type { AgentRef } from "@kibo/schema";
-import type { RunStore } from "../agents/run-store";
 import type { Docs } from "../docs";
+import type { RunStore } from "../runs/run-store";
 import { type AgentCatalog, createAgentCatalog } from "./catalog";
 import { type ClaudeEnv, claudeHomeOf } from "./claude-home";
 import type { ProjectFolderRef } from "./discover";

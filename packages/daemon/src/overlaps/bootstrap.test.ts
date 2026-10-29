@@ -9,11 +9,11 @@ import {
   type MomentData,
   type RunView,
 } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
-import type { HookSink } from "../agents/hook-route";
-import type { GitRunner } from "../agents/workspace-prep";
 import { LOCAL_DUPLICATION_KEY } from "../project-folder";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
+import type { HookSink } from "../runs/hook-route";
+import type { GitRunner } from "../runs/workspace-prep";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { type Overlaps, startOverlaps } from "./bootstrap";
 import { NOW, ticketRun } from "./peek-fakes.test-helper";
 import { openOverlapStore } from "./store";

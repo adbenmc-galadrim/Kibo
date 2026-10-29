@@ -1,8 +1,8 @@
 import { isIgnoredPath, isSecretPath, readProject } from "@kibo/core";
 import type { DuplicationSettings, Overlap, RunView, Step, WorkspaceIndex } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
 import type { Docs } from "../docs";
 import type { TraceService } from "../moments/trace-service";
+import type { GitRunner } from "../runs/workspace-prep";
 import type { PathScreen } from "./peek-path";
 import type { OverlapStore } from "./store";
 import type { WorkViewServices } from "./work-view";

@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 import { type ChangeMessage, CodeRequest, KiboError, RpcRequest } from "@kibo/schema";
 import type { Server, ServerWebSocket } from "bun";
-import { type HookSink, handleHook } from "./agents/hook-route";
 import { readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
 import type { AssetLookup } from "./components/sandbox-server";
@@ -20,6 +19,7 @@ import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteListen } from "./remote/remote-access";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
 import { rpcRefusal } from "./rpc-refusal";
+import { type HookSink, handleHook } from "./runs/hook-route";
 import type { Service } from "./service";
 import { SESSION_COOKIE, sessionCookie } from "./sessions/cookie";
 import { deviceNameFromUserAgent } from "./sessions/device-name";

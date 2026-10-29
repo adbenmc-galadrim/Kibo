@@ -11,8 +11,6 @@ import type {
   RunView,
   TicketView,
 } from "@kibo/schema";
-import { releaseFakeRun, scenarioPath } from "./agents/fake-claude-scenario";
-import { cleanupTmp, repo } from "./agents/git-test-kit";
 import {
   assign,
   type Client,
@@ -22,6 +20,8 @@ import {
   startTestDaemon,
   waitFor,
 } from "./moments/daemon-client.test-helper";
+import { releaseFakeRun, scenarioPath } from "./runs/fake-claude-scenario";
+import { cleanupTmp, repo } from "./testing/git-test-kit";
 
 cleanDaemons();
 afterEach(cleanupTmp);

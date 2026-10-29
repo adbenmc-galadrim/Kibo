@@ -10,8 +10,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { KiboError, type SetupStep, type WorktreeRecipe } from "@kibo/schema";
-import { cleanupTmp, repo, tmp, worktree, worktreeWith } from "./git-test-kit";
-import { runGit } from "./workspace-prep";
+import { runGit } from "../runs/workspace-prep";
+import { cleanupTmp, repo, tmp, worktree, worktreeWith } from "../testing/git-test-kit";
 import { runShell } from "./worktree-prep";
 import {
   applyRecipe,

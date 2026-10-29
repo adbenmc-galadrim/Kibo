@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { MomentData } from "@kibo/schema";
-import { openTranscript } from "../agents/fake-claude-transcript";
+import { openTranscript } from "../runs/fake-claude-transcript";
 import { createSubagentSources } from "../subagents/sources";
 import { openSubagentStore } from "../subagents/store";
 import { subagentMetaPath, subagentTracePath } from "../subagents/trace";

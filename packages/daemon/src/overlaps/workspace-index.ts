@@ -16,7 +16,7 @@ import {
   type IndexedFile,
   type WorkspaceIndex,
 } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 import { type AddedLine, addedLinesOf, type DiffFile, type GitDiff, gitDiffSummary } from "./git-diff";
 import { createIndexCache, type FileContent, type FileStat, type IndexCache } from "./index-cache";
 import type { WorkspaceRef } from "./workspace";

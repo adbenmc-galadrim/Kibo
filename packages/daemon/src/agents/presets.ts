@@ -11,7 +11,7 @@ import {
   presetPatch,
 } from "@kibo/schema";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
-import { assertAddDirs } from "./add-dirs";
+import { assertAddDirs } from "../runs/add-dirs";
 
 export type PresetTarget = {
   read(ref: AgentRef): Agent;

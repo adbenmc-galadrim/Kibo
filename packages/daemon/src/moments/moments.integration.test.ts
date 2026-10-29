@@ -1,8 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import type { RunMoment, RunMomentsPage, RunPeek, RunView } from "@kibo/schema";
-import { scenarioPath } from "../agents/fake-claude-scenario";
-import { cleanupTmp, repo } from "../agents/git-test-kit";
+import { scenarioPath } from "../runs/fake-claude-scenario";
+import { cleanupTmp, repo } from "../testing/git-test-kit";
 import {
   assign,
   type Client,

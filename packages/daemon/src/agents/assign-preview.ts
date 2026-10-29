@@ -16,7 +16,7 @@ import {
   WORKTREE_DEFAULTS,
   type WorkspaceStrategy,
 } from "@kibo/schema";
-import { sessionPreview, type TranscriptCheck } from "./session-decision";
+import { sessionPreview, type TranscriptCheck } from "../runs/session-decision";
 
 const PREVIEW_ID = "preview";
 

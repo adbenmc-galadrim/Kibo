@@ -1,5 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { cleanupTmp, commit, git } from "./agents/git-test-kit";
 import {
   assign,
   briefOf,
@@ -10,6 +9,7 @@ import {
   wrote,
 } from "./overlaps/integration.test-helper";
 import { stopDaemons } from "./project-agent/integration.test-helper";
+import { cleanupTmp, commit, git } from "./testing/git-test-kit";
 
 afterEach(async () => {
   await stopDaemons();

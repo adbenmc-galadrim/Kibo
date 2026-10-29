@@ -10,9 +10,9 @@ import {
   type TicketView,
   WORKTREE_DEFAULTS,
 } from "@kibo/schema";
+import { testAgent } from "../runs/orchestrator.test-helper";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
-import { cleanupTmp, tmp } from "./git-test-kit";
-import { testAgent } from "./orchestrator.test-helper";
 
 afterEach(cleanupTmp);
 

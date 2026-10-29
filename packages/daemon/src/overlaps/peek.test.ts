@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Overlap, PeekFileResult, PeekWorkResult } from "@kibo/schema";
-import { cleanupTmp, commit, git, repo } from "../agents/git-test-kit";
+import { cleanupTmp, commit, git, repo } from "../testing/git-test-kit";
 import { createPeek } from "./peek";
 import {
   type FakeWorld,

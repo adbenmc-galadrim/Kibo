@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { ASK_TOOL } from "@kibo/schema";
-import { MAX_INPUT_KEYS } from "../agents/hook-payload";
+import { MAX_INPUT_KEYS } from "../runs/hook-payload";
 import type { Guard, GuardDecision } from "./ports";
 
 export type DraftGuardOptions = { draftDir: string; readRoots: string[]; allowServer: boolean };

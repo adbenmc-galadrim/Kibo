@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { actionOf, type RunAction } from "@kibo/schema";
+import { CLAUDE_DENIAL_TEXT } from "../runs/fake-claude-transcript";
 import { denialsOfTurn, refusedActions } from "./denials";
-import { CLAUDE_DENIAL_TEXT } from "./fake-claude-transcript";
 
 const HOME = "/Users/dev";
 const CTX = {

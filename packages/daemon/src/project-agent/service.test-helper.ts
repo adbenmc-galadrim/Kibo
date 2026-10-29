@@ -11,7 +11,7 @@ import {
   type RunLogEntry,
   type RunView,
 } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
+import type { Notice } from "../runs/notifier";
 import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";

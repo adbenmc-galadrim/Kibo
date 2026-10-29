@@ -1,7 +1,7 @@
 import { expect, spyOn, test } from "bun:test";
 import type { HookPayload, HookReply, RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
-import type { HookSink } from "./hook-route";
+import type { HookSink } from "../runs/hook-route";
 import {
   PLAN_REMINDER,
   REPORT_REMINDER,

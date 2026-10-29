@@ -14,8 +14,8 @@ import {
   WORKTREE_DEFAULTS,
   worktreeBaseOf,
 } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
 import type { CommandMeta } from "../docs";
+import type { GitRunner } from "../runs/workspace-prep";
 import { changedFiles, checkFiles } from "./file-check";
 
 type Snapshot = Pick<ProjectSnapshot, "tickets"> & Partial<Pick<ProjectSnapshot, "meta">>;

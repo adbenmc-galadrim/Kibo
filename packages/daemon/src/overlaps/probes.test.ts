@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DUPLICATION_LIMITS, type IndexedFile, type WorkspaceIndex } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { createImportProbes, nodeProbeFs, type ProbeFs } from "./probes";
 
 afterEach(cleanupTmp);

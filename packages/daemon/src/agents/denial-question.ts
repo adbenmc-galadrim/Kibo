@@ -12,10 +12,10 @@ import {
   type RunMoment,
   type RunView,
 } from "@kibo/schema";
+import type { AgentDataPort } from "../runs/orchestrator-types";
 import { denialTexts } from "./denial-question-texts";
 import type { DenialStore } from "./denial-store";
 import { denialsOfTurn, type TurnDenialContext } from "./denials";
-import type { AgentDataPort } from "./orchestrator-types";
 
 export type DenialQuestionDeps = {
   store: DenialStore;

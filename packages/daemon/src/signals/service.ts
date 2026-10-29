@@ -19,9 +19,9 @@ import {
   WAKE_KINDS,
 } from "@kibo/schema";
 import type { z } from "zod";
-import type { Notice } from "../agents/notifier";
-import { guarded } from "../agents/orchestrator-support";
 import type { TraceService } from "../moments/trace-service";
+import type { Notice } from "../runs/notifier";
+import { guarded } from "../runs/orchestrator-support";
 import { formatClock } from "./clock";
 import { blockerNotice } from "./notices";
 import type { NewSignal, SignalStore } from "./store";

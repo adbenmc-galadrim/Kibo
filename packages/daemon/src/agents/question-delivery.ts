@@ -6,8 +6,8 @@ import {
   mainSessionOf,
   type RunView,
 } from "@kibo/schema";
+import type { AgentDataPort } from "../runs/orchestrator-types";
 import { assertTicketExecution, isTicketRun, type TicketExecution } from "./execution-removed";
-import type { AgentDataPort } from "./orchestrator-types";
 
 export type DeliveryDeps = {
   ticketExecution: TicketExecution;

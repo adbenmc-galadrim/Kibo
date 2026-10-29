@@ -1,8 +1,8 @@
 import type { Database } from "bun:sqlite";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { openRunStore } from "../agents/run-store";
 import { WORKSPACE_DOC_ID } from "../projects/doc-ids";
+import { openRunStore } from "../runs/run-store";
 import { loadDoc, openStore } from "../store";
 import { FIXTURE_HOME_021, FIXTURE_PROJECT_ID } from "../testing/make-home-0.21";
 import { createFileHistory } from "./file-history";

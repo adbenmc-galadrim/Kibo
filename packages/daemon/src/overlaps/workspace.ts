@@ -1,7 +1,7 @@
 import { realpath } from "node:fs/promises";
 import { basename } from "node:path";
 import { DUPLICATION_LIMITS, type RunView } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 
 export type WorkspaceRef = {
   key: string;

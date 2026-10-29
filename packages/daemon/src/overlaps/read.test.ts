@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DUPLICATION_LIMITS, MASKED, type OverlapDetail } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { localPeekFs, screenOf } from "./peek-fakes.test-helper";
 import { createOverlapReader } from "./read";
 import { openOverlapStore } from "./store";

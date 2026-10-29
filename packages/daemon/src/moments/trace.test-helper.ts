@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
 import type { HookPayload, RunAction, RunMomentsEvent, RunView } from "@kibo/schema";
-import { openTranscript, structuredPatch } from "../agents/fake-claude-transcript";
+import { openTranscript, structuredPatch } from "../runs/fake-claude-transcript";
 import { type MomentStore, openMomentStore } from "./store";
 import type { SubagentPort } from "./trace-live";
 import { createTraceService } from "./trace-service";

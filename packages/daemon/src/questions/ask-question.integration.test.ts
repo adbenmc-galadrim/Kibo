@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { AgentsState, ProjectMeta, ProjectSnapshot, RunView, Ticket } from "@kibo/schema";
-import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
-import { FAKE_CLAUDE } from "../agents/fake-claude-scenario";
-import type { Notice } from "../agents/notifier";
 import { type Daemon, startDaemon } from "../daemon";
+import { testAgent, testAgentSource } from "../runs/agents-port.test-helper";
+import { FAKE_CLAUDE } from "../runs/fake-claude-scenario";
+import type { Notice } from "../runs/notifier";
 
-const SCENARIO = join(import.meta.dir, "../agents/scenarios/ask-question.json");
+const SCENARIO = join(import.meta.dir, "../runs/scenarios/ask-question.json");
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();

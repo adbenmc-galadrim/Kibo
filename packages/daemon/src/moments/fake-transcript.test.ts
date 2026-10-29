@@ -3,9 +3,9 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
 import { hasSecret, type RunMoment, type RunView } from "@kibo/schema";
-import { cleanFakeDirs, tmp } from "../agents/fake-claude.test-helper";
-import { FAKE_CLAUDE, scenarioPath } from "../agents/fake-claude-scenario";
-import { reduceHookInput } from "../agents/hook-payload";
+import { cleanFakeDirs, tmp } from "../runs/fake-claude.test-helper";
+import { FAKE_CLAUDE, scenarioPath } from "../runs/fake-claude-scenario";
+import { reduceHookInput } from "../runs/hook-payload";
 import { openMomentStore } from "./store";
 import { createTraceService } from "./trace-service";
 

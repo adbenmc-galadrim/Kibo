@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { MomentData, Step } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import { openRunStore } from "../runs/run-store";
 import { openMomentStore, type RunTrace } from "./store";
 
 const dirs: string[] = [];

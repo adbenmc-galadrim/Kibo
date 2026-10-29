@@ -18,9 +18,9 @@ import type {
   TicketView,
 } from "@kibo/schema";
 import { DELIVERY_RPC_METHODS } from "@kibo/schema";
-import { fakeCalls, releaseFakeRun, scenarioPath } from "./agents/fake-claude-scenario";
-import { repo } from "./agents/git-test-kit";
 import { actions, type Kit, startKit, stopKits, waitFor } from "./agents-skills.test-helper";
+import { fakeCalls, releaseFakeRun, scenarioPath } from "./runs/fake-claude-scenario";
+import { repo } from "./testing/git-test-kit";
 
 afterEach(stopKits);
 

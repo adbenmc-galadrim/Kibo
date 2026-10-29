@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SignalKind } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import { openRunStore } from "../runs/run-store";
 import { type NewSignal, openSignalStore, type SignalStore } from "./store";
 
 const dirs: string[] = [];

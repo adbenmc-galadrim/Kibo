@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { HookPayload } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import { withOverlapWrites } from "./writes";
 
 const hook = (event: HookPayload["event"], tool: string, detail: string | null): HookPayload => ({

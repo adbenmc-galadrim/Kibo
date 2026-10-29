@@ -21,8 +21,8 @@ import type {
   Skill,
   TicketView,
 } from "@kibo/schema";
+import type { TicketExecution } from "../agents/execution-removed";
 import type { CliFallbacks } from "./cli-flags";
-import type { TicketExecution } from "./execution-removed";
 import type { HookLauncher } from "./hook-launcher";
 import type { HookSink } from "./hook-route";
 import type { Notice } from "./notifier";

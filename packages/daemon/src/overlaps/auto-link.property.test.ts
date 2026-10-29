@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { executeProjectCommand, readProject } from "@kibo/core";
 import { FINAL_STATUSES, type IndexedFile, type StatusId } from "@kibo/schema";
 import fc from "fast-check";
-import { cleanupTmp } from "../agents/git-test-kit";
+import { cleanupTmp } from "../testing/git-test-kit";
 import { indexedFile, linkWorld, NOW, P, workspaceIndex, wsRun } from "./auto-link.test-helper";
 
 afterEach(cleanupTmp);

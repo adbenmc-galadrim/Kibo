@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { diffFingerprints, renderDigest } from "@kibo/core/project-agent/digest";
 import type { BatchEvent, ProjectFingerprint, ProposedAction, TicketPrint } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import { openRunStore } from "../runs/run-store";
 import { type NewBatch, openProjectAgentStore } from "./store";
 
 const dirs: string[] = [];

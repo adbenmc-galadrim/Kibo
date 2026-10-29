@@ -8,10 +8,7 @@ import {
   type RunView,
   VISIBILITY_RPC,
 } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
-import type { Orchestrator } from "../agents/orchestrator-types";
 import { withReminders } from "../agents/reminders";
-import { runGit } from "../agents/workspace-prep";
 import { type AgentsPort, withRunProgress } from "../agents-rpc";
 import type { Docs } from "../docs";
 import { agentMcpSink } from "../progress/agent-mcp";
@@ -19,6 +16,9 @@ import type { TicketToolServices } from "../progress/mcp";
 import { createProgressService, type ProgressDocs, type ProgressService } from "../progress/service";
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
+import type { HookSink } from "../runs/hook-route";
+import type { Orchestrator } from "../runs/orchestrator-types";
+import { runGit } from "../runs/workspace-prep";
 import type { SignalService } from "../signals/service";
 import { skillTargetOf } from "../skills/bootstrap";
 import { withSkillUses } from "../skills/hook-uses";

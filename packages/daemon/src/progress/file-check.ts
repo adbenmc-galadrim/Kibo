@@ -1,5 +1,5 @@
 import type { FileCheck } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 
 const CHECK_MAX = 100;
 const PATH_MAX = 500;

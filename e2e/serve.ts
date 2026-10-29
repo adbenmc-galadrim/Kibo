@@ -87,7 +87,7 @@ for (const draft of drafts) {
   cpSync(join(import.meta.dir, "fixtures", "components", draft), dir, { recursive: true });
   renameSync(join(dir, "component.test.tsx.fixture"), join(dir, "component.test.tsx"));
 }
-const agents = join(root, "packages/daemon/src/agents");
+const agents = join(root, "packages/daemon/src/runs");
 const siloScenario = isSiloScenario(scenario);
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {

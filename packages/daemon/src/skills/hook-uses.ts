@@ -1,6 +1,6 @@
 import type { HookPayload } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
 import { actionFromHook } from "../moments/hook-actions";
+import type { HookSink } from "../runs/hook-route";
 import type { SkillUses } from "./uses-store";
 
 export type HookUsesDeps = Pick<SkillUses, "record"> & { now?: () => number };

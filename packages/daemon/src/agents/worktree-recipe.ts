@@ -17,8 +17,8 @@ import {
   type WorktreeRecipe,
   type WorktreeVars,
 } from "@kibo/schema";
-import { cleanEnv } from "./child-env";
-import type { GitRunner } from "./workspace-prep";
+import { cleanEnv } from "../runs/child-env";
+import type { GitRunner } from "../runs/workspace-prep";
 import type { ShellRunner } from "./worktree-prep";
 
 export type RecipeVars = Required<Pick<WorktreeVars, "branch" | "slug" | "key" | "path">> & {

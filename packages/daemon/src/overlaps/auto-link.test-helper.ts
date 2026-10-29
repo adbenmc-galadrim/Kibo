@@ -9,8 +9,8 @@ import type {
   WorkspaceIndex,
   WorkspaceRun,
 } from "@kibo/schema";
-import { tmp } from "../agents/git-test-kit";
 import type { CommandMeta } from "../docs";
+import { tmp } from "../testing/git-test-kit";
 import { createAutoLinker } from "./auto-link";
 import { indexedFile, NOW, ticketRun, workspaceIndex } from "./peek-fakes.test-helper";
 import { openOverlapStore } from "./store";

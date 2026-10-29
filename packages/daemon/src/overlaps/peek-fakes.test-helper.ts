@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import type { IndexedFile, Overlap, RunView, Step, WorkspaceIndex } from "@kibo/schema";
-import { runGit } from "../agents/workspace-prep";
 import { runView } from "../questions/questions.test-helper";
+import { runGit } from "../runs/workspace-prep";
 import type { PathScreen, PeekFs } from "./peek-path";
 import type { PeekServices } from "./work-view";
 import type { WorkspaceRef } from "./workspace";

@@ -11,8 +11,8 @@ import {
   type PublishUsage,
   type RunView,
 } from "@kibo/schema";
-import type { TaskInput, ToolGuard } from "../agents/orchestrator-types";
 import { tryKill } from "../process-group";
+import type { TaskInput, ToolGuard } from "../runs/orchestrator-types";
 import { BUILTIN_STARTERS } from "./builtin-starters";
 import type {
   AgentRuns,

@@ -6,7 +6,7 @@ import {
   type Question,
   type RunView,
 } from "@kibo/schema";
-import { demoRunGuard } from "./demo-guard";
+import { demoRunGuard } from "../agents/demo-guard";
 import type { HookSink } from "./hook-route";
 import type { AgentDataPort, TaskSpec, ToolGuard } from "./orchestrator-types";
 import { projectRunGuard } from "./project-guard";

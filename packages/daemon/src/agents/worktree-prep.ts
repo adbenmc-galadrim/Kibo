@@ -17,9 +17,9 @@ import {
   worktreeBaseOf,
   worktreeBranchOf,
 } from "@kibo/schema";
-import { runBounded } from "./bounded-process";
-import { cleanEnv } from "./runner";
-import type { GitRunner, PlacedWorkspace } from "./workspace-prep";
+import { runBounded } from "../runs/bounded-process";
+import { cleanEnv } from "../runs/runner";
+import type { GitRunner, PlacedWorkspace } from "../runs/workspace-prep";
 import { FETCH_TIMEOUT_MS, hasLocalBranch, resolveBase } from "./worktree-base";
 import { assertRecipe } from "./worktree-recipe";
 import { runRecipe } from "./worktree-recipe-run";

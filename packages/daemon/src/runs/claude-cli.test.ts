@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Exec } from "../ai/ports";
 import {
   assistantArgs,
   CLAUDE_BUILTIN_TOOLS,
@@ -12,10 +13,8 @@ import {
   parseVersion,
   probeClaude,
 } from "./claude-cli";
-import type { Exec } from "./ports";
 
-const help = (name: string) =>
-  readFileSync(join(import.meta.dir, "..", "agents", "scenarios", "help", name), "utf8");
+const help = (name: string) => readFileSync(join(import.meta.dir, "scenarios", "help", name), "utf8");
 const current = parseHelp(help("claude-2.1.283.txt"));
 const legacy = parseHelp(help("legacy.txt"));
 

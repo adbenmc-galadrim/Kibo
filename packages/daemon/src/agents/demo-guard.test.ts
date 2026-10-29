@@ -2,8 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { MAX_TEXT } from "../runs/hook-payload";
 import { demoRunGuard, demoWorkspaceGuard } from "./demo-guard";
-import { MAX_TEXT } from "./hook-payload";
 
 const dirs: string[] = [];
 afterEach(() => {

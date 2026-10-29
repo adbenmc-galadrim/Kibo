@@ -13,21 +13,21 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
-import { type TestAgentSource, testAgent, testAgentSource } from "./agents/agents-port.test-helper";
+import { type TestAgentSource, testAgent, testAgentSource } from "./runs/agents-port.test-helper";
 import {
   FAKE_CLAUDE,
   type FakeScenarioName,
   releaseFakeRun,
   scenarioPath,
-} from "./agents/fake-claude-scenario";
-import { commit, git, cleanupTmp as removeRepos, repo } from "./agents/git-test-kit";
-import { defaultHookLauncher } from "./agents/hook-launcher";
-import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
-import type { ProjectTurnPort } from "./agents/orchestrator-types";
-import { openRunStore, type RunStore } from "./agents/run-store";
+} from "./runs/fake-claude-scenario";
+import { defaultHookLauncher } from "./runs/hook-launcher";
+import { createOrchestrator, type Orchestrator } from "./runs/orchestrator";
+import type { ProjectTurnPort } from "./runs/orchestrator-types";
+import { openRunStore, type RunStore } from "./runs/run-store";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
+import { commit, git, cleanupTmp as removeRepos, repo } from "./testing/git-test-kit";
 
 const TOKEN = "c".repeat(64);
 const RpcReply = z.object({ ok: z.boolean(), result: z.unknown().optional() });

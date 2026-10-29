@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import type { Guideline } from "@kibo/schema";
-import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
-import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
+import { fakeCalls, releaseFakeRun } from "../runs/fake-claude-scenario";
+import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "../runs/orchestrator.test-helper";
 
 cleanHarness();
 

@@ -12,8 +12,6 @@ import type {
   Skill,
   SkillReview,
 } from "@kibo/schema";
-import { fakeLaunch } from "./agents/fake-claude-launch";
-import { releaseFakeRun, scenarioPath } from "./agents/fake-claude-scenario";
 import {
   type AgentList,
   actions,
@@ -30,6 +28,8 @@ import {
   stopKits,
   waitFor,
 } from "./agents-skills.test-helper";
+import { fakeLaunch } from "./runs/fake-claude-launch";
+import { releaseFakeRun, scenarioPath } from "./runs/fake-claude-scenario";
 
 afterEach(stopKits);
 

@@ -9,7 +9,7 @@ import {
   type ProjectAgentRpcRequest,
   undecidedActionIds,
 } from "@kibo/schema";
-import { guarded } from "../agents/orchestrator-support";
+import { guarded } from "../runs/orchestrator-support";
 import type { AgentContext } from "./context";
 import { rejectionMessage } from "./sessions";
 

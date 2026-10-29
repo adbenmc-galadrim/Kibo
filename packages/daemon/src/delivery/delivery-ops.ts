@@ -12,9 +12,9 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { DenialStore } from "../agents/denial-store";
-import type { AgentDataPort, Orchestrator } from "../agents/orchestrator-types";
 import { type Docs, USER_COMMAND } from "../docs";
 import { assertNotInboxForAgents } from "../inbox/inbox-rules";
+import type { AgentDataPort, Orchestrator } from "../runs/orchestrator-types";
 import { type AllowResumeDeps, type AllowResumeInput, allowAndResume } from "./allow-resume";
 import { type DeliverDeps, type DeliveryProject, deliver } from "./deliver";
 

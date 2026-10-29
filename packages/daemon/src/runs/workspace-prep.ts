@@ -9,8 +9,14 @@ import {
   type WorkspaceStrategy,
   type WorktreeSettings,
 } from "@kibo/schema";
+import {
+  prepareWorktree,
+  recentCommits,
+  runShell,
+  type ShellRunner,
+  worktreeBase,
+} from "../agents/worktree-prep";
 import { runBounded } from "./bounded-process";
-import { prepareWorktree, recentCommits, runShell, type ShellRunner, worktreeBase } from "./worktree-prep";
 
 export type PlacedWorkspace = { cwd: string; label: string };
 export type PreparedWorkspace = PlacedWorkspace & { commits: string[] };

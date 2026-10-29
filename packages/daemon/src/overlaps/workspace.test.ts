@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RunView } from "@kibo/schema";
-import { cleanupTmp, repo, tmp, worktree } from "../agents/git-test-kit";
-import { runGit } from "../agents/workspace-prep";
 import { runView } from "../questions/questions.test-helper";
+import { runGit } from "../runs/workspace-prep";
+import { cleanupTmp, repo, tmp, worktree } from "../testing/git-test-kit";
 import { workspaceOf } from "./workspace";
 
 afterEach(cleanupTmp);

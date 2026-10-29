@@ -1,9 +1,9 @@
 import { isTerminal } from "@kibo/schema";
-import type { Orchestrator } from "./agents/orchestrator";
 import type { startCollab } from "./collab/bootstrap";
 import type { TutorialBoot } from "./demo/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { createProjectAdmin, type ProjectAdmin } from "./projects/admin";
+import type { Orchestrator } from "./runs/orchestrator";
 import type { Service } from "./service";
 import type { Store } from "./store";
 

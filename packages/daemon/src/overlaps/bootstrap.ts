@@ -7,13 +7,13 @@ import {
   type ParallelWork,
   type RunView,
 } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
-import { type GitRunner, runGit } from "../agents/workspace-prep";
 import type { ScheduleTimers } from "../backups/schedule";
 import type { Docs } from "../docs";
 import type { TraceService } from "../moments/trace-service";
 import type { ProjectSettings } from "../notes/settings";
 import type { RpcExtension } from "../rpc-extensions";
+import type { HookSink } from "../runs/hook-route";
+import { type GitRunner, runGit } from "../runs/workspace-prep";
 import { createAutoLinker } from "./auto-link";
 import { overlapAggregates, withOverlapCounts } from "./counts";
 import { storeAlerts, withOverlapAlerts } from "./delivery";

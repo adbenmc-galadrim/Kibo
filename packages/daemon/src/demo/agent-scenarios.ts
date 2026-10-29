@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chmodSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { TEMPLATES } from "@kibo/devkit";
-import type { FakeScenario } from "../agents/fake-claude-scenario";
+import type { FakeScenario } from "../runs/fake-claude-scenario";
 
 const DEMO_SCENARIO_NAMES = ["ticket", "component"] as const;
 type DemoScenarioName = (typeof DEMO_SCENARIO_NAMES)[number];

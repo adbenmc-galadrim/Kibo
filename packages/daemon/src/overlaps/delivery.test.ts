@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type PendingAlert, pickAlerts } from "@kibo/core";
 import type { HookPayload, HookReply, Overlap } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import { storeAlerts, withOverlapAlerts } from "./delivery";
 import { type OverlapStore, openOverlapStore } from "./store";
 

@@ -20,9 +20,6 @@ import {
   type Session,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { createDataPort } from "./agents/data-port";
-import type { AgentSource } from "./agents/neutral-agents";
-import type { AgentDataPort } from "./agents/orchestrator";
 import { deliverAnswers } from "./agents/question-delivery";
 import { type AgentQuestions, type AgentsPort, deliveryDeps, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
@@ -46,6 +43,9 @@ import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { type AnswerWake, afterQuestionCommands } from "./questions/question-events";
 import { type QuestionImageDeps, questionImagesOf } from "./questions/question-images-port";
+import { createDataPort } from "./runs/data-port";
+import type { AgentSource } from "./runs/neutral-agents";
+import type { AgentDataPort } from "./runs/orchestrator";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";

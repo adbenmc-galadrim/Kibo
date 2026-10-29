@@ -2,8 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type SetupStep, WORKTREE_DEFAULTS, type WorktreeRecipe, type WorktreeSettings } from "@kibo/schema";
-import { cleanupTmp, repo, tmp } from "./git-test-kit";
-import { runGit } from "./workspace-prep";
+import { runGit } from "../runs/workspace-prep";
+import { cleanupTmp, repo, tmp } from "../testing/git-test-kit";
 import { assertWorktreeSettings, prepareWorktree, runShell, type WorktreeInput } from "./worktree-prep";
 
 afterEach(cleanupTmp);

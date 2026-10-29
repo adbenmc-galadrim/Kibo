@@ -1,5 +1,5 @@
 import { userInfo } from "node:os";
-import { runBounded } from "./agents/bounded-process";
+import { runBounded } from "./runs/bounded-process";
 
 export const LOGIN_PATH_TIMEOUT_MS = 3000;
 export const LOGIN_PATH_MARKERS = { start: "__KIBO_PATH_START__", end: "__KIBO_PATH_END__" };

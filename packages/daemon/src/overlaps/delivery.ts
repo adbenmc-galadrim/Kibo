@@ -1,6 +1,6 @@
 import { type PendingAlert, pickAlerts } from "@kibo/core";
 import type { HookReply, Overlap, OverlapRole } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import type { OverlapStore } from "./store";
 
 export type DeliveredAlert = { overlapId: string; role: OverlapRole };

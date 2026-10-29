@@ -9,7 +9,6 @@ import {
   type Ticket,
   WAKEUP_PREFIX,
 } from "@kibo/schema";
-import { releaseFakeRun } from "./agents/fake-claude-scenario";
 import {
   agentsOf,
   decide,
@@ -28,6 +27,7 @@ import {
   viewOf,
   waitFor,
 } from "./project-agent/integration.test-helper";
+import { releaseFakeRun } from "./runs/fake-claude-scenario";
 
 afterEach(stopDaemons);
 

@@ -1,5 +1,5 @@
 import { DUPLICATION_LIMITS, type IndexedFile, KiboError } from "@kibo/schema";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
 
 export type DiffFile = { path: string; status: IndexedFile["status"]; added: number; removed: number };
 export type GitDiff = { files: DiffFile[]; untracked: string[] };

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { CLAUDE_DENIAL_TEXT } from "../agents/fake-claude-transcript";
+import { CLAUDE_DENIAL_TEXT } from "../runs/fake-claude-transcript";
 import { AGENT, hook, LAUNCH, META, RUN, TOOL_USE, tracked } from "./tracker.test-helper";
 
 const LINE = '{"type":"assistant"}';

@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import type { AgentsState } from "@kibo/schema";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { overlapAggregates, withOverlapCounts } from "./counts";
 import { openOverlapStore } from "./store";
 

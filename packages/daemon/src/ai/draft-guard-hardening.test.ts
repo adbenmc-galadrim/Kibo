@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MAX_INPUT_KEYS, reduceHookPost } from "../agents/hook-payload";
+import { MAX_INPUT_KEYS, reduceHookPost } from "../runs/hook-payload";
 import { createDraftGuard } from "./draft-guard";
 
 const roots: string[] = [];

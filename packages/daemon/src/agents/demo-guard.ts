@@ -1,8 +1,8 @@
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { DEMO_AGENT_REF, type GuardDecision, type RunView } from "@kibo/schema";
-import { MAX_TEXT } from "./hook-payload";
-import type { ToolGuard } from "./orchestrator-types";
+import { MAX_TEXT } from "../runs/hook-payload";
+import type { ToolGuard } from "../runs/orchestrator-types";
 
 const PATH_KEYS = ["file_path", "notebook_path", "path"] as const;
 const DENIED: GuardDecision = { decision: "deny", reason: "the demo agent stays in its workspace" };

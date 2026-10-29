@@ -10,8 +10,8 @@ import {
   parseAgentRef,
   type SaveResult,
 } from "@kibo/schema";
-import { assertAddDirs } from "../agents/add-dirs";
 import { type RpcContext, type RpcExtension, requireLocal } from "../rpc-extensions";
+import { assertAddDirs } from "../runs/add-dirs";
 import type { AgentFilesService } from "./service";
 
 export type AgentPreviewRequest = Extract<AgentRpcRequest, { method: "agents.preview" }>;

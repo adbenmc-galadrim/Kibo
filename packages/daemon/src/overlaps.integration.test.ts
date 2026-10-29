@@ -2,7 +2,6 @@ import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { type BackupInfo, DEFAULT_DUPLICATION_SETTINGS, type ProjectSnapshot } from "@kibo/schema";
-import { cleanupTmp } from "./agents/git-test-kit";
 import {
   assign,
   autoLinksOf,
@@ -19,6 +18,7 @@ import {
   wrote,
 } from "./overlaps/integration.test-helper";
 import { agentsOf, snapshotOf, stopDaemons } from "./project-agent/integration.test-helper";
+import { cleanupTmp } from "./testing/git-test-kit";
 
 afterEach(async () => {
   await stopDaemons();

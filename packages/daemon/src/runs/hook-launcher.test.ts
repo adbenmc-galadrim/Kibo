@@ -10,9 +10,9 @@ afterEach(() => {
 });
 
 test("in development the hook runs through bun, compiled it is the sibling binary", () => {
-  expect(defaultHookLauncher("/usr/local/bin/bun", "/repo/packages/daemon/src/agents")).toEqual({
+  expect(defaultHookLauncher("/usr/local/bin/bun", "/repo/packages/daemon/src/runs")).toEqual({
     command: "/usr/local/bin/bun",
-    args: ["/repo/packages/daemon/src/agents/kibo-hook.ts"],
+    args: ["/repo/packages/daemon/src/runs/kibo-hook.ts"],
   });
   expect(defaultHookLauncher("/Applications/Kibo.app/Contents/MacOS/kibo-daemon", "/$bunfs/root")).toEqual({
     command: "/Applications/Kibo.app/Contents/MacOS/kibo-hook",

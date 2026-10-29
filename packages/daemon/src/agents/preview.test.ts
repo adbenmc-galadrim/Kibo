@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { EMPTY_DELIVERY, type Guideline, KiboError, type ProjectSnapshot } from "@kibo/schema";
-import { testAgent } from "./agents-port.test-helper";
-import { memoryAgentSource } from "./neutral-agents";
-import { testProject } from "./orchestrator.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
+import { memoryAgentSource } from "../runs/neutral-agents";
+import { testProject } from "../runs/orchestrator.test-helper";
 import { createAgentPreview } from "./preview";
 
 const guidelines: Guideline[] = [

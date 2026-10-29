@@ -1,9 +1,9 @@
 import { readProject } from "@kibo/core";
 import { type AnsweredLine, answerQuote, isAnswered, questionLabel } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
 import type { Docs } from "../docs";
 import type { TraceService } from "../moments/trace-service";
 import type { RpcExtension } from "../rpc-extensions";
+import type { Notice } from "../runs/notifier";
 import { signalRpc } from "./rpc";
 import { createSignalService, type SignalService } from "./service";
 import { openSignalStore } from "./store";

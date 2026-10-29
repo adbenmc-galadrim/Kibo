@@ -17,7 +17,7 @@ import {
   verifyIndex,
   verifyMarketPackage,
 } from "@kibo/trust";
-import type { Notice } from "../agents/notifier";
+import type { Notice } from "../runs/notifier";
 import type { HttpGet } from "./http-get";
 import { createKeyedQueue } from "./keyed-queue";
 import { assertListedIn } from "./listing";

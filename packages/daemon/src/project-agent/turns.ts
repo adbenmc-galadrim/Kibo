@@ -15,7 +15,7 @@ import {
   type Signal,
   signalLine,
 } from "@kibo/schema";
-import type { ProjectTurn, ProjectTurnPort } from "../agents/orchestrator-types";
+import type { ProjectTurn, ProjectTurnPort } from "../runs/orchestrator-types";
 import type { AgentContext } from "./context";
 import { memoryText, projectOfRun } from "./sessions";
 

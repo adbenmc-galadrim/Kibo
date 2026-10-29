@@ -1,5 +1,5 @@
 import { MODIFYING_TOOLS } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 
 export type WriteDeps = {
   onWrite(runId: string, absPath: string): void | Promise<void>;

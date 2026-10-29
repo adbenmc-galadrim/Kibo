@@ -1,6 +1,6 @@
 import { expect, spyOn, test } from "bun:test";
 import type { HookPayload, HookReply, RunAction } from "@kibo/schema";
-import type { HookSink } from "../agents/hook-route";
+import type { HookSink } from "../runs/hook-route";
 import { withSkillUses } from "./hook-uses";
 
 const hook = (p: Partial<HookPayload>): HookPayload => ({

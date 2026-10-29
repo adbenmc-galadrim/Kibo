@@ -13,9 +13,9 @@ import type {
 } from "@kibo/schema";
 import { z } from "zod";
 import type { TicketExecution } from "../../agents/execution-removed";
-import { aiScenarioPath } from "../../agents/fake-claude-ai";
-import { FAKE_CLAUDE } from "../../agents/fake-claude-scenario";
 import { startDaemon } from "../../daemon";
+import { aiScenarioPath } from "../../runs/fake-claude-ai";
+import { FAKE_CLAUDE } from "../../runs/fake-claude-scenario";
 
 export type AiHarness = {
   home: string;

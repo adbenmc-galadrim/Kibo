@@ -3,7 +3,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
 import { MEMORY_NOTE_PATH, type ProposeBatchInput, type RunView } from "@kibo/schema";
-import { projectAgentAgent } from "../agents/agents-port.test-helper";
+import { projectAgentAgent } from "../runs/agents-port.test-helper";
 import { projectAgentBody } from "./bootstrap";
 import { GOOD_TOKEN, type Kit, PROJECT_ID, serviceKit } from "./service.test-helper";
 

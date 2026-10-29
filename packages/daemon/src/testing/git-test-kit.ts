@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runGit } from "./workspace-prep";
+import { runGit } from "../runs/workspace-prep";
 
 const dirs: string[] = [];
 

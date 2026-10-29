@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
+import { cleanupTmp, commit, git, repo, tmp } from "../testing/git-test-kit";
 import { type GitRunner, prepareWorkspace, runGit, writeRunContext } from "./workspace-prep";
 
 afterEach(cleanupTmp);

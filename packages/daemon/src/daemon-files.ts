@@ -4,15 +4,15 @@ import { listGuidelines } from "@kibo/core/agent-config";
 import type { AgentRef } from "@kibo/schema";
 import { type AgentFiles, startAgentFiles } from "./agent-files/bootstrap";
 import { agentFilesRpc } from "./agent-files/rpc";
-import { catalogAgentSource, type LateAgentSource } from "./agents/agent-source";
-import type { Orchestrator } from "./agents/orchestrator-types";
 import { agentPresetRpc } from "./agents/presets";
 import { createAgentPreview } from "./agents/preview";
-import type { RunStore } from "./agents/run-store";
 import type { DaemonOptions } from "./daemon-options";
 import type { Closer } from "./daemon-shutdown";
 import { startVisibility, type Visibility } from "./moments/bootstrap";
 import type { RpcExtension } from "./rpc-extensions";
+import { catalogAgentSource, type LateAgentSource } from "./runs/agent-source";
+import type { Orchestrator } from "./runs/orchestrator-types";
+import type { RunStore } from "./runs/run-store";
 import { call, type Service } from "./service";
 import { type Skills, startSkills } from "./skills/bootstrap";
 

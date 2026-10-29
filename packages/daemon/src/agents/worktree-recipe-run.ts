@@ -1,8 +1,8 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { branchSlug, type SetupStep, shortSlug, type WorktreeRecipe } from "@kibo/schema";
+import type { GitRunner } from "../runs/workspace-prep";
 import { isFree } from "./port-probe";
-import type { GitRunner } from "./workspace-prep";
 import type { ShellRunner } from "./worktree-prep";
 import { applyRecipe, type RecipeResult, worktreeSiblings } from "./worktree-recipe";
 

@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
-import { cleanupTmp, git, repo, tmp, worktree } from "../agents/git-test-kit";
+import { cleanupTmp, git, repo, tmp, worktree } from "../testing/git-test-kit";
 import { readBranches } from "./refs-reader";
 
 afterEach(cleanupTmp);

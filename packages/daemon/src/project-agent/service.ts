@@ -12,8 +12,8 @@ import {
   type ProjectFingerprint,
   type RunView,
 } from "@kibo/schema";
-import type { ProjectTurnPort } from "../agents/orchestrator-types";
 import type { RpcExtension } from "../rpc-extensions";
+import type { ProjectTurnPort } from "../runs/orchestrator-types";
 import { formatClock } from "../signals/clock";
 import type { AgentContext, ProjectAgentDeps } from "./context";
 import { type DecideInput, decideBatch } from "./decide";

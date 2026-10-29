@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type AgentsState, ASK_QUESTION_TOOL, type HookPayload, Ticket } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
+import type { Notice } from "../runs/notifier";
 import { call, createService } from "../service";
 import { openStore } from "../store";
 import { agentQuestionHooks } from "./agent-hooks";

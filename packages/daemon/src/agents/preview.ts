@@ -19,8 +19,8 @@ import {
   type SettingOrigin,
 } from "@kibo/schema";
 import { EXAMPLE_NOW, exampleParallelWork } from "../overlaps/work-example";
-import type { AgentDataPort } from "./orchestrator-types";
-import { type ComposedAgent, composeAgent, skillRules } from "./run-prepare";
+import type { AgentDataPort } from "../runs/orchestrator-types";
+import { type ComposedAgent, composeAgent, skillRules } from "../runs/run-prepare";
 
 export type AgentPreviewRequest = { ref: AgentRef; projectId?: string; ticketId?: string };
 export type AgentPreviewDeps = {

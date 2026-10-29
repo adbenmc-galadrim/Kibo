@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { composeWorkSection } from "@kibo/core/overlaps/section";
 import { hasSecret } from "@kibo/schema";
 import fc from "fast-check";
-import { cleanupTmp, tmp } from "../agents/git-test-kit";
-import type { GitRunner } from "../agents/workspace-prep";
+import type { GitRunner } from "../runs/workspace-prep";
+import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { createPeek } from "./peek";
 import {
   fakeServices,

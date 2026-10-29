@@ -2,12 +2,12 @@ import { existsSync } from "node:fs";
 import { guidelineChain } from "@kibo/core/context";
 import type { Plan } from "@kibo/core/scheduler";
 import { type Agent, KiboError, mainSessionOf, type RunView } from "@kibo/schema";
+import { assertLeaf } from "../runs/children-probe";
+import type { Orchestrator, OrchestratorOptions, TaskSpec } from "../runs/orchestrator-types";
+import type { RunRegistry } from "../runs/run-registry";
+import type { NewRun } from "../runs/run-store";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
-import { assertLeaf } from "./children-probe";
 import { assertTicketExecution } from "./execution-removed";
-import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
-import type { RunRegistry } from "./run-registry";
-import type { NewRun } from "./run-store";
 
 export type AssignerDeps = {
   opts: OrchestratorOptions;

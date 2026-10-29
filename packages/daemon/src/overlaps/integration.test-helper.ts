@@ -11,10 +11,6 @@ import type {
   RunView,
   Ticket,
 } from "@kibo/schema";
-import { testAgent } from "../agents/agents-port.test-helper";
-import { fakeContexts, fakeWrites } from "../agents/fake-claude-ai";
-import { releaseFakeRun } from "../agents/fake-claude-scenario";
-import { repo } from "../agents/git-test-kit";
 import {
   agentsOf,
   type Rpc,
@@ -22,6 +18,10 @@ import {
   startStack,
   waitFor,
 } from "../project-agent/integration.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
+import { fakeContexts, fakeWrites } from "../runs/fake-claude-ai";
+import { releaseFakeRun } from "../runs/fake-claude-scenario";
+import { repo } from "../testing/git-test-kit";
 
 export const WORKTREE_AGENT: Agent = testAgent({
   id: "livraison",

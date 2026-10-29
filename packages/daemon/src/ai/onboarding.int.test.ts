@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { fakeCalls } from "../agents/fake-claude-scenario";
+import { fakeCalls } from "../runs/fake-claude-scenario";
 import { type AiHarness, startAiHarness } from "./testing/harness";
 
 let h: AiHarness | null = null;

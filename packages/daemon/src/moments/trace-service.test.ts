@@ -2,7 +2,7 @@ import { expect, spyOn, test } from "bun:test";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import type { RunAction } from "@kibo/schema";
-import { openTranscript } from "../agents/fake-claude-transcript";
+import { openTranscript } from "../runs/fake-claude-transcript";
 import { cleanTraceDirs, hook, kinds, playEditAndTests, setup, tmp } from "./trace.test-helper";
 
 cleanTraceDirs();

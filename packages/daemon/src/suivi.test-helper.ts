@@ -12,12 +12,12 @@ import type {
   TicketSession,
 } from "@kibo/schema";
 import { z } from "zod";
-import { testAgent, testAgentSource } from "./agents/agents-port.test-helper";
-import { FAKE_CLAUDE, type FakeCall, fakeCalls, scenarioPath } from "./agents/fake-claude-scenario";
 import type { Env } from "./code/run";
 import { createGitFixture, type GitFixture, installFakeGh } from "./code/testing/git-fixture";
 import { fakeBuild, okReport } from "./components/service.test-helper";
 import { type Daemon, startDaemon } from "./daemon";
+import { testAgent, testAgentSource } from "./runs/agents-port.test-helper";
+import { FAKE_CLAUDE, type FakeCall, fakeCalls, scenarioPath } from "./runs/fake-claude-scenario";
 
 export const FIXED_NOW = "2026-10-16T14:52:00+02:00";
 
