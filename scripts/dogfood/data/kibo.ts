@@ -17,14 +17,11 @@ export const PAGES: DesiredPage[] = [
     kind: "dashboard",
     instances: [
       { componentId: "kanban", config: {}, layout: { x: 0, y: 0, w: 6, h: 6 } },
-      { componentId: "tickets", config: { filter: "mine" }, layout: { x: 6, y: 0, w: 6, h: 6 } },
       { componentId: "graph", config: {}, layout: { x: 0, y: 6, w: 6, h: 6 } },
     ],
   },
   view("Kanban", "kanban"),
-  view("Tickets", "tickets"),
   view("Graphe", "graph"),
-  view("Notes", "notes"),
 ];
 
 export const DOMAINS: { name: string; file: string }[] = [
