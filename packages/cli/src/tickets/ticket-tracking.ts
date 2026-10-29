@@ -1,4 +1,5 @@
-import { isFeature, type SprintView, sameSprintCode, sortSprints, type TicketView } from "@kibo/schema";
+import { isFeature, type SprintView, sortSprints, type TicketView } from "@kibo/schema";
+import { findSprint } from "./find-sprint";
 
 export type SprintRef = { id: string; code: string; name: string };
 export type FeatureRef = { key: string; shortKey: string | null; title: string };
@@ -38,16 +39,6 @@ const currentOf = (sprints: readonly SprintSource[]): SprintSource | null =>
     .filter((s) => s.state === "current")
     .at(-1) ?? null;
 
-function named(sprints: readonly SprintSource[], wanted: string): SprintSource | null {
-  const folded = wanted.toLowerCase();
-  return (
-    sprints.find((s) => s.id === wanted) ??
-    sprints.find((s) => sameSprintCode(s.code, wanted)) ??
-    sprints.find((s) => s.name.toLowerCase() === folded) ??
-    null
-  );
-}
-
 export function sprintSelector(raw: string, sprints: readonly SprintSource[]): SprintSelector | null {
   const wanted = raw.trim();
   if (wanted === "none") return (t) => t.sprint === null;
@@ -55,6 +46,6 @@ export function sprintSelector(raw: string, sprints: readonly SprintSource[]): S
     const current = currentOf(sprints);
     return (t) => current !== null && t.sprint?.id === current.id;
   }
-  const target = named(sprints, wanted);
+  const target = findSprint(sprints, wanted);
   return target === null ? null : (t) => t.sprint?.id === target.id;
 }
