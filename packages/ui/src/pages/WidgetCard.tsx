@@ -38,7 +38,7 @@ export function WidgetCard(props: BodyProps & { editable: boolean }) {
           instance={instance}
           editable={editable}
           title={title}
-          fullscreen={apis?.capabilities.includes("fullscreen") ?? false}
+          fullscreen={apis.capabilities.includes("fullscreen")}
         />
       )}
       <WidgetBody {...props} apis={apis} />
@@ -52,13 +52,14 @@ export function ViewInstance({
   projectId,
   instance,
   viewer,
+  editable,
 }: {
   projectId: string;
   instance: Instance;
   viewer: string;
+  editable: boolean;
 }) {
   const apis = useInstanceApis(projectId, instance, NO_ELEMENT);
-  if (!apis) return null;
   return (
     <InstanceFrame
       projectId={projectId}
@@ -67,6 +68,7 @@ export function ViewInstance({
       surface="view"
       format="full"
       apis={apis}
+      editable={editable}
     />
   );
 }

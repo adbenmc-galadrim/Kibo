@@ -84,7 +84,7 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             {readSource(first.config) && <SourceHeader project={project} instance={first} />}
             <div data-view-body className="flex min-h-0 flex-1 flex-col">
               <PageBoundary resetKey={first.id}>
-                <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
+                <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable={editable} />
               </PageBoundary>
             </div>
           </>

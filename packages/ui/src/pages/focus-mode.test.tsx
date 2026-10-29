@@ -1,61 +1,26 @@
-import { beforeEach, expect, mock, test } from "bun:test";
-import type { Capability, ComponentSummary, Instance, Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
-import { type KiboSdk, useSdk } from "@kibo/sdk";
+import { afterAll, beforeEach, expect, mock, test } from "bun:test";
+import {
+  type Capability,
+  ComponentManifest,
+  type Instance,
+  type Page,
+  type ProjectSnapshot,
+  type RpcRequest,
+} from "@kibo/schema";
+import { type ComponentModule, type KiboSdk, useSdk } from "@kibo/sdk";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { apiMock } from "../api-mock";
 import { kiboProject } from "../lib/fixtures";
 
-const H = "d".repeat(64);
 const calls: RpcRequest[] = [];
-const summary = (id: string, title: string, capabilities: Capability[]): ComponentSummary => ({
-  id,
-  title,
-  builtin: false,
-  versions: [
-    {
-      version: "1.0.0",
-      hash: H,
-      trust: "trusted",
-      origin: "user",
-      active: true,
-      tampered: false,
-      manifest: {
-        id,
-        version: "1.0.0",
-        kind: "widget",
-        title,
-        reads: [],
-        writes: [],
-        data: false,
-        net: [],
-        secrets: [],
-        mcp: [],
-        capabilities,
-        selection: false,
-        configVersion: 0,
-        changes: [],
-        sdk: 1,
-      },
-      usages: [],
-      revoked: null,
-      backend: false,
-    },
-  ],
-});
 
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "listComponents")
-          return Promise.resolve([
-            summary("arcade", "Arcade", ["fullscreen"]),
-            summary("plain", "Plain", []),
-          ]);
-        if (req.method === "listDrafts") return Promise.resolve([]);
         return Promise.resolve(null);
       },
       subscribe: () => () => undefined,
@@ -65,7 +30,7 @@ mock.module("../api", () =>
   }),
 );
 
-const { loadTrusted } = await import("../shell/trusted-loader");
+const { BUILTIN_COMPONENTS } = await import("../registry");
 const { PageView } = await import("./PageView");
 const { HostProvider } = await import("../shell/Host");
 const { PageActionsProvider } = await import("../shell/page-actions");
@@ -82,11 +47,23 @@ function probe(id: string) {
     return <p>{`${id} content`}</p>;
   };
 }
-for (const id of ["arcade", "plain"])
-  await loadTrusted(id, "1.0.0", H, async () => ({
-    manifest: { id, version: "1.0.0", kind: "widget", title: id, reads: [], writes: [] },
-    Component: probe(id),
-  }));
+const module = (id: string, title: string, capabilities: Capability[]): ComponentModule => ({
+  manifest: ComponentManifest.parse({
+    id,
+    version: "1.0.0",
+    kind: "widget",
+    title,
+    reads: [],
+    writes: [],
+    capabilities,
+  }),
+  Component: probe(id),
+});
+const probes = [module("arcade", "Arcade", ["fullscreen"]), module("plain", "Plain", [])];
+BUILTIN_COMPONENTS.push(...probes);
+afterAll(() => {
+  for (const p of probes) BUILTIN_COMPONENTS.splice(BUILTIN_COMPONENTS.indexOf(p), 1);
+});
 
 const host = {
   openTicket: () => undefined,
@@ -225,15 +202,14 @@ test("every widget follows the visibility of the tab", async () => {
   }
 });
 
-test("the page lists the components once, the widgets do not ask again for their capabilities", async () => {
+test("neither the page nor its widgets ask the daemon for the component list", async () => {
   const view = show();
   await screen.findByText("arcade content");
   await screen.findByText("plain content");
   await act(async () => {
     await new Promise((r) => setTimeout(r, 10));
   });
-  const listed = calls.filter((c) => c.method === "listComponents").length;
-  expect(listed).toBe(5);
+  expect(calls.some((c) => c.method === "listComponents")).toBe(false);
   view.unmount();
 });
 

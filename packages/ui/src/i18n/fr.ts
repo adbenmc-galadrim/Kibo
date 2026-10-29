@@ -2,6 +2,7 @@ import type { KiboErrorCode } from "@kibo/schema";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
 import { frIntegrationRows } from "./fr-integration-rows";
+import { frRetired } from "./fr-retired";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
 
@@ -179,7 +180,7 @@ export const fr = {
     addComponent: "Ajouter un composant",
     editLayout: "Modifier la disposition",
     editLayoutNarrow: "Élargis la fenêtre pour modifier la disposition.",
-    unknownComponent: (ref: string) => `Composant introuvable : ${ref}`,
+    retired: frRetired,
   },
   newTicket: {
     title: "Nouveau ticket",
@@ -301,15 +302,6 @@ export const fr = {
     batch: "Lot à valider",
   },
   integrations: { rows: frIntegrationRows },
-  security: {
-    remoteFrame:
-      "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
-  },
-  market: {
-    backendStopped: "Backend arrêté — isolation OS indisponible",
-    backendStoppedHelp:
-      "L'interface reste utilisable. Les commandes d'installation sont sur la page Composants.",
-  },
   marketSources: { title: "Sources de composants" },
   sync: {
     title: "Synchronisation",

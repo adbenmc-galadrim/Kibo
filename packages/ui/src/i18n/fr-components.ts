@@ -1,23 +1,11 @@
 export const frComponents = {
   instance: {
     menu: (title: string) => `Actions ${title}`,
-    updateTo: (version: string) => `Mettre à jour vers ${version}`,
-    notesDir: "Dossier des notes…",
     remove: "Retirer de la page…",
     settings: "Réglages…",
     removeTitle: (title: string) => `Retirer ${title} de la page ?`,
     removeHelp: "Le widget disparaît de la page ; les tickets ne sont pas touchés.",
     removeConfirm: "Retirer",
-    updated: (version: string) => `Instance mise à jour en ${version}.`,
-    updateFailed: "Impossible de mettre à jour l'instance.",
-    pendingTitle: "Autorisation requise",
-    pendingHelp: (title: string, version: string) =>
-      `« ${title} » ${version} doit être autorisé avant de s'afficher.`,
-    pendingChanged: "Son code a changé depuis ton accord.",
-    review: "Examiner et autoriser",
-    loadFailed: "Impossible de charger le composant.",
-    navigated:
-      "Ce composant a tenté de quitter son bac à sable et a été arrêté. Recharge la page pour le relancer.",
   },
   componentErrors: {
     HASH_MISMATCH: "Le code du composant a changé depuis son affichage : vérifie de nouveau son empreinte.",

@@ -1,11 +1,4 @@
-import {
-  type ComponentSummary,
-  type ConfigField,
-  type ConfigSchema,
-  frameList,
-  type Instance,
-  splitRef,
-} from "@kibo/schema";
+import { type ConfigField, type ConfigSchema, frameList, type Instance } from "@kibo/schema";
 import { frWidgets } from "../i18n/fr-widgets";
 import { findComponent } from "../registry";
 
@@ -91,13 +84,6 @@ export function withFieldValue(
 const nonEmpty = (schema: ConfigSchema | undefined): ConfigSchema | null =>
   schema && Object.keys(schema).length > 0 ? schema : null;
 
-export function configSchemaOf(
-  instance: Instance,
-  components: ComponentSummary[] | null,
-): ConfigSchema | null {
-  const builtin = findComponent(instance.component);
-  if (builtin) return nonEmpty(builtin.manifest.configSchema);
-  const { id, version } = splitRef(instance.component);
-  const summary = components?.find((c) => c.id === id && !c.builtin);
-  return nonEmpty(summary?.versions.find((v) => v.version === version)?.manifest?.configSchema);
+export function configSchemaOf(instance: Instance): ConfigSchema | null {
+  return nonEmpty(findComponent(instance.component)?.manifest.configSchema);
 }

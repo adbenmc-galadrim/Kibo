@@ -136,7 +136,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(screen.getByText("Aucun composant ne correspond.")).toBeTruthy();
 });
 
-test("only the tracking components are built-ins on offer: no MCP source, no 3D viewer", async () => {
+test("only the six built-ins are on offer: no notes, tickets, MCP source or 3D viewer", async () => {
   render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
   const list = within(await screen.findByRole("region", { name: "Composants disponibles" }));
   await list.findByRole("radio", { name: "Burndown" });
@@ -144,16 +144,18 @@ test("only the tracking components are built-ins on offer: no MCP source, no 3D 
     .getAllByRole("radio")
     .map((r) => r.getAttribute("aria-label") ?? r.textContent)
     .filter((name) => name !== "Burndown");
-  expect(builtins).toHaveLength(8);
+  expect(builtins).toHaveLength(6);
   for (const name of [
     "Vue d'ensemble",
     "Planning",
     "Kanban",
     "Graphe de dépendances",
     "Questions",
-    "Tickets",
+    "Maquette",
   ])
     expect(list.getByRole("radio", { name })).toBeTruthy();
+  expect(list.queryByRole("radio", { name: "Tickets" })).toBeNull();
+  expect(list.queryByRole("radio", { name: "Notes" })).toBeNull();
   expect(list.queryByRole("radio", { name: "Source MCP" })).toBeNull();
   expect(list.queryByRole("radio", { name: "Visionneuse 3D" })).toBeNull();
 });

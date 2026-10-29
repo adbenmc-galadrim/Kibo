@@ -15,7 +15,6 @@ import { ContextMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { type MouseEvent, type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { type Flash, useFlash } from "../lib/use-flash";
 import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
 import { NavCount } from "./nav/NavRow";
@@ -50,7 +49,6 @@ type RowProps = {
   page: Page;
   projectId: string;
   instance: Instance | null;
-  flash: Flash["flash"];
   entries: MenuEntry[];
   editable: boolean;
   active: boolean;
@@ -98,7 +96,6 @@ function PageRow({
   page,
   projectId,
   instance,
-  flash,
   entries,
   editable,
   active,
@@ -145,13 +142,7 @@ function PageRow({
               {badge && <NavCount yields={editable}>{badge}</NavCount>}
             </button>
             {editable && (
-              <PageRowMenu
-                title={page.title}
-                projectId={projectId}
-                instance={instance}
-                entries={entries}
-                flash={flash}
-              />
+              <PageRowMenu title={page.title} projectId={projectId} instance={instance} entries={entries} />
             )}
           </div>
         </ContextMenuTrigger>
@@ -169,7 +160,6 @@ export function ProjectPages(p: Props) {
   const projectId = project.meta.id;
   const editable = canEdit(project);
   const [error, setError] = useState<string | null>(null);
-  const notice = useFlash();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const move = async (pageId: string, parentId: string | null, index?: number) => {
     setError(null);
@@ -221,7 +211,6 @@ export function ProjectPages(p: Props) {
           instance={
             page.kind === "view" ? (project.instances.find((i) => i.pageId === page.id) ?? null) : null
           }
-          flash={notice.flash}
           entries={entriesFor(page)}
           editable={editable}
           active={active}
@@ -251,17 +240,6 @@ export function ProjectPages(p: Props) {
       {error && (
         <p role="alert" className="px-2 py-1 text-xs text-destructive">
           {error}
-        </p>
-      )}
-      {notice.message && (
-        <p
-          role={notice.tone === "error" ? "alert" : "status"}
-          className={cn(
-            "px-2 py-1 text-xs",
-            notice.tone === "error" ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {notice.message}
         </p>
       )}
     </DndContext>

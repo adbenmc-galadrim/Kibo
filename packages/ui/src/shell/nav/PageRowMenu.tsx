@@ -5,7 +5,6 @@ import { SidebarMenuAction } from "@kibo/sdk/ui/sidebar";
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../../i18n/fr";
-import type { Flash } from "../../lib/use-flash";
 import { PageInstanceMenu } from "../lazy-screens";
 
 type Props = {
@@ -13,10 +12,9 @@ type Props = {
   projectId: string;
   instance: Instance | null;
   entries: MenuEntry[];
-  flash: Flash["flash"];
 };
 
-export function PageRowMenu({ title, projectId, instance, entries, flash }: Props) {
+export function PageRowMenu({ title, projectId, instance, entries }: Props) {
   const [opened, setOpened] = useState(false);
   const plain = (
     <DropdownMenuContent align="start" side="right">
@@ -34,7 +32,7 @@ export function PageRowMenu({ title, projectId, instance, entries, flash }: Prop
         </SidebarMenuAction>
       </DropdownMenuTrigger>
       {instance && opened ? (
-        <PageInstanceMenu projectId={projectId} instance={instance} entries={entries} flash={flash}>
+        <PageInstanceMenu projectId={projectId} instance={instance} entries={entries}>
           {plain}
         </PageInstanceMenu>
       ) : (

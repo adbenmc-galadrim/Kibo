@@ -1,62 +1,33 @@
-import { type ComponentSummary, compareSemver, type Instance, isBuiltinId, splitRef } from "@kibo/schema";
+import type { Instance } from "@kibo/schema";
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@kibo/sdk/ui/dropdown-menu";
-import { ArrowUpCircle, FolderOpen, Settings2, Trash2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { configSchemaOf } from "../lib/config-form";
 import { errorMessage } from "../lib/error-message";
-import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
-import type { Flash } from "../lib/use-flash";
-import { ConfirmDialog, InstanceSettingsDialog, NotesDirDialog, TrustDialog } from "../shell/lazy-dialogs";
-import { useComponents } from "../state/use-components";
+import { ConfirmDialog, InstanceSettingsDialog } from "../shell/lazy-dialogs";
 
 export type InstanceMenuContentProps = {
   projectId: string;
   instance: Instance;
   title: string;
-  flash: Flash["flash"];
   lead?: ReactNode;
   side?: "bottom" | "right";
 };
-type PendingUpdate = { target: TrustTarget; to: string };
-
-function higherVersions(summary: ComponentSummary | undefined, id: string, version: string) {
-  if (isBuiltinId(id) || !summary) return [];
-  return summary.versions
-    .filter((v) => compareSemver(v.version, version) > 0)
-    .sort((a, b) => compareSemver(b.version, a.version));
-}
 
 export function InstanceMenuContent({
   projectId,
   instance,
   title,
-  flash,
   lead,
   side = "bottom",
 }: InstanceMenuContentProps) {
   const i = fr.instance;
-  const { id, version } = splitRef(instance.component);
-  const { components } = useComponents();
-  const [notesDir, setNotesDir] = useState(false);
-  const [pending, setPending] = useState<PendingUpdate | null>(null);
   const [settings, setSettings] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const schema = configSchemaOf(instance, components);
-  const summary = components?.find((c) => c.id === id && !c.builtin);
-  const higher = higherVersions(summary, id, version);
-  const isNotes = id === "notes";
+  const schema = configSchemaOf(instance);
 
-  const update = async (to: string) => {
-    try {
-      await client.rpc({ method: "updateInstance", projectId, instanceId: instance.id, to });
-      flash(i.updated(to));
-    } catch (e) {
-      console.error(e);
-      flash(i.updateFailed, "error");
-    }
-  };
   const remove = async () => {
     await client.rpc({
       method: "command",
@@ -64,42 +35,24 @@ export function InstanceMenuContent({
       command: { method: "removeInstance", instanceId: instance.id },
     });
   };
-  const pick = (v: ComponentSummary["versions"][number]) => {
-    const target = !v.active && summary ? trustTargetOf(id, summary.title, v) : null;
-    if (target) setPending({ target, to: v.version });
-    else void update(v.version);
-  };
 
   return (
     <>
       <DropdownMenuContent align={side === "right" ? "start" : "end"} side={side}>
         {lead}
         {lead && <DropdownMenuSeparator />}
-        {higher.map((v) => (
-          <DropdownMenuItem key={v.version} onSelect={() => pick(v)}>
-            <ArrowUpCircle aria-hidden />
-            {i.updateTo(v.version)}
-          </DropdownMenuItem>
-        ))}
-        {isNotes && (
-          <DropdownMenuItem onSelect={() => setNotesDir(true)}>
-            <FolderOpen aria-hidden />
-            {i.notesDir}
-          </DropdownMenuItem>
-        )}
         {schema && (
           <DropdownMenuItem onSelect={() => setSettings(true)}>
             <Settings2 aria-hidden />
             {i.settings}
           </DropdownMenuItem>
         )}
-        {(higher.length > 0 || isNotes || schema) && <DropdownMenuSeparator />}
+        {schema && <DropdownMenuSeparator />}
         <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(true)}>
           <Trash2 aria-hidden />
           {i.remove}
         </DropdownMenuItem>
       </DropdownMenuContent>
-      {notesDir && <NotesDirDialog projectId={projectId} open onOpenChange={setNotesDir} />}
       {settings && schema && (
         <InstanceSettingsDialog
           projectId={projectId}
@@ -119,18 +72,6 @@ export function InstanceMenuContent({
           cancelLabel={fr.common.cancel}
           onConfirm={remove}
           describeError={errorMessage}
-        />
-      )}
-      {pending && (
-        <TrustDialog
-          target={pending.target}
-          mode="approve"
-          open
-          onOpenChange={(o) => !o && setPending(null)}
-          onApproved={() => {
-            setPending(null);
-            void update(pending.to);
-          }}
         />
       )}
     </>

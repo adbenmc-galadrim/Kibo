@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import type { ComponentSummary, Instance, RpcRequest } from "@kibo/schema";
+import type { Instance } from "@kibo/schema";
 import { createSpotlightStore, type SpotlightApi } from "@kibo/sdk";
 import { render } from "@testing-library/react";
 import { apiMock } from "../api-mock";
@@ -8,8 +8,7 @@ import type { InstanceApis } from "../lib/instance-capabilities";
 mock.module("../api", () =>
   apiMock({
     client: {
-      rpc: (req: RpcRequest) =>
-        req.method === "listComponents" ? new Promise(() => undefined) : Promise.resolve([]),
+      rpc: () => Promise.resolve([]),
       subscribe: () => () => undefined,
       subscribeTopic: () => () => undefined,
       subscribeEvents: () => () => undefined,
@@ -23,12 +22,10 @@ const { usePageSpotlight } = await import("./use-page-intent");
 const { createSelectionBus } = await import("./selection-bus");
 const { useInstanceApis } = await import("./use-instance-apis");
 
-const components: ComponentSummary[] = [];
 const state = {
   focusedId: null,
   dispatch: () => undefined,
   bus: createSelectionBus(),
-  components,
   spotlight: createSpotlightStore(),
 };
 const NO_REF = { current: null };
@@ -69,7 +66,7 @@ const widget = (component: string): Instance => ({
   config: {},
   componentHash: null,
 });
-const ready = new Map<string, InstanceApis | null>();
+const ready = new Map<string, InstanceApis>();
 
 function Ready({ instance }: { instance: Instance }) {
   ready.set(instance.component, useInstanceApis("p1", instance, NO_REF));
@@ -80,15 +77,15 @@ function Page({ children }: { children: React.ReactNode }) {
   return <PageContext.Provider value={usePageState([])}>{children}</PageContext.Provider>;
 }
 
-test("a built-in does not wait for the component list, a third party does", () => {
+test("a built-in and a retired component both get their apis at once, the retired one without capabilities", () => {
   const view = render(
     <Page>
-      <Ready instance={widget("kanban@1.0.0")} />
-      <Ready instance={widget("pad@0.2.0")} />
+      <Ready instance={widget("mockup@1.0.0")} />
+      <Ready instance={widget("notes@1.0.0")} />
     </Page>,
   );
-  expect(ready.get("kanban@1.0.0")?.capabilities).toEqual([]);
-  expect(ready.get("pad@0.2.0")).toBeNull();
+  expect(ready.get("mockup@1.0.0")?.capabilities).toEqual(["design", "fullscreen"]);
+  expect(ready.get("notes@1.0.0")?.capabilities).toEqual([]);
   view.unmount();
 });
 
@@ -103,7 +100,7 @@ test("the page aims its instances at the question of its address", () => {
     );
   }
   function SpotProbe() {
-    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF)?.spotlight);
+    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF).spotlight);
     return null;
   }
   const view = render(<Spot question="q1" />);
@@ -127,7 +124,7 @@ test("an intent of the page reaches its instances, and stays while the page is s
     );
   }
   function SpotProbe() {
-    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF)?.spotlight);
+    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF).spotlight);
     return null;
   }
   const view = render(<Spot />);

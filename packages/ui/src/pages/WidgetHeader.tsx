@@ -13,6 +13,7 @@ import { instanceFormat } from "../lib/format-grid";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import { componentIcon } from "../registry";
 import { SourceHeader } from "../shell/lazy-screens";
+import { canEdit } from "../state/access";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu } from "./InstanceMenu";
 
@@ -59,21 +60,20 @@ export function WidgetBody({
   viewer,
   apis,
   containerRef,
-}: BodyProps & { apis: InstanceApis | null; containerRef?: RefObject<HTMLDivElement | null> }) {
+}: BodyProps & { apis: InstanceApis; containerRef?: RefObject<HTMLDivElement | null> }) {
   return (
     <>
       {readSource(instance.config) && <SourceHeader project={project} instance={instance} />}
       <div ref={containerRef} className="@container min-h-0 flex-1 overflow-auto">
-        {apis && (
-          <InstanceFrame
-            projectId={project.meta.id}
-            instance={instance}
-            viewer={viewer}
-            surface="widget"
-            format={instanceFormat({ ...instance, layout }, page)}
-            apis={apis}
-          />
-        )}
+        <InstanceFrame
+          projectId={project.meta.id}
+          instance={instance}
+          viewer={viewer}
+          surface="widget"
+          format={instanceFormat({ ...instance, layout }, page)}
+          apis={apis}
+          editable={canEdit(project)}
+        />
       </div>
     </>
   );
