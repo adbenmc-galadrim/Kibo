@@ -92,7 +92,7 @@ export async function runTicketsCommand(
   const [sub, ident, ...rest] = positional;
   if (sub === "step") return ticketsStep(positional.slice(1), flags, io, connect);
   if (sub === "session") return ticketsSession(positional.slice(1), flags, io, connect);
-  const project = flags.project === true ? undefined : flags.project;
+  const project = typeof flags.project === "string" ? flags.project : undefined;
   if (isUsage(sub, ident, flags)) {
     io.err(frTickets.usage);
     return 2;

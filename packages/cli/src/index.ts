@@ -1,7 +1,7 @@
 import { join, resolve } from "node:path";
 import { resolveToolchain, type Toolchain } from "@kibo/devkit";
 import { KiboError, Template } from "@kibo/schema";
-import { type Parsed, parseArgs } from "./args";
+import { type FlagValue, type Parsed, parseArgs } from "./args";
 import { startDevServer } from "./commands/dev";
 import { type MarketCliDeps, runMarketCommand } from "./commands/market";
 import { type ComponentKind, newCommand } from "./commands/new";
@@ -32,7 +32,7 @@ export function cliIo(): CliIo {
 const kindOf = (flags: Parsed["flags"]): ComponentKind =>
   flags.kind === "view" || flags.kind === "both" ? flags.kind : "widget";
 
-function templateOf(flag: string | true | undefined): Template {
+function templateOf(flag: FlagValue | undefined): Template {
   if (flag === undefined) return "blank";
   const parsed = Template.safeParse(flag);
   if (!parsed.success) throw new KiboError("INVALID_INPUT", `unknown template ${String(flag)}`);
