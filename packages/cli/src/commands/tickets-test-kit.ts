@@ -141,6 +141,7 @@ type Declare = Extract<RpcRequest, { method: "declareTicketRef" }>;
 export type FakeDaemonOptions = {
   projects?: ProjectMeta[];
   declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
+  raw?(body: Record<string, unknown>): unknown;
 };
 
 const unchanged = (_req: Declare, ticket: TicketView): DeclareTicketRefResult => ({
@@ -154,6 +155,8 @@ export function fakeDaemon(
   options: FakeDaemonOptions = {},
 ) {
   const calls: RpcRequest[] = [];
+  const raws: Record<string, unknown>[] = [];
+  let closes = 0;
   const declared = options.declared ?? unchanged;
   const client: DaemonClient = {
     async rpc(req) {
@@ -171,7 +174,14 @@ export function fakeDaemon(
       }
       throw new Error(`unexpected ${sent.method}`);
     },
-    async close() {},
+    async raw(body) {
+      raws.push(body);
+      if (!options.raw) throw new Error("unexpected raw");
+      return options.raw(body);
+    },
+    async close() {
+      closes += 1;
+    },
   };
   const out: string[] = [];
   const err: string[] = [];
@@ -179,5 +189,6 @@ export function fakeDaemon(
   const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
   const declarations = () =>
     calls.flatMap((c) => (c.method === "declareTicketRef" ? [{ ticketKey: c.ticketKey, ref: c.ref }] : []));
-  return { client, calls, commands, declarations, out, err, io, connect: async () => client };
+  const closed = () => closes;
+  return { client, calls, raws, closed, commands, declarations, out, err, io, connect: async () => client };
 }

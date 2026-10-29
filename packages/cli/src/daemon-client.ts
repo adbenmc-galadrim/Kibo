@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export type DaemonClient = {
   rpc<M extends RpcRequest["method"]>(req: Extract<RpcRequest, { method: M }>): Promise<RpcResult[M]>;
+  raw(body: Record<string, unknown>): Promise<unknown>;
   close(): Promise<void>;
 };
 
@@ -79,7 +80,7 @@ export async function connectDaemon(home: string): Promise<DaemonClient> {
     throw new KiboError("DAEMON_NOT_RUNNING", "daemon not running");
   const base = `http://127.0.0.1:${port}`;
   const cookie = await pair(base, readFileSync(tokenFile, "utf8").trim());
-  const rpc: DaemonClient["rpc"] = async (req) => {
+  const raw: DaemonClient["raw"] = async (req) => {
     const res = await fetch(`${base}/api/rpc`, {
       method: "POST",
       headers: { origin: base, "content-type": "application/json", cookie },
@@ -88,10 +89,12 @@ export async function connectDaemon(home: string): Promise<DaemonClient> {
     const body: unknown = await res.json();
     if (typeof body !== "object" || body === null) throw new KiboError("INTERNAL", "invalid daemon response");
     if (Reflect.get(body, "ok") !== true) throw errorOf(body);
-    return Reflect.get(body, "result") as never;
+    return Reflect.get(body, "result");
   };
+  const rpc: DaemonClient["rpc"] = async (req) => (await raw(req)) as never;
   return {
     rpc,
+    raw,
     async close() {
       const own = (await rpc({ method: "listSessions" })).find((s) => s.current);
       if (own) await rpc({ method: "revokeSession", id: own.id });

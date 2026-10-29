@@ -24,6 +24,8 @@ const SPRINTS_USAGE = ["  kibo sprints list --project <clé|nom|id> [--json]"];
 
 const PROJECTS_USAGE = ["  kibo projects list [--json]", "  kibo projects get <clé|nom|id> [--json]"];
 
+const RPC_USAGE = ["  kibo rpc '<json>' | @fichier | @-"];
+
 const REVIEW_LABELS: Record<PrReview, string | null> = {
   none: null,
   review_required: null,
@@ -159,6 +161,14 @@ export const frProjects = {
     `Livraison : ${d ? `agent ${d.agent ?? "aucun"} · dossier ${d.root ?? "aucun"}` : "non configurée"}`,
 };
 
+export const frRpc = {
+  usage: ["Usage :", ...RPC_USAGE, "", "Envoie la requête telle quelle à POST /api/rpc.", DAEMON_HELP].join(
+    "\n",
+  ),
+  unreadable: (reason: string) => `JSON illisible : ${reason}`,
+  noMethod: "La requête doit être un objet JSON avec une méthode (« method »).",
+};
+
 export const fr = {
   usage: [
     "Usage :",
@@ -171,6 +181,7 @@ export const fr = {
     ...TICKETS_USAGE,
     ...SPRINTS_USAGE,
     ...PROJECTS_USAGE,
+    ...RPC_USAGE,
     "",
     DAEMON_HELP,
   ].join("\n"),

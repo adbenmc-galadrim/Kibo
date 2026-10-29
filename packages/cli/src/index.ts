@@ -12,12 +12,13 @@ import {
   type PublishStrategy,
   publishCommand,
 } from "./commands/publish";
+import { rpcCommand } from "./commands/rpc";
 import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
 import { DaemonError, isUnknownMethod } from "./daemon-client";
 import { explainError } from "./error-text";
-import { fr, frTickets } from "./fr";
+import { fr, frRpc, frTickets } from "./fr";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
 
@@ -117,7 +118,7 @@ const withHome = (io: CliIo, flags: Parsed["flags"]): CliIo =>
   typeof flags.home === "string" ? { ...io, home: resolve(flags.home) } : io;
 
 function help(scope: string | undefined, io: CliIo): number {
-  io.out(scope === "tickets" ? frTickets.usage : fr.usage);
+  io.out(scope === "tickets" ? frTickets.usage : scope === "rpc" ? frRpc.usage : fr.usage);
   return 0;
 }
 
@@ -133,6 +134,7 @@ export async function runCli(argv: string[], given: CliIo): Promise<number> {
     return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io), label);
   if (scope === "sprints")
     return reportingErrors(io, () => sprintsCommand(positional.slice(1), flags, io), label);
+  if (scope === "rpc") return reportingErrors(io, () => rpcCommand(positional, flags, io), label);
   if (scope === "projects")
     return reportingErrors(io, () => projectsCommand(positional.slice(1), flags, io), label);
   if (scope !== "component" || !command || !target) {
