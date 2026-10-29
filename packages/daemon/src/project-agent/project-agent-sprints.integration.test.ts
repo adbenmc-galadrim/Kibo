@@ -70,7 +70,9 @@ test("invalid sprint actions are refused by the tool, then the corrected batch c
   const [call] = stack.calls(run.sessionId);
   expect(call?.mcp.map((c) => c.isError)).toEqual([true, false]);
   const refusal = call?.mcp[0]?.text ?? "";
-  expect(refusal).toContain("#1 setSprint : sprint set on the root ticket");
+  expect(refusal).toContain(
+    "#1 setSprint : le sprint d'une étape vient de sa fonctionnalité : pose S43 sur F1",
+  );
   expect(refusal).toContain("#2 setSprint : sprint inconnu « S99 »");
   expect(refusal).toContain("#3 createSprint : code de sprint déjà pris « S42 »");
   const [batch] = (await viewOf(stack.rpc, project.id)).batches;

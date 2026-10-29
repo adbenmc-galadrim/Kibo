@@ -100,7 +100,9 @@ describe("sprint commands", () => {
     const f5 = ticket(d, "Photos");
     const step = ticket(d, "Envoi", f5.id);
     expect(assign(d, f5.id, s42.id).sprintId).toBe(s42.id);
-    expect(() => assign(d, step.id, s42.id)).toThrow("sprint set on the root ticket");
+    expect(() => assign(d, step.id, s42.id)).toThrow(
+      "a step inherits the sprint of its feature: set it on F1",
+    );
     expect(() => assign(d, step.id, s42.id)).toThrow("INVALID_INPUT");
     expect(() => assign(d, f5.id, "unknown")).toThrow("NOT_FOUND");
     expect(assign(d, f5.id, null).sprintId).toBeNull();
