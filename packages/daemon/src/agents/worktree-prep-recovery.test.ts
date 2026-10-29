@@ -2,9 +2,9 @@ import { afterEach, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { type GitBranchRef, WORKTREE_DEFAULTS } from "@kibo/schema";
-import { prepareWorktree, runShell, type WorktreeInput } from "../agents/worktree-prep";
+import { runGit } from "../runs/workspace-prep";
 import { cleanupTmp, git, repo, tmp } from "../testing/git-test-kit";
-import { runGit } from "./workspace-prep";
+import { prepareWorktree, runShell, type WorktreeInput } from "./worktree-prep";
 
 afterEach(cleanupTmp);
 
