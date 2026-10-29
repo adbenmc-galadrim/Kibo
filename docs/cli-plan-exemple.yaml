@@ -1,0 +1,92 @@
+# Exemple de plan pour `kibo plan apply` (projet fictif « Silo »).
+#
+#   kibo plan apply docs/cli-plan-exemple.yaml --dry-run --project SILO
+#   kibo plan apply docs/cli-plan-exemple.yaml --project SILO
+#
+# Le plan est validé en entier avant toute écriture : une seule erreur et rien
+# n'est écrit. Il est ensuite appliqué dans l'ordre et s'arrête à la première
+# action qui échoue ; la sortie dit alors ce qui a déjà été créé (new:n → clé).
+#
+# `id` et `why` sont facultatifs : sans `id`, chaque action prend sa position
+# (1, 2, 3…). Donnez un `id` à toutes les actions, ou à aucune.
+#
+# `new:<n>` désigne un ticket créé plus haut dans le même fichier (champ `ref`
+# de `createTicket`). Pour un ticket qui existe déjà, donnez sa clé (SILO-12).
+
+summary: Tournée et dépôt des relevés
+
+actions:
+  # Un sprint se crée avant de pouvoir être posé.
+  - type: createSprint
+    code: S2
+    name: Tournée
+    start: "2026-11-16"
+    end: "2026-11-27"
+
+  # Une fonctionnalité est un ticket racine : `feature: true`, sans `parent`.
+  # Elle reçoit la prochaine clé courte libre (F1, F2…).
+  - type: createTicket
+    ref: new:1
+    feature: true
+    title: Tournée et dépôt
+    why: Regrouper la collecte terrain et le dépôt des relevés
+
+  # Les étapes sont les enfants de la fonctionnalité (`parent`).
+  # Elles reçoivent la clé suivante du projet (SILO-<n>).
+  - type: createTicket
+    ref: new:2
+    parent: new:1
+    title: Préparer la tournée
+    labels: [area:web]
+
+  - type: createTicket
+    ref: new:3
+    parent: new:1
+    title: Déposer les relevés
+    labels: [area:api]
+
+  # Une étape facultative se marque après coup, hors plan :
+  #   kibo tickets create "…" --feature F1 --optional
+  # ou, pour une étape déjà créée, la commande `setTicketOptional` (kibo rpc).
+  - type: createTicket
+    ref: new:4
+    parent: new:1
+    title: Contrôler les relevés déposés
+
+  # Sens des liens : `from` bloque `to`.
+  # Ici, « Préparer la tournée » (new:2) bloque « Déposer les relevés » (new:3) :
+  # new:3 attend new:2, et new:2 apparaît dans les dépendances (deps) de new:3.
+  - type: link
+    from: new:2
+    to: new:3
+    kind: blocks
+
+  # « Déposer les relevés » (new:3) bloque « Contrôler les relevés déposés » (new:4).
+  - type: link
+    from: new:3
+    to: new:4
+    kind: blocks
+
+  # Le sprint se pose sur la fonctionnalité ; ses étapes en héritent.
+  # Le poser sur une étape est refusé.
+  - type: setSprint
+    ticket: new:1
+    sprint: S2
+
+  # Une question sur une étape, avec ses choix.
+  - type: createQuestion
+    ticket: new:3
+    title: Dépôt en un seul envoi ou par lot ?
+    options:
+      - Un seul envoi
+      - Par lot de 50
+    provisional: Un seul envoi
+
+  # `updateTicket` remplace toute la description ; un bloc `|` garde les retours à la ligne.
+  - type: updateTicket
+    ticket: new:3
+    description: |
+      Déposer les relevés de la tournée au service.
+
+      - un fichier par tournée ;
+      - accusé de réception conservé.

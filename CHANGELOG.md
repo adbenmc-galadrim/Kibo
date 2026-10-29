@@ -4,7 +4,11 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 ## Non publié
 
--
+- CLI : `kibo` écrit enfin : `features create`, `tickets create|update|move|link|unlink`, `sprints create|update|assign`, `questions list|add|answer`. Les textes se lisent dans un fichier (`@fichier`) ou sur l'entrée standard (`@-`) ; `--append` et `--prepend` complètent une description sans la réécrire à la main.
+- CLI : `kibo plan apply <fichier>` applique d'un bloc un plan YAML ou JSON (fonctionnalités, étapes, dépendances, sprints, questions, références `new:<n>`) ; `--dry-run` montre ce qui sera fait et les clés prévues, sans rien écrire. Un plan invalide n'écrit rien ; une erreur en cours de route arrête tout et dit ce qui a été créé.
+- CLI : `kibo plan export` écrit le plan du projet en Markdown ; `kibo tickets list` filtre par fonctionnalité (`--feature`) et par étiquette (`--label`) et choisit ses colonnes (`--fields`).
+- CLI : `kibo rpc '<json>'` envoie une requête brute à l'API du démon, appairage compris.
+- CLI : les erreurs disent quoi faire (« Le sprint d'une étape vient de sa fonctionnalité : posez S1 sur F1. »), et la page `docs/cli.md` documente les commandes et l'API (appairage, `command`, sens des liens).
 
 ## 0.31.0-alpha.7 — 2026-10-27
 
