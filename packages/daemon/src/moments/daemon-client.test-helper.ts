@@ -82,7 +82,6 @@ export async function startTestDaemon(o: TestDaemonOptions): Promise<Client> {
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
-    ticketExecution: "allowed",
     sampler: () => ({ cpu: 5, ram: 5 }),
     transcriptRoot: (o.transcriptRoot ?? ((h) => join(h, "fake")))(home),
     agentEnv: {

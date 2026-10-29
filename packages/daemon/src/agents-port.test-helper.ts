@@ -23,9 +23,6 @@ export function fakeAgentsPort(runs: RunView[]): FakeAgentsPort {
   };
   const listeners = new Set<(run: RunView) => void>();
   return {
-    ticketExecution: () => "allowed",
-    assign: unused,
-    preview: unused,
     answer: unused,
     cancel: unused,
     move: unused,

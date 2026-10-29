@@ -123,6 +123,5 @@ test("a reader of a shared project can neither see, message, reset nor decide th
   reopened.close();
   const snapshot = call(d(1).service, { method: "getProject", projectId });
   expect(snapshot.tickets.find((t) => t.id === ticket.id)?.statusId).toBe("todo");
-  expect(agents.assigned).toEqual([]);
   expect(agents.cancelled).toEqual([]);
 });

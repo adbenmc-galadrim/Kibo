@@ -21,7 +21,7 @@ import {
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { deliverAnswers } from "./agents/question-delivery";
-import { type AgentQuestions, type AgentsPort, deliveryDeps, handleAgentRequest } from "./agents-rpc";
+import { type AgentQuestions, type AgentsPort, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
 import { type Clock, createClock } from "./clock";
 import { type CommandHub, createCommandPath } from "./command-path";
@@ -259,10 +259,10 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     docs,
     icons,
     agentData,
-    deliverAnswers(projectId, ticketId) {
+    deliverAnswers(projectId) {
       assertNotInboxForAgents(projectId);
       questions.assertWritable(projectId);
-      return deliverAnswers(deliveryDeps(agentsReady(), questions), projectId, ticketId);
+      return deliverAnswers();
     },
     attachAgents(port) {
       agents = port;

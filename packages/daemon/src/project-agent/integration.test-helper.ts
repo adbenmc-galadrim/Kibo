@@ -97,7 +97,7 @@ async function boot(
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
-    ticketExecution: "allowed",
+    testAgentExecution: "shown",
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
     transcriptRoot: join(home, "fake"),

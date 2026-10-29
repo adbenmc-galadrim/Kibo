@@ -1,6 +1,5 @@
 import { homedir } from "node:os";
 import { ticketRuns } from "@kibo/schema";
-import { allowsTicketExecution } from "./agents/execution-removed";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
@@ -132,8 +131,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
     signals: signals.service,
-    agentExecution: () =>
-      allowsTicketExecution(opts.ticketExecution) ? "shown" : tracking.appSettings.get().agentExecution,
+    agentExecution: () => opts.testAgentExecution ?? tracking.appSettings.get().agentExecution,
     events: tracking.sink,
   });
   closers.push(() => projectAgent.stop());
@@ -261,10 +259,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       baseUrl: () => server.url,
       port: server.port,
       projectTurns: projectAgent.agent.turns,
-      lifecycle: delivery.lifecycle({
-        ...overlaps.lifecycle(visibility.lifecycle),
-        turnPrefix: overlaps.prefixer,
-      }),
+      lifecycle: delivery.lifecycle(overlaps.lifecycle(visibility.lifecycle)),
       locks: delivery.locks,
       ready: (orchestrator) => {
         agents = orchestrator;

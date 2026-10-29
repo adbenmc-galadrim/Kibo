@@ -36,55 +36,6 @@ const write: HookPayload = {
   stopHookActive: false,
 };
 
-test("a demo guard that cannot be built denies the call and is logged", () => {
-  const home = mkdtempSync(join(tmpdir(), "kibo-sink-"));
-  dirs.push(home);
-  const store = openRunStore(home);
-  const errors = spyOn(console, "error").mockImplementation(() => {});
-  try {
-    const registry = openRunRegistry(store);
-    registry.create(
-      {
-        id: "r1",
-        projectId: "p1",
-        ticketId: "t1",
-        ticketKey: "DEMO-6",
-        ticketTitle: "Démo",
-        profileId: "system:demo",
-        profileName: "demo",
-        agentScope: "global",
-        projectKey: null,
-        sessionId: "s",
-        brief: "",
-        kind: "ticket",
-        resumedFrom: null,
-      },
-      0,
-    );
-    registry.apply("r1", { type: "admitted", lane: 1 });
-    const gone = join(home, "runs/r1/workspace");
-    registry.apply("r1", {
-      type: "spawned",
-      pid: 1,
-      resume: false,
-      workspace: "isolated",
-      cwd: gone,
-      guidelines: 0,
-    });
-    const sink = createHookSink({ live: new Map(), tasks: new Map(), registry, agentGuard: () => null });
-    expect(sink.receive("r1", write, { file_path: join(gone, "notes.md") })).toEqual({
-      kind: "permission",
-      decision: "deny",
-      reason: "guard error",
-      additionalContext: null,
-    });
-    expect(errors.mock.calls.some((c) => String(c[0]).includes("guard of run r1 failed"))).toBe(true);
-  } finally {
-    errors.mockRestore();
-    store.close();
-  }
-});
-
 const ASK: AskInput = {
   kind: "question",
   images: [],
@@ -204,37 +155,20 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
       );
     run("p", "project");
     run("t", "ticket");
-    const tasks = new Map([
-      [
-        "p",
-        {
-          cwd: home,
-          extraArgs: [],
-          env: {},
-          resume: false,
-          guard: () => ({ decision: "allow" as const, reason: "task" }),
-        },
-      ],
-    ]);
-    const sink = createHookSink({ live: new Map(), tasks, registry, agentGuard: () => null });
+    const sink = createHookSink({ live: new Map(), registry, agentGuard: () => null });
     const bash = { ...write, tool: "Bash" };
     expect(sink.receive("p", bash, { command: "ls" })).toMatchObject({
       kind: "permission",
       decision: "deny",
     });
-    expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "SILO-1" })).toEqual({
-      kind: "permission",
-      decision: "allow",
-      reason: "task",
-      additionalContext: null,
-    });
+    expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "SILO-1" })).toBeNull();
     expect(sink.receive("t", bash, { command: "ls" })).toBeNull();
   } finally {
     store.close();
   }
 });
 
-test("the agent guard joins the task, demo and project guards, the first deny wins and a throw denies", () => {
+test("the agent guard joins the project guard, the first deny wins and a throw denies", () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-sink-"));
   dirs.push(home);
   const store = openRunStore(home);
@@ -260,8 +194,6 @@ test("the agent guard joins the task, demo and project guards, the first deny wi
         },
         0,
       );
-    const allowAll = () => ({ decision: "allow" as const, reason: "task" });
-    const tasks = new Map([["r1", { cwd: home, extraArgs: [], env: {}, resume: false, guard: allowAll }]]);
     const rules = {
       settings: {
         ...DEFAULT_AGENT_SETTINGS,
@@ -271,7 +203,6 @@ test("the agent guard joins the task, demo and project guards, the first deny wi
     };
     const sink = createHookSink({
       live: new Map(),
-      tasks,
       registry,
       agentGuard: (run) => {
         if (run.id === "r2") throw new Error("catalog down");
@@ -283,7 +214,7 @@ test("the agent guard joins the task, demo and project guards, the first deny wi
       decision: "deny",
       reason: expect.stringContaining("skill non autorisé par Kibo"),
     });
-    expect(sink.receive("r1", skill, { skill: "brainstorming" })).toMatchObject({ decision: "allow" });
+    expect(sink.receive("r1", skill, { skill: "brainstorming" })).toBeNull();
     expect(sink.receive("r1", { ...write, tool: "Agent" }, { subagent_type: "seo" })).toMatchObject({
       decision: "deny",
       reason: expect.stringContaining("sous-agent non autorisé par Kibo"),

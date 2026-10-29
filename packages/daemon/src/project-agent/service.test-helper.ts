@@ -71,9 +71,6 @@ function fakeAgents(
     runs.set(id, next);
     return next;
   };
-  const refuse = (name: string) => () => {
-    throw new KiboError("INTERNAL", `${name} is not faked`);
-  };
   return {
     startProjectRun(input) {
       calls.push(`start:${input.projectName}:${input.text}`);
@@ -95,9 +92,6 @@ function fakeAgents(
       calls.push(`cancel:${runId}`);
       return update(runId, { state: "cancelled" });
     },
-    ticketExecution: () => "removed",
-    assign: refuse("assign"),
-    deliverAnswers: refuse("deliverAnswers"),
     log: (runId) => {
       known(runId);
       return logs.get(runId) ?? [];

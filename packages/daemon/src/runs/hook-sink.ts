@@ -6,9 +6,8 @@ import {
   type Question,
   type RunView,
 } from "@kibo/schema";
-import { demoRunGuard } from "../agents/demo-guard";
 import type { HookSink } from "./hook-route";
-import type { AgentDataPort, TaskSpec, ToolGuard } from "./orchestrator-types";
+import type { AgentDataPort, ToolGuard } from "./orchestrator-types";
 import { projectRunGuard } from "./project-guard";
 import type { LiveRun } from "./run-launch";
 import type { RunRegistry } from "./run-registry";
@@ -16,7 +15,6 @@ import { sameRunToken } from "./run-token";
 
 export type HookSinkDeps = {
   live: Map<string, LiveRun>;
-  tasks: Map<string, TaskSpec>;
   registry: RunRegistry;
   agentGuard: (run: RunView) => ToolGuard | null;
 };
@@ -30,7 +28,7 @@ function decide(runId: string, guard: ToolGuard, call: Parameters<ToolGuard>[0])
   }
 }
 
-export function createHookSink({ live, tasks, registry, agentGuard }: HookSinkDeps): HookSink {
+export function createHookSink({ live, registry, agentGuard }: HookSinkDeps): HookSink {
   return {
     verify(runId, token) {
       const entry = live.get(runId);
@@ -42,9 +40,7 @@ export function createHookSink({ live, tasks, registry, agentGuard }: HookSinkDe
       const call = { tool: payload.tool ?? "", input: toolInput ?? null };
       const run = registry.get(runId);
       const decisions = [
-        tasks.get(runId)?.guard,
         (c: Parameters<ToolGuard>[0]) => agentGuard(run)?.(c) ?? null,
-        (c: Parameters<ToolGuard>[0]) => demoRunGuard(run)?.(c) ?? null,
         projectRunGuard(run),
       ].flatMap((guard) => (guard ? [decide(runId, guard, call)] : []));
       const decision =

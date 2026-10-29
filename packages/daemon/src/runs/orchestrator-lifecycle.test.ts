@@ -1,14 +1,19 @@
 import { expect, spyOn, test } from "bun:test";
-import { cleanHarness, run, setup, waitUntil } from "./orchestrator.test-helper";
+import {
+  cleanHarness,
+  projectAgentAgent,
+  run,
+  setup,
+  startProject,
+  waitUntil,
+} from "./orchestrator.test-helper";
 
 cleanHarness();
-
-const assignT1 = (h: ReturnType<typeof setup>) =>
-  h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "global:opus", brief: "" });
 
 test("each turn tells the lifecycle when the process is spawned and after its exit is recorded", async () => {
   const seen: string[] = [];
   const h = setup({
+    profiles: [projectAgentAgent()],
     scenario: "question",
     lifecycle: {
       onSpawned: async (r) => {
@@ -19,7 +24,7 @@ test("each turn tells the lifecycle when the process is spawned and after its ex
       },
     },
   });
-  const first = assignT1(h);
+  const first = startProject(h);
   await waitUntil(() => seen.length === 2);
   expect(seen).toEqual(["spawned:running:true", "end:waiting_input:1"]);
   h.orch.answer(first.id, "Port dynamique");
@@ -34,8 +39,12 @@ test("a failing lifecycle is logged and never fails the run", async () => {
     const boom = async () => {
       throw new Error("git missing");
     };
-    const h = setup({ scenario: "done", lifecycle: { onSpawned: boom, onTurnEnd: boom } });
-    const first = assignT1(h);
+    const h = setup({
+      profiles: [projectAgentAgent()],
+      scenario: "done",
+      lifecycle: { onSpawned: boom, onTurnEnd: boom },
+    });
+    const first = startProject(h);
     await waitUntil(() => run(h, first.id).state === "done");
     await waitUntil(() => errors.mock.calls.length >= 2);
     expect(errors.mock.calls.map((c) => String(c[0]))).toEqual([
@@ -64,8 +73,13 @@ test("a run that fails before its process starts only tells the lifecycle it end
   const errors = spyOn(console, "error").mockImplementation(() => {});
   try {
     const { seen, lifecycle } = recording();
-    const h = setup({ scenario: "done", claudeBin: "/nonexistent/claude", lifecycle });
-    const first = assignT1(h);
+    const h = setup({
+      profiles: [projectAgentAgent()],
+      scenario: "done",
+      claudeBin: "/nonexistent/claude",
+      lifecycle,
+    });
+    const first = startProject(h);
     await waitUntil(() => seen.length === 1);
     expect(run(h, first.id).state).toBe("failed");
     expect(seen).toEqual(["ended:failed"]);
@@ -76,8 +90,8 @@ test("a run that fails before its process starts only tells the lifecycle it end
 
 test("a run cancelled while it prepares only tells the lifecycle it ended without a turn", async () => {
   const { seen, lifecycle } = recording();
-  const h = setup({ scenario: "done", lifecycle });
-  const first = assignT1(h);
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "done", lifecycle });
+  const first = startProject(h);
   expect(run(h, first.id).state).toBe("starting");
   h.orch.cancel(first.id);
   await waitUntil(() => seen.length === 1);
@@ -88,8 +102,8 @@ test("a run cancelled while it prepares only tells the lifecycle it ended withou
 
 test("a run cancelled between two turns tells the lifecycle it ended without a turn", async () => {
   const { seen, lifecycle } = recording();
-  const h = setup({ scenario: "question", lifecycle });
-  const first = assignT1(h);
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "question", lifecycle });
+  const first = startProject(h);
   await waitUntil(() => seen.length === 2);
   expect(run(h, first.id).state).toBe("waiting_input");
   h.orch.cancel(first.id);

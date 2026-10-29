@@ -7,27 +7,17 @@ import {
   compareSemver,
   grantedOf,
   type IntegrationStatus,
+  KiboError,
   NO_PERMISSIONS,
   type PublishUsage,
   type RunView,
 } from "@kibo/schema";
 import { tryKill } from "../process-group";
-import type { TaskInput, ToolGuard } from "../runs/orchestrator-types";
 import { BUILTIN_STARTERS } from "./builtin-starters";
-import type {
-  AgentRuns,
-  CatalogEntry,
-  Clock,
-  Exec,
-  Guard,
-  PublishedComponent,
-  RunEnd,
-  RunState,
-} from "./ports";
+import type { AgentRuns, CatalogEntry, Clock, Exec, PublishedComponent, RunEnd, RunState } from "./ports";
 
 export type RunLike = Pick<RunView, "id" | "state" | "sessionId" | "output" | "error">;
 export type RunSource = {
-  submit(task: TaskInput): { id: string };
   cancel(runId: string): unknown;
   state(): { runs: RunLike[] };
   onRunState(listener: (run: RunLike) => void): () => void;
@@ -88,13 +78,6 @@ export function createExecPort(env: Record<string, string | undefined>): Exec {
   };
 }
 
-const toolGuard =
-  (guard: Guard): ToolGuard =>
-  ({ tool, input }) => {
-    const d = guard({ toolName: tool, toolInput: input });
-    return d.decision === "allow" ? { decision: "allow", reason: "" } : d;
-  };
-
 const toEnd = (run: RunLike): RunEnd => ({
   state: run.state === "done" ? "done" : run.state === "cancelled" ? "cancelled" : "failed",
   sessionId: run.sessionId,
@@ -105,18 +88,9 @@ const toEnd = (run: RunLike): RunEnd => ({
 export function runsFromOrchestrator(o: RunSource): AgentRuns {
   const find = (runId: string) => o.state().runs.find((r) => r.id === runId) ?? null;
   return {
-    enqueue: (req) =>
-      o.submit({
-        profileId: req.profileId,
-        projectId: null,
-        title: req.label,
-        cwd: req.cwd,
-        prompt: req.prompt,
-        extraArgs: req.args,
-        env: req.env,
-        ...(req.resumeSessionId !== null && { resumeSessionId: req.resumeSessionId }),
-        guard: toolGuard(req.guard),
-      }).id,
+    enqueue() {
+      throw new KiboError("AGENT_EXECUTION_REMOVED", "component drafts: Kibo no longer runs ticket agents");
+    },
     cancel(runId) {
       const run = find(runId);
       if (run && !TERMINAL.has(run.state)) o.cancel(runId);

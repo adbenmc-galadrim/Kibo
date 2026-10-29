@@ -2,16 +2,10 @@ import { expect, test } from "bun:test";
 import { readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { orderQueue } from "@kibo/core/scheduler";
-import {
-  PROJECT_AGENT_DENY,
-  PROJECT_AGENT_MCP_TOOLS,
-  PROJECT_AGENT_REF,
-  TICKET_MCP_TOOLS,
-} from "@kibo/schema";
+import { PROJECT_AGENT_DENY, PROJECT_AGENT_MCP_TOOLS, PROJECT_AGENT_REF } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { createOrchestrator } from "./orchestrator";
 import {
-  assign,
   cleanHarness,
   type Harness,
   knownSkill,
@@ -32,7 +26,7 @@ const flagOf = (argv: string[], name: string) => argv[argv.indexOf(name) + 1] ??
 test("startProjectRun queues a project run at the head with its first message", () => {
   const h = setup({ scenario: "done", profiles });
   h.orch.setHost({ paused: true });
-  const ticket = assign(h, "t1");
+  const earlier = start(h, "Et l'autre projet ?", "p2");
   const r = start(h);
   expect(r).toMatchObject({
     kind: "project",
@@ -45,7 +39,7 @@ test("startProjectRun queues a project run at the head with its first message", 
     pendingAnswer: "Où en est-on ?",
     priority: true,
   });
-  expect(orderQueue(h.orch.state().runs).map((x) => x.id)).toEqual([r.id, ticket.id]);
+  expect(orderQueue(h.orch.state().runs).map((x) => x.id)).toEqual([r.id, earlier.id]);
 });
 
 test("each message is a turn: resume after done, pending during a turn, prompt composed by the port", async () => {
@@ -204,24 +198,6 @@ test("answer on a project run that is not the latest of its project is refused",
   await waitUntil(() => run(h, newer.id).state === "done");
   expect(() => h.orch.answer(older.id, "x")).toThrow("INVALID_TRANSITION");
   expect(h.orch.answer(newer.id, "y").pendingAnswer).toBe("y");
-}, 30_000);
-
-test("a ticket run gets no deny rules and a private MCP config limited to the ticket tools", async () => {
-  const h = setup({ scenario: "done", profiles });
-  const r = assign(h, "t1");
-  await waitUntil(() => run(h, r.id).state === "done");
-  const argv = fakeCalls(h.state, r.sessionId)[0]?.argv ?? [];
-  const settings = JSON.parse(flagOf(argv, "--settings"));
-  expect(settings.permissions.deny).toBeUndefined();
-  expect(settings.permissions.allow.slice(0, TICKET_MCP_TOOLS.length)).toEqual([...TICKET_MCP_TOOLS]);
-  const configFile = flagOf(argv, "--mcp-config");
-  expect(configFile).toBe(join(h.home, "runs", r.id, "mcp.json"));
-  expect(JSON.parse(readFileSync(configFile, "utf8")).mcpServers.kibo.env).toEqual({
-    KIBO_MCP_URL: `${h.url}/agent-mcp/${r.id}`,
-    KIBO_RUN_TOKEN: h.tokens.get(r.id),
-    KIBO_MCP_TOOLS: "ticket",
-  });
-  expect(argv.join(" ")).not.toContain(h.tokens.get(r.id) ?? "?");
 }, 30_000);
 
 test("cancelling a turn drops the waiting message and keeps the session for the next one", async () => {

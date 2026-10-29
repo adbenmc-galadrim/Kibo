@@ -106,7 +106,6 @@ const boot = (home: string, claude: string, scenario: string, env: Record<string
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
-    ticketExecution: "allowed",
     sampler: () => ({ cpu: 5, ram: 5 }),
     userHome: home,
     transcriptRoot: join(home, "fake"),

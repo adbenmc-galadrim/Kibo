@@ -31,7 +31,6 @@ function boot(events?: ProjectEventInput[]) {
     service: {
       docs: h.service.docs,
       agentData: h.service.agentData,
-      deliverAnswers: h.service.deliverAnswers,
       attachProjectAgent(port: { summaries(): ProjectAgentSummary[] }) {
         attached.push(`attach:${port.summaries().length}`);
         return () => attached.push("detach");

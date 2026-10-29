@@ -4,7 +4,6 @@ import type {
   AgentRef,
   AgentsState,
   AskInput,
-  AssignPreview,
   Domain,
   GuardDecision,
   Guideline,
@@ -21,7 +20,6 @@ import type {
   Skill,
   TicketView,
 } from "@kibo/schema";
-import type { TicketExecution } from "../agents/execution-removed";
 import type { CliFallbacks } from "./cli-flags";
 import type { HookLauncher } from "./hook-launcher";
 import type { HookSink } from "./hook-route";
@@ -64,16 +62,9 @@ export type AgentDataPort = {
   ): void;
 };
 
-export type DemoAgent = { bin: string; env(): Record<string, string> };
-
 export type ProjectTurn = { cwd: string; systemPrompt: string; prompt: string };
 export type ProjectTurnPort = { prepare(run: RunView, runDir: string): Promise<ProjectTurn> };
 export type ProjectRunInput = { projectId: string; projectName: string; text: string };
-
-export type TurnPrefixPort = {
-  briefSection(run: RunView): Promise<string | null>;
-  changedSection(run: RunView): Promise<string | null>;
-};
 
 export type OrchestratorOptions = {
   home: string;
@@ -81,7 +72,6 @@ export type OrchestratorOptions = {
   data: AgentDataPort;
   claudeBin: string | null;
   hook: HookLauncher;
-  demoAgent: DemoAgent;
   baseUrl: () => string;
   sampler: () => HostLoad;
   hostInfo: HostInfo;
@@ -96,40 +86,16 @@ export type OrchestratorOptions = {
   onSpawned?: (run: RunView) => Promise<void>;
   onTurnEnd?: (run: RunView) => Promise<void>;
   onEndedWithoutTurn?: (run: RunView) => Promise<void>;
-  turnPrefix?: TurnPrefixPort;
   locks?: () => MachineLock[];
-  ticketExecution?: TicketExecution;
 };
 
-export type AssignInput = {
-  projectId: string;
-  ticketId: string;
-  profileId: AgentRef;
-  brief: string;
-  fresh?: boolean;
-};
 export type ToolGuard = (call: {
   tool: string;
   input: Record<string, unknown> | null;
 }) => GuardDecision | null;
-export type TaskInput = {
-  profileId: AgentRef;
-  projectId: string | null;
-  title: string;
-  cwd: string;
-  prompt: string;
-  extraArgs?: string[];
-  env?: Record<string, string>;
-  resumeSessionId?: string;
-  guard?: ToolGuard;
-};
 
 export type Orchestrator = {
-  ticketExecution(): TicketExecution;
-  assign(input: AssignInput): RunView;
-  submit(task: TaskInput): RunView;
   startProjectRun(input: ProjectRunInput): RunView;
-  preview(input: Omit<AssignInput, "brief">): AssignPreview;
   answer(runId: string, text: string): RunView;
   cancel(runId: string): RunView;
   move(runId: string, index: number): void;
@@ -142,12 +108,4 @@ export type Orchestrator = {
   onChange(listener: () => void): () => void;
   onRunState(listener: (run: RunView) => void): () => void;
   stop(): Promise<void>;
-};
-
-export type TaskSpec = {
-  cwd: string;
-  extraArgs: string[];
-  env: Record<string, string>;
-  resume: boolean;
-  guard?: ToolGuard;
 };

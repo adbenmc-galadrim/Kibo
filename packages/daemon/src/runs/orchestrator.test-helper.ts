@@ -16,7 +16,7 @@ import {
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
-import { agentsPort, testAgent, testRef } from "./agents-port.test-helper";
+import { agentsPort, testAgent } from "./agents-port.test-helper";
 import { FAKE_CLAUDE, type FakeScenarioName, scenarioPath } from "./fake-claude-scenario";
 import { defaultHookLauncher } from "./hook-launcher";
 import { type HookSink, handleHook } from "./hook-route";
@@ -128,8 +128,6 @@ type Setup = {
   guidelines?: Guideline[];
   readOnly?: boolean;
   assignFails?: boolean;
-  demoProject?: boolean;
-  demoAgent?: OrchestratorOptions["demoAgent"];
   meta?: Partial<ProjectSnapshot["meta"]>;
   questions?: Question[];
   markFails?: boolean;
@@ -137,7 +135,6 @@ type Setup = {
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
   skills?: Skill[];
   locks?: OrchestratorOptions["locks"];
-  ticketExecution?: OrchestratorOptions["ticketExecution"];
   children?: Record<string, number>;
   externalRefs?: Record<string, TicketView["externalRefs"]>;
 };
@@ -188,7 +185,7 @@ export function setup(o: Setup): Harness {
     runDone: (_projectId, ticketId) => {
       done.push(ticketId);
     },
-    isDemoProject: () => o.demoProject ?? false,
+    isDemoProject: () => false,
     createQuestion: () => null,
     answerRunQuestion: () => null,
     runQuestions: () => [],
@@ -218,7 +215,6 @@ export function setup(o: Setup): Harness {
     data,
     claudeBin: o.claudeBin === undefined ? FAKE_CLAUDE : o.claudeBin,
     hook: defaultHookLauncher(),
-    demoAgent: o.demoAgent ?? { bin: FAKE_CLAUDE, env: () => ({}) },
     baseUrl: () => url,
     sampler: o.load ?? (() => ({ cpu: 10, ram: 20 })),
     hostInfo: { cores: 8, ramGb: 16 },
@@ -250,7 +246,6 @@ export function setup(o: Setup): Harness {
     ...o.lifecycle,
     cliFallbacks: o.cliFallbacks,
     locks: o.locks,
-    ticketExecution: o.ticketExecution ?? "allowed",
   };
   orch = createOrchestrator(options);
   current = {
@@ -319,5 +314,5 @@ export const run = (h: Harness, id: string): RunView => {
   return found;
 };
 
-export const assign = (h: Harness, ticketId: string, profileId = "opus", fresh = false) =>
-  h.orch.assign({ projectId: "p1", ticketId, profileId: testRef(profileId), brief: "", fresh });
+export const startProject = (h: Harness, projectId = "p1", text = "Où en est-on ?"): RunView =>
+  h.orch.startProjectRun({ projectId, projectName: "Silo", text });

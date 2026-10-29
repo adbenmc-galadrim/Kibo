@@ -1,16 +1,14 @@
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type AgentContext, launchFlags, skillAllowRule, subagentsJson } from "@kibo/core/agents/compose";
-import { type BriefInput, buildRunContext, buildSystemPrompt, type ContextFile } from "@kibo/core/context";
+import type { ContextFile } from "@kibo/core/context";
 import { rewriteSkillMentions } from "@kibo/core/skill-mentions";
 import {
   AGENT_BODY_MAX,
   type Agent,
   type AgentFile,
   type AgentRef,
-  type Guideline,
   KiboError,
-  type QuestionRecipient,
   type RunView,
   type Skill,
   type SkillsRule,
@@ -32,10 +30,7 @@ export type ComposedAgent = {
   skillReview: boolean;
 };
 
-export type TurnContent =
-  | { kind: "ticket"; brief: BriefInput; chain: Guideline[]; recipients: readonly QuestionRecipient[] }
-  | { kind: "task"; brief: string }
-  | { kind: "project"; systemPrompt: string; brief: string };
+export type TurnContent = { kind: "project"; systemPrompt: string; brief: string };
 
 export type PreparedTurn = {
   systemPromptFile: string;
@@ -99,32 +94,11 @@ export function skillRules(rule: SkillsRule, withArgs: boolean): string[] {
   return rule.ids.flatMap((id) => (withArgs ? [skillAllowRule(id), `Skill(${id} *)`] : [skillAllowRule(id)]));
 }
 
-function contextFiles(composed: ComposedAgent, content: TurnContent): ContextFile[] {
-  switch (content.kind) {
-    case "ticket":
-      return buildRunContext({
-        ...content.brief,
-        chain: content.chain,
-        agent: composed.context,
-        protocol: {
-          progress: true,
-          recipients: content.recipients,
-          signals: true,
-          skillReview: composed.skillReview,
-          parallel: true,
-        },
-      }).files;
-    case "task":
-      return [
-        { path: "CLAUDE.md", content: buildSystemPrompt([], composed.context) },
-        { path: "brief.md", content: content.brief },
-      ];
-    case "project":
-      return [
-        { path: "CLAUDE.md", content: content.systemPrompt },
-        { path: "brief.md", content: content.brief },
-      ];
-  }
+function contextFiles(content: TurnContent): ContextFile[] {
+  return [
+    { path: "CLAUDE.md", content: content.systemPrompt },
+    { path: "brief.md", content: content.brief },
+  ];
 }
 
 function inlineAgents(composed: ComposedAgent): string {
@@ -155,7 +129,7 @@ export function createTurnPreparer(deps: { data: AgentLookup; fallbacks: CliFall
     prepare(run: RunView, runDir: string, content: TurnContent): PreparedTurn {
       const composed = composeAgent(deps.data, run.profileId, run.projectId);
       const agents = fallbacks.agentsInline && composed.agentsJson !== null ? inlineAgents(composed) : null;
-      const files = contextFiles(composed, content);
+      const files = contextFiles(content);
       const { systemPromptFile, briefFile } = writeRunContext(runDir, files);
       const agentsFile = writeAgents(runDir, composed);
       const { flags } = composed;

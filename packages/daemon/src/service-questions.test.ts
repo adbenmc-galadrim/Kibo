@@ -5,14 +5,12 @@ import { join } from "node:path";
 import {
   type AgentsState,
   type AnswerInput,
-  answerPrompt,
   type ChangeMessage,
   type ProjectCommand,
   Question,
   type RunView,
   Ticket,
 } from "@kibo/schema";
-import type { TicketExecution } from "./agents/execution-removed";
 import type { AgentsPort } from "./agents-rpc";
 import { runView } from "./questions/questions.test-helper";
 import { call, createService } from "./service";
@@ -32,11 +30,7 @@ const ask = {
   images: [],
 };
 
-function fakeAgents(
-  runs: RunView[],
-  answers: [string, string][],
-  ticketExecution: TicketExecution,
-): AgentsPort {
+function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
   const unused = () => {
     throw new Error("not used");
   };
@@ -64,9 +58,6 @@ function fakeAgents(
     signals: [],
   });
   return {
-    ticketExecution: () => ticketExecution,
-    assign: unused,
-    preview: unused,
     cancel: unused,
     move: unused,
     setPriority: unused,
@@ -83,7 +74,7 @@ function fakeAgents(
   };
 }
 
-function setup(runState: RunView["state"], ticketExecution: TicketExecution = "allowed") {
+function setup(runState: RunView["state"]) {
   const dir = mkdtempSync(join(tmpdir(), "kibo-service-q-"));
   dirs.push(dir);
   const s = createService(openStore(dir), { user: "adam" });
@@ -104,7 +95,7 @@ function setup(runState: RunView["state"], ticketExecution: TicketExecution = "a
   const run = runView({ id: "r1", projectId: project.id, ticketId: ticket.id, state: runState });
   const answers: [string, string][] = [];
   const runs = [run];
-  s.attachAgents(fakeAgents(runs, answers, ticketExecution));
+  s.attachAgents(fakeAgents(runs, answers));
   const messages: ChangeMessage[] = [];
   s.onChange((m) => messages.push(m));
   const agentQuestion = (title: string, blocking: boolean) =>
@@ -171,34 +162,6 @@ test("answering the blocking question of a waiting run resumes nothing and leave
   expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredAt: null, deliveredRunId: null });
 });
 
-test("delivering the answers of a ticket sends one message to its session and marks them", () => {
-  const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("done");
-  const first = answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
-  const second = answer(agentQuestion("Garder les archives ?", false)?.id ?? "");
-  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
-    sent: 2,
-    runId: "r1",
-  });
-  expect(answers).toEqual([["r1", `${answerPrompt(first)}\n${answerPrompt(second)}`]]);
-  expect(snapshot().questions.every((q) => q.answer?.deliveredRunId === "r1")).toBe(true);
-  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({ sent: 0, runId: null });
-});
-
-test("an inherited run of the ticket shows the answers still to deliver and receives them", () => {
-  const { s, project, ticket, run, runs, answers, agentQuestion, answer, snapshot } = setup("done");
-  const answered = answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
-  runs.push({ ...run, id: "r2", seq: 2, sessionId: run.sessionId, resumedFrom: "r1", state: "done" });
-  expect(call(s, { method: "getAgents" }).questions).toEqual([
-    { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
-  ]);
-  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
-    sent: 1,
-    runId: "r2",
-  });
-  expect(answers).toEqual([["r2", answerPrompt(answered)]]);
-  expect(snapshot().questions[0]?.answer?.deliveredRunId).toBe("r2");
-});
-
 test("open questions stay on the run that asked them, answers to deliver follow the main run", () => {
   const { s, run, runs, agentQuestion, answer } = setup("done");
   agentQuestion("Garder les archives ?", false);
@@ -239,7 +202,7 @@ test("recipient commands update the snapshot and announce the project", () => {
 });
 
 test("without ticket execution a blocking answer is recorded, no run resumes and delivering is refused", () => {
-  const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("waiting_input", "removed");
+  const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("waiting_input");
   const q = agentQuestion("Quel port ?", true);
   const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
   expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });

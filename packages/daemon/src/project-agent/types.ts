@@ -4,7 +4,6 @@ import type {
   AgentMcpRequest,
   AgentSummary,
   Batch,
-  DeliveryResult,
   Guideline,
   KeyForecast,
   ProjectAgentTool,
@@ -33,8 +32,8 @@ export type ProjectAgentDataPort = {
 
 export type ProjectAgentAgentsPort = Pick<
   Orchestrator,
-  "startProjectRun" | "answer" | "cancel" | "assign" | "state" | "log" | "ticketExecution"
-> & { deliverAnswers(projectId: string, ticketId: string): DeliveryResult };
+  "startProjectRun" | "answer" | "cancel" | "state" | "log"
+>;
 
 export type ProjectAgentOps = {
   tool(run: RunView, tool: ProjectAgentTool, input: unknown): Promise<string>;

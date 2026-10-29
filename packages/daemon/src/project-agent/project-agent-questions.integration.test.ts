@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
-import type { ProjectSnapshot, Question, RunView } from "@kibo/schema";
+import type { ProjectSnapshot, Question } from "@kibo/schema";
 import {
-  agentsOf,
   decide,
   type Rpc,
   type Seeded,
@@ -12,7 +11,6 @@ import {
   stopDaemons,
   turnDone,
   viewOf,
-  waitFor,
 } from "./integration.test-helper";
 
 afterEach(stopDaemons);
@@ -20,7 +18,7 @@ afterEach(stopDaemons);
 const ADAM = { kind: "human", ref: "adam" } as const;
 
 async function seedQuestions(rpc: Rpc, seeded: Seeded): Promise<void> {
-  const { project, receiver, docs, livraison } = seeded;
+  const { project, receiver, docs } = seeded;
   const command = <T>(cmd: Record<string, unknown>) =>
     rpc<T>({ method: "command", projectId: project.id, command: cmd });
   const ask = (ticketId: string, title: string) =>
@@ -35,22 +33,6 @@ async function seedQuestions(rpc: Rpc, seeded: Seeded): Promise<void> {
     by: ADAM,
   });
   await answer(await ask(docs.id, "Client - Logo ?"));
-  const run = await rpc<RunView>({
-    method: "assignAgent",
-    projectId: project.id,
-    ticketId: docs.id,
-    profileId: livraison.ref,
-    brief: "",
-  });
-  await waitFor(async () =>
-    (await agentsOf(rpc)).runs.find((r) => r.id === run.id)?.state === "done" ? true : undefined,
-  );
-  const logo = await waitFor(async () =>
-    (await snapshotOf(rpc, project.id)).questions.find(
-      (q) => q.title === "Client - Logo ?" && q.answer?.deliveredAt,
-    ),
-  );
-  expect(logo.answer?.deliveredRunId).toBe(run.id);
 }
 
 const byTitle = (snapshot: ProjectSnapshot, title: string) =>
@@ -109,7 +91,7 @@ test("a question batch adds a recipient, asks, renames, reopens and archives, th
   expect(listed?.text).toContain("Client - Logo ?");
 }, 90_000);
 
-test("an answer marked as delivered no longer blocks an update, the batch is proposed at once", async () => {
+test("an answered question no longer blocks an update, the batch is proposed at once", async () => {
   const stack = await startStack();
   const seeded = await seedKibo(stack.rpc);
   const { project } = seeded;

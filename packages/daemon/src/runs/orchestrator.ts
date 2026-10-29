@@ -1,32 +1,33 @@
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
-import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
-import { type Agent, type HostLoad, HostSettings, isTerminal, KiboError, type RunView } from "@kibo/schema";
-import { activeRunOf } from "../agents/assign-preview";
-import { assertTicketExecution, isTicketRun } from "../agents/execution-removed";
-import { createAssigner } from "../agents/orchestrator-assign";
+import { headRank, orderQueue, planAdmissions, rankForMove } from "@kibo/core/scheduler";
+import {
+  type Agent,
+  type HostLoad,
+  HostSettings,
+  isProjectRun,
+  isTerminal,
+  KiboError,
+  type RunView,
+} from "@kibo/schema";
 import { createLocksWatch } from "../locks/locks-watch";
 import { agentGuardOf } from "./agent-guard";
 import { assertLeaf, childrenProbe } from "./children-probe";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
-import { guarded, knownAgent, startOfDay, ticketAgent } from "./orchestrator-support";
-import type { Orchestrator, OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
+import { guarded, knownAgent, startOfDay } from "./orchestrator-support";
+import type { Orchestrator, OrchestratorOptions, ToolGuard } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
 import { cancelRun } from "./run-cancel";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
-import type { NewRun } from "./run-store";
 import { reapOrphan } from "./runner";
 
 export type {
   AgentDataPort,
-  AssignInput,
-  DemoAgent,
   Orchestrator,
   OrchestratorOptions,
   ProjectTurnPort,
-  TaskInput,
   TicketContext,
   ToolGuard,
 } from "./orchestrator-types";
@@ -35,7 +36,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const now = opts.now ?? Date.now;
   const registry = openRunRegistry(opts.store, now);
   const live = new Map<string, LiveRun>();
-  const tasks = new Map<string, TaskSpec>();
   const guards = new Map<string, ToolGuard>();
   const listeners = new Set<() => void>();
   const stateListeners = new Set<(run: RunView) => void>();
@@ -63,7 +63,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
 
   const settings = () => hostSettingsOf(opts.store, opts.hostInfo);
   const agentOf = (ref: string): Agent => knownAgent(opts.data, ref);
-  const ticketAgentOf = (ref: string, projectId: string): Agent => ticketAgent(opts.data, ref, projectId);
   const schedulerAgents = () =>
     opts.data.agents(null).map((a) => ({ ref: a.ref, name: a.name, maxParallel: a.settings.maxParallel }));
   const plan = (runs: RunView[]) =>
@@ -78,7 +77,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const launchRun = createRunLauncher({
     opts,
     registry,
-    tasks,
     live,
     agentOf,
     guards,
@@ -105,7 +103,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const hostView = () => hostViewOf(opts.store, opts.hostInfo, registry.all(), load);
   const hooks = createHookSink({
     live,
-    tasks,
     registry,
     agentGuard: (run) => guards.get(run.id) ?? agentGuardOf(opts.data.agentOf(run.profileId)),
   });
@@ -135,26 +132,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     };
   };
 
-  const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
-
-  const { assign, submit, preview } = createAssigner({
-    opts,
-    registry,
-    tasks,
-    tick,
-    agentOf,
-    ticketAgentOf,
-    plan,
-    now,
-    enqueue,
-  });
-
-  const ticketExecution = opts.ticketExecution ?? "removed";
-
   return {
-    ticketExecution: () => ticketExecution,
-    assign,
-    submit,
     startProjectRun(input) {
       const id = createProjectRun(
         { registry, agentOf, assertWritable: opts.data.assertWritable, projectKey: opts.data.projectKey },
@@ -163,16 +141,14 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       tick();
       return registry.get(id);
     },
-    preview,
     answer(runId, text) {
       const target = registry.get(runId);
-      if (isTicketRun(target)) assertTicketExecution(ticketExecution, "answer");
+      if (!isProjectRun(target))
+        throw new KiboError("AGENT_EXECUTION_REMOVED", "answer: Kibo no longer runs ticket agents");
       if (isTerminal(target.state)) assertLeaf(childrenProbe(opts.data)(target));
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }
-      if (isTerminal(target.state) && target.ticketId && activeRunOf(registry.all(), target.ticketId))
-        throw new KiboError("CONFLICT", `ticket ${target.ticketKey} already has an active run`);
       registry.apply(runId, { type: "answered", text, rank: headRank(registry.all()) });
       tick();
       return registry.get(runId);

@@ -9,7 +9,6 @@ import {
   type IntegrationStatus,
   type RunState,
 } from "@kibo/schema";
-import type { TaskInput } from "../runs/orchestrator-types";
 import {
   catalogEntries,
   createExecPort,
@@ -74,7 +73,6 @@ describe("kibo shim", () => {
 function fakeOrchestrator() {
   const runs = new Map<string, RunLike>();
   const listeners = new Set<(r: RunLike) => void>();
-  const submitted: TaskInput[] = [];
   const cancelled: string[] = [];
   const view = (id: string, state: RunState, output: string | null = null): RunLike => ({
     id,
@@ -88,12 +86,6 @@ function fakeOrchestrator() {
     for (const l of [...listeners]) l(run);
   };
   const o = {
-    submit: (task: TaskInput) => {
-      submitted.push(task);
-      const run = view(`r${submitted.length}`, "queued");
-      runs.set(run.id, run);
-      return run;
-    },
     cancel: (id: string) => {
       cancelled.push(id);
       emit(view(id, "cancelled"));
@@ -106,7 +98,7 @@ function fakeOrchestrator() {
       };
     },
   };
-  return { o, submitted, cancelled, view, emit };
+  return { o, cancelled, view, emit };
 }
 
 describe("runsFromOrchestrator", () => {
@@ -118,44 +110,20 @@ describe("runsFromOrchestrator", () => {
     args: ["--tools", "Read"],
     env: { PATH: "/kibo/bin" },
     resumeSessionId: null,
-    guard: ({ toolName, toolInput }: { toolName: string; toolInput: unknown }) =>
-      toolName === "Write" || toolInput === null
-        ? ({ decision: "deny", reason: "reserved" } as const)
-        : ({ decision: "allow" } as const),
+    guard: () => ({ decision: "allow" }) as const,
   };
 
-  test("submits a ticketless task and translates the guard", () => {
-    const f = fakeOrchestrator();
-    const ports = runsFromOrchestrator(f.o);
-    expect(ports.enqueue(request)).toBe("r1");
-    const task = f.submitted[0];
-    expect(task).toMatchObject({
-      profileId: "system:generateur",
-      projectId: null,
-      title: "Composant Burndown",
-      extraArgs: ["--tools", "Read"],
-      env: { PATH: "/kibo/bin" },
-    });
-    expect(task && "resumeSessionId" in task).toBe(false);
-    expect(task?.guard?.({ tool: "Write", input: {} })).toEqual({ decision: "deny", reason: "reserved" });
-    expect(task?.guard?.({ tool: "Read", input: {} })).toEqual({ decision: "allow", reason: "" });
-    ports.enqueue({ ...request, resumeSessionId: "s1" });
-    expect(f.submitted[1]?.resumeSessionId).toBe("s1");
-  });
-
-  test("a null tool input reaches the guard as null", () => {
-    const f = fakeOrchestrator();
-    runsFromOrchestrator(f.o).enqueue(request);
-    expect(f.submitted[0]?.guard?.({ tool: "Read", input: null })).toEqual({
-      decision: "deny",
-      reason: "reserved",
-    });
+  test("a component draft is refused: Kibo no longer runs ticket agents", () => {
+    expect(() => runsFromOrchestrator(fakeOrchestrator().o).enqueue(request)).toThrow(
+      "AGENT_EXECUTION_REMOVED",
+    );
   });
 
   test("end events fire once, late subscribers get the result, output becomes stdout", () => {
     const f = fakeOrchestrator();
     const ports = runsFromOrchestrator(f.o);
-    const runId = ports.enqueue(request);
+    const runId = "r1";
+    f.emit(f.view(runId, "queued"));
     const ends: string[] = [];
     ports.onEnd(runId, (e) => ends.push(`${e.state}:${e.stdout}`));
     f.emit(f.view(runId, "running"));
@@ -170,28 +138,25 @@ describe("runsFromOrchestrator", () => {
   test("state listeners only hear their run", () => {
     const f = fakeOrchestrator();
     const ports = runsFromOrchestrator(f.o);
-    const runId = ports.enqueue(request);
-    const other = ports.enqueue(request);
     const states: RunState[] = [];
-    const off = ports.onState(runId, (s) => states.push(s));
-    f.emit(f.view(other, "running"));
-    f.emit(f.view(runId, "running"));
+    const off = ports.onState("r1", (s) => states.push(s));
+    f.emit(f.view("r2", "running"));
+    f.emit(f.view("r1", "running"));
     off();
-    f.emit(f.view(runId, "done"));
+    f.emit(f.view("r1", "done"));
     expect(states).toEqual(["running"]);
   });
 
   test("cancel of a finished or unknown run does nothing", () => {
     const f = fakeOrchestrator();
     const ports = runsFromOrchestrator(f.o);
-    const runId = ports.enqueue(request);
-    f.emit(f.view(runId, "done"));
-    ports.cancel(runId);
+    f.emit(f.view("r1", "done"));
+    ports.cancel("r1");
     ports.cancel("unknown");
     expect(f.cancelled).toEqual([]);
-    const live = ports.enqueue(request);
-    ports.cancel(live);
-    expect(f.cancelled).toEqual([live]);
+    f.emit(f.view("r2", "running"));
+    ports.cancel("r2");
+    expect(f.cancelled).toEqual(["r2"]);
   });
 });
 

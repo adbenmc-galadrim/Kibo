@@ -8,7 +8,6 @@ import {
   Question,
   Ticket,
 } from "@kibo/schema";
-import { assertTicketExecution } from "../agents/execution-removed";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export type Created = { ticketId: string; key: string };
@@ -28,12 +27,6 @@ function createdTicket(deps: ActionRunnerDeps, out: unknown): Created {
   const ticket = deps.data.project(deps.projectId).tickets.find((t) => t.id === id);
   if (!ticket) throw new KiboError("INTERNAL", `created ticket ${id} vanished`);
   return { ticketId: id, key: ticket.key ?? ticket.keyLabel };
-}
-
-function idOf(ids: TicketIds, ref: string): string {
-  const id = ids[ref];
-  if (id === undefined) throw new KiboError("INTERNAL", `unresolved ticket reference ${ref}`);
-  return id;
 }
 
 const readsFreshProject = (action: ProposedAction): boolean =>
@@ -89,24 +82,10 @@ export async function runAction(
 ): Promise<Created | null> {
   const { data, projectId } = deps;
   switch (action.type) {
-    case "assignAgent": {
-      const agents = agentsOf(deps, action);
-      assertTicketExecution(agents.ticketExecution(), "assignAgent");
-      agents.assign({
-        projectId,
-        ticketId: idOf(ids, action.ticket),
-        profileId: action.profileId,
-        brief: action.brief ?? "",
-        ...(action.fresh !== undefined && { fresh: action.fresh }),
-      });
-      return null;
-    }
-    case "deliverAnswers": {
-      const agents = agentsOf(deps, action);
-      assertTicketExecution(agents.ticketExecution(), "deliverAnswers");
-      agents.deliverAnswers(projectId, idOf(ids, action.ticket));
-      return null;
-    }
+    case "assignAgent":
+    case "deliverAnswers":
+      agentsOf(deps, action);
+      throw new KiboError("AGENT_EXECUTION_REMOVED", `${action.type}: Kibo no longer runs ticket agents`);
     case "cancelRun":
       agentsOf(deps, action).cancel(action.runId);
       return null;

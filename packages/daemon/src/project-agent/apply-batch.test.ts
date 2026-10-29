@@ -1,13 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  batchStatusOfResults,
-  KiboError,
-  MEMORY_NOTE_PATH,
-  type ProposedAction,
-  Question,
-} from "@kibo/schema";
+import { batchStatusOfResults, MEMORY_NOTE_PATH, type ProposedAction, Question } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import { applyBatch } from "./apply-batch";
 import {
@@ -54,7 +48,7 @@ describe("applyBatch", () => {
     expect(results[1]).toEqual({ actionId: 2, outcome: "applied", detail: null, created: null });
   });
 
-  test("applies a seven action batch in order, feeding new: references to the next actions", async () => {
+  test("applies a six action batch in order, feeding new: references to the next actions", async () => {
     const h = setup();
     const s = await seed(h);
     await h.data.writeNote(h.project.id, MEMORY_NOTE_PATH, "", "create");
@@ -63,15 +57,14 @@ describe("applyBatch", () => {
       { id: 2, why, type: "setStatus", ticket: "new:1", statusId: "in_progress" },
       { id: 3, why, type: "link", from: "SILO-1", to: "new:1", kind: "blocks" },
       { id: 4, why, type: "updateTicket", ticket: "SILO-2", title: "Deux renommé" },
-      { id: 5, why, type: "assignAgent", ticket: "new:1", profileId: "global:opus", brief: "Vas-y" },
       { id: 6, why, type: "answerQuestion", questionId: s.open.id, answer: { kind: "text", text: "8080" } },
       { id: 7, why, type: "updateNote", path: MEMORY_NOTE_PATH, content: "# Mémoire\n" },
     ]);
     const reads = h.projectReads();
     const results = await apply(h, batch);
     expect(h.projectReads() - reads).toBe(2);
-    expect(outcomes(results)).toEqual(Array(7).fill("applied"));
-    expect(results.map((r) => r.actionId)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(outcomes(results)).toEqual(Array(6).fill("applied"));
+    expect(results.map((r) => r.actionId)).toEqual([1, 2, 3, 4, 6, 7]);
     expect(batchStatusOfResults(results)).toBe("applied");
     const snap = h.data.project(h.project.id);
     const created = snap.tickets.find((t) => t.title === "Nouveau");
@@ -80,9 +73,6 @@ describe("applyBatch", () => {
     expect(created?.parentId).toBe(s.tickets[2]?.id ?? "");
     expect(snap.links.some((l) => l.from === s.tickets[0]?.id && l.to === created?.id)).toBe(true);
     expect(titleOf(h, "SILO-2")).toBe("Deux renommé");
-    expect(h.agents.assigned).toEqual([
-      { projectId: h.project.id, ticketId: created?.id ?? "", profileId: "global:opus", brief: "Vas-y" },
-    ]);
     const answered = snap.questions.find((q) => q.id === s.open.id);
     expect(answered?.answer?.by).toEqual(HUMAN);
     expect(await h.data.readNote(h.project.id, MEMORY_NOTE_PATH)).toBe("# Mémoire\n");
@@ -133,30 +123,15 @@ describe("applyBatch", () => {
     expect(titleOf(h, "SILO-1")).toBe("Ticket 1");
   });
 
-  test("an orchestrator refusal fails the action with its message", async () => {
-    const h = setup();
-    await seed(h);
-    const batch = await propose(h, [
-      { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus" },
-    ]);
-    h.agents.failAssign = new KiboError("CONFLICT", "ticket already has an active run");
-    const results = await apply(h, batch);
-    expect(results).toEqual([
-      { actionId: 1, outcome: "failed", detail: "ticket already has an active run", created: null },
-    ]);
-  });
-
   test("agents and notes actions go through the orchestrator and the notes", async () => {
     const h = setup();
     const s = await seed(h);
     const batch = await propose(h, [
       { id: 1, why, type: "cancelRun", runId: s.runId },
-      { id: 2, why, type: "deliverAnswers", ticket: "SILO-6" },
-      { id: 3, why, type: "createNote", path: MEMORY_NOTE_PATH, content: "" },
+      { id: 2, why, type: "createNote", path: MEMORY_NOTE_PATH, content: "" },
     ]);
-    expect(outcomes(await apply(h, batch))).toEqual(["applied", "applied", "applied"]);
+    expect(outcomes(await apply(h, batch))).toEqual(["applied", "applied"]);
     expect(h.agents.cancelled).toEqual([s.runId]);
-    expect(h.agents.delivered).toEqual([{ projectId: h.project.id, ticketId: s.tickets[5]?.id ?? "" }]);
     const dir = h.notes.info(h.project.id).dir;
     expect(readFileSync(join(dir, MEMORY_NOTE_PATH), "utf8")).toBe("");
   });
@@ -218,8 +193,6 @@ describe("stale targets are never overwritten", () => {
     expect(outcomes(results)).toEqual(Array(7).fill("stale"));
     expect(h.commands).toEqual([]);
     expect(h.agents.cancelled).toEqual([]);
-    expect(h.agents.delivered).toEqual([]);
-    expect(h.agents.assigned).toEqual([]);
     expect(statusOf(h, "SILO-3")).toBe("in_review");
     expect(await h.data.readNote(h.project.id, "a.md")).toBe("# Adam\n");
     expect(await h.data.readNote(h.project.id, "c.md")).toBe("# Déjà là\n");
@@ -264,12 +237,9 @@ describe("ticket agents removed", () => {
       { id: 2, why, type: "setStatus", ticket: "SILO-2", statusId: "done" },
       { id: 3, why, type: "deliverAnswers", ticket: "SILO-6" },
     ]);
-    h.agents.mode = "removed";
     const results = await apply(h, batch);
     expect(outcomes(results)).toEqual(["failed", "applied", "failed"]);
     for (const r of [results[0], results[2]]) expect(r?.detail).toStartWith("AGENT_EXECUTION_REMOVED: ");
     expect(statusOf(h, "SILO-2")).toBe("done");
-    expect(h.agents.assigned).toEqual([]);
-    expect(h.agents.delivered).toEqual([]);
   });
 });

@@ -30,10 +30,10 @@ export type ProjectAgentBoot = { agent: ProjectAgentService; plan: { rpc: RpcExt
 
 export type ProjectAgentBootInput = {
   home: string;
-  service: Pick<Service, "deliverAnswers" | "attachProjectAgent" | "agentData"> & { docs: Docs };
+  service: Pick<Service, "attachProjectAgent" | "agentData"> & { docs: Docs };
   notes: ProjectAgentDataDeps["notes"];
   settings: ProjectAgentDataDeps["settings"];
-  orchestrator: () => Omit<ProjectAgentAgents, "deliverAnswers"> & Pick<Orchestrator, "onRunState">;
+  orchestrator: () => ProjectAgentAgents & Pick<Orchestrator, "onRunState">;
   notify: (notice: Notice) => void;
   signals: ProjectAgentSignalsPort;
   agentBody?: () => string;
@@ -95,7 +95,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     agents: (projectId) => service.agentData.agents(projectId),
     guidelines: (projectId) => service.agentData.guidelines(projectId),
   });
-  const agents = () => ({ ...input.orchestrator(), deliverAnswers: service.deliverAnswers });
+  const agents = input.orchestrator;
   let self: ProjectAgentService | null = null;
   const agent = createProjectAgentService({
     store,

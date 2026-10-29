@@ -14,6 +14,7 @@ import {
 } from "./fakes.test-helper";
 
 const why = "";
+const REMOVED = new Set([5, 6]);
 
 async function withHarness<T>(fn: (h: Harness, s: Seeded) => Promise<T>): Promise<T> {
   const h = harness();
@@ -113,7 +114,8 @@ describe("executor properties", () => {
           const chosen = new Set(picked);
           const results = await apply(h, batch, chosen);
           for (const r of results) {
-            if (chosen.has(r.actionId)) expect(r.outcome).toBe("applied");
+            if (chosen.has(r.actionId))
+              expect(r.outcome).toBe(REMOVED.has(r.actionId) ? "failed" : "applied");
             else
               expect(r).toEqual({
                 actionId: r.actionId,
@@ -124,8 +126,6 @@ describe("executor properties", () => {
           }
           const commandIds = [1, 2, 3, 4, 8, 9, 12];
           expect(h.commands).toHaveLength(commandIds.filter((id) => chosen.has(id)).length);
-          expect(h.agents.assigned).toHaveLength(chosen.has(5) ? 1 : 0);
-          expect(h.agents.delivered).toHaveLength(chosen.has(6) ? 1 : 0);
           expect(h.agents.cancelled).toHaveLength(chosen.has(7) ? 1 : 0);
           const snap = h.data.project(h.project.id);
           expect(snap.tickets.some((t) => t.title === "Créé")).toBe(chosen.has(1));

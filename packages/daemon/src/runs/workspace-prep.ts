@@ -1,42 +1,14 @@
-import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
-import {
-  type BaseFallback,
-  type GitBranchRef,
-  KiboError,
-  type SetupStep,
-  WORKTREE_DEFAULTS,
-  type WorkspaceStrategy,
-  type WorktreeSettings,
-} from "@kibo/schema";
-import {
-  prepareWorktree,
-  recentCommits,
-  runShell,
-  type ShellRunner,
-  worktreeBase,
-} from "../agents/worktree-prep";
+import { KiboError } from "@kibo/schema";
 import { runBounded } from "./bounded-process";
 
 export type PlacedWorkspace = { cwd: string; label: string };
-export type PreparedWorkspace = PlacedWorkspace & { commits: string[] };
 export type GitRunner = (
   args: string[],
   cwd: string,
   timeoutMs?: number,
 ) => Promise<{ code: number; stdout: string; stderr: string }>;
-export type PrepareInput = {
-  strategy: WorkspaceStrategy;
-  projectFolder: string | null;
-  ticketKey: string;
-  runDir: string;
-  worktree: WorktreeSettings | null;
-  branchRef: GitBranchRef | null;
-  git?: GitRunner;
-  shell?: ShellRunner;
-  onSetup?: (step: SetupStep) => void;
-  onBaseFallback?: (fallback: BaseFallback) => void;
-};
 
 const gitEnv = (): Record<string, string | undefined> => ({
   ...process.env,
@@ -59,45 +31,6 @@ export const runGit: GitRunner = async (args, cwd, timeoutMs) => {
 };
 
 const failed = (detail: string) => new KiboError("WORKSPACE_FAILED", detail);
-
-function requireFolder(folder: string | null): string {
-  if (!folder) throw new KiboError("PROJECT_FOLDER_MISSING", "the project has no local folder");
-  if (!existsSync(folder) || !statSync(folder).isDirectory())
-    throw new KiboError("PROJECT_FOLDER_NOT_FOUND", `folder ${folder} does not exist`);
-  return folder;
-}
-
-export async function prepareWorkspace(input: PrepareInput): Promise<PreparedWorkspace> {
-  const git = input.git ?? runGit;
-  switch (input.strategy) {
-    case "worktree": {
-      const folder = requireFolder(input.projectFolder);
-      const top = await git(["rev-parse", "--show-toplevel"], folder);
-      if (top.code !== 0) throw new KiboError("NOT_A_REPO", `${folder} is not a git repository`);
-      const settings = input.worktree ?? WORKTREE_DEFAULTS;
-      const placed = await prepareWorktree({
-        root: top.stdout.trim(),
-        ticketKey: input.ticketKey,
-        branchRef: input.branchRef,
-        settings,
-        runDir: input.runDir,
-        git,
-        shell: input.shell ?? runShell,
-        onSetup: input.onSetup,
-        onBaseFallback: input.onBaseFallback,
-      });
-      const commits = await recentCommits(git, placed.cwd, worktreeBase(settings, input.branchRef));
-      return { ...placed, commits };
-    }
-    case "repo":
-      return { cwd: requireFolder(input.projectFolder), label: "repo", commits: [] };
-    case "isolated": {
-      const cwd = join(input.runDir, "workspace");
-      mkdirSync(cwd, { recursive: true, mode: 0o700 });
-      return { cwd, label: "isolated", commits: [] };
-    }
-  }
-}
 
 export function writeRunContext(
   runDir: string,

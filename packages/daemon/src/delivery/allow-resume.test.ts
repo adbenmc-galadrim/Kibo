@@ -11,11 +11,9 @@ import {
   KiboError,
   AgentSettingsPatch as PatchSchema,
   type Question,
-  RESUME_AFTER_ALLOW,
   type RunView,
 } from "@kibo/schema";
 import { denialStore } from "../agents/denial-store";
-import type { TicketExecution } from "../agents/execution-removed";
 import { runView } from "../questions/questions.test-helper";
 import { type AllowResumeDeps, allowAndResume } from "./allow-resume";
 
@@ -47,7 +45,7 @@ function agentWith(settings: AgentSettings): Agent {
   };
 }
 
-function setup(run: RunView, resumable: string[] = [], ticketExecution: TicketExecution = "allowed") {
+function setup(run: RunView, resumable: string[] = []) {
   const store = denialStore(new Database(":memory:", { strict: true }));
   store.save({ runId: "r1", turn: 1, items: ITEMS, questionId: "q1", seq: 3, at: 1 });
   let settings: AgentSettings = { ...DEFAULT_AGENT_SETTINGS, allow: ["Bash(git *)", "Bash(pnpm *)"] };
@@ -80,7 +78,6 @@ function setup(run: RunView, resumable: string[] = [], ticketExecution: TicketEx
     orchestrator: {
       state: (): Pick<AgentsState, "runs" | "resumable"> => ({ runs: [run], resumable }),
       answer: answerRun,
-      ticketExecution: () => ticketExecution,
     },
     denials: store,
     viewer: () => "adam",
@@ -109,57 +106,6 @@ function setup(run: RunView, resumable: string[] = [], ticketExecution: TicketEx
 const waiting = runView({ id: "r1", state: "waiting_input", profileId: "global:livraison" });
 const input = { runId: "r1", questionId: "q1", rules: ["Bash(pnpm *)", "Bash(tail *)"], addDirs: [SKILLS] };
 
-test("allowing patches the agent, resumes the run, then answers the question as the human, delivered", () => {
-  const { deps, calls, answerQuestion, answerRun, delivered, settings } = setup(waiting);
-  const result = allowAndResume(deps, input);
-  expect(calls).toEqual(["settings", "run", "question", "delivered"]);
-  expect(delivered.mock.calls[0]).toEqual(["p1", "t1", ["q1"], "r1"]);
-  expect(settings().allow).toEqual(["Bash(git *)", "Bash(pnpm *)", "Bash(tail *)"]);
-  expect(settings().addDirs).toEqual([SKILLS]);
-  expect(answerQuestion.mock.calls[0]).toEqual([
-    "p1",
-    "q1",
-    `Autorisé : Bash(pnpm *), Bash(tail *) ; ${SKILLS}`,
-    { kind: "human", ref: "adam" },
-  ]);
-  expect(answerRun.mock.calls[0]).toEqual([
-    "r1",
-    RESUME_AFTER_ALLOW(["Bash(pnpm *)", "Bash(tail *)"], [SKILLS]),
-  ]);
-  expect(result.run.state).toBe("queued");
-  expect(result.agent.settings.allow).toContain("Bash(tail *)");
-});
-
-test("a finished run that can be resumed is resumed too", () => {
-  const done = { ...waiting, state: "done" as const };
-  const { deps, calls } = setup(done, ["r1"]);
-  allowAndResume(deps, input);
-  expect(calls).toEqual(["settings", "run", "question", "delivered"]);
-});
-
-test("a question already answered, archived or removed is refused before any write", () => {
-  for (const close of ["archived", "gone"] as const) {
-    const kit = setup(waiting);
-    kit[close]();
-    expect(() => allowAndResume(kit.deps, input)).toThrow(
-      expect.objectContaining({ code: "INVALID_TRANSITION" }),
-    );
-    expect(kit.calls).toEqual([]);
-  }
-});
-
-test("a resume refused after the patch restores the agent settings and leaves the question open", () => {
-  const kit = setup(waiting);
-  const before = kit.settings();
-  kit.failResume();
-  expect(() => allowAndResume(kit.deps, input)).toThrow(
-    expect.objectContaining({ code: "TICKET_HAS_CHILDREN" }),
-  );
-  expect(kit.settings().allow).toEqual(before.allow);
-  expect(kit.settings().addDirs).toEqual(before.addDirs);
-  expect(kit.answerQuestion).not.toHaveBeenCalled();
-});
-
 test("a run that cannot be resumed is refused before any write", () => {
   for (const run of [
     { ...waiting, state: "done" as const },
@@ -173,35 +119,8 @@ test("a run that cannot be resumed is refused before any write", () => {
   }
 });
 
-test("a proposed rule that became unsafe is refused by name and nothing is applied", () => {
-  const { deps, calls } = setup(waiting);
-  const unsafe = { ...input, rules: ["Bash(pnpm *)", "Bash(sudo *)"] };
-  expect(() => allowAndResume(deps, unsafe)).toThrow(
-    new KiboError("INVALID_INPUT", "rule Bash(sudo *) is not safe"),
-  );
-  expect(calls).toEqual([]);
-});
-
-test("rules, folders and questions foreign to the run are refused", () => {
-  const { deps, calls } = setup(waiting);
-  const cases = [
-    { ...input, questionId: "q9" },
-    { ...input, rules: ["Bash(curl *)"] },
-    { ...input, addDirs: [`${HOME}/Documents`] },
-    { ...input, rules: [], addDirs: [] },
-    { ...input, addDirs: [`${HOME}/.ssh`] },
-  ];
-  for (const bad of cases) {
-    expect(() => allowAndResume(deps, bad)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
-  }
-  expect(() => allowAndResume(deps, { ...input, runId: "r9" })).toThrow(
-    expect.objectContaining({ code: "NOT_FOUND" }),
-  );
-  expect(calls).toEqual([]);
-});
-
 test("without ticket execution a ticket run is not resumed, nothing is patched and the question stays open", () => {
-  const { deps, calls } = setup(waiting, [], "removed");
+  const { deps, calls } = setup(waiting, []);
   expect(() => allowAndResume(deps, input)).toThrow("AGENT_EXECUTION_REMOVED");
   expect(calls).toEqual([]);
 });

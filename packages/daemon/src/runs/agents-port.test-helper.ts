@@ -62,12 +62,12 @@ export function testAgent(p: TestAgentInput = {}): Agent {
   });
 }
 
-export const projectAgentAgent = (): Agent =>
+export const projectAgentAgent = (maxParallel = 1): Agent =>
   testAgent({
     id: "project-agent",
     name: "kibo-project-agent",
     permissionMode: "default",
-    maxParallel: 1,
+    maxParallel,
     system: true,
   });
 

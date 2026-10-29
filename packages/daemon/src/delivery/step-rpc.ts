@@ -6,9 +6,9 @@ import {
   type RunView,
   type TicketView,
 } from "@kibo/schema";
-import { activeRunOf } from "../agents/assign-preview";
 import { type Docs, KIBO_COMMAND } from "../docs";
 import type { RpcExtension } from "../rpc-extensions";
+import { activeRunOf } from "../runs/active-run";
 
 export type StepDocs = Pick<Docs, "project" | "activity" | "run" | "assertWritable" | "today">;
 export type StepRpcDeps = { docs: StepDocs; runs(): readonly RunView[]; now(): number };

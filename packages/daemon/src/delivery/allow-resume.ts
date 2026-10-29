@@ -15,7 +15,6 @@ import {
 } from "@kibo/schema";
 import { denialTexts } from "../agents/denial-question-texts";
 import type { DenialStore } from "../agents/denial-store";
-import { assertTicketExecution, isTicketRun, type TicketExecution } from "../agents/execution-removed";
 
 export type AllowResumeInput = {
   runId: string;
@@ -36,7 +35,6 @@ export type AllowResumeDeps = {
   orchestrator: {
     state(): Pick<AgentsState, "runs" | "resumable">;
     answer(runId: string, text: string): RunView;
-    ticketExecution(): TicketExecution;
   };
   denials: Pick<DenialStore, "get">;
   viewer(projectId: string): string;
@@ -103,7 +101,8 @@ export function allowAndResume(
   const rules = unique(input.rules);
   const dirs = unique(input.addDirs);
   const run = resumableRun(deps, input.runId);
-  if (isTicketRun(run)) assertTicketExecution(deps.orchestrator.ticketExecution(), "allowAndResume");
+  if (run.kind === "ticket" && run.ticketId !== null)
+    throw new KiboError("AGENT_EXECUTION_REMOVED", "allowAndResume: Kibo no longer runs ticket agents");
   assertAllowed(proposalsOf(deps, input), rules, dirs, deps.home);
   const question = openQuestion(deps, run.projectId, input.questionId);
   const agent = deps.agents.agentOf(run.profileId);

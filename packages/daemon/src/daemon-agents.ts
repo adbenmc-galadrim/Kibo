@@ -3,9 +3,6 @@ import { type AiBootstrapDeps, type StartedAi, startAi } from "./ai/bootstrap";
 import type { RunSource } from "./collab/bootstrap";
 import type { DaemonOptions } from "./daemon-options";
 import type { Closer } from "./daemon-shutdown";
-import { demoAgentBin } from "./demo/agent-bin";
-import { demoAgentEnv } from "./demo/agent-env";
-import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
 import { defaultHookLauncher } from "./runs/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./runs/host-load";
 import { createOrchestrator } from "./runs/orchestrator";
@@ -21,7 +18,7 @@ export type AgentsInput = {
   baseUrl(): string;
   port: number;
   projectTurns: OrchestratorOptions["projectTurns"];
-  lifecycle: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn" | "turnPrefix">;
+  lifecycle: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn">;
   locks: NonNullable<OrchestratorOptions["locks"]>;
   ready(orchestrator: Orchestrator): void;
   attachRuns(source: RunSource): Closer;
@@ -39,7 +36,6 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
     data: service.agentData,
     claudeBin: opts.claudeBin ?? null,
     hook: defaultHookLauncher(),
-    demoAgent: { bin: demoAgentBin(), env: () => demoAgentEnv(ensureDemoAgentFiles(opts.home)) },
     baseUrl: input.baseUrl,
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),
@@ -49,7 +45,6 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
     ...(opts.userHome && { userHome: opts.userHome }),
     ...input.lifecycle,
     locks: input.locks,
-    ...(opts.ticketExecution && { ticketExecution: opts.ticketExecution }),
   });
   closers.push(() => orchestrator.stop());
   input.ready(orchestrator);

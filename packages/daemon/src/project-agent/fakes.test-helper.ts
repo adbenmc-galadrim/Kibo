@@ -7,7 +7,6 @@ import {
   type Agent,
   type AgentsState,
   type Batch,
-  type DeliveryResult,
   KiboError,
   type ProjectCommand,
   type ProjectMeta,
@@ -18,12 +17,10 @@ import {
   type StatusId,
   Ticket,
 } from "@kibo/schema";
-import type { TicketExecution } from "../agents/execution-removed";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { runView } from "../questions/questions.test-helper";
 import { testAgent } from "../runs/agents-port.test-helper";
-import type { AssignInput } from "../runs/orchestrator-types";
 import { call, createService, type Service } from "../service";
 import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { openStore } from "../store";
@@ -48,11 +45,7 @@ export const AGENTS: Agent[] = [
 export type FakeAgents = ProjectAgentAgentsPort & {
   runs: RunView[];
   queue: QueueEntry[];
-  assigned: AssignInput[];
   cancelled: string[];
-  delivered: { projectId: string; ticketId: string }[];
-  failAssign: KiboError | null;
-  mode: TicketExecution;
 };
 
 const HOST = {
@@ -76,12 +69,7 @@ export function fakeAgents(): FakeAgents {
   const fake: FakeAgents = {
     runs: [],
     queue: [],
-    assigned: [],
     cancelled: [],
-    delivered: [],
-    failAssign: null,
-    mode: "allowed",
-    ticketExecution: () => fake.mode,
     startProjectRun: unused,
     answer: unused,
     log: unused,
@@ -96,22 +84,9 @@ export function fakeAgents(): FakeAgents {
       progress: [],
       signals: [],
     }),
-    assign(input) {
-      if (fake.failAssign) throw fake.failAssign;
-      fake.assigned.push(input);
-      return runView({
-        id: `run-${fake.assigned.length}`,
-        projectId: input.projectId,
-        ticketId: input.ticketId,
-      });
-    },
     cancel(runId) {
       fake.cancelled.push(runId);
       return runView({ id: runId, state: "cancelled" });
-    },
-    deliverAnswers(projectId, ticketId): DeliveryResult {
-      fake.delivered.push({ projectId, ticketId });
-      return { sent: 1, runId: null };
     },
   };
   return fake;

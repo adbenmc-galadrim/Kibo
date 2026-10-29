@@ -1,6 +1,5 @@
 import type { Toolchain } from "@kibo/devkit";
-import { type HostLoad, KiboError, type Session } from "@kibo/schema";
-import type { TicketExecution } from "./agents/execution-removed";
+import { type AgentExecution, type HostLoad, KiboError, type Session } from "@kibo/schema";
 import { type Clock, createClock, parseFixedNow } from "./clock";
 import type { ComponentsDeps } from "./components/service";
 import type { IntegrationFlags } from "./integrations/bootstrap";
@@ -35,8 +34,8 @@ export type DaemonOptions = {
   agentSource?: AgentSource;
   clock?: Clock;
   code?: CodeTrackingOptions;
-  ticketExecution?: TicketExecution;
   answerWakeGraceMs?: number;
+  testAgentExecution?: AgentExecution;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;

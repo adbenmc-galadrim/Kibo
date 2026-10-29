@@ -1,62 +1,24 @@
 import { expect, spyOn, test } from "bun:test";
-import { existsSync, mkdirSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { type HookPayload, type RunView, WORKTREE_DEFAULTS } from "@kibo/schema";
-import { repo } from "../testing/git-test-kit";
+import { existsSync } from "node:fs";
+import { type HookPayload, PROJECT_AGENT_REF, type RunView } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { createOrchestrator } from "./orchestrator";
-import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
+import {
+  cleanHarness,
+  projectAgentAgent,
+  run,
+  setup,
+  startProject,
+  waitUntil,
+} from "./orchestrator.test-helper";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 
 cleanHarness();
 
-test("a question suspends the run, the answer resumes it, and the ticket moves on", async () => {
-  const h = setup({ scenario: "question" });
-  const first = h.orch.assign({
-    projectId: "p1",
-    ticketId: "t1",
-    profileId: "global:opus",
-    brief: "Garder l'ordre.",
-  });
-  expect(h.assigned).toEqual(["t1:opus-dev"]);
-  await waitUntil(() => run(h, first.id).state === "waiting_input");
-  expect(run(h, first.id)).toMatchObject({
-    question: "Quel port pour le récepteur ?",
-    label: "global · opus-dev · KIB-1",
-    workspace: "isolated",
-    cwd: realpathSync(join(h.home, "runs", first.id, "workspace")),
-  });
-  expect(h.orch.state().host.used).toBe(0);
-  await waitUntil(() => h.notices.length > 0);
-  expect(h.notices).toContainEqual({
-    title: "global · opus-dev · KIB-1 attend une réponse",
-    body: "KIB-1 · Quel port pour le récepteur ?",
-  });
-
-  h.orch.answer(first.id, "Port dynamique");
-  await waitUntil(() => run(h, first.id).state === "done");
-
-  const calls = fakeCalls(h.state, first.sessionId);
-  expect(calls).toHaveLength(2);
-  expect(calls[0]?.argv).toContain("--session-id");
-  expect(calls[0]?.prompt).toContain("# KIB-1 · Ticket KIB-1");
-  expect(calls[0]?.prompt).toContain("Garder l'ordre.");
-  expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", first.sessionId]);
-  expect(calls[1]?.prompt).toBe("Port dynamique");
-  expect(calls.every((c) => c.hasToken && c.hookUrl === `${h.url}/hooks/${first.id}`)).toBe(true);
-  expect(run(h, first.id)).toMatchObject({ tokens: 2800, turns: 2, question: null });
-  expect(h.done).toEqual(["t1"]);
-  expect(h.started).toEqual(["t1", "t1"]);
-  const log = h.orch.log(first.id);
-  expect(log.filter((e) => e.event.type === "spawned")).toHaveLength(2);
-  expect(log.some((e) => e.event.type === "hook" && e.event.payload.tool === "Write")).toBe(true);
-  expect(existsSync(join(h.home, "runs", first.id, "brief.md"))).toBe(true);
-}, 30_000);
-
 test("four runs on three host slots leave one queued until a slot frees", async () => {
-  const h = setup({ scenario: "hold" });
-  const runs = ["t1", "t2", "t3", "t4"].map((t) => assign(h, t));
+  const h = setup({ scenario: "hold", profiles: [projectAgentAgent(4)] });
+  const runs = ["p1", "p2", "p3", "p4"].map((p) => startProject(h, p));
   const at = (i: number): RunView => {
     const r = runs[i];
     if (!r) throw new Error(`run ${i} missing`);
@@ -77,8 +39,8 @@ test("four runs on three host slots leave one queued until a slot frees", async 
 }, 30_000);
 
 test("above the CPU threshold nothing starts until the threshold is raised", async () => {
-  const h = setup({ scenario: "done", load: () => ({ cpu: 95, ram: 20 }) });
-  const r = assign(h, "t1");
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "done", load: () => ({ cpu: 95, ram: 20 }) });
+  const r = startProject(h);
   expect(h.orch.state().queue).toEqual([
     { runId: r.id, position: 1, reason: { kind: "cpu", value: 95, threshold: 85 } },
   ]);
@@ -91,9 +53,9 @@ test("above the CPU threshold nothing starts until the threshold is raised", asy
 }, 30_000);
 
 test("hooks need the live token of their own run", async () => {
-  const h = setup({ scenario: "hold" });
-  const a = assign(h, "t1");
-  const b = assign(h, "t2");
+  const h = setup({ scenario: "hold", profiles: [projectAgentAgent(2)] });
+  const a = startProject(h, "p1");
+  const b = startProject(h, "p2");
   await waitUntil(() => [a, b].every((r) => run(h, r.id).lastActivity?.event === "PreToolUse"));
   const payload: HookPayload = {
     event: "Notification",
@@ -133,27 +95,26 @@ test("hooks need the live token of their own run", async () => {
 }, 30_000);
 
 test("cancelling a running run stops its process and frees the slot", async () => {
-  const h = setup({ scenario: "hold" });
-  const r = assign(h, "t1");
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "hold" });
+  const r = startProject(h);
   await waitUntil(() => run(h, r.id).lastActivity?.event === "PreToolUse");
   expect(h.orch.cancel(r.id).state).toBe("cancelled");
   await waitUntil(() => h.orch.log(r.id).some((e) => e.event.type === "exited"));
   expect(run(h, r.id).state).toBe("cancelled");
   expect(h.orch.state().host.used).toBe(0);
   expect(() => h.orch.cancel(r.id)).toThrow("INVALID_TRANSITION");
-  expect(h.done).toEqual([]);
 }, 30_000);
 
 test("queued runs can be moved and prioritized; running ones cannot", async () => {
-  const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })] });
-  const [a, b, c] = ["t1", "t2", "t3"].map((t) => assign(h, t));
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "hold" });
+  const [a, b, c] = ["p1", "p2", "p3"].map((p) => startProject(h, p));
   if (!a || !b || !c) throw new Error("runs missing");
-  expect(h.orch.state().queue.map((q) => q.runId)).toEqual([b.id, c.id]);
-  h.orch.move(c.id, 0);
   expect(h.orch.state().queue.map((q) => q.runId)).toEqual([c.id, b.id]);
-  h.orch.setPriority(b.id, true);
+  h.orch.move(b.id, 0);
   expect(h.orch.state().queue.map((q) => q.runId)).toEqual([b.id, c.id]);
-  expect(run(h, b.id).priority).toBe(true);
+  h.orch.setPriority(c.id, true);
+  expect(h.orch.state().queue.map((q) => q.runId)).toEqual([c.id, b.id]);
+  expect(run(h, c.id).priority).toBe(true);
   const events = h.orch.log(a.id).length;
   expect(() => h.orch.move(a.id, 1)).toThrow("INVALID_TRANSITION");
   expect(() => h.orch.setPriority(a.id, true)).toThrow("INVALID_TRANSITION");
@@ -162,39 +123,32 @@ test("queued runs can be moved and prioritized; running ones cannot", async () =
   await waitUntil(() => [a, b, c].every((r) => run(h, r.id).state === "done"));
 }, 30_000);
 
-test("a workspace failure fails the run with its code and notifies", async () => {
-  const h = setup({
-    scenario: "done",
-    profiles: [testAgent({ id: "repo", name: "repo-dev", workspace: "repo" })],
-  });
-  const r = assign(h, "t1", "repo");
-  await waitUntil(() => run(h, r.id).state === "failed");
-  expect(run(h, r.id).error).toStartWith("PROJECT_FOLDER_MISSING: ");
-  expect(h.orch.state().host.used).toBe(0);
-  expect(h.notices.map((n) => n.title)).toContain("global · repo-dev · KIB-1 a échoué");
-});
-
 const claudeInCommonPlaces = ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"].some((p) => existsSync(p));
 
 test.skipIf(claudeInCommonPlaces)("a missing claude CLI fails the run", async () => {
-  const h = setup({ scenario: "done", claudeBin: null, env: { PATH: "/nonexistent" } });
-  const r = assign(h, "t1");
+  const h = setup({
+    profiles: [projectAgentAgent()],
+    scenario: "done",
+    claudeBin: null,
+    env: { PATH: "/nonexistent" },
+  });
+  const r = startProject(h);
   await waitUntil(() => run(h, r.id).state === "failed");
   expect(run(h, r.id).error).toStartWith("AGENT_CLI_NOT_FOUND: ");
 });
 
 test("each state change is announced, run by run", async () => {
-  const h = setup({ scenario: "done" });
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "done" });
   const states: string[] = [];
   h.orch.onRunState((r) => states.push(r.state));
-  const r = assign(h, "t1");
+  const r = startProject(h);
   await waitUntil(() => run(h, r.id).state === "done");
   expect(states).toEqual(["queued", "starting", "running", "done"]);
 }, 30_000);
 
 test("a restart after a crash kills the orphaned agent of an interrupted run", async () => {
-  const h = setup({ scenario: "hold" });
-  const r = assign(h, "t1");
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "hold" });
+  const r = startProject(h);
   await waitUntil(() => run(h, r.id).lastActivity?.event === "PreToolUse");
   const restarted = createOrchestrator({ ...h.options, tickMs: 60_000 });
   expect(restarted.state().runs.find((x) => x.id === r.id)?.state).toBe("failed");
@@ -203,8 +157,8 @@ test("a restart after a crash kills the orphaned agent of an interrupted run", a
 }, 30_000);
 
 test("stopping the daemon kills agents; the next start marks them interrupted", async () => {
-  const h = setup({ scenario: "hold" });
-  const r = assign(h, "t1");
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "hold" });
+  const r = startProject(h);
   await waitUntil(() => run(h, r.id).lastActivity?.event === "PreToolUse");
   await h.orch.stop();
   expect(run(h, r.id).state).toBe("running");
@@ -214,93 +168,16 @@ test("stopping the daemon kills agents; the next start marks them interrupted", 
   });
 }, 30_000);
 
-test("a launch refused by the runner fails the run instead of throwing", async () => {
-  const h = setup({ scenario: "done" });
-  const cwd = join(h.home, "draft");
-  mkdirSync(cwd);
-  const r = h.orch.submit({
-    profileId: "global:opus",
-    projectId: null,
-    title: "Tâche",
-    cwd,
-    prompt: "x",
-    extraArgs: ["--settings", "{}"],
-  });
-  await waitUntil(() => run(h, r.id).state === "failed");
-  expect(run(h, r.id).error).toStartWith("INVALID_INPUT: ");
-  expect(h.orch.state().host.used).toBe(0);
-});
-
 test("invalid host settings are refused and not saved", () => {
-  const h = setup({ scenario: "done" });
+  const h = setup({ profiles: [projectAgentAgent()], scenario: "done" });
   expect(() => h.orch.setHost({ cpuThreshold: 5 })).toThrow("INVALID_INPUT");
   expect(h.store.hostSettings()).toEqual({});
 });
 
-test("a PreToolUse without tool input reaches the guard as null, never as an empty object", () => {
-  const h = setup({ scenario: "hold" });
-  const cwd = join(h.home, "draft");
-  mkdirSync(cwd);
-  const inputs: unknown[] = [];
-  const r = h.orch.submit({
-    profileId: "global:opus",
-    projectId: null,
-    title: "Tâche gardée",
-    cwd,
-    prompt: "x",
-    guard: ({ input }) => {
-      inputs.push(input);
-      return input === null ? { decision: "deny", reason: "no input" } : null;
-    },
-  });
-  const payload = {
-    event: "PreToolUse" as const,
-    sessionId: r.sessionId,
-    transcriptPath: null,
-    tool: "Write",
-    detail: null,
-    question: null,
-    agentId: null,
-    toolUseId: null,
-    ask: null,
-    todos: null,
-    stopHookActive: false,
-  };
-  expect(h.orch.hooks.receive(r.id, payload, null)).toMatchObject({ decision: "deny", reason: "no input" });
-  expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
-  expect(inputs).toEqual([null, { file_path: "ui.tsx" }]);
-  h.orch.cancel(r.id);
-});
-
-test("a guard that throws denies the tool, logs the error and lets the run finish", async () => {
-  const errors = spyOn(console, "error").mockImplementation(() => {});
-  try {
-    const h = setup({ scenario: "guard" });
-    const cwd = join(h.home, "draft");
-    mkdirSync(cwd);
-    const r = h.orch.submit({
-      profileId: "global:opus",
-      projectId: null,
-      title: "Tâche gardée",
-      cwd,
-      prompt: "x",
-      guard: ({ tool }) => {
-        if (tool === "Bash") throw new Error("guard exploded");
-        return null;
-      },
-    });
-    await waitUntil(() => run(h, r.id).state === "done");
-    expect(run(h, r.id).denied).toEqual(["Bash"]);
-    expect(errors.mock.calls.some((c) => String(c[0]).includes(`guard of run ${r.id}`))).toBe(true);
-  } finally {
-    errors.mockRestore();
-  }
-}, 30_000);
-
 test("a throwing listener neither silences the others nor stops the orchestrator", async () => {
   const errors = spyOn(console, "error").mockImplementation(() => {});
   try {
-    const h = setup({ scenario: "done" });
+    const h = setup({ profiles: [projectAgentAgent()], scenario: "done" });
     const states: string[] = [];
     let changes = 0;
     h.orch.onRunState(() => {
@@ -313,11 +190,10 @@ test("a throwing listener neither silences the others nor stops the orchestrator
     h.orch.onChange(() => {
       changes += 1;
     });
-    const r = assign(h, "t1");
+    const r = startProject(h, "p1");
     await waitUntil(() => run(h, r.id).state === "done" && changes > 0);
     expect(states).toEqual(["queued", "starting", "running", "done"]);
-    expect(h.done).toEqual(["t1"]);
-    const again = assign(h, "t2");
+    const again = startProject(h, "p2");
     await waitUntil(() => run(h, again.id).state === "done");
     expect(errors.mock.calls.some((c) => String(c[0]).includes("run state listener"))).toBe(true);
     expect(errors.mock.calls.some((c) => String(c[0]).includes("change listener"))).toBe(true);
@@ -329,15 +205,14 @@ test("a throwing listener neither silences the others nor stops the orchestrator
 test("a process ending while its run is queued again records no exit", async () => {
   const errors = spyOn(console, "error").mockImplementation(() => {});
   try {
-    const h = setup({ scenario: "hold" });
+    const h = setup({ profiles: [projectAgentAgent()], scenario: "hold" });
     const registry = openRunRegistry(h.store);
     const live = new Map<string, LiveRun>();
     const launchRun = createRunLauncher({
       opts: h.options,
       registry,
-      tasks: new Map(),
       live,
-      agentOf: () => testAgent(),
+      agentOf: () => projectAgentAgent(),
       guards: new Map(),
       stopping: () => false,
     });
@@ -345,16 +220,16 @@ test("a process ending while its run is queued again records no exit", async () 
       {
         id: "stray",
         projectId: "p1",
-        ticketId: "t1",
-        ticketKey: "KIB-1",
-        ticketTitle: "Ticket KIB-1",
-        profileId: "global:opus",
-        profileName: "opus-dev",
-        agentScope: "global" as const,
+        ticketId: null,
+        ticketKey: null,
+        ticketTitle: "Agent de projet · Silo",
+        profileId: PROJECT_AGENT_REF,
+        profileName: "kibo-project-agent",
+        agentScope: "system" as const,
         projectKey: null,
         sessionId: crypto.randomUUID(),
         brief: "",
-        kind: "ticket",
+        kind: "project",
         resumedFrom: null,
       },
       0,
@@ -400,78 +275,3 @@ test("a process ending while its run is queued again records no exit", async () 
     errors.mockRestore();
   }
 }, 30_000);
-
-test("resuming an ended run is refused while another run of its ticket is active", async () => {
-  const h = setup({ scenario: "done" });
-  h.orch.setHost({ paused: true });
-  await h.orch.stop();
-  const registry = openRunRegistry(h.store);
-  const record = (id: string) => ({
-    id,
-    projectId: "p1",
-    ticketId: "t1",
-    ticketKey: "KIB-1",
-    ticketTitle: "Ticket KIB-1",
-    profileId: "global:opus",
-    profileName: "opus-dev",
-    agentScope: "global" as const,
-    projectKey: null,
-    sessionId: crypto.randomUUID(),
-    brief: "",
-    kind: "ticket" as const,
-    resumedFrom: null,
-  });
-  const active = registry.create(record("older-active"), 0);
-  const ended = registry.create(record("newer-ended"), 1);
-  registry.apply(ended.id, { type: "admitted", lane: 1 });
-  registry.apply(ended.id, {
-    type: "spawned",
-    pid: 1,
-    resume: false,
-    workspace: "isolated",
-    cwd: h.home,
-    guidelines: 0,
-  });
-  registry.apply(ended.id, {
-    type: "exited",
-    code: 0,
-    isError: false,
-    result: "ok",
-    tokens: 0,
-    costUsd: 0,
-    denied: [],
-  });
-  const orch = createOrchestrator({ ...h.options, tickMs: 60_000 });
-  try {
-    expect(orch.state().resumable).toContain(ended.id);
-    const events = orch.log(ended.id).length;
-    expect(() => orch.answer(ended.id, "Ajoute les tests")).toThrow("CONFLICT");
-    expect(orch.log(ended.id)).toHaveLength(events);
-    orch.cancel(active.id);
-    expect(orch.answer(ended.id, "Ajoute les tests").state).toBe("queued");
-  } finally {
-    await orch.stop();
-  }
-});
-
-test("the setup command of a worktree run is journaled before the agent starts", async () => {
-  const folder = await repo();
-  const h = setup({
-    scenario: "done",
-    profiles: [testAgent({ workspace: "worktree" })],
-    meta: { folder, worktree: { ...WORKTREE_DEFAULTS, setup: "git worktree add {path} {branch}" } },
-  });
-  const r = assign(h, "t1");
-  await waitUntil(() => run(h, r.id).state === "done");
-  const types = h.orch.log(r.id).map((entry) => entry.event.type);
-  expect(types.slice(types.indexOf("admitted"), types.indexOf("spawned") + 1)).toEqual([
-    "admitted",
-    "setup",
-    "setup",
-    "session",
-    "spawned",
-  ]);
-  const steps = h.orch.log(r.id).flatMap((entry) => (entry.event.type === "setup" ? [entry.event] : []));
-  expect(steps.map((step) => step.status)).toEqual(["running", "done"]);
-  expect(steps[0]?.command).toBe(`git worktree add ${realpathSync(folder)}/.kibo/worktrees/kib-1 kib-1`);
-});

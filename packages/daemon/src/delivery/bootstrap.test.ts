@@ -12,7 +12,6 @@ import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { testAgent, testAgentSource } from "../runs/agents-port.test-helper";
 import { CLAUDE_DENIAL_TEXT } from "../runs/fake-claude-transcript";
 import type { Notice } from "../runs/notifier";
-import type { AssignInput } from "../runs/orchestrator-types";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
 import { startDelivery } from "./bootstrap";
@@ -71,7 +70,6 @@ async function rig() {
     }),
   );
   const notices: Notice[] = [];
-  const assigned: AssignInput[] = [];
   const run = runView({
     id: "r1",
     projectId: project.id,
@@ -103,18 +101,12 @@ async function rig() {
         throw new Error("not used");
       },
     }),
-    orchestrator: () => ({
-      ...port,
-      assign: (input: AssignInput) => {
-        assigned.push(input);
-        return runView({ id: "r2", ticketId: input.ticketId, brief: input.brief });
-      },
-    }),
+    orchestrator: () => port,
     db,
     alive: () => true,
   });
   opened.push({ home, store, close: delivery.close });
-  return { service, project, ticket, run, port, delivery, notices, assigned, slots };
+  return { service, project, ticket, run, port, delivery, notices, slots };
 }
 
 test("every delivery RPC method is served, the preset by the agent files and the rest here", async () => {
@@ -123,19 +115,14 @@ test("every delivery RPC method is served, the preset by the agent files and the
   expect([...served].sort()).toEqual([...DELIVERY_RPC_METHODS].sort());
 });
 
-test("Livrer on a leaf assigns the delivery agent through the RPC, with the brief written by Kibo", async () => {
-  const { delivery, project, ticket, assigned } = await rig();
+test("Livrer on a leaf is refused through the RPC; the delivery agent is still named", async () => {
+  const { delivery, project, ticket } = await rig();
   const extension = delivery.rpc.find((e) => e.methods.includes("deliver"));
-  await extension?.handle({ method: "deliver", projectId: project.id, ticketId: ticket.id }, LOCAL_CONTEXT);
-  expect(assigned).toEqual([
-    {
-      projectId: project.id,
-      ticketId: ticket.id,
-      profileId: "global:full-delivery",
-      brief: "/full-delivery SILO-1",
-      fresh: false,
-    },
-  ]);
+  await expect(
+    Promise.resolve().then(() =>
+      extension?.handle({ method: "deliver", projectId: project.id, ticketId: ticket.id }, LOCAL_CONTEXT),
+    ),
+  ).rejects.toMatchObject({ code: "AGENT_EXECUTION_REMOVED" });
   expect(await delivery.components.call(project.id, { kind: "run.deliveryAgent" })).toEqual({
     ref: "global:full-delivery",
     name: "full-delivery",

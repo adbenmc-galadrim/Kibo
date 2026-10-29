@@ -15,9 +15,6 @@ import type { SignalService } from "./signals/service";
 
 export type AgentsPort = Pick<
   Orchestrator,
-  | "ticketExecution"
-  | "assign"
-  | "preview"
   | "answer"
   | "cancel"
   | "move"
@@ -68,13 +65,8 @@ export function withSignalCounts(port: AgentsPort, signals: Pick<SignalService, 
   };
 }
 
-export function deliveryDeps(
-  port: Pick<AgentsPort, "state" | "answer" | "ticketExecution">,
-  q: AgentQuestions,
-): DeliveryDeps {
+function deliveryDeps(port: Pick<AgentsPort, "answer">, q: AgentQuestions): DeliveryDeps {
   return {
-    ticketExecution: port.ticketExecution(),
-    runs: () => port.state().runs,
     answer: (runId, text) => port.answer(runId, text),
     data: q.data,
   };
@@ -107,17 +99,9 @@ export function handleAgentRequest(port: AgentsPort, req: RpcRequest, q: AgentQu
     case "getRunLog":
       return port.log(req.runId);
     case "previewAssign":
-      assertNotInboxForAgents(req.projectId);
-      return port.preview({ projectId: req.projectId, ticketId: req.ticketId, profileId: req.profileId });
     case "assignAgent":
       assertNotInboxForAgents(req.projectId);
-      return port.assign({
-        projectId: req.projectId,
-        ticketId: req.ticketId,
-        profileId: req.profileId,
-        brief: req.brief,
-        fresh: req.fresh,
-      });
+      throw new KiboError("AGENT_EXECUTION_REMOVED", `${req.method}: Kibo no longer runs ticket agents`);
     case "answerRun":
       return answerRun(port, q, req.runId, req.text);
     case "cancelRun":
