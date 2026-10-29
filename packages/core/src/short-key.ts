@@ -9,7 +9,7 @@ export const MAX_FEATURE_SEQ = 999;
 
 const tickets = (doc: LoroDoc) => doc.getTree("tickets");
 
-function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
+export function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
   const used = new Set<string>();
   for (const node of walkDepthFirst(tickets(doc))) {
     const key = node.data.get("shortKey");
@@ -21,10 +21,15 @@ function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
 export type FeatureSlot = { key: string; seq: number };
 export type ShortKeyAllocation = FeatureSlot & { ticketId: string };
 
-export function nextFeatureSlot(doc: LoroDoc, exceptId: string | null): FeatureSlot {
+export function freeFeatureSeq(doc: LoroDoc, exceptId: string | null): number {
   const used = usedShortKeys(doc, exceptId);
   let seq = featureSeqOf(doc) + 1;
   while (used.has(`${FEATURE_PREFIX}${seq}`)) seq += 1;
+  return seq;
+}
+
+export function nextFeatureSlot(doc: LoroDoc, exceptId: string | null): FeatureSlot {
+  const seq = freeFeatureSeq(doc, exceptId);
   if (seq > MAX_FEATURE_SEQ)
     throw new KiboError("INVALID_INPUT", `no short key left after ${FEATURE_PREFIX}${MAX_FEATURE_SEQ}`);
   return { key: `${FEATURE_PREFIX}${seq}`, seq };
