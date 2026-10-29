@@ -465,3 +465,18 @@ crashed », rendu à 2,3 Go) sur la page « Proposition » chargée ; d'où le v
 au 18 oct. » manquait au fichier : il est refait depuis son clair par `S.darkFromLightAC` (couleur du nœud de même chemin dans la paire
 P1 bis v3, sinon la table des jetons), à l'identique de l'ancien export hors du volet. Un nom avec `/` devient `a / b` : chercher
 `icon-button / list` en retirant les espaces.
+## Phase 33 : barre du haut sans sync, barre latérale sans Tickets ni Notes (2026-10-29)
+
+Spec §49.5 et §49.11 (composants `tickets` et `notes` retirés, décision du 2026-10-29). Sur la page « Proposition » (et sur les pistes A et C
+pour la puce) : puce « Synchronisé · il y a 1 min » de la barre du haut retirée (`S.syncChip` supprimé de `10-shell.js` et de ses appels) ;
+entrées « Tickets » et « Notes » retirées de la barre latérale du projet et du menu des pages de la barre repliée (`S.PAGES_P` : Vue d'ensemble,
+Planning, Kanban, Graphe, Questions, comme §39.2) ; boards « P4 · Tickets » (sombre et clair) retirés avec leurs exports et `S.draw["p-tickets"]`.
+Retrait en place dans Penpot (formes supprimées, mise en page flex recalculée), sans redessin.
+
+Exports : les boards de Penpot ne rendent plus exactement les anciens PNG (textes remesurés à chaque chargement). Les exports
+`proposition-*` ne sont donc pas refaits en entier : seule la zone qui change est recopiée du nouveau rendu dans l'ancien PNG (puce : sa
+boîte élargie de 3 px, barre latérale : x 0 à 240 sur toute la hauteur, barre repliée : x 0 à 340, y 150 à 580 pour le menu et son ombre).
+Hors de ces zones, aucun pixel ne change (vérifié par différence). Cotes : lignes de la puce et des deux entrées retirées de `cotes.md`,
+positions des entrées suivantes de la barre latérale remontées de 32 px par entrée retirée (vérifié sur les positions Penpot), section P4 retirée.
+Les pistes historiques (A2, B2, C2 « Tickets », pages « Styles » et « Choix ») restent en archive dans Penpot ; seules leurs listes de
+navigation sont alignées dans les scripts.

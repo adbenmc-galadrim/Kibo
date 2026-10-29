@@ -8,7 +8,7 @@ S.kanbanLogo = (mode, size) => { const u = size / 100, n = v => +(v * u).toFixed
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">${b}</svg>`; };
 S.logo = (p, size) => S.svg(p, S.kanbanLogo(S.mode, size), "logo");
 S.ICONS.dashboard = '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>';
-S.NAV_ICON = { "Vue d'ensemble": "dashboard", "Tickets": "list", "Kanban": "kanban", "Graphe": "graph", "Notes": "note", "Questions": "question" };
+S.NAV_ICON = { "Vue d'ensemble": "dashboard", "Planning": "sprint", "Kanban": "kanban", "Graphe": "graph", "Questions": "question" };
 
 S.navItem = (p, icon, label, o = {}) => { const C = S.C;
   const r = S.row(p, { name: "nav/" + label, fx: true, h: 30, pad: [0, 8, 0, 8 + (o.indent || 0)], gap: 8, radius: 6, fill: o.active ? C.hover : null });
@@ -30,8 +30,8 @@ S.sidebar = (p, active, o = {}) => { const C = S.C;
   S.box(sb, { w: 4, h: 12 });
   const h = S.row(sb, { fx: true, h: 24, pad: [0, 8] }); S.txt(h, "Projets", { size: 11, weight: 500, color: C.dim, ls: 0.4, upper: true }); S.spacer(h); S.icon(h, "plus", 13, C.dim);
   S.navItem(sb, null, "Silo", { chev: "chevDown", dot: S.D.project.color });
-  const counts = o.counts || { "Tickets": "27", "Questions": "3" };
-  for (const pg of (o.pages || ["Vue d'ensemble", "Tickets", "Kanban", "Graphe", "Notes", "Questions"]))
+  const counts = o.counts || { "Questions": "3" };
+  for (const pg of (o.pages || ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]))
     S.navItem(sb, S.NAV_ICON[pg], pg, { indent: 18, active: active === pg, count: counts[pg] || null });
   for (const [n, c] of S.D.projects.slice(1)) S.navItem(sb, null, n, { chev: "chevRight", dot: c });
   S.box(sb, { w: 4, h: 4, fy: true });
@@ -52,8 +52,6 @@ S.agentButton = (p, o = {}) => { const C = S.C;
   S.icon(b, "bot", 15, C.brand); S.txt(b, o.label || "Agent de projet", { size: 12.5, weight: 500, color: o.on ? C.brandText : C.fg });
   if (o.count) { const k = S.row(b, { pad: [0, 5], radius: 8, fill: C.brandBtn }); S.txt(k, o.count, { size: 10.5, weight: 600, color: "#FFFFFF", mono: true }); }
   return b; };
-S.syncChip = (p, o = {}) => { const C = S.C; const r = S.row(p, { gap: 6 });
-  S.icon(r, "github", 14, C.dim); S.txt(r, o.text || "Synchronisé · il y a 1 min", { size: 12, color: C.dim }); return r; };
 S.liveChip = (p, o = {}) => { const C = S.C; const r = S.row(p, { gap: 6, pad: [3, 8], radius: 12, stroke: C.brandLine, fill: C.brandSoft });
   S.dot(r, C.brand, 6); S.txt(r, o.text || `${S.D.session.tool} · ${S.D.session.tk} · ${S.D.session.step}`, { size: 11.5, weight: 500, color: C.brandText }); return r; };
 S.topbar = (p, crumbs, right) => { const C = S.C;
@@ -68,7 +66,7 @@ S.rail = (p, active) => { const C = S.C;
     S.icon(b, icon, 18, on ? C.fg : C.dim); if (badge) S.abs(S.dot(b, badge, 7)); return b; };
   item("search"); item("home", active === "Accueil");
   S.hline(r, C.soft, { w: 28 });
-  for (const pg of ["Vue d'ensemble", "Tickets", "Kanban", "Graphe", "Notes", "Questions"]) item(S.NAV_ICON[pg], active === pg);
+  for (const pg of ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]) item(S.NAV_ICON[pg], active === pg);
   S.box(r, { w: 4, h: 4, fy: true }); item("bell"); item("settings"); S.avatar(r, "AB", 28);
   S.vline(p, C.soft); return r; };
 

@@ -34,7 +34,7 @@ S.shell27 = (f, active, o = {}) => { const C = S.C;
   const root = S.box(f, { name: "root", w: f.width, h: f.height, dir: "row", align: "stretch" });
   if (o.collapsed) S.sidebarIcons(root, active); else S.sidebar(root, active, { pages: o.pages || S.PAGES_P, counts: o.counts || S.COUNTS_P });
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, o.crumbs || ["Silo", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : o.agentCount === null ? {} : { count: o.agentCount || "3" }); });
+  S.topbar(main, o.crumbs || ["Silo", active], t => { if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : o.agentCount === null ? {} : { count: o.agentCount || "3" }); });
   return { root, main }; };
 // Barre latérale repliée en icônes (48 px) : sous 1 180 px de large (§39.6.16).
 S.sidebarIcons = (p, active) => { const C = S.C;

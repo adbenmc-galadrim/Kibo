@@ -9,7 +9,7 @@ S.topbarC = (p, title, o = {}) => { const C = S.C;
   if (o.range !== false) { const seg = S.row(t, { pad: 2, radius: 7, fill: C.muted, gap: 2 });
     for (const [l, on] of [["Jour"], ["Semaine", true], ["Mois"]]) { const s = S.row(seg, { pad: [3, 10], radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null }); S.txt(s, l, { size: 12, weight: 500, color: on ? C.fg : C.mfg }); }
     const d = S.row(t, { gap: 6 }); S.icon(d, "chevLeft", 14, C.dim); S.txt(d, "ven. 16 oct. · S42", { size: 12.5, weight: 500 }); S.icon(d, "chevRight", 14, C.dim); }
-  S.spacer(t); S.syncChip(t); S.agentButton(t, { count: "3" });
+  S.spacer(t); S.agentButton(t, { count: "3" });
   S.hline(p, C.soft); return t; };
 S.wk = (x0, colW, w) => x0 + w * colW;
 

@@ -83,7 +83,7 @@ S.mastC1 = (root, active) => { const K = S.K;
   S.spacer(m);
   const r = S.col(m, { gap: 3, align: "end" }); S.T(r, "Vendredi 15 janvier 2027", { title: true, italic: true, size: 17 }); S.T(r, "Sprint S1, dernier jour", { size: 12, color: K.ink2 });
   const nav = S.row(root, { fx: true, gap: 24, pad: [18, 0, 10, 0] });
-  for (const n of ["Vue d'ensemble", "Planning", "Tickets", "Graphe", "Notes", "Questions"]) { const on = n === active; const c = S.col(nav, { gap: 4 });
+  for (const n of ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]) { const on = n === active; const c = S.col(nav, { gap: 4 });
     S.T(c, n.toUpperCase(), { size: 11, weight: on ? 600 : 500, ls: 1.4, color: on ? K.ink : K.ink2 }); S.box(c, { w: 10, h: 1.5, fill: on ? K.ink : null, fx: true }); }
   S.spacer(nav); const ag = S.row(nav, { gap: 6 }); S.icon(ag, "bot", 14, K.accent); S.T(ag, "AGENT DE PROJET", { size: 11, weight: 500, ls: 1.4, color: K.ink2 }); S.avatar(nav, "AB", 26, { fill: K.panel, stroke: K.rule2, color: K.ink });
   S.box(root, { name: "rule", h: 2, w: 10, fx: true, fill: K.ink }); S.box(root, { w: 4, h: 3 }); S.box(root, { name: "rule", h: 1, w: 10, fx: true, fill: K.ink }); };
@@ -285,7 +285,7 @@ S.navC3 = (root, active) => { const K = S.K;
   const n = S.row(root, { fx: true, h: 72, pad: [0, 32], gap: 12 });
   S.logo(n, 30); const ps = S.row(n, { gap: 8, pad: [7, 14], radius: 999, fill: K.card, stroke: K.line }); S.dot(ps, "#14B8A6", 9); S.T(ps, "Silo", { size: 14, weight: 600 }); S.icon(ps, "chevDown", 14, K.ink2);
   S.box(n, { w: 12, h: 4 });
-  for (const l of ["Accueil", "Planning", "Tickets", "Graphe", "Notes", "Questions"]) { const on = l === active; const p = S.row(n, { pad: [8, 16], radius: 999, fill: on ? K.ink : null }); S.T(p, l, { size: 14, weight: 500, color: on ? K.bg : K.ink2 }); }
+  for (const l of ["Accueil", "Planning", "Kanban", "Graphe", "Questions"]) { const on = l === active; const p = S.row(n, { pad: [8, 16], radius: 999, fill: on ? K.ink : null }); S.T(p, l, { size: 14, weight: 500, color: on ? K.bg : K.ink2 }); }
   S.spacer(n); S.icon(n, "search", 19, K.ink2); S.icon(n, "bell", 19, K.ink2); S.avatar(n, "AB", 36, { fill: K.brandSoft, stroke: K.line, color: K.brand }); };
 S.bubble = (p, icon, bg, fg, sz = 40) => { const b = S.box(p, { w: sz, h: sz, radius: sz / 2, fill: bg, dir: "row", align: "center", justify: "center" }); S.icon(b, icon, Math.round(sz * 0.45), fg); return b; };
 S.dotsC3 = (p, ft, ink, sz = 12) => { const K = S.K; const r = S.row(p, { gap: 5 });
