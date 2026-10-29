@@ -7,4 +7,6 @@ export const PLAN_USAGE = [
 
 export const frPlan = {
   usage: usageText(PLAN_USAGE, DAEMON_HELP),
+  unknownField: (name: string, fields: readonly string[]) =>
+    `Champ inconnu : ${name}. Champs : ${fields.join(", ")}`,
 };

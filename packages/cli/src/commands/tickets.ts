@@ -1,6 +1,16 @@
 import { existsSync } from "node:fs";
-import type { Parsed } from "../args";
+import { flagText, type Parsed, splitList } from "../args";
 import { frTickets } from "../fr";
+import { frPlan } from "../fr-plan";
+import {
+  fieldLines,
+  LIST_FIELDS,
+  type ListField,
+  parseFields,
+  pickFields,
+  unknownField,
+} from "../tickets/list-fields";
+import { featureFilter, labelFilter, type TicketFilter } from "../tickets/list-filters";
 import { briefFile, detailExtras, notesOrEmpty } from "../tickets/ticket-detail";
 import { detailLines, listLines, type TicketDetail } from "../tickets/ticket-text";
 import { sprintSelector } from "../tickets/ticket-tracking";
@@ -42,27 +52,62 @@ const givenFilters = (flags: Flags): string[] => [
   ...(flags.ready === true ? ["--ready"] : []),
   ...(typeof flags.status === "string" ? [`--status ${flags.status}`] : []),
   ...(typeof flags.sprint === "string" ? [`--sprint ${flags.sprint}`] : []),
+  ...(typeof flags.feature === "string" ? [`--feature ${flags.feature}`] : []),
+  ...(typeof flags.label === "string" ? [`--label ${flags.label}`] : []),
 ];
 
-function listText(tickets: readonly TicketSummary[], flags: Flags): string[] {
-  if (tickets.length > 0) return listLines(tickets);
+function listText(tickets: readonly TicketSummary[], flags: Flags, fields: ListField[] | null): string[] {
+  if (tickets.length > 0)
+    return fields === null
+      ? listLines(tickets)
+      : fieldLines(
+          tickets.map((t) => pickFields(t, fields)),
+          fields,
+        );
   const filters = givenFilters(flags);
   return [filters.length === 0 ? frTickets.noTickets : frTickets.noMatch(filters.join(" "))];
 }
 
-function listCommand({ snapshot, flags, io }: TicketsContext): number {
+function listFilters({ snapshot, flags, io }: TicketsContext): TicketFilter[] | number {
   const wanted = typeof flags.status === "string" ? statusFilter(flags.status) : null;
   const inSprint = typeof flags.sprint === "string" ? sprintSelector(flags.sprint, snapshot.sprints) : null;
   if (typeof flags.sprint === "string" && inSprint === null) {
     io.err(frTickets.sprintNotFound(flags.sprint));
     return 1;
   }
-  const tickets = summarize(snapshot)
-    .filter((t) => flags.ready !== true || t.startable)
-    .filter((t) => wanted === null || matchesStatus(t, wanted))
-    .filter((t) => inSprint === null || inSprint(t));
-  if (flags.json === true) printJson(io, tickets);
-  else for (const line of listText(tickets, flags)) io.out(line);
+  const feature = flagText(flags, "feature");
+  const inFeature = feature === null ? null : featureFilter(snapshot.tickets, feature);
+  if (feature !== null && inFeature === null) return notFound(feature, io);
+  const label = flagText(flags, "label");
+  return [
+    (t) => flags.ready !== true || t.startable,
+    (t) => wanted === null || matchesStatus(t, wanted),
+    (t) => inSprint === null || inSprint(t),
+    (t) => inFeature === null || inFeature(t),
+    ...(label === null ? [] : [labelFilter(label)]),
+  ];
+}
+
+function listFields(flags: Flags, io: TicketsIo): ListField[] | null | number {
+  const raw = flagText(flags, "fields");
+  if (raw === null) return null;
+  const unknown = unknownField(raw);
+  if (unknown === null && splitList(raw).length > 0) return parseFields(raw);
+  if (unknown !== null) io.err(frPlan.unknownField(unknown, LIST_FIELDS));
+  io.err(frTickets.usage);
+  return 2;
+}
+
+function listCommand(ctx: TicketsContext): number {
+  const { snapshot, flags, io } = ctx;
+  const fields = listFields(flags, io);
+  if (typeof fields === "number") return fields;
+  const filters = listFilters(ctx);
+  if (typeof filters === "number") return filters;
+  const tickets = summarize(snapshot).filter((t) => filters.every((keep) => keep(t)));
+  if (flags.json === true)
+    printJson(io, fields === null ? tickets : tickets.map((t) => pickFields(t, fields)));
+  else for (const line of listText(tickets, flags, fields)) io.out(line);
   return 0;
 }
 
