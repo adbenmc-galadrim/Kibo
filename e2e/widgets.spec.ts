@@ -62,7 +62,7 @@ test("le Kanban défile dans ses colonnes en Large, Demi-page et Plein écran", 
   await expectColumnScrollsInside(page, page.getByRole("main"), info, "kanban-full");
 });
 
-test("les étiquettes filtrent les Tickets et le Kanban, la fiche les modifie", async ({ page }, info) => {
+test("les étiquettes filtrent le Kanban, la fiche les modifie", async ({ page }, info) => {
   const key = projectKey("LAB", info);
   await pairAndCreateProject(page, info, key);
   const projectId = projectIdOf(page);
@@ -72,26 +72,15 @@ test("les étiquettes filtrent les Tickets et le Kanban, la fiche les modifie", 
   await create("Écran de connexion", ["area:web", "phase:p1"]);
   await create("Sans étiquette", []);
   await createPage(page, "Étiquettes", "Tableau de bord");
-  await addComponent(page, "Tickets");
-  const tickets = page.locator("[data-instance]").first();
-  await expect(tickets.getByText("Contrat de l'API")).toBeVisible();
-  await tickets.getByRole("button", { name: "Fonctionnalité", exact: true }).click();
-  await page.getByRole("menuitemcheckbox", { name: "area:api" }).click();
-  await page.keyboard.press("Escape");
-  await expect(tickets.getByText("Écran de connexion")).toHaveCount(0);
-  await expect(tickets.getByText("Sans étiquette")).toHaveCount(0);
-  await expect(tickets.getByRole("button", { name: "Contrat de l'API" })).toHaveCount(1);
-  await shot(page, info, "labels-tickets");
-
   await addComponent(page, "Kanban");
-  const kanban = page.locator("[data-instance]").nth(1);
+  const kanban = page.locator("[data-instance]").first();
   await showAllTickets(kanban);
   await kanban.getByRole("button", { name: "Étiquette : toutes" }).click();
   await page.getByRole("menuitemradio", { name: "phase:p1" }).click();
   await expect(kanban.getByRole("article")).toHaveCount(2);
   await shot(page, info, "labels-kanban");
 
-  await tickets.getByRole("button", { name: "Contrat de l'API" }).click();
+  await kanban.getByRole("button", { name: /Contrat de l'API/ }).click();
   const sheet = page.getByRole("dialog");
   const field = sheet.getByRole("textbox", { name: "Ajouter une étiquette" });
   await field.fill("Mauvaise");

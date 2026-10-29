@@ -1,13 +1,10 @@
 import { sampleGlb } from "@kibo/sdk/fixtures";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { createPage, pairAndCreateProject } from "./helpers";
-import { addPendingComponent, publishDraft } from "./publish-kit";
+import { pairAndCreateProject } from "./helpers";
 import { projectKey, shot } from "./repo-project";
 
 test.setTimeout(240_000);
 
-const DRAFT = "viewer";
-const TITLE = "Viewer";
 const cube = () => ({
   name: "Cube Demo.glb",
   mimeType: "model/gltf-binary",
@@ -26,7 +23,7 @@ async function importCube(dialog: Locator) {
   await dialog.getByLabel("Choisir des fichiers à importer").setInputFiles(cube());
 }
 
-test("fichiers du projet, capacités à l'écran 30, CSP du composant", async ({ page }, info) => {
+test("fichiers du projet : import, doublon refusé, suppression", async ({ page }, info) => {
   const key = projectKey("FIL", info);
   await pairAndCreateProject(page, info, key);
 
@@ -51,29 +48,6 @@ test("fichiers du projet, capacités à l'écran 30, CSP du composant", async ({
   await expect(row).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(files).toBeHidden();
-
-  await publishDraft(page, DRAFT, "new-version");
-  await createPage(page, "Visionneuse", "Tableau de bord");
-  const trust = await addPendingComponent(page, TITLE, "0.1.0");
-  await expect(trust.getByText("Lire les manettes branchées")).toBeVisible();
-  await expect(trust.getByText("Lire les fichiers du projet")).toBeVisible();
-  await expect(trust.getByText("Aucun accès réseau", { exact: true })).toBeVisible();
-  await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toHaveCount(0);
-  await shot(page, info, "ecran-30-capacites");
-  await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
-  await expect(trust).toBeHidden({ timeout: 60_000 });
-  const iframe = page.locator(`iframe[title="${TITLE}"]`);
-  const allow = (await iframe.getAttribute("allow")) ?? "";
-  expect(allow).toContain("gamepad *");
-  expect(allow).toContain("autoplay 'none'");
-  await expect(page.frameLocator(`iframe[title="${TITLE}"]`).getByText("1 fichiers")).toBeVisible();
-
-  const src = await iframe.getAttribute("src");
-  if (!src) throw new Error("the viewer iframe has no src");
-  expect(new URL(src).pathname).toMatch(/^\/c\/viewer\/0\.1\.0\/[0-9a-f]+\/index\.html$/);
-  const csp = (await page.request.get(src)).headers()["content-security-policy"] ?? "";
-  expect(csp).toContain("connect-src 'self'");
-  expect(csp).not.toContain("media-src");
 });
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];

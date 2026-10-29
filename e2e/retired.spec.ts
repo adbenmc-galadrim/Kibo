@@ -6,18 +6,18 @@ import { E2E_TOKEN } from "./token";
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
-test("un jeu ou un serpent déjà posé s'affiche absent et se retire de la page", async ({ page }, info) => {
+test("un composant retiré déjà posé affiche l'encart et se retire de la page", async ({ page }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const key = projectKey("RET", info);
   await pairAndCreateProject(page, info, key);
-  await createPage(page, "Jeux", "Tableau de bord");
+  await createPage(page, "Anciens", "Tableau de bord");
   const projects = await rpc(page, { method: "listProjects" });
   const project = (projects as { name: string; id: string }[]).find((p) => p.name === `Kibo ${key}`);
   if (!project) throw new Error("project not listed");
   const snapshot = await rpc(page, { method: "getProject", projectId: project.id });
   const pages = (snapshot as { pages: { id: string; title: string }[] }).pages;
-  const pageId = pages.find((p) => p.title === "Jeux")?.id;
+  const pageId = pages.find((p) => p.title === "Anciens")?.id;
   if (!pageId) throw new Error("page not found");
   const add = (component: string, x: number) =>
     rpc(page, {
@@ -25,19 +25,20 @@ test("un jeu ou un serpent déjà posé s'affiche absent et se retire de la page
       projectId: project.id,
       command: { method: "addInstance", pageId, component, layout: { x, y: 0, w: 6, h: 4 } },
     });
-  await add("itch@1.0.0", 0);
+  await add("notes@1.0.0", 0);
   await add("snake@1.0.0", 6);
 
   const main = page.getByRole("main");
-  await expect(main.getByText("Composant absent : itch@1.0.0")).toBeVisible();
-  await expect(main.getByText("Composant absent : snake@1.0.0")).toBeVisible();
+  const notice = main.getByText("Ce composant n'existe plus dans Kibo.");
+  await expect(notice).toHaveCount(2);
+  await expect(main.locator("code", { hasText: "notes@1.0.0" })).toBeVisible();
+  await expect(main.locator("code", { hasText: "snake@1.0.0" })).toBeVisible();
+  await expect(main.getByText("Tes notes restent dans le dossier du projet.")).toHaveCount(1);
   await shot(page, info, "composants-retires");
-  await main.getByRole("button", { name: "Actions itch@1.0.0" }).click();
-  await page.getByRole("menuitem", { name: "Retirer de la page…" }).click();
-  const confirm = page.getByRole("alertdialog", { name: "Retirer itch@1.0.0 de la page ?" });
-  await confirm.getByRole("button", { name: "Retirer", exact: true }).click();
-  await expect(main.getByText("Composant absent : itch@1.0.0")).toHaveCount(0);
-  await expect(main.getByText("Composant absent : snake@1.0.0")).toBeVisible();
+  await main.getByRole("button", { name: "Retirer de la page" }).first().click();
+  await expect(notice).toHaveCount(1);
+  await expect(main.getByText("Tes notes restent dans le dossier du projet.")).toHaveCount(0);
+  await expect(main.locator("code", { hasText: "snake@1.0.0" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -48,6 +49,7 @@ const RETIRED_URLS = [
   "/#/creations",
   "/#/components",
   "/#/settings/components",
+  "/#/settings/sources",
   "/#/settings/domains",
   "/#/code",
   "/#/runs/r1",
