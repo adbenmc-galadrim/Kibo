@@ -1,14 +1,76 @@
+import { type SprintView, sameSprintCode } from "@kibo/schema";
 import type { Parsed } from "../args";
-import { frFeatures } from "../fr-write";
-import type { Connect, SessionIo } from "./daemon-session";
+import { frTickets } from "../fr";
+import { frFeatures, frWrite } from "../fr-write";
+import { type Connect, type SessionIo, withClient } from "./daemon-session";
+import { chooseProject } from "./tickets-context";
+import { createTicket, editOf, labelsOf, report, send, usage, type WriteContext } from "./write-support";
+
+const VALUE_FLAGS = ["project", "sprint", "description", "labels"];
+
+function sprintOf(sprints: readonly SprintView[], raw: string): SprintView | null {
+  const wanted = raw.trim();
+  const folded = wanted.toLowerCase();
+  return (
+    sprints.find((s) => s.id === wanted) ??
+    sprints.find((s) => sameSprintCode(s.code, wanted)) ??
+    sprints.find((s) => s.name.toLowerCase() === folded) ??
+    null
+  );
+}
+
+async function createFeature(title: string, ctx: WriteContext): Promise<number> {
+  const edit = editOf(ctx);
+  if (edit !== null && ("usage" in edit || edit.kind !== "replace"))
+    return usage(ctx, "usage" in edit ? edit.usage : null, frFeatures.usage);
+  const wanted = typeof ctx.flags.sprint === "string" ? ctx.flags.sprint : null;
+  const sprint = wanted === null ? null : sprintOf(ctx.snapshot.sprints, wanted);
+  if (wanted !== null && sprint === null) {
+    ctx.io.err(frTickets.sprintNotFound(wanted));
+    return 1;
+  }
+  const created = await createTicket(ctx, {
+    method: "createTicket",
+    title,
+    feature: true,
+    description: edit?.text,
+    labels: labelsOf(ctx),
+  });
+  if (sprint !== null)
+    await send(ctx, { method: "setTicketSprint", ticketId: created.id, sprintId: sprint.id });
+  const key = created.shortKey ?? created.key ?? created.id;
+  return report(ctx, created.id, frWrite.created(key, title, sprint === null ? [] : [sprint.code]));
+}
 
 export async function featuresCommand(
-  _positional: readonly string[],
-  _flags: Parsed["flags"],
+  positional: readonly string[],
+  flags: Parsed["flags"],
   io: SessionIo,
-  _connect?: Connect,
-  _cwd: string = process.cwd(),
+  connect?: Connect,
+  cwd: string = process.cwd(),
+  stdin?: () => string,
 ): Promise<number> {
-  io.err(frFeatures.usage);
-  return 2;
+  const [sub, title] = positional;
+  if (
+    sub !== "create" ||
+    !title ||
+    VALUE_FLAGS.some((name) => typeof flags[name] !== "string" && flags[name] !== undefined)
+  ) {
+    io.err(frFeatures.usage);
+    return 2;
+  }
+  const project = typeof flags.project === "string" ? flags.project : undefined;
+  return withClient(
+    io,
+    async (client) => {
+      const choice = chooseProject(await client.rpc({ method: "listProjects" }), "", project, cwd);
+      if ("problem" in choice) {
+        io.err(choice.problem);
+        return choice.code;
+      }
+      const snapshot = await client.rpc({ method: "getProject", projectId: choice.project.id });
+      return createFeature(title, { client, snapshot, flags, io, cwd, stdin });
+    },
+    connect,
+  );
 }

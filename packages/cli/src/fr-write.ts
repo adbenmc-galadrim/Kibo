@@ -15,3 +15,15 @@ export const TICKETS_WRITE_USAGE = [
 export const frFeatures = {
   usage: usageText(FEATURES_USAGE, PROJECT_HINT, TEXT_HINT, DAEMON_HELP),
 };
+
+export const frWrite = {
+  created: (key: string, title: string, extras: readonly string[]) =>
+    [`✓ ${key} créée : ${title}`, ...extras].join(" · "),
+  inFeature: (title: string, feature: string) => `${title} (${feature})`,
+  optional: "facultative",
+  moved: (key: string, feature: string) => `✓ ${key} déplacée sous ${feature}`,
+  updated: (key: string, parts: readonly string[]) => `✓ ${key} : ${parts.join(", ")}`,
+  parts: { title: "titre", description: "description", labels: "étiquettes" },
+  nothingToUpdate: "Rien à modifier : donnez --title, --description, --append, --prepend ou --labels.",
+  exclusive: "--description, --append et --prepend s'excluent.",
+};
