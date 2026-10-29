@@ -61,10 +61,16 @@ function recordReminder(deps: ActionRunnerDeps, out: unknown): void {
   });
 }
 
-function agentsOf(deps: ActionRunnerDeps, action: ProposedAction): ProjectAgentAgentsPort {
+function batchAgents(
+  deps: ActionRunnerDeps,
+  action: ProposedAction,
+): NonNullable<ActionRunnerDeps["agents"]> {
   if (!deps.agents) throw new KiboError("INTERNAL", `${action.type} is not available outside a batch`);
-  return deps.agents();
+  return deps.agents;
 }
+
+const agentsOf = (deps: ActionRunnerDeps, action: ProposedAction): ProjectAgentAgentsPort =>
+  batchAgents(deps, action)();
 
 function runCommands(deps: ActionRunnerDeps, action: ProposedAction, ids: TicketIds): Created | null {
   let created: Created | null = null;
@@ -106,7 +112,7 @@ export async function runAction(
       return null;
     case "createNote":
     case "updateNote":
-      agentsOf(deps, action);
+      batchAgents(deps, action);
       await data.writeNote(
         projectId,
         action.path,
