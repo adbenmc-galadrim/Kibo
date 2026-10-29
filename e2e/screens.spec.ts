@@ -151,10 +151,6 @@ test("20 · menu contextuel d'un onglet", async () => {
   await expect(kanban).toHaveAttribute("aria-selected", "true");
   await kanban.click({ button: "right" });
   await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
-  await sideButton("Tickets").click({ modifiers: ["ControlOrMeta"] });
-  const tickets = bar().getByRole("tab", { name: "Kibo · Tickets" });
-  await tickets.click({ button: "right" });
-  await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
   await sideButton("Tableau de bord").click({ modifiers: ["ControlOrMeta"] });
   await page.getByRole("button", { name: "Nouvel onglet" }).click();
   const palette = page.getByRole("dialog", { name: "Palette de commandes" });

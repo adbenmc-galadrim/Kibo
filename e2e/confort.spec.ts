@@ -65,24 +65,10 @@ test("synchronisation : état vide et connexion d'un autre appareil", async ({ p
   await expect(dialog).toBeHidden();
 });
 
-test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
+test("Kanban filtré et réordonné", async ({ page }, info) => {
   await pair(page);
   const { projectId, board } = await seed(page);
   await page.goto(`/#/p/${projectId}/${encodeURIComponent(board)}`);
-  const sidebar = page.locator('[data-sidebar="sidebar"]');
-  await sidebar.getByRole("button", { name: "Tickets", exact: true }).click();
-  const tree = page.getByRole("region", { name: "Tickets" });
-  await expect(tree).toBeVisible();
-  await page.keyboard.press("/");
-  await tree.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }).fill("types zod");
-  await expect(tree.getByText("Types Zod Ticket / Link / Status")).toBeVisible();
-  await expect(
-    tree.getByRole("button", { name: /^Ouvrir la fonctionnalité F\d+ · Noyau de données$/ }),
-  ).toBeVisible();
-  await expect(tree.getByText("Orchestration des agents")).toHaveCount(0);
-  await shot(page, info, "ecran-125");
-
-  await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
   const filter = page.getByRole("group", { name: "Tickets affichés" });
   await expect(filter.getByRole("button", { name: "Tous", exact: true })).toHaveAttribute(
     "aria-pressed",

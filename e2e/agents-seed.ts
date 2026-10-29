@@ -206,8 +206,6 @@ export async function seedWorkspace(page: Page, folder: string): Promise<Seeded>
   await command({ method: "addPage", title: "Tableau de bord", kind: "dashboard" });
   const board = text(await command({ method: "addPage", title: "Kanban", kind: "view" }), "id");
   await command({ method: "addInstance", pageId: board, component: "kanban@1.0.0" });
-  const tree = text(await command({ method: "addPage", title: "Tickets", kind: "view" }), "id");
-  await command({ method: "addInstance", pageId: tree, component: "tickets@1.0.0" });
 
   const rows = new Map(TICKETS.map((row) => [row.n, row]));
   const tickets = new Map<number, string>();

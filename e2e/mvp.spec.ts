@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { rpc } from "./agents-seed";
 import { addComponent, createPage, openNewProject, pairAndCreateProject } from "./helpers";
 import { projectKey } from "./repo-project";
 
@@ -63,38 +64,34 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(page.getByRole("region", { name: "À faire" })).toHaveCount(0);
 });
 
-test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, info) => {
+test("tableau de bord Kanban, sous-ticket et fiche", async ({ page }, info) => {
   const key = projectKey("DASH", info);
   await pairAndCreateProject(page, info, key);
   await createPage(page, "Suivi", "Tableau de bord");
-  await addComponent(page, "Tickets");
   await addComponent(page, "Kanban");
 
-  const tickets = page.getByRole("region", { name: "Tickets" });
   const todo = page.getByRole("region", { name: "À faire" });
-  await expect(tickets).toBeVisible();
   await expect(todo).toBeVisible();
-  const left = await tickets.boundingBox();
-  const right = await page.getByText("0 ticket · Tous", { exact: true }).boundingBox();
-  expect(left && right && left.x + left.width <= right.x).toBe(true);
-
   await createTicket(
     page,
-    tickets.getByRole("button", { name: "Nouveau ticket", exact: true }).first(),
+    page.getByRole("button", { name: "Nouveau ticket dans À faire", exact: true }),
     "Préparer la démo",
   );
-  await expect(tickets.getByText(`${key}-1`)).toBeVisible();
+  await expect(todo.getByText(`${key}-1`)).toBeVisible();
 
-  await tickets.getByRole("button", { name: `Nouveau sous-ticket de ${key}-1` }).click();
-  await expect(page.getByRole("dialog").getByText(`${key}-1`)).toBeVisible();
-  await page.getByLabel("Titre", { exact: true }).fill("Enregistrer la vidéo");
-  await page.getByRole("button", { name: "Créer le ticket" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  const projectId = decodeURIComponent(/#\/p\/([^/]+)\//.exec(page.url())?.[1] ?? "");
+  const snapshot = await rpc(page, { method: "getProject", projectId });
+  const parentId = (snapshot as { tickets: { id: string; title: string }[] }).tickets.find(
+    (t) => t.title === "Préparer la démo",
+  )?.id;
+  if (!parentId) throw new Error("parent ticket not found");
+  await rpc(page, {
+    method: "command",
+    projectId,
+    command: { method: "createTicket", title: "Enregistrer la vidéo", parentId, statusId: "todo" },
+  });
 
-  await expect(tickets.getByText(`${key}-2`)).toBeVisible();
   const chip = "Ouvrir l'ensemble F1 · Préparer la démo";
-  const featureChip = "Ouvrir la fonctionnalité F1 · Préparer la démo";
-  await expect(tickets.getByRole("button", { name: featureChip })).toBeVisible();
   await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
   await expect(page.getByTitle("1 ticket · Tous", { exact: true })).toBeAttached();
 

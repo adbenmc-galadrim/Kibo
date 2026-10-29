@@ -271,10 +271,8 @@ export const SILO_QUESTIONS: readonly QuestionSpec[] = [
 export const SILO_PAGES: readonly (readonly [string, string])[] = [
   ["Vue d'ensemble", "overview@1.0.0"],
   ["Planning", "planning@1.0.0"],
-  ["Tickets", "tickets@1.0.0"],
   ["Kanban", "kanban@1.0.0"],
   ["Graphe", "graph@1.0.0"],
-  ["Notes", "notes@1.0.0"],
   ["Questions", "questions@1.0.0"],
 ];
 

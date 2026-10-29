@@ -37,7 +37,7 @@ test("the compared reference of every screen is the mockup PNG, painted only whe
 }, 30_000);
 
 test("the compared content zone is the same crop of the mockup", () => {
-  const file = designFile("tickets", "dark");
+  const file = designFile("kanban", "dark");
   const raw = readFileSync(join(DESIGN_REFERENCES, file));
   const region = { x: 241, y: 49, w: 1199, h: 951 };
   const compared = decodePng(comparedReference(raw, [], region));

@@ -48,12 +48,6 @@ export async function sayToAgent(panel: Locator, message: string): Promise<void>
 export const userBubbles = (panel: Locator, text: string): Locator =>
   panel.getByRole("listitem", { name: /^Toi · / }).filter({ hasText: text });
 
-export const ticketRow = (page: Page, keyLabel: string): Locator =>
-  page
-    .getByRole("listitem")
-    .filter({ has: page.getByText(keyLabel, { exact: true }) })
-    .last();
-
 export function sprintFeatures(info: TestInfo, code: string): readonly string[] {
   const sprints: unknown = JSON.parse(
     kiboCli(info, ["sprints", "list", "--project", SILO_PROJECT.key, "--json"]),

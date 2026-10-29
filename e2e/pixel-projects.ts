@@ -28,7 +28,7 @@ const PRS_SPEC = /\/prs\.spec\.ts$/;
 const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
 const ATTENTE_SPEC = /\/attente\.spec\.ts$/;
 const PIXEL_SPECS =
-  /pixel-(planning|fonctionnalite|tickets|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket|agent)\.spec\.ts/;
+  /pixel-(planning|fonctionnalite|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket|agent)\.spec\.ts/;
 const QUESTIONS_SPEC = /pixel-questions\.spec\.ts/;
 const questionsProjectOf = (scheme: string): string => `pixel-questions-${scheme}`;
 

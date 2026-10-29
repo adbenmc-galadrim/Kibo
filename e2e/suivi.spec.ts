@@ -1,7 +1,7 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { list, rpc, text } from "./agents-seed";
 import { clipboardText, kiboCli, type Silo } from "./planning-kit";
-import { field, openProjectAgent, openSilo, openSiloPage, sprintFeatures, ticketRow } from "./suivi-kit";
+import { field, openProjectAgent, openSilo, openSiloPage, sprintFeatures } from "./suivi-kit";
 
 test.describe.configure({ mode: "serial" });
 
@@ -132,48 +132,44 @@ test("the Planning switches to Bandes and back to Colonnes", async ({ page }) =>
   await expect(page.getByRole("region", { name: "S42 Saisie hors ligne" })).toBeVisible();
 });
 
-test("Tickets shows review, CI and sessions, and a CLI session lights SILO-51 without moving it", async ({
+async function openSiloKanbanAll(page: Page): Promise<void> {
+  await openSiloPage(page, "Kanban");
+  const all = page.getByRole("main").getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
+}
+
+const kanbanCard = (page: Page, keyLabel: string): Locator =>
+  page.getByRole("article", { name: new RegExp(`^${keyLabel} `) });
+
+test("the Kanban shows review, CI and sessions, and a CLI session lights SILO-51 without moving it", async ({
   page,
 }, info) => {
-  await openSiloPage(page, "Tickets");
-  const pr20 = ticketRow(page, "SILO-45");
+  await openSiloKanbanAll(page);
+  const pr20 = kanbanCard(page, "SILO-45");
   await expect(pr20).toContainText("#20");
-  await expect(pr20).toContainText("changements demandés");
   await expect(pr20.getByLabel("CI cassée")).toBeVisible();
-  await expect(ticketRow(page, "SILO-33").getByLabel("Session T3 Code en cours")).toBeVisible();
+  await expect(kanbanCard(page, "SILO-33").getByLabel("Session T3 Code en cours")).toBeVisible();
 
-  await page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S43$/ }).click();
-  const silo51 = ticketRow(page, "SILO-51");
+  const silo51 = page.getByRole("region", { name: "Bloqué" }).getByRole("article", { name: /^SILO-51 / });
   await expect(silo51).toBeVisible();
-  await expect(silo51).toContainText("À faire");
   await expect(silo51.getByLabel(/^Session .* en cours$/)).toHaveCount(0);
   kiboCli(info, ["tickets", "session", "SILO-51", "start"]);
   await expect(silo51.getByLabel("Session T3 Code en cours")).toBeVisible();
   kiboCli(info, ["tickets", "session", "SILO-51", "stop"]);
   await expect(silo51.getByLabel(/^Session .* en cours$/)).toHaveCount(0);
-  await expect(silo51).toContainText("À faire");
+  await expect(silo51).toBeVisible();
   const snapshot = await rpc(page, { method: "getProject", projectId: silo.projectId });
   const ticket = list(snapshot, "tickets").find((t) => field(t, "keyLabel") === "SILO-51");
   expect(text(ticket, "statusId")).toBe("todo");
 });
 
-test("a retouche posed by the CLI shows on the delivered SILO-21 with its update command", async ({
-  page,
-}, info) => {
+test("a retouche posed by the CLI shows on the delivered SILO-21 card", async ({ page }, info) => {
   expect(kiboCli(info, ["tickets", "step", "SILO-21", "7", "--update"])).toContain(
     "retouche · 7 · Porte qualité",
   );
-  await openSiloPage(page, "Tickets");
-  await page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ }).click();
-  const delivered = page.getByRole("button", { name: /^(Déplier|Replier) Terminés dans S42$/ });
-  await expect(async () => {
-    if ((await delivered.getAttribute("aria-label"))?.startsWith("Déplier")) await delivered.click();
-    await expect(delivered).toHaveAccessibleName("Replier Terminés dans S42", { timeout: 1_000 });
-  }).toPass();
-  const silo21 = ticketRow(page, "SILO-21");
-  await expect(silo21).toContainText("retouche · 7 · Porte qualité");
-  await silo21.getByText("Démo client").click({ button: "right" });
-  await expect(page.getByRole("menuitem", { name: "Copier /update-delivery SILO-21" })).toBeVisible();
+  await openSiloKanbanAll(page);
+  await expect(kanbanCard(page, "SILO-21")).toContainText("retouche · Phase 7/12 · Porte qualité");
 });
 
 test("the sprint sheet carries the report of F5 to S43, and the batch turns partial", async ({

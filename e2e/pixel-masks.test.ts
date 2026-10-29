@@ -21,7 +21,6 @@ test("every mask stays inside its screen and says why", () => {
   expect(screens).toEqual([
     "planning",
     "fonctionnalite",
-    "tickets",
     "vue-ensemble",
     "graphe",
     "graphe-prs",

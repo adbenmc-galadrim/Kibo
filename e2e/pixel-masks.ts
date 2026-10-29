@@ -4,7 +4,6 @@ export type PixelMask = Box & { why: string };
 type OriginScreen =
   | "planning"
   | "fonctionnalite"
-  | "tickets"
   | "vue-ensemble"
   | "graphe"
   | "graphe-prs"
@@ -42,7 +41,6 @@ export const MASK_AREA_LIMIT = 0.04;
 const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   planning: 1000,
   fonctionnalite: 1000,
-  tickets: 1000,
   "vue-ensemble": 1260,
   graphe: 1000,
   "graphe-prs": 1000,
@@ -94,13 +92,6 @@ const syncAge = (x: number): PixelMask => ({
   h: 16,
   why: "« Synchronisé · il y a 1 min » : âge relatif de la synchronisation, aucun serveur de sync semé",
 });
-const updatedAt = (y: number, w: number): PixelMask => ({
-  x: 1323,
-  y,
-  w,
-  h: 17,
-  why: "« Mis à jour » : âge relatif d'un fait semé à l'heure réelle (§37.15 point 13)",
-});
 const clockTime = (x: number, y: number, w: number, h: number, what: string): PixelMask => ({
   x,
   y,
@@ -122,20 +113,6 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
     clockTime(1364, 498, 36, 15, "« 15:04 » de l'activité"),
     clockTime(1364, 528, 36, 15, "« 14:51 » de l'activité"),
     clockTime(1376, 558, 24, 15, "« hier » de l'activité"),
-  ],
-  tickets: [
-    USER,
-    syncAge(1124),
-    updatedAt(190, 61),
-    updatedAt(231, 66),
-    updatedAt(272, 45),
-    updatedAt(313, 23),
-    updatedAt(354, 23),
-    updatedAt(395, 22),
-    updatedAt(469, 48),
-    updatedAt(510, 23),
-    updatedAt(551, 26),
-    updatedAt(592, 26),
   ],
   "vue-ensemble": [
     user(1216),
