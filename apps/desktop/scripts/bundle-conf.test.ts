@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const conf = JSON.parse(readFileSync(join(import.meta.dir, "../src-tauri/tauri.conf.json"), "utf8"));
+const releaseWorkflow = readFileSync(join(import.meta.dir, "../../../.github/workflows/release.yml"), "utf8");
 
-test("macOS is signed ad hoc, without hardened runtime, Apple identity or entitlements", () => {
+test("macOS is signed ad hoc by default and with a stable identity in release, without Apple account", () => {
   expect(conf.bundle.macOS.signingIdentity).toBe("-");
+  expect(releaseWorkflow).toContain('APPLE_SIGNING_IDENTITY=Kibo Code Signing"');
   expect(conf.bundle.macOS.hardenedRuntime).toBe(false);
   expect(conf.bundle.macOS.minimumSystemVersion).toBe("12.0");
   expect(conf.bundle.macOS.entitlements).toBeUndefined();

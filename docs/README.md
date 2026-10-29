@@ -16,6 +16,7 @@ Ce dossier est aussi le dossier de notes du projet Kibo dans Kibo (page Notes) :
 ## Guides
 
 - [Installation](installation.md)
+- [Signature de la release macOS](release-signing.md) : certificat stable, secrets, rotation.
 - [CLI `kibo`](cli.md) : lire et écrire depuis un terminal, appliquer un plan ([exemple](cli-plan-exemple.yaml)), l'API du démon.
 
 ## Feuille de route et plans
