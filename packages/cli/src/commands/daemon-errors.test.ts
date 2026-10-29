@@ -91,3 +91,13 @@ test("keeps the original error when getAppInfo answers garbage", async () => {
     /^Erreur NOT_FOUND : ticket SILO-33 \(démon \/\S+kibo-cli-old-\S+, version inconnue\)$/,
   );
 });
+
+test("a known refusal is explained in French", async () => {
+  const d = fakeOldDaemon((m) => {
+    if (m === "getAppInfo") return ok(APP_INFO);
+    if (m === "command") return refused("INVALID_INPUT", "a hold needs a step (a feature cannot be held)");
+    return null;
+  });
+  expect(await d.run("tickets", "set", "SILO-30", "hold=attente client")).toBe(1);
+  expect(d.err).toEqual(["Une attente se pose sur une étape, pas sur une fonctionnalité."]);
+});

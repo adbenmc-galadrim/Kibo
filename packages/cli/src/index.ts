@@ -16,6 +16,7 @@ import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
 import { DaemonError, isUnknownMethod } from "./daemon-client";
+import { explainError } from "./error-text";
 import { fr, frTickets } from "./fr";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
@@ -94,6 +95,8 @@ function marketDeps(io: CliIo): MarketCliDeps {
 }
 
 function errorText(e: KiboError, command: string): string {
+  const explained = explainError(e);
+  if (explained !== null) return explained;
   if (!(e instanceof DaemonError) || e.daemon === null) return fr.error(e.code, e.detail);
   const { home, version } = e.daemon;
   if (isUnknownMethod(e)) return fr.daemonTooOld(fr.daemonName(home, version), command);
