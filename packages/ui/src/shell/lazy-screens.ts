@@ -45,11 +45,6 @@ export const FilePreviewSheet = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
-export const SourceHeader = lazyPanel(
-  () => import("../pages/SourceHeader").then((m) => m.SourceHeader),
-  fr.lazy,
-  { fallback: "sr-only" },
-);
 export const IntegrationNotices = lazyPanel(
   () => import("./IntegrationNotices").then((m) => m.IntegrationNotices),
   fr.lazy,

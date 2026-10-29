@@ -28,7 +28,7 @@ export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(mine\/MyTicketsPage|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader)\.tsx$/,
+  /\/packages\/ui\/src\/(mine\/MyTicketsPage|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen))\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|shell\/TicketSheet|palette\/CommandPalette)\.tsx$/,
   /\/components\/(graph\/src\/(GraphView|PrsView)|kanban\/src\/Kanban|mockup\/src\/(Mockup|FrameFullscreen))\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence))\.tsx$/,

@@ -12,7 +12,7 @@ import { TrackingSection } from "../ticket/TrackingSection";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import type { TicketJournal } from "../ticket/use-ticket-tracking";
 import { useOptionalHost } from "./Host";
-import { CiSection, DesignProperty, DesignSection, SyncStatus } from "./sheet/lazy-sections";
+import { CiSection, DesignProperty, DesignSection } from "./sheet/lazy-sections";
 
 type Props = {
   project: ProjectSnapshot;
@@ -57,9 +57,6 @@ export function TicketDetail({
     });
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="-mx-4 empty:hidden">
-        <SyncStatus projectId={project.meta.id} ticket={t} />
-      </div>
       <TrackingSection
         ticket={t}
         ciRuns={ciRuns}

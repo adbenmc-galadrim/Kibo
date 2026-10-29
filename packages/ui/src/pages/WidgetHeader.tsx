@@ -6,13 +6,12 @@ import {
   type ProjectSnapshot,
   splitRef,
 } from "@kibo/schema";
-import { lazyPanel, readSource } from "@kibo/sdk";
+import { lazyPanel } from "@kibo/sdk";
 import type { RefObject } from "react";
 import { fr } from "../i18n/fr";
 import { instanceFormat } from "../lib/format-grid";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import { componentIcon } from "../registry";
-import { SourceHeader } from "../shell/lazy-screens";
 import { canEdit } from "../state/access";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu } from "./InstanceMenu";
@@ -62,19 +61,16 @@ export function WidgetBody({
   containerRef,
 }: BodyProps & { apis: InstanceApis; containerRef?: RefObject<HTMLDivElement | null> }) {
   return (
-    <>
-      {readSource(instance.config) && <SourceHeader project={project} instance={instance} />}
-      <div ref={containerRef} className="@container min-h-0 flex-1 overflow-auto">
-        <InstanceFrame
-          projectId={project.meta.id}
-          instance={instance}
-          viewer={viewer}
-          surface="widget"
-          format={instanceFormat({ ...instance, layout }, page)}
-          apis={apis}
-          editable={canEdit(project)}
-        />
-      </div>
-    </>
+    <div ref={containerRef} className="@container min-h-0 flex-1 overflow-auto">
+      <InstanceFrame
+        projectId={project.meta.id}
+        instance={instance}
+        viewer={viewer}
+        surface="widget"
+        format={instanceFormat({ ...instance, layout }, page)}
+        apis={apis}
+        editable={canEdit(project)}
+      />
+    </div>
   );
 }

@@ -68,7 +68,6 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/files/FileTabView.tsx",
       "/Kibo/packages/ui/src/files/FilePreviewSheet.tsx",
       "/Kibo/packages/ui/src/shell/IntegrationNotices.tsx",
-      "/Kibo/packages/ui/src/pages/SourceHeader.tsx",
       "/Kibo/components/graph/src/GraphView.tsx",
       "/Kibo/components/kanban/src/Kanban.tsx",
       "/Kibo/packages/ui/src/dialogs/NewProjectDialog.tsx",

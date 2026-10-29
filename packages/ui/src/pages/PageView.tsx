@@ -1,12 +1,11 @@
 import type { Page, ProjectSnapshot, Spotlight } from "@kibo/schema";
-import { lazyPanel, readSource } from "@kibo/sdk";
+import { lazyPanel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
 import { compactInstances } from "../lib/format-grid";
-import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
+import { PresenceAvatars } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
@@ -74,14 +73,11 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             </div>
           </div>
         ) : page.kind === "view" ? (
-          <>
-            {readSource(first.config) && <SourceHeader project={project} instance={first} />}
-            <div data-view-body className="flex min-h-0 flex-1 flex-col">
-              <PageBoundary resetKey={first.id}>
-                <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable={editable} />
-              </PageBoundary>
-            </div>
-          </>
+          <div data-view-body className="flex min-h-0 flex-1 flex-col">
+            <PageBoundary resetKey={first.id}>
+              <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable={editable} />
+            </PageBoundary>
+          </div>
         ) : editing && layoutMode ? (
           <EditLayout
             projectId={projectId}
@@ -126,8 +122,6 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             taken={instances.map((i) => i.layout)}
             open
             onOpenChange={setAdding}
-            workflow={project.workflow}
-            linked={linkedRepos(project)}
           />
         )}
       </div>

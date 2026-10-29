@@ -12,8 +12,6 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getGithubConnectOptions")
-          return Promise.resolve({ ghAvailable: false, ghLogin: null, mode: null });
         return add();
       },
       subscribe: () => () => undefined,
@@ -46,7 +44,7 @@ test("screen 3: built-ins only, search, preview and display", async () => {
   expect(screen.queryByText("Mes composants")).toBeNull();
   await user.click(screen.getByRole("radio", { name: "Kanban" }));
   expect(screen.getByText("Widget dans la grille")).toBeTruthy();
-  expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
+  expect(screen.queryByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeNull();
   expect(
     screen.getByText(
       "Intégré · confiance totale · lit : ticket, status, run, runs CI, question, sprint · écrit : ticket, run",
