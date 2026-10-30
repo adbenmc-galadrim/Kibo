@@ -142,22 +142,16 @@ describe("startDaemon", () => {
     expect(tables.map((t) => t.name)).toEqual(expect.arrayContaining(["sync_config", "sync_projects"]));
   });
 
-  test("remote access is off by default and pairing codes are single use", async () => {
+  test("remote access is gone: /api/pair-code answers 404 and the daemon listens on 127.0.0.1", async () => {
     const { d } = await launch();
-    const rpc = await pair(d);
-    const status = await (await rpc({ method: "getRemoteAccess" })).json();
-    expect(status).toMatchObject({ ok: true, result: { enabled: false, url: null } });
-    const created = z
-      .object({ result: z.object({ code: z.string() }) })
-      .parse(await (await rpc({ method: "createPairingCode" })).json());
-    const redeem = () =>
-      fetch(`${d.url}/api/pair-code`, {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: d.url },
-        body: JSON.stringify({ code: created.result.code }),
-      });
-    expect((await redeem()).status).toBe(204);
-    expect((await redeem()).status).toBe(401);
+    const cookie = await pairCookie(d);
+    const res = await fetch(`${d.url}/api/pair-code`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: d.url, cookie },
+      body: JSON.stringify({ code: "ABCD-EFGH" }),
+    });
+    expect(res.status).toBe(404);
+    expect(d.url).toStartWith("http://127.0.0.1:");
   });
 
   test("an automatic backup runs at start, then createBackup from the RPC writes under <home>/backups and getBackups lists it", async () => {

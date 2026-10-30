@@ -1,18 +1,11 @@
 import { z } from "zod";
 import type { ProjectMeta } from "./project";
-import { type PairingCode, RemoteAccessConfig, type RemoteAccessStatus, type SessionInfo } from "./security";
 import { type MemberInfo, MemberRole, type ProjectSyncInfo } from "./sharing";
 import { type DeviceInfo, type PresencePeer, SyncId, type SyncStatus } from "./sync";
 
 const id = SyncId;
 
 export const SYNC_RPC_REQUESTS = [
-  z.object({ method: z.literal("listSessions") }),
-  z.object({ method: z.literal("revokeSession"), id: z.string().regex(/^[0-9a-f]{64}$/) }),
-  z.object({ method: z.literal("getRemoteAccess") }),
-  RemoteAccessConfig.extend({ method: z.literal("enableRemoteAccess") }),
-  z.object({ method: z.literal("disableRemoteAccess") }),
-  z.object({ method: z.literal("createPairingCode") }),
   z.object({ method: z.literal("getSyncStatus") }),
   z.object({
     method: z.literal("connectSyncServer"),
@@ -50,12 +43,6 @@ export const SYNC_RPC_METHODS: ReadonlySet<string> = new Set(
 );
 
 export type SyncRpcResult = {
-  listSessions: SessionInfo[];
-  revokeSession: null;
-  getRemoteAccess: RemoteAccessStatus;
-  enableRemoteAccess: RemoteAccessStatus;
-  disableRemoteAccess: null;
-  createPairingCode: PairingCode;
   getSyncStatus: SyncStatus;
   connectSyncServer: SyncStatus;
   disconnectSyncServer: null;

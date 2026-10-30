@@ -3,8 +3,7 @@ import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadOrCreateToken } from "./auth";
-import { PairingCodes } from "./remote/pairing-codes";
-import { healthResponse, startServer } from "./server";
+import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
@@ -53,7 +52,6 @@ test("GET /api/health answers the pid without origin nor session, locally only",
   expect(res.headers.get("cache-control")).toBe("no-store");
   expect(await res.json()).toEqual({ pid: process.pid });
   expect((await fetch(`${server.url}/api/health`, { method: "POST" })).status).toBe(404);
-  expect(healthResponse({ hostname: "0.0.0.0", port: 1, secure: true, remote: true }, "GET")).toBeNull();
 });
 
 describe("pairing and auth", () => {
@@ -126,32 +124,20 @@ describe("pairing and auth", () => {
     expect(image.status).toBe(200);
   });
 
-  test("pairing routes refuse a body over 4 KiB before parsing it", async () => {
+  test("the pairing route refuses a body over 4 KiB before parsing it", async () => {
     const pad = "x".repeat(5 * 1024);
     expect((await post("/api/pair", { token: TOKEN, pad })).status).toBe(413);
-    expect((await post("/api/pair-code", { code: "ABCD-EFGH", pad })).status).toBe(413);
     expect((await post("/api/pair", { token: TOKEN })).status).toBe(204);
   });
 
-  test("pairing with a code still works under the cap", async () => {
-    const codes = new PairingCodes(() => Date.now());
-    const coded = startServer({
-      service: createService(store, { user: "adam" }),
-      token: TOKEN,
-      port: 0,
-      uiDir: null,
-      pairingCodes: codes,
+  test("/api/pair-code answers 404 and the daemon listens on 127.0.0.1 only", async () => {
+    const cookie = await pair();
+    expect((await post("/api/pair-code", { code: "ABCD-EFGH" }, { cookie })).status).toBe(404);
+    expect(Object.keys(server).sort()).toEqual(["port", "stop", "url"]);
+    const refused = await fetch(`http://localhost:${server.port}/api/health`, {
+      headers: { host: `192.168.1.20:${server.port}` },
     });
-    try {
-      const res = await fetch(`${coded.url}/api/pair-code`, {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: coded.url },
-        body: JSON.stringify({ code: codes.create().code }),
-      });
-      expect(res.status).toBe(204);
-    } finally {
-      coded.stop();
-    }
+    expect(refused.status).toBe(403);
   });
 
   test("websocket needs a session and receives changes", async () => {

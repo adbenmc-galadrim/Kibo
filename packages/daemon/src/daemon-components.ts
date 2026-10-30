@@ -1,3 +1,4 @@
+import { type SandboxServerOptions, startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, type ComponentsService, createComponentsService } from "./components/service";
 import type { DaemonOptions } from "./daemon-options";
 import type { Closer } from "./daemon-shutdown";
@@ -46,4 +47,13 @@ export function startDaemonIntegrations(
   closers.push(parts.service.attachIntegrations(integrations));
   closers.push(() => integrations.stop());
   return integrations;
+}
+
+export function startDaemonSandbox(
+  opts: SandboxServerOptions,
+  front: Closer[],
+): { url: string; port: number } {
+  const sandbox = startSandboxServer(opts);
+  front.push(() => sandbox.stop());
+  return sandbox;
 }

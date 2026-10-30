@@ -34,7 +34,6 @@ mock.module("../api", () =>
   apiMock({
     client: {
       pair: () => Promise.resolve(),
-      pairWithCode: () => Promise.resolve(),
       rpc: async (req: { method: string }) => (req.method === "getAppInfo" ? environment.app : environment),
       subscribe: none,
       subscribeEvents: none,

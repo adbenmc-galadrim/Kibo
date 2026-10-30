@@ -17,6 +17,7 @@ import type { QuestionRecipient } from "./question-recipient";
 import { CORE_RPC, type CoreRpcResult } from "./rpc-core";
 import type { Rule } from "./rule";
 import type { RunChanged } from "./run";
+import { SESSION_RPC, type SessionRpcResult } from "./session-rpc";
 import type { ProjectSyncInfo } from "./sharing";
 import type { SprintView } from "./sprint";
 import type { StartReason } from "./startability";
@@ -76,6 +77,7 @@ export type ChangeMessage =
 export const RpcRequest = z.discriminatedUnion("method", [
   ...CORE_RPC,
   ...INTEGRATION_RPC,
+  ...SESSION_RPC,
   ...SYNC_RPC_REQUESTS,
   ...APP_RPC,
   ...PROJECT_AGENT_RPC,
@@ -86,6 +88,7 @@ export type RpcRequest = z.infer<typeof RpcRequest>;
 
 export type RpcResult = CoreRpcResult &
   IntegrationRpcResult &
+  SessionRpcResult &
   SyncRpcResult &
   AppRpcResult &
   ProjectAgentRpcResult &

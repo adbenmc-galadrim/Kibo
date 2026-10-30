@@ -1,14 +1,8 @@
 import { expect, test } from "bun:test";
 import { RpcRequest } from "./rpc";
 
-test("phase 7 sync, presence and security RPCs parse", () => {
+test("phase 7 sync and presence RPCs parse", () => {
   const requests = [
-    { method: "listSessions" },
-    { method: "revokeSession", id: "a".repeat(64) },
-    { method: "getRemoteAccess" },
-    { method: "enableRemoteAccess", address: "192.168.1.20", port: 47832, tls: { kind: "self-signed" } },
-    { method: "disableRemoteAccess" },
-    { method: "createPairingCode" },
     { method: "getSyncStatus" },
     {
       method: "connectSyncServer",
@@ -34,14 +28,6 @@ test("phase 7 sync, presence and security RPCs parse", () => {
 });
 
 test("invalid phase 7 RPCs are refused", () => {
-  expect(
-    RpcRequest.safeParse({
-      method: "enableRemoteAccess",
-      address: "0.0.0.0",
-      port: 47832,
-      tls: { kind: "self-signed" },
-    }).success,
-  ).toBe(false);
   expect(
     RpcRequest.safeParse({ method: "createProjectInvite", projectId: "p1", role: "owner" }).success,
   ).toBe(false);

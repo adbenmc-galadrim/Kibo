@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { type ChangeMessage, CodeRequest, KiboError, RpcRequest } from "@kibo/schema";
+import { type ChangeMessage, CodeRequest, RpcRequest } from "@kibo/schema";
 import type { Server, ServerWebSocket } from "bun";
 import { readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
@@ -13,8 +13,6 @@ import {
   type QuestionImageRouteDeps,
   serveQuestionImage,
 } from "./questions/image-route";
-import { PairingCodes } from "./remote/pairing-codes";
-import type { RemoteListen } from "./remote/remote-access";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
 import { rpcRefusal } from "./rpc-refusal";
 import { type HookSink, handleHook } from "./runs/hook-route";
@@ -40,14 +38,12 @@ export type ServerOptions = {
   sandboxOrigin?: () => string | null;
   redact?: (text: string) => string;
   sessions?: SessionStore;
-  pairingCodes?: PairingCodes;
   extensions?: RpcExtension[];
   handlers?: RpcHandler[];
   now?: () => number;
 };
 type WsData = { sessionHash: string };
-export type ListenInfo = { hostname: string; port: number; secure: boolean; remote: boolean };
-export type RunningServer = { url: string; port: number; stop(): void; listenRemote: RemoteListen };
+export type RunningServer = { url: string; port: number; stop(): void };
 
 const MAX_BODY_BYTES = 3 * 1_048_576;
 const HOOK_PATH = /^\/hooks\/([0-9a-f-]{36})$/;
@@ -57,8 +53,6 @@ const sandboxOrigins = (origin: string | null): string[] => {
   const { port } = new URL(origin);
   return [`http://127.0.0.1:${port}`, `http://localhost:${port}`];
 };
-const hostPart = (hostname: string, port: number) =>
-  `${hostname.includes(":") ? `[${hostname}]` : hostname}:${port}`;
 
 function sessionStoreOf(given: SessionStore | undefined): { sessions: SessionStore; close(): void } {
   if (given) return { sessions: given, close: () => {} };
@@ -68,14 +62,14 @@ function sessionStoreOf(given: SessionStore | undefined): { sessions: SessionSto
 
 const HEALTH_HEADERS = { "cache-control": "no-store" };
 
-async function localOnly(l: ListenInfo, handle: (() => Promise<Response>) | null): Promise<Response> {
-  const res = handle && !l.remote ? await handle() : new Response("not found", { status: 404 });
+async function noStore(handle: (() => Promise<Response>) | null): Promise<Response> {
+  const res = handle ? await handle() : new Response("not found", { status: 404 });
   res.headers.set("cache-control", "no-store");
   return res;
 }
 
-export function healthResponse(l: ListenInfo, method: string): Response | null {
-  if (l.remote || method !== "GET") return null;
+function healthResponse(method: string): Response {
+  if (method !== "GET") return new Response("not found", { status: 404 });
   return Response.json({ pid: process.pid }, { headers: HEALTH_HEADERS });
 }
 
@@ -83,7 +77,6 @@ export function startServer(opts: ServerOptions): RunningServer {
   const now = opts.now ?? Date.now;
   const { sessions, close: closeSessions } = sessionStoreOf(opts.sessions);
   sessions.purge(now());
-  const pairingCodes = opts.pairingCodes ?? new PairingCodes(now);
   const sockets = new Map<string, Set<ServerWebSocket<WsData>>>();
   const redact = opts.redact ?? unredacted;
   let port = opts.port;
@@ -93,9 +86,6 @@ export function startServer(opts: ServerOptions): RunningServer {
     const extra = (opts.extraOrigins ?? []).filter((o) => !sandbox.includes(o));
     return [`http://127.0.0.1:${port}`, `http://localhost:${port}`, ...extra];
   };
-  const allowedHosts = (l: ListenInfo) => (l.remote ? [hostPart(l.hostname, l.port)] : hosts());
-  const allowedOrigins = (l: ListenInfo) =>
-    l.remote ? [`https://${hostPart(l.hostname, l.port)}`] : origins();
   const sessionIdOf = (req: Request) => readCookie(req.headers.get("cookie"), SESSION_COOKIE);
   const sessionOf = (req: Request): SessionCheck | null => {
     const id = sessionIdOf(req);
@@ -112,29 +102,19 @@ export function startServer(opts: ServerOptions): RunningServer {
   ];
   const handlers = opts.handlers ?? [];
 
-  const paired = (req: Request, l: ListenInfo) => {
+  const paired = (req: Request) => {
     const deviceName = deviceNameFromUserAgent(req.headers.get("user-agent"));
-    const { id } = sessions.create({ deviceName, remote: l.remote }, now());
-    return new Response(null, { status: 204, headers: { "set-cookie": sessionCookie(id, l.secure) } });
+    const { id } = sessions.create({ deviceName, remote: false }, now());
+    return new Response(null, { status: 204, headers: { "set-cookie": sessionCookie(id, false) } });
   };
 
-  const pairWithToken = async (req: Request, l: ListenInfo) => {
-    if (l.remote) return fail("FORBIDDEN", "token pairing is only allowed on 127.0.0.1", 403);
+  const pairWithToken = async (req: Request) => {
     const token = await readPairingField(req, "token");
     if (token.tooLarge) return fail("TOO_LARGE", "pairing body too large", 413);
     if (token.value === null || !sameSecret(token.value, opts.token)) {
       return fail("UNAUTHORIZED", "invalid pairing token", 401);
     }
-    return paired(req, l);
-  };
-
-  const pairWithCode = async (req: Request, l: ListenInfo) => {
-    const code = await readPairingField(req, "code");
-    if (code.tooLarge) return fail("TOO_LARGE", "pairing body too large", 413);
-    const outcome = code.value === null ? "invalid" : pairingCodes.redeem(code.value);
-    if (outcome === "rate-limited") return fail("RATE_LIMITED", "too many attempts, create a new code", 429);
-    if (outcome === "invalid") return fail("UNAUTHORIZED", "invalid or expired code", 401);
-    return paired(req, l);
+    return paired(req);
   };
 
   const authenticated = async (
@@ -166,60 +146,45 @@ export function startServer(opts: ServerOptions): RunningServer {
     return new Response("not found", { status: 404 });
   };
 
-  const handleApi = async (
-    req: Request,
-    url: URL,
-    srv: Server<WsData>,
-    l: ListenInfo,
-  ): Promise<Response | undefined> => {
-    if (!allowedOrigins(l).includes(req.headers.get("origin") ?? ""))
+  const handleApi = async (req: Request, url: URL, srv: Server<WsData>): Promise<Response | undefined> => {
+    if (!origins().includes(req.headers.get("origin") ?? ""))
       return fail("FORBIDDEN", "origin not allowed", 403);
-    if (url.pathname === "/api/pair" && req.method === "POST") return pairWithToken(req, l);
-    if (url.pathname === "/api/pair-code" && req.method === "POST") return pairWithCode(req, l);
+    if (url.pathname === "/api/pair" && req.method === "POST") return pairWithToken(req);
     const session = sessionOf(req);
     const id = sessionIdOf(req);
     if (!session || id === null) return fail("UNAUTHORIZED", "pair this browser first", 401);
-    const ctx: RpcContext = { sessionHash: session.hash, remote: session.remote || l.remote };
-    const renewal = session.renewed ? sessionCookie(id, l.secure) : null;
+    const ctx: RpcContext = { sessionHash: session.hash, remote: false };
+    const renewal = session.renewed ? sessionCookie(id, false) : null;
     const res = await authenticated(req, url, srv, ctx, renewal);
     if (res && renewal) res.headers.set("set-cookie", renewal);
     return res;
   };
 
-  const makeFetch =
-    (listen: () => ListenInfo) =>
-    async (req: Request, srv: Server<WsData>): Promise<Response | undefined> => {
-      const l = listen();
-      const url = new URL(req.url);
-      if (!allowedHosts(l).includes(req.headers.get("host") ?? ""))
-        return new Response("forbidden host", { status: 403 });
-      if (url.pathname === "/api/health") {
-        return healthResponse(l, req.method) ?? new Response("not found", { status: 404 });
-      }
-      const hookRun = HOOK_PATH.exec(url.pathname)?.[1];
-      const hooks = opts.hooks;
-      if (hookRun) return localOnly(l, hooks ? () => handleHook(req, hookRun, hooks) : null);
-      const agentRun = AGENT_MCP_PATH.exec(url.pathname)?.[1];
-      const agentMcp = opts.agentMcp;
-      if (agentRun) return localOnly(l, agentMcp ? () => handleAgentMcp(req, agentRun, agentMcp) : null);
-      if (url.pathname.startsWith("/icons/")) {
-        return serveIcon(req, url, {
-          icons: opts.icons ?? { get: () => null },
-          origins: () => allowedOrigins(l),
-          hasSession,
-        });
-      }
-      if (isQuestionImagePath(url.pathname)) {
-        const read = opts.questionImages?.read ?? (() => null);
-        return serveQuestionImage(req, url, { read, origins: () => allowedOrigins(l), hasSession });
-      }
-      if (!url.pathname.startsWith("/api/")) {
-        return serveUi(opts.uiDir, url.pathname, opts.sandboxOrigin?.() ?? null);
-      }
-      const res = await handleApi(req, url, srv, l);
-      res?.headers.set("cache-control", "no-store");
-      return res;
-    };
+  const fetchHandler = async (req: Request, srv: Server<WsData>): Promise<Response | undefined> => {
+    const url = new URL(req.url);
+    if (!hosts().includes(req.headers.get("host") ?? ""))
+      return new Response("forbidden host", { status: 403 });
+    if (url.pathname === "/api/health") return healthResponse(req.method);
+    const hookRun = HOOK_PATH.exec(url.pathname)?.[1];
+    const hooks = opts.hooks;
+    if (hookRun) return noStore(hooks ? () => handleHook(req, hookRun, hooks) : null);
+    const agentRun = AGENT_MCP_PATH.exec(url.pathname)?.[1];
+    const agentMcp = opts.agentMcp;
+    if (agentRun) return noStore(agentMcp ? () => handleAgentMcp(req, agentRun, agentMcp) : null);
+    if (url.pathname.startsWith("/icons/")) {
+      return serveIcon(req, url, { icons: opts.icons ?? { get: () => null }, origins, hasSession });
+    }
+    if (isQuestionImagePath(url.pathname)) {
+      const read = opts.questionImages?.read ?? (() => null);
+      return serveQuestionImage(req, url, { read, origins, hasSession });
+    }
+    if (!url.pathname.startsWith("/api/")) {
+      return serveUi(opts.uiDir, url.pathname, opts.sandboxOrigin?.() ?? null);
+    }
+    const res = await handleApi(req, url, srv);
+    res?.headers.set("cache-control", "no-store");
+    return res;
+  };
 
   const websocket = {
     open(ws: ServerWebSocket<WsData>) {
@@ -238,55 +203,29 @@ export function startServer(opts: ServerOptions): RunningServer {
     message() {},
   };
 
-  const servers = new Set<Server<WsData>>();
   const local = Bun.serve<WsData>({
     hostname: "127.0.0.1",
     port: opts.port,
     maxRequestBodySize: MAX_BODY_BYTES,
-    fetch: makeFetch(() => ({ hostname: "127.0.0.1", port, secure: false, remote: false })),
+    fetch: fetchHandler,
     websocket,
   });
   port = local.port ?? opts.port;
-  servers.add(local);
-
-  const listenRemote: RemoteListen = ({ hostname, port: remotePort, tls }) => {
-    if (!tls.cert || !tls.key) throw new KiboError("TLS_REQUIRED", "remote access requires TLS");
-    const info: ListenInfo = { hostname, port: remotePort, secure: true, remote: true };
-    const remote = Bun.serve<WsData>({
-      hostname,
-      port: remotePort,
-      tls,
-      maxRequestBodySize: MAX_BODY_BYTES,
-      fetch: makeFetch(() => info),
-      websocket,
-    });
-    info.port = remote.port ?? remotePort;
-    servers.add(remote);
-    return {
-      port: info.port,
-      stop: () => {
-        servers.delete(remote);
-        remote.stop(true);
-      },
-    };
-  };
 
   const publish = (message: ChangeMessage) => {
     const text = redact(JSON.stringify(message));
-    for (const s of servers) s.publish("changes", text);
+    local.publish("changes", text);
   };
   const off = opts.service.onChange(publish);
   const offCode = opts.code?.onChange(publish);
   return {
     url: `http://127.0.0.1:${port}`,
     port,
-    listenRemote,
     stop: () => {
       off();
       offCode?.();
       offRevoke();
-      for (const s of servers) s.stop(true);
-      servers.clear();
+      local.stop(true);
       closeSessions();
     },
   };

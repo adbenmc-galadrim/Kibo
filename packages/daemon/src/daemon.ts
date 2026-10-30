@@ -6,8 +6,7 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { migrateDomainScopes } from "./config/domain-scope-migration";
 import { startProjectAdmin } from "./daemon-admin";
 import { startAgents } from "./daemon-agents";
-import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
-import { startDaemonSandbox, startRemote } from "./daemon-network";
+import { startDaemonComponents, startDaemonIntegrations, startDaemonSandbox } from "./daemon-components";
 import { clockFromEnv, type DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
 import { createLocalServices, openDaemonStores } from "./daemon-stores";
@@ -20,15 +19,11 @@ import { startProjectAgent } from "./project-agent/bootstrap";
 import { projectAgentSource } from "./project-agent/definition";
 import { startWakeup } from "./project-agent/wakeup/bootstrap";
 import { questionImageFiles } from "./questions/question-images-port";
-import { PairingCodes } from "./remote/pairing-codes";
-import type { RemoteAccess } from "./remote/remote-access";
-import { remoteRpc } from "./remote/rpc";
 import type { Orchestrator } from "./runs/orchestrator";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { ready } from "./service-ports";
 import { openSessionStore } from "./sessions/session-store";
-import { openLocalSettings } from "./settings";
 import { DaemonRunning, findRunningDaemon } from "./single-instance";
 import { startCodeTracking } from "./tracking/bootstrap";
 import { deliveryStepRpc } from "./tracking/delivery-step";
@@ -113,9 +108,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     opts.code,
     tracking.passes(() => projectAgent.agent),
   );
-  const pairingCodes = new PairingCodes(Date.now);
-  let remote: RemoteAccess | null = null;
-  const remoteAccess = () => ready(remote, "INTERNAL", "remote access is not initialised");
   const app = startAppDiagnostics({
     home: opts.home,
     userHome: opts.userHome ?? homedir(),
@@ -137,9 +129,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     code,
     token,
     sessions: openSessionStore(store.db),
-    pairingCodes,
     extensions: [
-      remoteRpc(remoteAccess, pairingCodes),
       backupsRpc(local.backups),
       app.rpc,
       ...tracking.rpc,
@@ -168,11 +158,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   front.push(() => server.stop());
   uiPort = server.port;
-  remote = await startRemote(
-    { home: opts.home, settings: openLocalSettings(store), secrets: integrations.secrets },
-    server,
-    front,
-  );
   const sandbox = startDaemonSandbox(
     {
       port: opts.sandboxPort,
