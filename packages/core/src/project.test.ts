@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { EMPTY_DELIVERY } from "@kibo/schema";
+import { EMPTY_DELIVERY, ProjectMeta } from "@kibo/schema";
 import { LoroDoc, LoroMap } from "loro-crdt";
 import {
   countTicketsByStatus,
@@ -47,6 +47,17 @@ describe("workspace", () => {
     registerProject(ws, meta);
     expect(() => registerProject(ws, { ...meta, id: "p3" })).toThrow("INVALID_INPUT");
   });
+  test("a workspace entry still carrying the retired duplication setting stays readable", () => {
+    const ws = createWorkspaceDoc();
+    registerProject(ws, meta);
+    const entry = ws.getList("projects").get(0);
+    if (!(entry instanceof LoroMap)) throw new Error("the entry is not a map");
+    entry.set("duplication", { shared: ["src/**"] });
+    ws.commit();
+    expect(listProjects(ws)[0]).toMatchObject(meta);
+    expect(ProjectMeta.parse(listProjects(ws)[0])).toEqual(meta);
+    expect(updateRegisteredProject(ws, "p1", { name: "Kibo 2" })).toEqual({ ...meta, name: "Kibo 2" });
+  });
   test("a registered project is updated in place and can be removed", () => {
     const ws = createWorkspaceDoc();
     registerProject(ws, meta);
@@ -71,6 +82,16 @@ describe("workspace", () => {
 });
 
 describe("project meta", () => {
+  test("a project doc still carrying the retired duplication setting reads without it", () => {
+    const doc = createProjectDoc(meta);
+    doc.getMap("meta").set("duplication", { shared: ["src/**"] });
+    doc.commit();
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy)).toEqual(meta);
+    expect(setProjectMeta(copy, { name: "Noyau" })).toEqual({ ...meta, name: "Noyau" });
+  });
+
   test("setProjectMeta writes only the given fields and keeps key and id", () => {
     const doc = createProjectDoc(meta);
     expect(setProjectMeta(doc, { color: "#6366F1" })).toEqual({ ...meta, color: "#6366F1" });
