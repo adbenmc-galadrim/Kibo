@@ -1,5 +1,4 @@
 import {
-  DuplicationSettings,
   ProjectDelivery,
   type ProjectMeta,
   STORYBOOK_DEFAULTS,
@@ -12,7 +11,6 @@ import type { ProjectSettings } from "./notes/settings";
 export const LOCAL_FOLDER_KEY = "folder";
 export const LOCAL_WORKTREE_KEY = "worktree";
 export const LOCAL_STORYBOOK_KEY = "storybook";
-export const LOCAL_DUPLICATION_KEY = "duplication";
 export const LOCAL_DELIVERY_KEY = "delivery";
 
 type Reader = Pick<ProjectSettings, "get">;
@@ -49,9 +47,6 @@ export const localWorktree = (settings: Reader, projectId: string): WorktreeSett
 export const localStorybook = (settings: Reader, projectId: string): StorybookSettings | null =>
   localJson(settings, projectId, LOCAL_STORYBOOK_KEY, StorybookSettings);
 
-export const localDuplication = (settings: Reader, projectId: string): DuplicationSettings | null =>
-  localJson(settings, projectId, LOCAL_DUPLICATION_KEY, DuplicationSettings);
-
 export const localDelivery = (settings: Reader, projectId: string): ProjectDelivery | null =>
   localJson(settings, projectId, LOCAL_DELIVERY_KEY, ProjectDelivery);
 
@@ -61,7 +56,6 @@ export const storybookSettingsOf = (settings: Reader, projectId: string): Storyb
 export function withLocalSettings(meta: ProjectMeta, settings: ProjectSettings): ProjectMeta {
   const worktree = localWorktree(settings, meta.id);
   const storybook = localStorybook(settings, meta.id);
-  const duplication = localDuplication(settings, meta.id);
   const delivery = localDelivery(settings, meta.id);
-  return { ...meta, folder: localFolder(settings, meta), worktree, storybook, duplication, delivery };
+  return { ...meta, folder: localFolder(settings, meta), worktree, storybook, delivery };
 }

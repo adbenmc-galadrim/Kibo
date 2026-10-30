@@ -18,7 +18,6 @@ const doc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -202,21 +201,8 @@ test("a run reads the local worktree settings of its project", () => {
 
 const skill = (id: string, projectId: string | null): Skill => ({
   id,
-  source: projectId === null ? "user" : "project",
   projectId,
-  plugin: null,
-  name: id,
   description: `Skill ${id}`,
-  path: "",
-  file: null,
-  problem: null,
-  hash: null,
-  readOnly: false,
-  shadowedBy: null,
-  files: [],
-  usage: { last: null, runs30d: 0 },
-  reviews: { open: 0 },
-  modifiedAt: null,
 });
 
 test("the port serves the agents and skills of a project from its sources, and the project key from the doc", () => {

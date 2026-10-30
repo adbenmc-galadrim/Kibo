@@ -4,12 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { INBOX_ID, type ProjectMeta, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
-import {
-  LOCAL_DUPLICATION_KEY,
-  LOCAL_FOLDER_KEY,
-  LOCAL_STORYBOOK_KEY,
-  LOCAL_WORKTREE_KEY,
-} from "../project-folder";
+import { LOCAL_FOLDER_KEY, LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { createService } from "../service";
 import { openStore } from "../store";
@@ -260,29 +255,4 @@ test("an existing folder is an absolute path to a directory", () => {
   writeFileSync(file, "x");
   expect(folderIsDirectory(file)).toBe(false);
   expect(folderIsDirectory(join(file, "inside"))).toBe(false);
-});
-
-test("duplication settings are local, need a local session, and null restores the defaults", () => {
-  const s = setup();
-  const duplication = {
-    enabled: false,
-    minLines: 12,
-    compareTests: true,
-    ignore: ["src/gen/**"],
-    genericExports: [],
-  };
-  const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
-    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
-  expect(() => update({ duplication }, REMOTE)).toThrow("FORBIDDEN");
-  expect(() => update({ duplication: { ...duplication, minLines: 3 } })).toThrow("INVALID_INPUT");
-  expect(update({ duplication }).duplication).toEqual(duplication);
-  expect(JSON.parse(s.settings.get(s.project.id, LOCAL_DUPLICATION_KEY) ?? "null")).toEqual(duplication);
-  expect(s.snapshot().meta.duplication).toEqual(duplication);
-  expect(s.summary()?.duplication).toEqual(duplication);
-  expect(JSON.stringify(s.service.docs.project(s.project.id).toJSON())).not.toContain("src/gen/**");
-  expect(JSON.stringify(s.service.docs.workspace.toJSON())).not.toContain("src/gen/**");
-  expect(update({ duplication: null }).duplication).toBeNull();
-  expect(s.settings.get(s.project.id, LOCAL_DUPLICATION_KEY)).toBeNull();
-  expect(s.summary()?.duplication).toBeNull();
-  s.close();
 });

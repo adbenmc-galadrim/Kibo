@@ -19,24 +19,7 @@ const runDir = () => {
   return join(d, "run");
 };
 
-const skill = (id: string, description: string): Skill => ({
-  id,
-  source: "user",
-  projectId: null,
-  plugin: null,
-  name: id,
-  description,
-  path: "",
-  file: null,
-  problem: null,
-  hash: null,
-  readOnly: false,
-  shadowedBy: null,
-  files: [],
-  usage: { last: null, runs30d: 0 },
-  reviews: { open: 0 },
-  modifiedAt: null,
-});
+const skill = (id: string, description: string): Skill => ({ id, projectId: null, description });
 
 const reviewSettings: Partial<AgentSettings> = {
   subagents: ["global:livraison", "global:seo"],

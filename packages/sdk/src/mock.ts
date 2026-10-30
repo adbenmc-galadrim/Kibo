@@ -45,7 +45,6 @@ export function createMockSdk(
     color: "#71717A",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: opts.tracking ?? null,
     description: opts.description ?? null,

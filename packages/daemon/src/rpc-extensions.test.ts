@@ -35,7 +35,7 @@ test("requireLocal refuses a remote session", () => {
 });
 
 test("an extension method is answered by the extension that serves it", async () => {
-  const settings = { method: "getAppSettings" } as const;
-  const ext = { methods: ["getAppSettings"] as const, handle: async () => "served" };
+  const settings = { method: "listMcpServers" } as const;
+  const ext = { methods: ["listMcpServers"] as const, handle: async () => "served" };
   expect(await dispatchRpc(service, [ext], settings, ctx, [])).toBe("served");
 });

@@ -10,8 +10,6 @@ import { createProjectSettings } from "./notes/settings";
 import type { ActivitySources } from "./project-activity";
 import type { RpcExtension } from "./rpc-extensions";
 import type { Service } from "./service";
-import { appSettingsRpc } from "./settings/app-settings-rpc";
-import { createAppSettingsStore } from "./settings/app-settings-store";
 import type { Store } from "./store";
 import { type SprintEndDeps, startSprintEndWatch } from "./tracking/sprint-end";
 import { createSprintEndStore } from "./tracking/sprint-end-store";
@@ -46,7 +44,6 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   const { store, service, clock } = input;
   const settings = createProjectSettings(store.db);
   migrateTracking({ docs: service.docs, settings, log: console.error, now: clock.now });
-  const appSettings = createAppSettingsStore(store.db, clock.now);
   const events = startProjectEvents({ store, service, now: Date.now });
   closers.push(() => events.stop());
   restoreLocalKeys({ docs: service.docs, settings, sink: events.sink, now: clock.now });
@@ -62,7 +59,7 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   sessions.pass();
   const sprintEnds = createSprintEndStore(store.db, Date.now);
   return {
-    rpc: [appSettingsRpc({ store: appSettings, emit }), events.rpc, sessions.rpc],
+    rpc: [events.rpc, sessions.rpc],
     sink: events.sink,
     projectEvents: (req) => events.store.list(req),
     passes(agent) {

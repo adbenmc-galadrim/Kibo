@@ -21,7 +21,6 @@ export function inboxMeta(): ProjectMeta {
     color: INBOX_COLOR,
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,

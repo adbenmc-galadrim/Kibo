@@ -1,35 +1,10 @@
-import {
-  DEFAULT_DUPLICATION_SETTINGS,
-  DEFAULT_WORKFLOW,
-  DUPLICATION_SHARED_GLOBS,
-  type DuplicationSettings,
-  type EffectiveDuplication,
-  formatTicketKey,
-  ProjectMeta,
-  ProjectPatch,
-  type Status,
-} from "@kibo/schema";
+import { DEFAULT_WORKFLOW, formatTicketKey, ProjectMeta, ProjectPatch, type Status } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
 import { stored, valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
-export const LOCAL_ONLY_META: ReadonlySet<string> = new Set([
-  "worktree",
-  "storybook",
-  "duplication",
-  "delivery",
-]);
-
-const hasShared = (settings: DuplicationSettings): settings is EffectiveDuplication =>
-  settings.shared !== undefined;
-
-export function effectiveDuplication(meta: {
-  duplication: DuplicationSettings | null;
-}): EffectiveDuplication {
-  const settings = meta.duplication ?? DEFAULT_DUPLICATION_SETTINGS;
-  return hasShared(settings) ? settings : { ...settings, shared: [...DUPLICATION_SHARED_GLOBS] };
-}
+export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook", "delivery"]);
 
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
   Object.entries(meta).filter(([key]) => !LOCAL_ONLY_META.has(key));
@@ -56,7 +31,6 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     color: m.get("color") as string,
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
     description: stored(

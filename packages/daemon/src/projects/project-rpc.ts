@@ -25,13 +25,7 @@ import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
 import { markMigrated } from "../migrations/tracking";
 import type { ProjectSettings } from "../notes/settings";
-import {
-  localDelivery,
-  localDuplication,
-  localFolder,
-  localStorybook,
-  localWorktree,
-} from "../project-folder";
+import { localDelivery, localFolder, localStorybook, localWorktree } from "../project-folder";
 import { setupProject } from "./project-setup";
 
 export type ProjectRpcDeps = {
@@ -77,7 +71,6 @@ function createProject(
     color: req.color,
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -125,7 +118,6 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
         folder: folderOf(deps, meta),
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),
-        duplication: localDuplication(deps.settings, meta.id),
         delivery: localDelivery(deps.settings, meta.id),
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),

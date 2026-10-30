@@ -67,7 +67,6 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         color: "#64748B",
         worktree: null,
         storybook: null,
-        duplication: null,
         delivery: null,
         tracking: null,
         description: null,
@@ -93,7 +92,6 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       color: "#22C55E",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
@@ -111,7 +109,6 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-        if (req.method === "getAppSettings") return Promise.resolve({});
         if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });

@@ -23,7 +23,6 @@ const meta = (over: Partial<ProjectMeta>): ProjectMeta => ({
   color: "#336699",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,

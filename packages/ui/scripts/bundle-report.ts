@@ -75,7 +75,6 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/dialogs\/GuidelinesField\.tsx$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
-  /\/packages\/ui\/src\/i18n\/fr-agent-bar\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-delivery\.ts$/,

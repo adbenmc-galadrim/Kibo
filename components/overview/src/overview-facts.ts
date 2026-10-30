@@ -82,7 +82,6 @@ export const metaOf = (tracking: TrackingSettings | null): ProjectMeta => ({
   color: "",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking,
   description: null,

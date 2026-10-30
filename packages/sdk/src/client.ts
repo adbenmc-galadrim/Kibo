@@ -1,5 +1,4 @@
 import {
-  AiEvent,
   CodeEvent,
   type CodeRequest,
   type CodeResult,
@@ -27,7 +26,6 @@ export type KiboClient = {
   onRunChanged(listener: (e: RunChanged) => void): () => void;
   subscribeCode(listener: (event: CodeEvent) => void): () => void;
   subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
-  subscribeAi(listener: (event: AiEvent) => void): () => void;
   subscribeEvents(listener: (event: Phase7Event) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
@@ -64,7 +62,6 @@ export function createClient(opts: ClientOptions): KiboClient {
   const runListeners = new Set<(e: RunChanged) => void>();
   const codeListeners = new Set<(event: CodeEvent) => void>();
   const integrationListeners = new Set<(event: IntegrationEvent) => void>();
-  const aiListeners = new Set<(event: AiEvent) => void>();
   const eventListeners = new Set<(event: Phase7Event) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
@@ -79,7 +76,6 @@ export function createClient(opts: ClientOptions): KiboClient {
     runListeners.size +
     codeListeners.size +
     integrationListeners.size +
-    aiListeners.size +
     eventListeners.size +
     [...topics.values()].reduce((n, set) => n + set.size, 0);
 
@@ -98,11 +94,6 @@ export function createClient(opts: ClientOptions): KiboClient {
       const integration = IntegrationEvent.safeParse(data);
       if (integration.success) {
         for (const l of integrationListeners) l(integration.data);
-        return;
-      }
-      const ai = AiEvent.safeParse(data);
-      if (ai.success) {
-        for (const l of aiListeners) l(ai.data);
         return;
       }
       const phase7 = Phase7Event.safeParse(data);
@@ -191,14 +182,6 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         integrationListeners.delete(listener);
-        release();
-      };
-    },
-    subscribeAi(listener) {
-      aiListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        aiListeners.delete(listener);
         release();
       };
     },

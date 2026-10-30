@@ -294,9 +294,6 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
-  test("vague 23, repli des questions", () => {
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-agent-bar.ts"))).toBe(true);
-  });
   test("vague 23, repli des textes de fr.ts", () => {
     for (const p of ["fr-domains.ts", "fr-integrations.ts"])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(true);

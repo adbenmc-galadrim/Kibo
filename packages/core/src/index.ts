@@ -1,7 +1,5 @@
 export * from "./agents/compose";
-export * from "./agents/frontmatter";
 export * from "./agents/run-name";
-export * from "./agents/skill-id";
 export * from "./agents/summary";
 export * from "./bindings";
 export * from "./commands";

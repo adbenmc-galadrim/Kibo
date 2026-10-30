@@ -40,16 +40,6 @@ test("project meta defaults storybook to null and the patch writes or clears it"
   ).toBe(false);
 });
 
-test("project meta defaults duplication to null and the patch writes or clears it", () => {
-  expect(
-    ProjectMeta.parse({ id: "p", key: "AB", name: "n", folder: null, color: "#123456" }).duplication,
-  ).toBeNull();
-  expect(ProjectPatch.safeParse({ duplication: null }).success).toBe(true);
-  const settings = { enabled: false, minLines: 8, compareTests: false, ignore: [], genericExports: [] };
-  expect(ProjectPatch.safeParse({ duplication: settings }).data).toEqual({ duplication: settings });
-  expect(ProjectPatch.safeParse({ duplication: {} }).success).toBe(false);
-});
-
 test("project meta defaults delivery to null and the patch writes or clears it", () => {
   expect(
     ProjectMeta.parse({ id: "p", key: "AB", name: "n", folder: null, color: "#123456" }).delivery,

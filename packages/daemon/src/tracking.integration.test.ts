@@ -26,7 +26,6 @@ const Snapshot = z.object({
   pages: z.array(z.object({ title: z.string() })),
 });
 type Snapshot = z.infer<typeof Snapshot>;
-const ConfigMessage = z.object({ topic: z.literal("config") });
 
 const cleanups: (() => Promise<void> | void)[] = [];
 afterEach(async () => {
@@ -164,13 +163,6 @@ test("a branch, then its PR, then its merge move the ticket and deliver its feat
   const merged = await silo.reaches("SILO-1", "done");
   expect(silo.ticket(merged, "SILO-2").feature?.status).toBe("delivered");
   expect(silo.ticket(merged, "SILO-3").statusId).toBe("todo");
-});
-
-test("changing an app setting tells every client to reload the configuration", async () => {
-  const client = await launch(tempHome());
-  await client.rpc({ method: "setAppSettings", patch: {} });
-  const isConfig = (e: unknown) => ConfigMessage.safeParse(e).success;
-  await until(async () => client.events.find(isConfig), "config message");
 });
 
 test("an imported plan key becomes the feature's short key and a Planning page, once", async () => {

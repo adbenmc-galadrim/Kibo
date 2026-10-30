@@ -42,7 +42,6 @@ export const frProject = {
         `Les .md que reçoivent les agents des tickets de ${name}, après ceux du workspace.`,
       summary: (files: number, domains: number) =>
         `${files} fichier${files > 1 ? "s" : ""} .md · ${domains} domaine${domains > 1 ? "s" : ""}`,
-      open: "Ouvrir le dossier de guidelines →",
     },
     save: "Enregistrer",
     cancel: "Annuler",

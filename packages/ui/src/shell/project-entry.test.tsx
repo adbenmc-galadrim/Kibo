@@ -15,7 +15,6 @@ const summary: ProjectSummary = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,

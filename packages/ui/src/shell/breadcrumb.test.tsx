@@ -88,7 +88,6 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       color: "#64748B",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,

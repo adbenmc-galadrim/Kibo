@@ -6,13 +6,11 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
-  type TabTarget,
 } from "@kibo/schema";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { appInfoFixture } from "../lib/app-info-fixture";
-import { configFixture } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
@@ -25,7 +23,6 @@ const snapshot = (): ProjectSnapshot => ({
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -62,7 +59,6 @@ mock.module("../api", () =>
             color: "#6366F1",
             worktree: null,
             storybook: null,
-            duplication: null,
             delivery: null,
             tracking: null,
             description: null,
@@ -83,7 +79,6 @@ const project: ProjectSummary = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -98,16 +93,6 @@ const saveButton = () => screen.getByRole("button", { name: "Enregistrer" });
 beforeEach(() => {
   calls.length = 0;
   fail = null;
-});
-
-test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
-  const closed = mock(() => {});
-  const go = mock((_target: TabTarget) => {});
-  render(<EditProjectDialog project={project} onClose={closed} config={configFixture()} go={go} />);
-  expect(screen.getByText("6 fichiers .md · 2 domaines")).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
-  expect(closed).toHaveBeenCalledTimes(1);
-  expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
 });
 
 test("asked on its folder field, the dialog puts the focus there instead of the name", () => {

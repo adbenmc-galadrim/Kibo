@@ -50,14 +50,9 @@ async function launch() {
   };
 }
 
-test("a daemon started with KIBO_FIXED_NOW reports it and has no agent execution setting", async () => {
+test("a daemon started with KIBO_FIXED_NOW reports it", async () => {
   const rpc = await launch();
   expect(await rpc({ method: "getAppInfo" })).toMatchObject({ fixedNow: FIXED_NOW });
-  expect(await rpc({ method: "getAppSettings" })).toEqual({});
-  expect(await rpc({ method: "setAppSettings", patch: { agentExecution: "shown" } })).toEqual({
-    refused: "INVALID_INPUT",
-  });
-  expect(await rpc({ method: "getAppSettings" })).toEqual({});
 });
 
 test("the daemon refuses every ticket agent launch as an unknown request", async () => {

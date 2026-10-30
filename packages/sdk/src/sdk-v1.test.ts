@@ -25,7 +25,6 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     color: "#71717A",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,

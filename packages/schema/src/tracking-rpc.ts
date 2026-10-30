@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { type AppSettings, AppSettingsPatch } from "./app-settings";
 import { AbsPath, DeliveryKind, DeliveryStepNumber } from "./delivery";
 import { GithubPrRef } from "./external-ref";
 import { GitBranchRef } from "./git-branch";
@@ -12,8 +11,6 @@ import { SessionState, SessionTool, type TicketSession } from "./ticket-session"
 const DeclaredRef = z.discriminatedUnion("kind", [GitBranchRef, GithubPrRef]);
 
 export const TRACKING_RPC = [
-  z.object({ method: z.literal("getAppSettings") }),
-  z.object({ method: z.literal("setAppSettings"), patch: AppSettingsPatch }),
   z.object({
     method: z.literal("setTicketSession"),
     projectId: z.string().min(1),
@@ -51,8 +48,6 @@ export const TRACKING_RPC_METHODS: readonly TrackingRpcRequest["method"][] = TRA
 );
 
 export type TrackingRpcResult = {
-  getAppSettings: AppSettings;
-  setAppSettings: AppSettings;
   setTicketSession: TicketSession | null;
   listProjectEvents: ProjectEventPage;
   declareTicketRef: DeclareTicketRefResult;

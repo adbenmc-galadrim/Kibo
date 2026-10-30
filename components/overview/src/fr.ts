@@ -110,8 +110,6 @@ export const fr = {
     changes: "changements demandés",
     step: "Étape suivante",
     copy: "Copier",
-    deliver: "Livrer",
-    deliverFailed: "La livraison n'a pas pu démarrer.",
     none: "Aucune fonctionnalité ouverte dans le sprint.",
   },
   review: {

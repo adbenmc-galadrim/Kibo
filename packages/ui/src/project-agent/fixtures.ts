@@ -59,7 +59,6 @@ export function siloProject(): ProjectSnapshot {
       color: "#0EA5E9",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,

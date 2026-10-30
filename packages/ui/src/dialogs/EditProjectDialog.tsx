@@ -7,7 +7,6 @@ import {
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
-  type TabTarget,
   type TrackingSettings,
   type WorkspaceConfig,
 } from "@kibo/schema";
@@ -36,7 +35,6 @@ type Props = {
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
   config?: WorkspaceConfig | null;
-  go?(target: TabTarget): void;
   focus?: ProjectEditField;
 };
 const t = frProject.edit;
@@ -49,7 +47,7 @@ export function editFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({ project, onClose, canBrowse, pick, config, go, focus }: Props) {
+export function EditProjectDialog({ project, onClose, canBrowse, pick, config, focus }: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -172,16 +170,7 @@ export function EditProjectDialog({ project, onClose, canBrowse, pick, config, g
             withPortEnv={showWorktree}
             disabled={busy}
           />
-          {config && go && (
-            <GuidelinesField
-              project={project}
-              config={config}
-              go={(target) => {
-                onClose();
-                go(target);
-              }}
-            />
-          )}
+          {config && <GuidelinesField project={project} config={config} />}
           <TrackingSection value={tracking} onChange={setTracking} disabled={busy} />
           <RecipientsFields projectId={project.id} />
           {error && (

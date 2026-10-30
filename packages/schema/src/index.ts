@@ -66,7 +66,6 @@ export * from "./net";
 export * from "./next-step";
 export * from "./note";
 export * from "./on-hold";
-export * from "./overlap-settings";
 export * from "./overview";
 export * from "./page";
 export * from "./permissions";

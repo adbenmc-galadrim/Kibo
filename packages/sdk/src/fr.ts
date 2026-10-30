@@ -2,7 +2,6 @@ export const fr = {
   pendingKey: "Clé attribuée à la prochaine synchronisation",
   selected: (count: number) => (count === 1 ? "1 sélectionné" : `${count} sélectionnés`),
   clearSelection: "Effacer la sélection",
-  runMissing: "Run introuvable",
   demo: (feature: string) => `Démo · ${feature}`,
   clientText: {
     blocks: (feature: string) => `bloque « ${feature} »`,
