@@ -31,9 +31,11 @@ Le script choisit le paquet de ta distribution (`.deb` avec `apt`, `.rpm` avec `
 Depuis les sources, avec [Bun](https://bun.sh) : `bun install` puis `bun run start`.
 <!-- release-end -->
 
-## Pourquoi macOS demande l'accès au trousseau une dernière fois
+## L'accès au trousseau sur macOS
 
-Kibo range tes jetons (GitHub, Figma, Penpot) dans le trousseau de macOS, qui n'autorise que l'application qui les a créés. Jusqu'à la `0.32.0-alpha.1`, chaque version était signée ad hoc : macOS la voyait comme une nouvelle application et redemandait l'accès après chaque mise à jour. Les releases sont désormais signées par un certificat stable, « Kibo Code Signing ». À la première mise à jour signée, macOS demande l'accès une dernière fois : choisis « Toujours autoriser ». Les mises à jour suivantes ne demandent plus rien. Ce certificat n'est pas délivré par Apple : l'ouverture la première fois se fait toujours comme décrit plus haut. Le détail est dans [la procédure de signature](release-signing.md).
+Kibo range tes jetons (GitHub, Figma, Penpot) dans le trousseau de macOS, qui n'autorise que l'application qui les a créés. Une release construite sans le certificat de signature reste signée ad hoc : macOS la voit comme une nouvelle application et redemande l'accès après chaque mise à jour.
+
+La chaîne de release sait signer avec un certificat stable, « Kibo Code Signing », quand ce certificat est configuré sur le dépôt. Avec une release ainsi signée, choisis « Toujours autoriser » à la première demande ; les mises à jour suivantes signées par le même certificat ne devraient plus rien demander. Ce certificat n'est pas délivré par Apple : la première ouverture se fait toujours comme décrit plus haut. Le détail est dans [la procédure de signature](release-signing.md).
 
 ## Vérifier un téléchargement
 

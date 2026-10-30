@@ -1,10 +1,10 @@
 # Kibo
 
-Centre de contrôle de projets de code, local-first, piloté par l'IA.
+Suivi de projets de code, local-first, avec un agent de projet.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
 (vue d'ensemble, planning, Kanban, graphe de dépendances, questions, maquettes), écrits avec le SDK public.
 
-État : alpha, suivi de projets en local (phase 33 : retrait de l'ancien Kibo). Rapports dans `docs/superpowers/rapports/`.
+État : alpha, suivi de projets en local. Rapports dans `docs/superpowers/rapports/`.
 
 ## Lancer
 
@@ -39,16 +39,16 @@ Ensuite, Kibo vérifie les nouvelles versions au lancement puis toutes les six h
 
 Publier une version alpha : `bun apps/desktop/scripts/version.ts set 0.N.0-alpha.M`, section `## 0.N.0-alpha.M — AAAA-MM-JJ` dans `CHANGELOG.md` (le tag est refusé sans elle), commit, puis tag `v0.N.0-alpha.M` poussé sur `main` ; le workflow `release` construit, signe, publie une pré-release et met à jour le canal `alpha`.
 
-## Agents
+## Agent de projet
 
-Kibo lance Claude Code en local (`claude -p`, sur ton abonnement) : installe le CLI (version 2.1.259 ou plus récente) et connecte-toi une fois avec `claude`. Le démon le cherche dans le `PATH`, `~/.local/bin`, `~/.claude/local`, `/opt/homebrew/bin` et `/usr/local/bin` ; sinon, passe `--claude-bin <chemin>` au démon.
+Kibo suit ton travail sans le lancer à ta place : le code se fait dans ton éditeur ou ton outil d'agents, Kibo observe git, les PR et la CI. Chaque projet a un seul agent, qui lit son état, répond à tes questions et propose des lots d'actions à valider.
 
-- Crée un profil dans **Agents** (modèle, espace de travail, permissions, runs en parallèle), puis « Assigner à un agent » depuis la fiche d'un ticket.
-- Tout run passe par la file (**Files d'attente**) : créneaux hôte, créneaux du profil, seuils CPU 85 % et RAM 90 %.
-- Un run qui pose une question attend ta réponse dans la barre des agents, sans occuper de créneau.
-- Les guidelines (**Paramètres › Domaines & guidelines**) sont injectées dans l'ordre workspace → projet → domaine → profil.
+Il utilise Claude Code en local (`claude -p`, sur ton abonnement) : installe le CLI (version 2.1.259 ou plus récente) et connecte-toi une fois avec `claude`. Le démon le cherche dans le `PATH`, `~/.local/bin`, `~/.claude/local`, `/opt/homebrew/bin` et `/usr/local/bin` ; sinon, passe `--claude-bin <chemin>` au démon.
+
+- Chaque tour de l'agent passe par la file : créneaux hôte, seuils CPU 85 % et RAM 90 %.
+- Une question de l'agent attend ta réponse dans son volet, sans occuper de créneau.
 - Les tests n'utilisent jamais le vrai CLI : `packages/daemon/src/runs/fake-claude.ts` le remplace.
-- Instance de test avec le vrai CLI : `KIBO_CLAUDE_ISOLATED=1` (avec un `KIBO_HOME` temporaire) lance `claude` avec `--setting-sources project,local --strict-mcp-config` (ni réglages, plugins, hooks ni MCP de `~/.claude`) et écrit agents et skills sous `$KIBO_HOME/claude` ; la connexion de `claude` reste celle d'Adam.
+- Instance de test avec le vrai CLI : `KIBO_CLAUDE_ISOLATED=1` (avec un `KIBO_HOME` temporaire) lance `claude` avec `--setting-sources project,local --strict-mcp-config` (ni réglages, plugins, hooks ni MCP de `~/.claude`) ; la connexion de `claude` reste la tienne.
 
 ## Où trouver quoi
 
