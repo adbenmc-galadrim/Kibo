@@ -750,7 +750,16 @@ Lancer dans T3 (§50.11, §50.12) :
   ~/Documents/silo », « Modèle · par défaut », « Annuler », « Lancer ».
 - Fil en cours : SILO-34 « T3 · en cours depuis 12 min » et « Ouvrir dans T3 » ; fil qui attend : SILO-45 « T3 · attend ta réponse ».
 - Clé copiée : SILO-45 « ✓ Copiée ».
-- Kanban, infobulle de SILO-33 : « Branche · feat/envoi-hors-ligne », « En attente · Serveur MinIO de recette indisponible ».
+- Kanban, infobulle de SILO-33 : « Étiquettes · area:mobile », « Branche · feat/envoi-hors-ligne », « En attente · Serveur MinIO de
+  recette indisponible », « Questions · 1 ouverte » (Q18).
+- Question ajoutée au scénario `silo-t3` : **Q18** sur SILO-33 « Écran d'envoi hors ligne », « Combien de photos garder en file
+  sur le téléphone hors réseau ? », destinataire Produit, non bloquante, posée par Adam aujourd'hui à 11:20. Les trois Kanban
+  de la page « Phase 34 » comptent donc 4 questions ouvertes (« Questions 4 » dans la barre latérale) ; les fiches ticket, posées
+  sur le Kanban `silo-maquettes`, et les autres écrans gardent Q14, Q16, Q17. Étiquette de SILO-33 : `area:mobile`.
+- Kanban de ce scénario (colonne vide repliée, infobulle, survol) : même état, puce « En attente 5 » dans la barre de filtres et
+  pastille « Serveur MinIO de r… » sur SILO-33.
+- Graphe, étape démarrable (§47) : dans `silo-attente`, SILO-46 « Démo client » de F4 n'attend plus SILO-45 et n'a ni bloqueur ni
+  question : bordure pleine verte dans F4 dépliée ; au survol, « Lancer dans T3 » à droite de la ligne (maquette 12).
 - Kanban, survol de SILO-46 (démarrable) : « Lancer dans T3 » sous le titre ; SILO-34 « T3 · en cours depuis 12 min ».
 - Graphe, « Tout voir » : cadres repliés à 56 px ; F5 redéplié, SILO-34 porte « T3 » à la place de son icône.
 

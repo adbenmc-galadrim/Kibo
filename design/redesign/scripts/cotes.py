@@ -129,7 +129,8 @@ SCREENS34 = [(34, "P34 · Aujourd'hui", "proposition-p34-aujourdhui"),
     (48, "P34 · Fiche ticket, clé copiée", "proposition-p34-fiche-copiee"),
     (49, "P34 · Toast de livraison", "proposition-p34-toast-livree"),
     (50, "P34 · Récapitulatif de sprint", "proposition-p34-recap-sprint"),
-    (51, "P34 · Code couleur", "proposition-p34-couleurs")]
+    (51, "P34 · Code couleur", "proposition-p34-couleurs"),
+    (52, "P34 · Graphe, Lancer dans T3", "proposition-p34-graphe-survol-t3")]
 MARK34 = "\n## Phase 34\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
@@ -146,7 +147,7 @@ if "--sections" in sys.argv:
 if "--phase34" in sys.argv:
     cur = open(W + "/cotes.md").read()
     cur = cur.split(MARK34)[0].rstrip("\n") + "\n"
-    intro = ["## Phase 34", "", "Aujourd'hui, fin de parcours et lancement dans T3 (spec §50), données de la section « Phase 34 · Aujourd'hui, fin de parcours et lancement dans T3 » de `design/donnees-fictives.md`, horloge au vendredi 16 octobre (S42). Les dix-huit boards sont sur la page « Phase 34 » du fichier « Kibo · Redesign » (`scripts/61-phase-34.js`) : chacun clone sa référence de la page « Proposition » (copie « src · … » rangée à x = −20 000) ou est dessiné de zéro (Aujourd'hui, code couleur), puis reçoit les patchs de la phase. Rangées de 1 600 px à partir de y = 0, sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-34` à `_dump-51`), puis `python3 scripts/cotes.py <dossier des JSON> --phase34`, qui remplace cette partie seulement. Les boards de la page « Proposition » redessinés en place (Vue d'ensemble, Planning, Fonctionnalité, Graphe, Kanban, Questions, fiche ticket, variantes en attente) sont relevés à leur place (`--sections 1,2,3,6,8,…,33`)."]
+    intro = ["## Phase 34", "", "Aujourd'hui, fin de parcours et lancement dans T3 (spec §50), données de la section « Phase 34 · Aujourd'hui, fin de parcours et lancement dans T3 » de `design/donnees-fictives.md`, horloge au vendredi 16 octobre (S42). Les dix-neuf boards sont sur la page « Phase 34 » du fichier « Kibo · Redesign » (`scripts/61-phase-34.js`) : chacun clone sa référence de la page « Proposition » (copie « src · … » rangée à x = −20 000) ou est dessiné de zéro (Aujourd'hui, code couleur), puis reçoit les patchs de la phase. Rangées de 1 600 px à partir de y = 0, sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-34` à `_dump-52`), puis `python3 scripts/cotes.py <dossier des JSON> --phase34`, qui remplace cette partie seulement. Les boards de la page « Proposition » redessinés en place (Vue d'ensemble, Planning, Fonctionnalité, Graphe, Kanban, Questions, fiche ticket, variantes en attente) sont relevés à leur place (`--sections 1,2,3,6,8,…,33`)."]
     parts = [screen_md(i, name, png, "").replace("page « Proposition »", "page « Phase 34 »", 1) for i, name, png in SCREENS34]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
     print(sum(1 for _ in open(W + "/cotes.md")))

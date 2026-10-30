@@ -1,10 +1,6 @@
-// Phase 34 (spec §50) : barre latérale sans « Mes tickets » ni « Boîte de réception », écrans existants retouchés en place,
-// page « Phase 34 » des nouveaux boards (rangées de 1 300 px, sombre à x = 0, clair à x = 1 540).
 const S = storage;
 S.draw = S.draw || {};
 
-// ---------- Barre latérale (spec §50.2) : Aujourd'hui, Projets, Paramètres ----------
-// Retrait en place sur un board déjà dessiné : entrées retirées, « Accueil » renommé, menu des pages de la barre repliée remonté.
 S.p34Sidebar = (b) => { const out = { removed: 0, renamed: 0, menu: 0 };
   const flat = (s) => s.name.replace(/\s/g, "");
   let lift = 0;
@@ -30,7 +26,6 @@ S.modeOf = (b) => (/\(clair\)$/.test(b.name) ? "light" : "dark");
 S.find34 = (scope, pred) => penpotUtils.findShapes(pred, scope)[0];
 S.texts34 = (scope) => penpotUtils.findShapes(s => s.type === "text", scope).map(t => t.characters);
 
-// ---------- Kanban (spec §50.8, §50.9) : un seul signal par carte, « Étape n/12 », colonnes vides repliées ----------
 S.stepChip = (p, n) => S.chip(p, `Étape ${n}/12`, { mono: true, size: 11, weight: 400, color: S.C.mfg, stroke: S.C.border, pad: [2, 6] });
 S.prChip = (p, ref) => S.chip(p, ref, { icon: "pr", isz: 11, ic: S.C.mfg, size: 11, weight: 500, color: S.C.mfg, stroke: S.C.border, pad: [2, 6] });
 S.signalChip = (p, sig) => { const C = S.C;
@@ -62,7 +57,6 @@ S.p34Cards = (b, t3 = {}) => { S.setMode(S.modeOf(b)); const out = {};
   for (const col of penpotUtils.findShapes(s => /^column /.test(s.name), b)) { const colName = col.name.replace(/^column /, "");
     for (const card of col.children.filter(c => /^card /.test(c.name))) out[card.name] = S.p34Card(card, colName, { t3: t3[card.name.replace(/^card /, "")] }); }
   return out; };
-// Colonne vide repliée en bande verticale de 40 px ; les autres se partagent la place libérée.
 S.p34Collapse = (b) => { const C = S.C, row = S.find34(b, s => s.name === "columns-row"); if (!row) return null;
   const cols = row.children.filter(c => /^column /.test(c.name)); const gap = row.flex.columnGap, W = row.width;
   const empty = cols.filter(c => !c.children.some(k => /^card /.test(k.name)));
@@ -85,7 +79,6 @@ S.p34Kanban = async (b, t3 = {}) => { S.setMode(S.modeOf(b)); const row = S.find
   const cards = S.p34Cards(b, t3), counter = S.p34KanbanCounter(b), collapsed = S.p34Collapse(b);
   await S.wait(800); for (const [s, col] of shadows) if (col) { s.x = col.x; s.resize(col.width, s.height); }
   return { cards: Object.keys(cards).length, counter, collapsed }; };
-// ---------- Fiche ticket (spec §50.11) : « Lancer dans T3 », la PR une seule fois, « Requise » dans le Suivi ----------
 S.sheetBar = (b) => { const sheet = S.find34(b, s => s.name === "sheet"); return sheet && sheet.children.find(c => c.name === "box" && c.flex && c.flex.dir === "row"); };
 S.launchButton = (bar, ref) => { const C = S.C;
   const btn = S.btn(null, "Lancer dans T3", "default", { sm: true, icon: "play" }); btn.name = "launch-t3";
@@ -116,7 +109,6 @@ S.p34Suivi = (b, o = {}) => { const C = S.C, sheet = S.find34(b, s => s.name ===
       S.showAfter(suivi, liv, r); out.push("requise"); } }
   return out; };
 S.p34Fiche = async (b) => { S.setMode(S.modeOf(b)); const k = await S.p34Kanban(b); const bar = S.p34FicheBar(b); const suivi = S.p34Suivi(b); return { k, bar, suivi }; };
-// États du bouton : fil en cours (orange), fil qui attend (ambre), clé copiée.
 S.t3Group = (bar, ref, waiting) => { const C = S.C, col = waiting ? C.amber : C.brandText;
   const g = S.row(null, { name: waiting ? "t3-waiting" : "t3-running", pad: [3, 3, 3, 10], gap: 8, radius: 7, stroke: waiting ? C.amber : C.brandLine, fill: waiting ? C.amberSoft : C.brandSoft });
   S.dot(g, waiting ? C.amber : C.brand, 7); S.txt(g, waiting ? S.T3_WAITING : S.T3_RUNNING, { size: 12, weight: 500, color: col });
@@ -128,7 +120,6 @@ S.p34FicheCopied = (b) => { const C = S.C, bar = S.sheetBar(b), key = bar.childr
   const g = S.row(null, { name: "key-copied", pad: [3, 8], gap: 5, radius: 6, fill: C.greenSoft }); S.icon(g, "check", 13, C.green); S.txt(g, "Copiée", { size: 12.5, weight: 500, color: C.green });
   S.showBefore(bar, ic || key, g); if (ic) ic.remove(); key.remove(); return g; };
 
-// ---------- Vue d'ensemble (spec §50.3) : tuile « En cours », sections par urgence, frise sans légende, « Livrée aujourd'hui » ----------
 S.card34 = (b, prefix) => S.find34(b, s => s.name.replace(/\s/g, "").startsWith(("card/" + prefix).replace(/\s/g, "")));
 S.p34Tile = (b) => { const C = S.C, kpis = S.find34(b, s => s.name === "kpis"); if (!kpis) return null;
   const label = S.find34(kpis, s => s.type === "text" && s.characters === "En cours"); if (!label) return null;
@@ -182,9 +173,7 @@ S.p34Fit = async (b) => { await S.wait(800); const main = S.find34(b, s => s.nam
 S.p34Vue = async (b, o = {}) => { S.setMode(S.modeOf(b)); const out = {};
   out.tile = S.p34Tile(b); out.legend = S.p34Legend(b); out.steps = S.p34Steps(b); out.q = S.p34QuestionsHead(b);
   out.order = S.p34Order(b); if (o.livree) out.livree = S.p34Livree(b); out.h = await S.p34Fit(b); return out; };
-// Attend que la mise en page flex se stabilise (valeur lue identique deux fois de suite).
 S.settle34 = async (read, step = 400, max = 12) => { let v = read(); for (let i = 0; i < max; i++) { await S.wait(step); const w = read(); if (Math.abs(w - v) < 0.5) return w; v = w; } return v; };
-// ---------- Planning (spec §50.4) : bande « En attente », une alerte par sprint, capacité ambre pour le sprint courant et le suivant ----------
 S.P34_CURRENT = "S42"; S.P34_NEXT = "S43";
 S.p34Alerts = (col) => { const boxes = col.children.filter(c => c.name === "box" && S.find34(c, z => z.name.replace(/\s/g, "") === "icon/clockAlert"));
   if (boxes.length < 2) return boxes.length; const shown = [...boxes].sort((a, b) => a.y - b.y);
@@ -224,7 +213,6 @@ S.p34Planning = async (b, o = {}) => { S.setMode(S.modeOf(b)); const out = { ale
   await S.settle34(() => dz ? dz.y : 0); for (const [c, off] of floats) c.y = dz.y + off;
   out.floats = floats.length; return out; };
 
-// ---------- Graphe (spec §50.5) : cadres pleins, cibles de 24 px, « Tout voir » qui replie ----------
 S.EDGES_P34 = [["F1", "F3"], ["F2", "F3"], ["F2", "F4"], ["F3", "F5"], ["F2", "F6"], ["F4", "F8"], ["F4", "F7"], ["F5", "F7"], ["F7", "F9"]];
 S.frames34 = (b) => penpotUtils.findShapes(z => /^frame F\d+$/.test(z.name), b);
 S.stepRows34 = (fr) => fr.children.filter(c => c.name === "box" && c.height >= 20 && c.strokes && c.strokes.length);
@@ -239,6 +227,11 @@ S.restack34 = (b, gap = 30) => { const cv = S.find34(b, z => z.name === "canvas"
   for (const fr of S.frames34(cv)) (lanes[Math.round(fr.x)] = lanes[Math.round(fr.x)] || []).push(fr);
   for (const list of Object.values(lanes)) { list.sort((a, c) => a.y - c.y); for (let i = 1; i < list.length; i++) list[i].y = list[i - 1].y + list[i - 1].height + gap; }
   return Object.keys(lanes).length; };
+S.startableRow34 = (b) => { const f4 = S.find34(b, z => z.name === "frame F4"); const t = f4 && S.find34(f4, z => z.type === "text" && z.characters === "Démo client"); return t ? S.parentOf(f4, t) : null; };
+S.startable34 = (b) => { const r = S.startableRow34(b); if (!r) return null; r.strokes = [{ strokeColor: S.C.green, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "solid" }]; return r; };
+S.graphHover34 = (b) => { const r = S.startableRow34(b); if (!r) return null; const ic = r.children.find(c => c.type === "group" && /^icon/.test(c.name.replace(/\s/g, "")));
+  const btn = S.btn(null, "Lancer dans T3", "default", { sm: true, icon: "play", pad: [2, 8], size: 11.5 }); btn.name = "launch-t3"; if (ic) { S.showBefore(r, ic, btn); ic.remove(); } else S.showLast(r, btn);
+  r.flex.topPadding = 2; r.flex.bottomPadding = 2; return btn; };
 S.noEdges34 = (b) => { const cv = S.find34(b, z => z.name === "canvas"); let n = 0; for (const e of cv.children.filter(c => c.name === "edges")) { e.remove(); n++; } return n; };
 S.graphLegend34 = (b) => { const cv = S.find34(b, z => z.name === "canvas"); for (const c of cv.children.filter(c => c.name === "legend" || c.name === "legend-bar")) c.remove();
   const bar = S.row(cv, { name: "legend-bar", x: 16, y: Math.round(cv.height) - 18 - 30, w: 32, h: 30, pad: [0, 6], radius: 8, fill: S.C.card, stroke: S.C.border }); S.legendButton34(bar); bar.bringToFront(); return true; };
@@ -258,7 +251,7 @@ S.graphToolbar34 = (b, collapsed) => { const main = S.find34(b, z => z.name === 
   const btn = S.btn(bar, collapsed ? "Déplier tout" : "Tout voir", "outline", { sm: true, icon: collapsed ? "expand" : "shrink" }); btn.name = "toggle-all"; return true; };
 S.p34Graph = async (b) => { S.setMode(S.modeOf(b)); const out = { frames: 0 };
   for (const fr of S.frames34(b)) { S.p34Frame(fr); out.frames++; }
-  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.noEdges34(b); out.legend = S.graphLegend34(b); return out; };
+  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.noEdges34(b); out.legend = S.graphLegend34(b); out.startable = !!S.startable34(b); return out; };
 S.collapse34 = (fr) => { const C = S.C, kids = [...fr.children].reverse(), head = kids[0], title = kids.find(c => c.type === "text"), segs = kids.find(c => c.name === "segs");
   const key = S.find34(head, z => z.type === "text" && /^F\d+$/.test(z.characters)).characters;
   for (const c of kids) if (c !== title && c !== segs) c.remove();
@@ -276,7 +269,6 @@ S.t3Pill34 = (row) => { const C = S.C, ic = row.children.find(c => c.type === "g
   if (ic) { S.showBefore(row, ic, p); ic.remove(); } else S.showLast(row, p);
   row.strokes = [{ strokeColor: C.brandLine, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "solid" }]; return p; };
 
-// ---------- Questions (spec §50.10) : liste compacte, une ligne par question, une rangée de filtres ----------
 S.Q34 = [
   { id: "Q14", text: "Un box réaffecté garde-t-il ses photos ?", to: "Client", blocking: true, ticket: "SILO-51", age: "3 j", asked: "il y a 3 j" },
   { id: "Q16", text: "Quota par client : 2 Go ou 5 Go ?", to: "Produit", ticket: "SILO-34", age: "1 j", asked: "hier" },
@@ -328,7 +320,6 @@ S.p34Questions = async (b, o = {}) => { const C = S.C; S.setMode(S.modeOf(b)); c
   if (pv && exp) { pv.x = Math.round(exp.x + exp.width - pv.width); pv.y = Math.round(top.y + top.height + 6); out.preview = true; }
   out.rows = qs.length; return out; };
 
-// ---------- Aujourd'hui (spec §50.2) ----------
 S.TODAY34 = {
   sub: "vendredi 16 octobre · 4 projets · 31 tickets ouverts",
   blocked: { right: "1 ticket bloqué · 1 question bloquante · tous projets", rows: [{ key: "SILO-51", title: "Lecture du fichier Excel", reason: "question · bloque F6 · Q14", project: "SILO" }] },
@@ -378,13 +369,12 @@ S.today34 = (f, o = {}) => { const C = S.C, D = S.TODAY34;
     if (p.sprint) S.txt(r, p.sprint, { size: 12, mono: true, color: C.dim }); });
   return f; };
 
-// Une rangée flex créée après coup garde parfois ses enfants à l'ancienne place : un écart modifié puis rétabli relance la mise en page.
+// Penpot ne relance pas la mise en page flex d’une rangée créée après coup : un écart modifié puis rétabli la force.
 S.relayout34 = async (f) => { const off = (g) => g.children.some(c => c.x < g.x - 1 || c.y < g.y - 1 || c.x + c.width > g.x + g.width + 1 || c.y + c.height > g.y + g.height + 1);
   const bad = penpotUtils.findShapes(z => z.type === "board" && z.flex && z.children && z.children.length && !z.clipContent && off(z), f);
   for (const g of bad) { const k = g.flex.dir === "row" ? "columnGap" : "rowGap", v = g.flex[k]; g.flex[k] = v + 1; await S.wait(50); g.flex[k] = v; }
   await S.wait(600); return bad.length; };
 
-// ---------- Fin de parcours (spec §50.3) : toast de livraison, récapitulatif de sprint ----------
 S.toast34 = (f) => { const C = S.C, t = S.col(f, { name: "toast livraison", w: 340, pad: [12, 14], gap: 8, radius: 10, stroke: C.border, fill: C.card, shadow: 8 });
   const h = S.row(t, { fx: true, gap: 8 }); S.icon(h, "circleCheck", 15, C.green); S.txt(h, "F3", { size: 12, mono: true, color: C.mfg });
   S.txt(h, "Réaffecter un box", { size: 13, weight: 600 }); S.txt(h, "· livrée", { size: 12.5, color: C.mfg }); S.spacer(h); S.icon(h, "x", 13, C.dim);
@@ -399,7 +389,6 @@ S.recap34 = (f) => { const C = S.C, t = S.col(f, { name: "récapitulatif S42", w
 S.place34 = (f, s, x, y) => { s.bringToFront(); s.x = f.x + x; s.y = f.y + y; for (const e of S.placed) if (e[0].id === s.id) { e[2] = x; e[3] = y; } return s; };
 S.cornerOf = (f, s, m = 16) => S.place34(f, s, Math.round(f.width - s.width - m), Math.round(f.height - s.height - m));
 
-// ---------- Confirmation « Lancer dans T3 » (spec §50.11) ----------
 S.confirm34 = (f) => { const C = S.C; const v = S.veil(f); v.name = "veil t3"; v.bringToFront();
   const d = S.col(f, { name: "dialog", w: 520, pad: 20, gap: 14, radius: 12, stroke: C.border, fill: C.card, shadow: 12 });
   S.txt(d, "Lancer SILO-45 dans T3", { size: 16, weight: 600 }); S.txt(d, "Kibo ouvre une session T3 Code qui livre l'étape avec /full-delivery.", { size: 13, color: C.mfg, fill: true });
@@ -409,16 +398,26 @@ S.confirm34 = (f) => { const C = S.C; const v = S.veil(f); v.name = "veil t3"; v
   const a = S.row(d, { fx: true, gap: 8, justify: "end" }); S.btn(a, "Annuler", "outline", { sm: true }); S.btn(a, "Lancer", "default", { sm: true, icon: "play" });
   return d; };
 
-// ---------- Kanban : infobulle d'une carte, « Lancer dans T3 » au survol ----------
 S.tooltip34 = (f, card, rows) => { const C = S.C, t = S.col(f, { name: "card tooltip", w: 300, pad: [10, 12], gap: 6, radius: 8, stroke: C.border, fill: C.card, shadow: 8 });
   for (const [k, v, mono] of rows) { const r = S.row(t, { fx: true, gap: 10, align: "start" }); const l = S.row(r, { w: 76 }); S.txt(l, k, { size: 12, color: C.dim });
     const tv = S.txt(r, v, { size: 12, mono, color: C.fg }); tv.layoutChild.horizontalSizing = "fill"; tv.growType = "auto-height"; }
   S.place34(f, t, Math.round(card.x - f.x + card.width + 10), Math.round(card.y - f.y)); card.strokes = [{ strokeColor: C.mfg, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1 }]; return t; };
+S.TIP34 = [["Étiquettes", "area:mobile", true], ["Branche", "feat/envoi-hors-ligne", true], ["En attente", "Serveur MinIO de recette indisponible"], ["Questions", "1 ouverte"]];
+S.questionCount34 = (b, n) => { const t = S.find34(b, z => z.type === "text" && z.characters === "Questions" && S.parentOf(b, z) && S.parentOf(b, z).children.some(c => c.type === "text" && /^\d+$/.test(c.characters)));
+  if (!t) return null; const c = S.parentOf(b, t).children.find(c => c.type === "text" && /^\d+$/.test(c.characters)); c.characters = n; S.refont(c); return n; };
+S.planningAtRest34 = (b) => { let n = 0; const dz = S.find34(b, z => z.name === "dropzone"); if (dz) { dz.remove(); n++; }
+  for (const c of b.children.filter(c => c.name !== "root")) { c.remove(); n++; }
+  const f9 = S.find34(b, z => z.name === "feature F9"); if (f9) f9.opacity = 1;
+  return { removed: n, alert: !!S.alert34(b, "S42", "F5 ne tiendra pas (4 étapes restantes)") }; };
+S.alert34 = (b, code, text) => { const C = S.C, col = S.find34(b, z => z.name === "col " + code); if (!col) return null;
+  for (const o of col.children.filter(c => c.name === "alert")) o.remove();
+  const w = S.row(null, { name: "alert", fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.amberSoft }); S.icon(w, "clockAlert", 13, C.amber); S.txt(w, text, { size: 11.5, color: C.amber, fill: true });
+  const load = col.children.find(c => S.find34(c, z => z.type === "text" && z.name === "load")) || col.children.find(c => c.type === "text" && c.name === "load");
+  if (load) S.showAfter(col, load, w); else S.showFirst(col, w); w.layoutChild.horizontalSizing = "fill"; return w; };
 S.hoverLaunch34 = (card) => { const C = S.C, title = card.children.find(c => c.type === "text");
   const b = S.btn(null, "Lancer dans T3", "default", { sm: true, icon: "play", pad: [3, 8] }); b.name = "launch-t3"; S.showAfter(card, title, b);
   card.strokes = [{ strokeColor: C.mfg, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1 }]; return b; };
 
-// ---------- Tableau des couleurs (spec §50.7) ----------
 S.COLORS34 = [["Bloque", "red", "--tracking-red", "lock", "ticket bloqué, question bloquante, fonctionnalité en retard", "bloqué · Q14"],
   ["Attention", "amber", "--tracking-amber", "triangleAlert", "à risque, limite atteinte, changements demandés, T3 attend", "changements demandés"],
   ["Attente", "hold", "--tracking-hold", "pause", "étape mise de côté", "Serveur MinIO de r…"],
@@ -452,7 +451,6 @@ S.colors34 = (f) => { const C = S.C; const body = S.col(f, { name: "body", w: f.
   const bt = S.row(ex, { gap: 8 }); S.btn(bt, "Coller la réponse", "outline", { sm: true, icon: "copy" }); S.agentButton(bt);
   return body; };
 
-// ---------- Fiche de SILO-34 (fil T3 en cours) à partir de celle de SILO-45 ----------
 S.ficheSilo34 = (b) => { const C = S.C, sheet = S.find34(b, z => z.name === "sheet"), set = (from, to) => { const t = S.byText(sheet, from); if (t) { t.characters = to; S.refont(t); } return !!t; };
   set("SILO-45", "SILO-34"); set("F4", "F5"); set("Conflits de saisie", "Tests E2E de l'envoi"); set("En review", "À faire"); set("feat/silo-45", "feat/silo-34");
   const st = S.find34(sheet, z => z.type === "ellipse" && String((z.fills[0] || {}).fillColor).toUpperCase() === C.purple.toUpperCase()); if (st) { st.fills = []; st.strokes = [{ strokeColor: C.dim, strokeWidth: 1.5, strokeAlignment: "inner", strokeOpacity: 1 }]; }
@@ -467,20 +465,19 @@ S.ficheSilo34 = (b) => { const C = S.C, sheet = S.find34(b, z => z.name === "she
   const none = S.byText(qs, "Aucune question sur ce ticket."); if (none) { const r = S.row(null, { gap: 8 }); S.txt(r, "Q16", { size: 12, mono: true, color: C.mfg }); S.txt(r, "Quota par client : 2 Go ou 5 Go ?", { size: 13 }); S.showBefore(qs, none, r); none.remove(); }
   return true; };
 
-// ---------- Page « Phase 34 » : rangées, noms, dessin et export ----------
 S.ROWS34 = ["p34-aujourdhui", "p34-vue-ensemble-livree", "p34-planning", "p34-graphe-tout-voir", "p34-graphe-redeplie", "p34-kanban-replie", "p34-kanban-infobulle",
   "p34-kanban-survol-t3", "p34-questions", "p34-questions-depliee", "p34-fiche-ticket", "p34-fiche-confirmation", "p34-fiche-lancee", "p34-fiche-attend",
-  "p34-fiche-copiee", "p34-toast-livree", "p34-recap-sprint", "p34-couleurs"];
+  "p34-fiche-copiee", "p34-toast-livree", "p34-recap-sprint", "p34-couleurs", "p34-graphe-survol-t3"];
 S.STEP34 = 1600;
 S.NAMES34 = { "p34-aujourdhui": "P34 · Aujourd'hui", "p34-vue-ensemble-livree": "P34 · Vue d'ensemble, livrée aujourd'hui", "p34-planning": "P34 · Planning",
   "p34-graphe-tout-voir": "P34 · Graphe, Tout voir", "p34-graphe-redeplie": "P34 · Graphe, F5 redépliée", "p34-kanban-replie": "P34 · Kanban, colonne vide repliée",
-  "p34-kanban-infobulle": "P34 · Kanban, infobulle", "p34-kanban-survol-t3": "P34 · Kanban, Lancer dans T3", "p34-questions": "P34 · Questions",
+  "p34-kanban-infobulle": "P34 · Kanban, infobulle", "p34-kanban-survol-t3": "P34 · Kanban, Lancer dans T3", "p34-graphe-survol-t3": "P34 · Graphe, Lancer dans T3", "p34-questions": "P34 · Questions",
   "p34-questions-depliee": "P34 · Questions, Q14 dépliée", "p34-fiche-ticket": "P34 · Fiche ticket", "p34-fiche-confirmation": "P34 · Fiche ticket, confirmation",
   "p34-fiche-lancee": "P34 · Fiche ticket, T3 en cours", "p34-fiche-attend": "P34 · Fiche ticket, T3 attend", "p34-fiche-copiee": "P34 · Fiche ticket, clé copiée",
   "p34-toast-livree": "P34 · Toast de livraison", "p34-recap-sprint": "P34 · Récapitulatif de sprint", "p34-couleurs": "P34 · Code couleur" };
 S.SRC34 = { "p34-vue-ensemble-livree": "P1 bis v3 · Vue d'ensemble", "p34-toast-livree": "P1 bis v3 · Vue d'ensemble", "p34-planning": "P2 · Planning · en attente",
-  "p34-graphe-tout-voir": "P5b · Graphe, Fonctionnalités", "p34-graphe-redeplie": "P5b · Graphe, Fonctionnalités", "p34-kanban-replie": "P7 · Kanban",
-  "p34-kanban-infobulle": "P7 · Kanban · en attente", "p34-kanban-survol-t3": "P7 · Kanban · en attente", "p34-questions": "P9 · Questions", "p34-questions-depliee": "P9 · Questions",
+  "p34-graphe-tout-voir": "P5b · Graphe, Fonctionnalités", "p34-graphe-redeplie": "P5b · Graphe, Fonctionnalités", "p34-kanban-replie": "P7 · Kanban · en attente",
+  "p34-kanban-infobulle": "P7 · Kanban · en attente", "p34-kanban-survol-t3": "P7 · Kanban · en attente", "p34-graphe-survol-t3": "P5b · Graphe, Fonctionnalités", "p34-questions": "P9 · Questions", "p34-questions-depliee": "P9 · Questions",
   "p34-fiche-ticket": "P8 · Fiche ticket", "p34-fiche-confirmation": "P8 · Fiche ticket", "p34-fiche-lancee": "P8 · Fiche ticket", "p34-fiche-attend": "P8 · Fiche ticket",
   "p34-fiche-copiee": "P8 · Fiche ticket", "p34-recap-sprint": "P1 bis v3 · En retard au 18 oct." };
 S.draw34k = {
@@ -489,13 +486,14 @@ S.draw34k = {
   "p34-vue-ensemble-livree": async (f) => S.p34Vue(f, { livree: true }),
   "p34-toast-livree": async (f) => { await S.p34Vue(f, { livree: true }); const t = S.toast34(f); await S.settle34(() => t.height); S.cornerOf(f, t); },
   "p34-recap-sprint": async (f) => { await S.p34Vue(f); const t = S.recap34(f); await S.settle34(() => t.height); S.cornerOf(f, t); },
-  "p34-planning": async (f) => S.p34Planning(f),
+  "p34-planning": async (f) => { await S.p34Planning(f); return S.planningAtRest34(f); },
   "p34-graphe-tout-voir": async (f) => { await S.p34Graph(f); return S.p34GraphAll(f, []); },
   "p34-graphe-redeplie": async (f) => { await S.p34Graph(f); await S.p34GraphAll(f, ["F5"]); S.t3Pill34(S.parentOf(f, S.byText(f, "Tests E2E de l'envoi"))); },
-  "p34-kanban-replie": async (f) => S.p34Kanban(f),
+  "p34-kanban-replie": async (f) => { await S.p34Kanban(f); S.questionCount34(f, "4"); },
   "p34-kanban-infobulle": async (f) => { await S.p34Kanban(f); await S.wait(600); const card = S.find34(f, z => z.name === "card SILO-33");
-    S.tooltip34(f, card, [["Branche", "feat/envoi-hors-ligne", true], ["En attente", "Serveur MinIO de recette indisponible"]]); },
-  "p34-kanban-survol-t3": async (f) => { await S.p34Kanban(f, { "SILO-34": "running" }); S.hoverLaunch34(S.find34(f, z => z.name === "card SILO-46")); },
+    S.tooltip34(f, card, S.TIP34); S.questionCount34(f, "4"); },
+  "p34-graphe-survol-t3": async (f) => { await S.p34Graph(f); S.t3Pill34(S.parentOf(f, S.byText(f, "Tests E2E de l'envoi"))); return S.graphHover34(f); },
+  "p34-kanban-survol-t3": async (f) => { await S.p34Kanban(f, { "SILO-34": "running" }); S.hoverLaunch34(S.find34(f, z => z.name === "card SILO-46")); S.questionCount34(f, "4"); },
   "p34-questions": async (f) => { for (const c of f.children.filter(c => c.name !== "root")) c.remove(); return S.p34Questions(f); },
   "p34-questions-depliee": async (f) => { for (const c of f.children.filter(c => c.name !== "root")) c.remove(); return S.p34Questions(f, { open: "Q14" }); },
   "p34-fiche-ticket": async (f) => S.p34Fiche(f),
@@ -520,7 +518,6 @@ S.export34 = async (only) => { await S.page("Phase 34"); await S.wait(800); cons
     try { out.push(await S.exportPng(c, `proposition-${key}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
 
-// ---------- Retouches en place des écrans existants (page « Proposition ») ----------
 S.neutral34 = (b, label) => { const C = S.C; let n = 0;
   for (const bt of penpotUtils.findShapes(z => /Button ?\/ ?brand/.test(z.name) && S.texts34(z).includes(label), b)) {
     bt.fills = [{ fillColor: C.primary, fillOpacity: 1 }]; bt.name = "Button/default";
@@ -571,7 +568,7 @@ S.INPLACE34 = {
   "P9c · Supprimer la question": async (b) => { const r = await S.p34Questions(b); for (const n of ["veil", "dialog"]) { const d = b.children.find(c => c.name === n); if (d) d.bringToFront(); } return r; },
   "P9d · Questions, répondues": (b) => S.p34Questions(b, { qs: [S.Q34[1]], state: "répondue", openCount: 2, summary: "1 répondue" }),
 };
-S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b) }) };
+S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b), startable: !!S.startable34(b) }) };
 S.fix34 = async (name, kind) => { await S.page("Proposition"); const b = penpot.currentPage.root.children.find(c => c.name === name); if (!b) throw new Error("missing board: " + name);
   S.setMode(S.modeOf(b)); S.placed = []; const r = S.FIX34[kind](b); await S.wait(600); const relaid = await S.relayout34(b); return { r, relaid, bottom: S.bottom34(b) }; };
 S.bottom34 = (b) => Math.round(Math.max(...penpotUtils.findShapes(z => z.type === "text", b).map(t => t.y + t.height - b.y)));
