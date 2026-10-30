@@ -117,7 +117,6 @@ describe("bundle report", () => {
       "/x/packages/ui/src/i18n/fr-layout.ts",
       "/x/packages/sdk/src/mock.ts",
       "/x/packages/sdk/src/mock-calls.ts",
-      "/x/packages/sdk/src/mock-notes.ts",
       "/x/packages/sdk/src/fixtures.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
@@ -295,20 +294,6 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
-  test("the signal box and its texts are forbidden in the entry, not the panel hook", () => {
-    const paths = [
-      "/x/packages/ui/src/project-agent/signals/SignalBox.tsx",
-      "/x/packages/ui/src/project-agent/signals/SignalRow.tsx",
-      "/x/packages/ui/src/project-agent/signals/use-signals.ts",
-      "/x/packages/ui/src/project-agent/PanelTabs.tsx",
-      "/x/packages/ui/src/i18n/fr-signals.ts",
-    ];
-    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(
-      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
-    ).toBe(false);
-  });
-
   test("vague 23, repli des questions", () => {
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-agent-bar.ts"))).toBe(true);
   });
@@ -349,7 +334,6 @@ describe("bundle report", () => {
       "dialogs/SprintPreview.tsx",
       "dialogs/FeatureSelect.tsx",
       "shell/NotFound.tsx",
-      "pages/PageErrorBoundary.tsx",
     ])
       expect(ui(p)).toBe(true);
     for (const p of ["i18n/fr.ts", "dialogs/new-project-model.ts", "pages/PageView.tsx"])

@@ -14,9 +14,9 @@ const entry = (code: string): BuiltChunk[] => [
 const rawSize = (bytes: Uint8Array) => bytes.length;
 
 describe("phase budget", () => {
-  test("the global ceiling stays at 230 000 and the phase requirement is 224 000", () => {
-    expect(ENTRY_GZIP_BUDGET).toBe(230_000);
-    expect(PHASE_BUDGET).toBe(224_000);
+  test("the phase requirement follows the measure and the ceiling stays 6 000 above it", () => {
+    expect(ENTRY_GZIP_BUDGET).toBe(204_000);
+    expect(PHASE_BUDGET).toBe(198_000);
   });
 
   test("exceeding the phase requirement fails even under the global ceiling", () => {

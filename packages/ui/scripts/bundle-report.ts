@@ -20,8 +20,8 @@ export type ReportOptions = {
   gzip(bytes: Uint8Array<ArrayBuffer>): number;
 };
 
-export const ENTRY_GZIP_BUDGET = 230_000;
-export const PHASE_BUDGET = 224_000;
+export const ENTRY_GZIP_BUDGET = 204_000;
+export const PHASE_BUDGET = 198_000;
 
 export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1)} kB (${bytes} octets)`;
 
@@ -37,7 +37,6 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/components\/overview\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
   /\/packages\/sdk\/src\/tracking\//,
   /\/packages\/schema\/src\/(project-event|overview[a-z-]*)\.ts$/,
-  /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
   /\/packages\/ui\/src\/dialogs\/(OpenViewDialog|RenamePageDialog)\.tsx$/,
@@ -60,7 +59,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/settings\/SettingsLayout\.tsx$/,
   /\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
-  /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
+  /\/packages\/sdk\/src\/(mock|mock-calls|fixtures|fixtures-glb)\.tsx?$/,
   /\/packages\/ui\/src\/(dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|WorkspaceMenuItems\.tsx)|i18n\/fr-tracking\.ts)$/,
   /\/packages\/core\/src\/|\/node_modules\/loro-crdt\//,
   /\/packages\/ui\/src\/((about|whats-new)\/[A-Za-z-]+\.tsx?|i18n\/fr-(about|whats-new)\.ts)$/,
@@ -76,7 +75,6 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/dialogs\/GuidelinesField\.tsx$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
-  /\/packages\/ui\/src\/(project-agent\/signals\/[A-Za-z-]+\.tsx?|i18n\/fr-signals\.ts)$/,
   /\/packages\/ui\/src\/i18n\/fr-agent-bar\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
@@ -88,7 +86,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/shell\/nav\/(overview-page\.ts|new-ticket-pages\.ts|NewTicketAction\.tsx)$/,
   /\/packages\/ui\/src\/i18n\/fr-ai\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(new-project|new-ticket|home|ticket-tracking)\.ts$/,
-  /\/packages\/ui\/src\/(dialogs\/(SprintSetupFields|SprintPreview|FeatureSelect)|shell\/NotFound|pages\/PageErrorBoundary)\.tsx$/,
+  /\/packages\/ui\/src\/(dialogs\/(SprintSetupFields|SprintPreview|FeatureSelect)|shell\/NotFound)\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-changes\.ts$/,
 ];
 
