@@ -55,7 +55,6 @@ const event = (
 
 const ctx = {
   recipients: [...DEFAULT_RECIPIENTS, { id: "galadrim", name: "Galadrim" }],
-  members: [],
   ticketLabel: (id: string) => (id === T1 ? "KIB-1" : "KIB-2"),
   now: NOW,
 };

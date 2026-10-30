@@ -37,7 +37,7 @@ export type ExistingTicket = { id: string; title: string; domainId: string | nul
 export function knownDomains(all: Domain[], projectId: string): { list: Domain[]; ids: ResolvedIds } {
   const own = all.filter((d) => d.owner.scope === "project" && d.owner.projectId === projectId);
   const workspace = all.filter((d) => d.owner.scope === "workspace");
-  const list = domainsOf({ project: { domains: own, shared: false }, workspace });
+  const list = domainsOf({ project: { domains: own }, workspace });
   const domains = new Map([...list].reverse().map((d) => [d.name, d.id]));
   return { list, ids: { projectId, domains, workspaceDomains: new Set(workspace.map((d) => d.id)) } };
 }

@@ -20,13 +20,7 @@ const kibo = {
   client: null,
 };
 
-function fixture(
-  opts: {
-    writable?: (id: string) => void;
-    save?: (id: string | null) => void;
-    restore?: (id: string) => void;
-  } = {},
-) {
+function fixture(opts: { save?: (id: string | null) => void; restore?: (id: string) => void } = {}) {
   const docs = new Map<string, LoroDoc>([
     [INBOX_ID, createProjectDoc(INBOX_META)],
     ["p1", createProjectDoc(kibo)],
@@ -40,10 +34,6 @@ function fixture(
         const doc = docs.get(id);
         if (!doc) throw new KiboError("NOT_FOUND", `project ${id} not found`);
         return doc;
-      },
-      assertWritable(id) {
-        log.push(`writable ${id}`);
-        opts.writable?.(id);
       },
       save(id) {
         log.push(`save ${id}`);
@@ -70,19 +60,14 @@ function fixture(
 }
 
 test("the checks run in the spec order before anything is written", () => {
-  const f = fixture({
-    writable: () => {
-      throw new KiboError("FORBIDDEN", "read-only");
-    },
-  });
+  const f = fixture();
   const t = createTicket(f.inbox, { title: "T" });
   expect(() => f.file({ method: "fileTicket", ticketId: t.id, projectId: INBOX_ID })).toThrow(
     "INVALID_INPUT",
   );
   expect(f.log).toEqual([]);
   expect(() => f.file({ method: "fileTicket", ticketId: t.id, projectId: "ghost" })).toThrow("NOT_FOUND");
-  expect(() => f.file({ method: "fileTicket", ticketId: t.id, projectId: "p1" })).toThrow("FORBIDDEN");
-  expect(f.log).toEqual(["project ghost", "project p1", "writable p1"]);
+  expect(f.log).toEqual(["project ghost"]);
   expect(f.emitted).toEqual([]);
 });
 
@@ -92,7 +77,6 @@ test("a filing saves both docs inside one transaction, then announces the inbox 
   expect(f.file({ method: "fileTicket", ticketId: t.id, projectId: "p1" })).toMatchObject({ key: "KIB-1" });
   expect(f.log).toEqual([
     "project p1",
-    "writable p1",
     `project ${INBOX_ID}`,
     "begin",
     `save ${INBOX_ID}`,

@@ -1,7 +1,6 @@
-import type { CiRun, MemberInfo, Question, TicketRun, TicketView } from "@kibo/schema";
+import type { CiRun, Question, TicketRun, TicketView } from "@kibo/schema";
 import { DELIVERY_STEP_LABELS, FINAL_STATUSES } from "@kibo/schema";
 import {
-  assigneeLabel,
   DELIVERY_STEP_CHIP,
   GroupChip,
   type GroupRef,
@@ -41,7 +40,6 @@ export type CardFacts = {
   ciRuns: CiRun[];
   blocked: boolean;
   blocking: Question | null;
-  members: MemberInfo[];
   questions: QuestionsChipData;
 };
 
@@ -61,7 +59,7 @@ function StepChip({ ticket }: { ticket: TicketView }) {
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, run, ciRuns, blocked, blocking, members, questions, menu, title } = props;
+  const { ticket: t, group, run, ciRuns, blocked, blocking, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
   const reason = startReasonText(t.startReason, t.waitingOn);
@@ -114,11 +112,6 @@ export function KanbanCardContent(props: Props) {
           className="max-w-full"
         />
         <StepChip ticket={t} />
-        {t.assignee?.kind === "human" && members.length > 0 && (
-          <Badge variant="outline" className="max-w-full text-3xs font-normal">
-            <span className="truncate">{assigneeLabel(t.assignee, members)}</span>
-          </Badge>
-        )}
         {otherQuestions > 0 && (
           <QuestionsChip
             {...questions}

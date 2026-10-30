@@ -39,8 +39,7 @@ const prParts = (pr: PrSummary): string[] =>
     pr.url,
   ].filter((part) => part !== null);
 
-const assigneeName = (a: AssigneeSummary) =>
-  a.kind === "agent" ? `agent ${a.ref}` : (a.name ?? (a.me ? "moi" : a.ref));
+const assigneeName = (a: AssigneeSummary) => (a.kind === "agent" ? `agent ${a.ref}` : a.me ? "moi" : a.ref);
 const branchName = (b: BranchSummary) => (b.base === null ? b.name : `${b.name} (base ${b.base})`);
 
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;

@@ -88,9 +88,7 @@ const preview = (refused: boolean) => {
         ciRuns={[]}
         blocked
         blocking={question}
-        members={[]}
         questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
-        readOnly={false}
         refused={refused}
       />
     </SdkProvider>,

@@ -1,7 +1,6 @@
 import type { CiRun, Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 import { frTicketTracking as tt } from "../i18n/fr-ticket-tracking";
-import { canEdit } from "../state/access";
 import { useNow } from "../state/use-agents";
 import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
@@ -40,7 +39,6 @@ export function TicketDetail({
   onOpenFile,
   onOpenTicket,
 }: Props) {
-  const editable = canEdit(project);
   const now = useNow(60_000);
   const host = useOptionalHost();
   const descriptionCommand = useTicketCommand(project.meta.id);
@@ -65,19 +63,15 @@ export function TicketDetail({
         repo={project.meta.folder !== null}
       />
       <div className={LINE} />
-      {(editable || t.description) && (
-        <>
-          <DescriptionEditor
-            ticketId={t.id}
-            description={t.description}
-            editable={editable}
-            command={descriptionCommand}
-            onOpenFile={open}
-          />
-          <div className={LINE} />
-        </>
-      )}
-      <DependenciesSection project={project} ticket={t} editable={editable} onOpenTicket={onOpenTicket} />
+      <DescriptionEditor
+        ticketId={t.id}
+        description={t.description}
+        editable
+        command={descriptionCommand}
+        onOpenFile={open}
+      />
+      <div className={LINE} />
+      <DependenciesSection project={project} ticket={t} editable onOpenTicket={onOpenTicket} />
       <div className={LINE} />
       <QuestionsSection
         ticket={t}

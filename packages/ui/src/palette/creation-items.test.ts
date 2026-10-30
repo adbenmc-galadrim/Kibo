@@ -17,7 +17,7 @@ const meta = {
   client: null,
 };
 const counts = { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
-const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => ({
+const snapshot = (): ProjectSnapshot => ({
   meta,
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -28,27 +28,22 @@ const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot =>
   instances: [],
   rules: [],
   bindings: [],
-  nextTicketKey: null,
+  nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: true, keyAllocator: "server", role: "viewer", access, members: [] },
 });
-const context = (access: ProjectSnapshot["sync"]["access"]): PaletteContext => ({
+const context = (): PaletteContext => ({
   projects: [{ ...meta, counts } satisfies ProjectSummary],
-  snapshots: new Map([["p1", snapshot(access)]]),
+  snapshots: new Map([["p1", snapshot()]]),
   recents: [],
   activeProjectId: "p1",
   activeTicketId: null,
 });
-const actions = (access: ProjectSnapshot["sync"]["access"]) =>
-  buildItems(context(access))
+const actions = () =>
+  buildItems(context())
     .filter((i) => i.group === "actions")
     .map((i) => i.id);
 
-test("the palette offers no creation in a read-only or revoked project", () => {
-  expect(actions("write")).toContain("action:newTicket");
-  expect(actions("write")).toContain("action:newPage");
-  for (const access of ["read-only", "revoked"] as const) {
-    expect(actions(access)).not.toContain("action:newTicket");
-    expect(actions(access)).not.toContain("action:newPage");
-  }
+test("the palette offers to create a ticket and a page in the active project", () => {
+  expect(actions()).toContain("action:newTicket");
+  expect(actions()).toContain("action:newPage");
 });

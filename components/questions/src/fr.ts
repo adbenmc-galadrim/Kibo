@@ -65,7 +65,6 @@ export const fr = {
   emptyOpen: "Aucune question ouverte.",
   empty: "Aucune question.",
   emptyPage: "Pose ici les questions au client ou à l'équipe : une question bloquante retient son étape.",
-  readOnly: "Lecture seule",
   archive: "Archiver",
   archiveTitle: (title: string) => `Archiver « ${title} » ?`,
   archiveHelp: "La question est masquée ; tu peux la restaurer depuis le filtre « Archivées ».",

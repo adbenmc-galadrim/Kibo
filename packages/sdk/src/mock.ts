@@ -1,10 +1,4 @@
-import {
-  createProjectDoc,
-  enableServerAllocation,
-  executeProjectCommand,
-  readProject,
-  UNDATED,
-} from "@kibo/core";
+import { createProjectDoc, executeProjectCommand, readProject, UNDATED } from "@kibo/core";
 import {
   ComponentManifest,
   type ComponentManifestInput,
@@ -12,7 +6,6 @@ import {
   defaultFormatOf,
   type EntityType,
   KiboError,
-  type ProjectAccess,
   type ProjectCommand,
   type ProjectEditRequest,
   permissionOfCall,
@@ -62,8 +55,6 @@ export function createMockSdk(
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
-  let access: ProjectAccess = "write";
-  if (opts.shared) enableServerAllocation(doc);
   const run = (cmd: ProjectCommand) => {
     const result = executeProjectCommand(doc, cmd);
     changes.emit();
@@ -116,7 +107,6 @@ export function createMockSdk(
       manifest,
       configPatches,
       runs: () => runs,
-      access: () => access,
       embeds,
       peek: mockRuns.peek,
       settings: () => settings.read(),
@@ -191,7 +181,6 @@ export function createMockSdk(
         return record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item));
       },
     },
-    sharing: () => record("read:ticket", "read sharing", () => inner.sharing()),
     capability: (name) => {
       const permission = capPermission(name);
       markUsed(permission);
@@ -235,10 +224,6 @@ export function createMockSdk(
     setRuns: (next) => {
       runs = next;
       runChanges.emit();
-      changes.emit();
-    },
-    setAccess: (next) => {
-      access = next;
       changes.emit();
     },
     setTracking: settings.setTracking,

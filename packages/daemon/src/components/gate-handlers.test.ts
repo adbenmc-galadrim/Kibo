@@ -6,7 +6,6 @@ import {
   DEFAULT_RECIPIENTS,
   type EmbedView,
   type Instance,
-  KiboError,
   NO_ACTIVITY,
   type ProjectMeta,
 } from "@kibo/schema";
@@ -156,24 +155,6 @@ test("the question recipients are read from the project, defaults included, with
   const project = new LoroDoc();
   const h = createGateHandlers({ ...stubHandlerDeps, docs: { ...stubDocs, project: () => project } });
   expect(await h.recipients("p")).toEqual([...DEFAULT_RECIPIENTS]);
-  expect(project.oplogVersion().length()).toBe(0);
-});
-
-test("instance data writes go through the project write guard", async () => {
-  const project = new LoroDoc();
-  const guarded = createGateHandlers({
-    ...stubHandlerDeps,
-    docs: {
-      ...stubDocs,
-      project: () => project,
-      assertWritable: (projectId) => {
-        throw new KiboError("FORBIDDEN", `project ${projectId} is read-only`);
-      },
-    },
-  });
-  await expect(guarded.data("p", "i1", { kind: "data.set", key: "k", value: 1 })).rejects.toThrow(
-    "FORBIDDEN",
-  );
   expect(project.oplogVersion().length()).toBe(0);
 });
 

@@ -18,7 +18,6 @@ export const frInbox = {
     title: (key: string) => `Rattacher ${key} à un projet`,
     project: "Projet",
     nextKey: (key: string) => `Le ticket reçoit une nouvelle clé dans ce projet (la prochaine est ${key}).`,
-    serverKey: "Sa clé sera attribuée par le serveur de sync.",
     children: "Ses sous-tickets suivent.",
     links: "Ses liens vers d'autres tickets de la boîte sont perdus.",
     confirm: "Rattacher",

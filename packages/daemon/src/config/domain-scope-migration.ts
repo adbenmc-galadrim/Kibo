@@ -8,7 +8,7 @@ import {
   planDomainScopes,
   usersOf,
 } from "@kibo/core/domain-scope";
-import { type Domain, KiboError } from "@kibo/schema";
+import type { Domain } from "@kibo/schema";
 import type { Docs } from "../docs";
 
 const MARKER = "domainsScopedAt";
@@ -28,19 +28,9 @@ function usageByProject(docs: Docs): DomainUsageByProject {
   return usage;
 }
 
-export function writable(docs: Docs, projectId: string): boolean {
-  try {
-    docs.assertWritable(projectId);
-    return true;
-  } catch (e) {
-    if (e instanceof KiboError) return false;
-    throw e;
-  }
-}
-
 const projectName = (docs: Docs, projectId: string) => getProjectMeta(docs.project(projectId)).name;
 
-function keptLine(docs: Docs, domain: Domain, reason: KeepReason, usage: DomainUsageByProject): string {
+function keptLine(domain: Domain, reason: KeepReason, usage: DomainUsageByProject): string {
   const head = `domain "${domain.name}" kept in the workspace`;
   const users = usersOf(usage, domain.id);
   switch (reason) {
@@ -48,8 +38,6 @@ function keptLine(docs: Docs, domain: Domain, reason: KeepReason, usage: DomainU
       return `${head}: unused`;
     case "shared":
       return `${head}: used by ${users.length} projects`;
-    case "read-only":
-      return `${head}: project "${projectName(docs, users[0] ?? "")}" is read-only`;
   }
 }
 
@@ -72,14 +60,14 @@ export async function migrateDomainScopes(
   if (settings.get(MARKER) !== undefined) return null;
   const domains = new Map(listDomains(docs.workspace).map((d) => [d.id, d]));
   const usage = usageByProject(docs);
-  const plan = planDomainScopes([...domains.values()], usage, (id) => writable(docs, id));
+  const plan = planDomainScopes([...domains.values()], usage);
   for (const { domainId, projectId } of plan.move) {
     const domain = domains.get(domainId);
     if (domain) log(moveDomain(docs, domain, projectId));
   }
   for (const { domainId, reason } of plan.keep) {
     const domain = domains.get(domainId);
-    if (domain) log(keptLine(docs, domain, reason, usage));
+    if (domain) log(keptLine(domain, reason, usage));
   }
   settings.set(MARKER, new Date(deps.now()).toISOString());
   docs.workspace.commit();

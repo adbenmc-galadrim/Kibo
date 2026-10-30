@@ -81,7 +81,6 @@ export function createProjectAgentDataPort(deps: ProjectAgentDataDeps): ProjectA
     project: (projectId) => snapshotOf(docs, projectId),
     projectName: (projectId) => docs.projectMeta(projectId).name,
     projectFolder: (projectId) => docs.projectMeta(projectId).folder,
-    assertWritable: (projectId) => docs.assertWritable(projectId),
     viewer: (projectId) => docs.identity(projectId),
     agents: (projectId) => deps.agents(projectId).map(agentSummary),
     guidelines: (projectId) => deps.guidelines(projectId),

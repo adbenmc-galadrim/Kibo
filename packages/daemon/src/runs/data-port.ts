@@ -165,7 +165,6 @@ export function createDataPort(
       return { project, ticket, domain, childCount };
     },
     guidelines: (projectId) => guidelinesOf(docs, projectId),
-    assertWritable: (projectId) => docs.assertWritable(projectId),
     assignTicket(projectId, ticketId, profileName) {
       docs.run(projectId, {
         method: "updateTicket",

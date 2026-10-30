@@ -3,13 +3,12 @@ import {
   DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
   KiboError,
-  type ProjectAccess,
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
   type TabTarget,
 } from "@kibo/schema";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { appInfoFixture } from "../lib/app-info-fixture";
@@ -17,7 +16,6 @@ import { configFixture } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
-let access: ProjectAccess = "write";
 const snapshot = (): ProjectSnapshot => ({
   meta: {
     id: "kibo",
@@ -44,7 +42,6 @@ const snapshot = (): ProjectSnapshot => ({
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access, members: [] },
 });
 mock.module("../api", () =>
   apiMock({
@@ -101,7 +98,6 @@ const saveButton = () => screen.getByRole("button", { name: "Enregistrer" });
 beforeEach(() => {
   calls.length = 0;
   fail = null;
-  access = "write";
 });
 
 test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
@@ -128,13 +124,6 @@ test("a writable project shows its question recipients (screen 187d)", async () 
   render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(await screen.findByRole("list", { name: "Destinataires des questions" })).toBeTruthy();
   expect(screen.getByText("Moi (technique)")).toBeTruthy();
-});
-
-test("a read-only project hides the question recipients", async () => {
-  access = "read-only";
-  render(<EditProjectDialog project={project} onClose={() => {}} />);
-  await act(() => new Promise((r) => setTimeout(r, 20)));
-  expect(screen.queryByText("Destinataires des questions")).toBeNull();
 });
 
 test("shows the current values and saves only the changed fields, then the icon (screen 107)", async () => {

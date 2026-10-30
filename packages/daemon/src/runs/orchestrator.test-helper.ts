@@ -32,7 +32,6 @@ import { newRunToken } from "./run-token";
 const ticket = (id: string, key: string | null): TicketView => ({
   id,
   key,
-  pendingSeq: key === null ? 1 : null,
   hold: null,
   keyLabel: key ?? "KIB-…",
   title: `Ticket ${key ?? id}`,
@@ -92,7 +91,6 @@ export const testProject: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-5",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 export { projectAgentAgent, testAgent } from "./agents-port.test-helper";
@@ -125,7 +123,6 @@ type Setup = {
   claudeBin?: string | null;
   env?: Record<string, string>;
   guidelines?: Guideline[];
-  readOnly?: boolean;
   assignFails?: boolean;
   meta?: Partial<ProjectSnapshot["meta"]>;
   questions?: Question[];
@@ -169,9 +166,6 @@ export function setup(o: Setup): Harness {
       return { project, ticket: t, domain: null, childCount: children.get(ticketId) ?? 0 };
     },
     guidelines: () => o.guidelines ?? [],
-    assertWritable: (projectId) => {
-      if (o.readOnly) throw new KiboError("FORBIDDEN", `project ${projectId} is read-only`);
-    },
     assignTicket: (_projectId, ticketId, name) => {
       if (o.assignFails) throw new KiboError("INVALID_INPUT", "ticket write refused");
       assigned.push(`${ticketId}:${name}`);

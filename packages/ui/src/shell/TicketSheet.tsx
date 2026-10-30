@@ -12,7 +12,6 @@ import {
 import { X } from "lucide-react";
 import { frFeature, frGroup } from "../i18n/fr-group";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
-import { canEdit } from "../state/access";
 import { findTicket } from "../tabs/target-hash";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
@@ -55,7 +54,6 @@ export function TicketSheet({
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
   if (!t) return null;
-  const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
   const actionsMenu = (extra?: MenuEntry[]) => (
     <TicketActionsMenu
@@ -63,7 +61,7 @@ export function TicketSheet({
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
-      editable={editable}
+      editable
       onOpenInTab={onOpenInTab}
       onFile={inbox ? onFile : undefined}
       onDeleted={onDeleted}
@@ -100,13 +98,13 @@ export function TicketSheet({
             <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
               <TicketTitle
                 title={t.title}
-                editable={editable}
+                editable
                 error={command.error}
                 onSave={(title) => command.run({ method: "updateTicket", ticketId: t.id, title })}
                 onCancel={command.clearError}
               />
             </SheetTitle>
-            <LabelsField ticket={t} editable={editable} command={labelsCommand} />
+            <LabelsField ticket={t} editable command={labelsCommand} />
           </SheetHeader>
           <GroupDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />
         </SheetContent>

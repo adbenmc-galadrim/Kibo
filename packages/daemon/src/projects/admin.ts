@@ -69,8 +69,6 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       if (patch.folder !== undefined) checkFolder(projectId, patch.folder, ctx);
       const local = [patch.worktree, patch.storybook, patch.duplication, patch.delivery];
       if (local.some((value) => value !== undefined)) requireLocal(ctx);
-      const touchesDoc = [patch.name, patch.color, patch.tracking, patch.folder].some((v) => v !== undefined);
-      if (touchesDoc) deps.docs.assertWritable(projectId);
       return deps.store.transaction(() => {
         if (patch.folder !== undefined) deps.settings.unset(projectId, LOCAL_FOLDER_KEY);
         return deps.docs.updateProjectMeta(projectId, patch);

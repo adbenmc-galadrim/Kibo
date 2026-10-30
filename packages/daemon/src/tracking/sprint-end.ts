@@ -8,13 +8,13 @@ import {
   sprintEndDigest,
 } from "@kibo/schema";
 import type { Docs } from "../docs";
-import { projectWritable } from "../project-agent/wakeup/bootstrap";
+import { projectKnown } from "../project-agent/wakeup/bootstrap";
 import type { SprintEndStore } from "./sprint-end-store";
 
 export const SPRINT_END_HISTORY_DAYS = 7;
 
 export type SprintEndDeps = {
-  docs: Pick<Docs, "projectIds" | "project" | "assertWritable">;
+  docs: Pick<Docs, "projectIds" | "project">;
   store: SprintEndStore;
   agent: () => { send(projectId: string, text: string): void };
   today: () => string;
@@ -41,7 +41,7 @@ function featuresOf(snapshot: ProjectSnapshot, sprint: SprintView): SprintEndFea
 }
 
 export function startSprintEndWatch(deps: SprintEndDeps): SprintEndWatch {
-  const writable = projectWritable(deps.docs);
+  const known = projectKnown(deps.docs);
 
   const endedSprints = (projectId: string, today: string) => {
     const snapshot = readProject(deps.docs.project(projectId), today);
@@ -57,7 +57,7 @@ export function startSprintEndWatch(deps: SprintEndDeps): SprintEndWatch {
 
   const wake = (projectId: string, today: string): void => {
     markOldOf(projectId, today);
-    if (!writable(projectId)) return;
+    if (!known(projectId)) return;
     const { snapshot, ended } = endedSprints(projectId, today);
     for (const sprint of ended) {
       const digest = sprintEndDigest(sprint, featuresOf(snapshot, sprint));

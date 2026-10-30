@@ -146,18 +146,16 @@ test("without hover, the trigger stays a plain button and hovering opens nothing
   expect(trigger.getAttribute("data-state")).toBeNull();
 });
 
-test("the question mode names its human author by the project members, never by an account id", async () => {
-  const adam = "1789b628-9778-4031-95aa-0dbd53d0ebf5";
+test("the question mode names its human author, never by an account id", async () => {
   const unknown = "2a4e8c1d-0b3f-4e5a-9c7d-6f8e9a0b1c2d";
-  const members = [{ userId: adam, name: "Adam", role: "owner" as const }];
-  const byAdam = question(1, { createdBy: { kind: "human", ref: adam } });
-  const { trigger } = mount({ mode: "question", questions: [byAdam], members });
+  const byAdam = question(1, { createdBy: { kind: "human", ref: "adam" } });
+  const { trigger } = mount({ mode: "question", questions: [byAdam] });
   fireEvent.focus(trigger);
   await settle(0);
-  expect(screen.getByText(/^posée par Adam · /)).toBeTruthy();
+  expect(screen.getByText(/^posée par adam · /)).toBeTruthy();
   cleanup();
   const byStranger = question(2, { createdBy: { kind: "human", ref: unknown } });
-  const second = mount({ mode: "question", questions: [byStranger], members });
+  const second = mount({ mode: "question", questions: [byStranger] });
   fireEvent.focus(second.trigger);
   await settle(0);
   expect(screen.getByText(/^posée par un membre · /)).toBeTruthy();

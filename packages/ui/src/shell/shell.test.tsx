@@ -41,7 +41,6 @@ const project: ProjectSnapshot = {
     {
       id: "7@1",
       key: "KIB-7",
-      pendingSeq: null,
       hold: null,
       keyLabel: "KIB-7",
       title: "Schéma",
@@ -89,7 +88,6 @@ const project: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-8",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const repo: ProjectSnapshot = {
   ...project,
@@ -110,15 +108,13 @@ const repo: ProjectSnapshot = {
   pages: [],
   tickets: [],
 };
-const readOnly: ProjectSnapshot = {
+const lecture: ProjectSnapshot = {
   ...project,
   meta: { ...project.meta, id: "p3", name: "Lecture", key: "LEC" },
-  sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] },
 };
 const sharedProject: ProjectSnapshot = {
   ...project,
   meta: { ...project.meta, id: "p4", name: "Partagé", key: "PAR" },
-  sync: { shared: true, keyAllocator: "server", role: "owner", access: "write", members: [] },
 };
 const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
   const [model] = project.tickets;
@@ -155,7 +151,7 @@ const snapshots = new Map([
   [INBOX_ID, inbox],
   ["p1", project],
   ["p2", repo],
-  ["p3", readOnly],
+  ["p3", lecture],
   ["p4", sharedProject],
 ]);
 const saved: RpcRequest[] = [];
@@ -199,7 +195,7 @@ mock.module("../state/use-projects", () => ({
     projects: [
       { ...project.meta, counts },
       { ...repo.meta, counts },
-      { ...readOnly.meta, counts },
+      { ...lecture.meta, counts },
       { ...sharedProject.meta, counts },
     ],
     error: null,
@@ -681,14 +677,6 @@ test("openView hands any other intent to the page it opens, outside the address"
   expect(pageIntents.take("9@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
 });
 
-test("a read-only project hides page and ticket creation", async () => {
-  renderShell();
-  await go("#/p/p3/");
-  expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
-});
-
 test("the project agent opens from the header and ⌘J, follows the project pages and closes without project", async () => {
   renderShell();
   await go("#/p/p1/1%401");
@@ -705,17 +693,6 @@ test("the project agent opens from the header and ⌘J, follows the project page
   await go("#/");
   await waitFor(() => expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull());
   expect(screen.queryByRole("button", { name: "Agent de projet" })).toBeNull();
-});
-
-test("a read-only project has no project agent: no button, ⌘J does nothing", async () => {
-  renderShell();
-  await go("#/p/p3/");
-  await screen.findByText("Cette page est vide : ajoute un composant pour commencer.");
-  expect(screen.queryByRole("button", { name: /^Agent de projet/ })).toBeNull();
-  fireEvent.keyDown(window, { key: "j", metaKey: isMac(), ctrlKey: !isMac() });
-  await act(async () => {});
-  expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull();
-  expect(localStorage.getItem("kibo.projectAgent.open")).toBeNull();
 });
 
 const screenWidth = (narrow: boolean) => {

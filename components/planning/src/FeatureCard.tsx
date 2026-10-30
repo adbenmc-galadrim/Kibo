@@ -98,10 +98,10 @@ export function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyPro
   );
 }
 
-type Props = { card: Card; readOnly: boolean; onOpen: () => void; menu: readonly MenuEntry[] };
+type Props = { card: Card; onOpen: () => void; menu: readonly MenuEntry[] };
 
-export function FeatureCard({ card, readOnly, onOpen, menu }: Props) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id, disabled: readOnly });
+export function FeatureCard({ card, onOpen, menu }: Props) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id });
   const article = (
     <article
       ref={setNodeRef}
@@ -113,7 +113,7 @@ export function FeatureCard({ card, readOnly, onOpen, menu }: Props) {
         CARD_CLASS,
         "group relative",
         card.late ? "border-transparent" : "border-(--tracking-border)",
-        !readOnly && "cursor-grab touch-none",
+        "cursor-grab touch-none",
         isDragging && "opacity-40",
       )}
     >

@@ -28,9 +28,9 @@ const ITEMS: DenialItem[] = [
   { tool: "mcp__kibo__peek_work", target: "", rule: null, addDir: null, reason: "mcp" },
 ];
 
-type Setup = { state?: RunState; reader?: boolean; denials?: boolean };
+type Setup = { state?: RunState; denials?: boolean };
 
-const mount = ({ state = "waiting_input", reader = false, denials = true }: Setup = {}) => {
+const mount = ({ state = "waiting_input", denials = true }: Setup = {}) => {
   const recorded: Record<string, RunDenials> = {};
   let ticketId = "";
   const seed = (run: (cmd: ProjectCommand) => unknown) => {
@@ -52,7 +52,6 @@ const mount = ({ state = "waiting_input", reader = false, denials = true }: Setu
     agentExecution: "shown",
   });
   m.setRuns([{ ticketId, runId: "r1", label: "silo · full-delivery · SILO-15", state, position: null }]);
-  if (reader) m.setAccess("read-only");
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -148,13 +147,6 @@ test("a running run cannot be resumed: the proposals stay, the relaunch waits", 
   expect(block.queryByRole("button", { name: "Autoriser et relancer" })).toBeNull();
   expect(block.getByText("Relance possible quand le run attend une réponse ou est terminé.")).toBeTruthy();
   expect(block.getByRole("button", { name: "Ignorer" })).toBeTruthy();
-});
-
-test("a reader sees the proposals without any button", async () => {
-  mount({ reader: true });
-  const block = await proposals();
-  expect(block.queryAllByRole("button")).toEqual([]);
-  expect(block.getAllByRole("checkbox").every((b) => b.hasAttribute("disabled"))).toBe(true);
 });
 
 test("without recorded denials the card falls back to the ordinary answer form", async () => {

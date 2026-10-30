@@ -10,7 +10,7 @@ import { type Allowance, allowanceOf, canRelaunch, isAllowable, itemKey, tilde }
 import { fr } from "./fr";
 import { useAnswer } from "./use-questions";
 
-type Props = { question: Question; run: TicketRun | null; readOnly: boolean; fallback: ReactNode };
+type Props = { question: Question; run: TicketRun | null; fallback: ReactNode };
 type Loaded = { status: "loading" } | { status: "none" } | { status: "ready"; denials: RunDenials };
 
 const t = fr.denials;
@@ -44,22 +44,16 @@ function useDenials(question: Question): Loaded {
   return loaded;
 }
 
-type ProposalLineProps = { item: DenialItem; checked: boolean; disabled: boolean; onToggle(): void };
+type ProposalLineProps = { item: DenialItem; checked: boolean; onToggle(): void };
 
-function ProposalLine({ item, checked, disabled, onToggle }: ProposalLineProps) {
+function ProposalLine({ item, checked, onToggle }: ProposalLineProps) {
   const allowable = isAllowable(item);
   const label =
     item.rule !== null ? t.rule(item.rule) : item.addDir !== null ? t.dir(tilde(item.addDir)) : null;
   return (
     <li className="flex items-start gap-2.5 border-t py-2 first:border-t-0">
       {allowable && label !== null ? (
-        <Checkbox
-          aria-label={label}
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={onToggle}
-          className="mt-0.5"
-        />
+        <Checkbox aria-label={label} checked={checked} onCheckedChange={onToggle} className="mt-0.5" />
       ) : (
         <Minus aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       )}
@@ -81,7 +75,7 @@ function ProposalLine({ item, checked, disabled, onToggle }: ProposalLineProps) 
   );
 }
 
-export function DenialProposals({ question, run, readOnly, fallback }: Props) {
+export function DenialProposals({ question, run, fallback }: Props) {
   const sdk = useSdk();
   const traces = agentTracesShown(useComponentSettings().agentExecution);
   const answer = useAnswer();
@@ -125,38 +119,35 @@ export function DenialProposals({ question, run, readOnly, fallback }: Props) {
               key={itemKey(item)}
               item={item}
               checked={checked.has(itemKey(item))}
-              disabled={readOnly}
               onToggle={() => toggle(itemKey(item))}
             />
           ))}
         </ul>
       </div>
-      {!readOnly && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {failed && (
-            <span role="alert" className="text-xs text-destructive">
-              {fr.answerFailed}
-            </span>
-          )}
-          {traces && !relaunch && (
-            <span className="flex-1 text-2xs text-muted-foreground">{t.notResumable}</span>
-          )}
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void ignore()}>
-            {t.ignore}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {failed && (
+          <span role="alert" className="text-xs text-destructive">
+            {fr.answerFailed}
+          </span>
+        )}
+        {traces && !relaunch && (
+          <span className="flex-1 text-2xs text-muted-foreground">{t.notResumable}</span>
+        )}
+        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void ignore()}>
+          {t.ignore}
+        </Button>
+        {traces && relaunch && (
+          <Button
+            size="sm"
+            className={`h-7 text-xs ${AGENT_ACCENT_SOLID}`}
+            disabled={allowance.rules.length + allowance.addDirs.length === 0}
+            onClick={() => setConfirming(allowance)}
+          >
+            <Play aria-hidden />
+            {t.allow}
           </Button>
-          {traces && relaunch && (
-            <Button
-              size="sm"
-              className={`h-7 text-xs ${AGENT_ACCENT_SOLID}`}
-              disabled={allowance.rules.length + allowance.addDirs.length === 0}
-              onClick={() => setConfirming(allowance)}
-            >
-              <Play aria-hidden />
-              {t.allow}
-            </Button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
       <AllowResumeDialog
         allowance={confirming}
         runLabel={run?.label ?? runId}

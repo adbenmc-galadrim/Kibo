@@ -91,7 +91,6 @@ const empty: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 test("ProjectHome names the created project and its folder", () => {

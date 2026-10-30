@@ -12,42 +12,41 @@ const color = "#14B8A6";
 const domain = (id: string) => Domain.parse({ id, name: id.toUpperCase(), color });
 const usage = (entries: Record<string, Record<string, number>>) =>
   new Map(Object.entries(entries).map(([d, byProject]) => [d, new Map(Object.entries(byProject))]));
-const writable = (projectId: string) => projectId !== "ro";
 
 describe("domainsOf", () => {
-  test("local: the project then the workspace; shared: the project only", () => {
+  test("the project then the workspace", () => {
     const own = Domain.parse({ id: "p", name: "Sync", color, owner: { scope: "project", projectId: "a" } });
     const ws = [domain("w")];
-    expect(domainsOf({ project: { domains: [own], shared: false }, workspace: ws })).toEqual([own, ...ws]);
-    expect(domainsOf({ project: { domains: [own], shared: true }, workspace: ws })).toEqual([own]);
+    expect(domainsOf({ project: { domains: [own] }, workspace: ws })).toEqual([own, ...ws]);
   });
 });
 
 describe("planDomainScopes", () => {
-  test("moves a domain used by one writable project, keeps every other case", () => {
+  test("moves a domain used by one project, keeps every other case", () => {
     const plan = planDomainScopes(
       [domain("d1"), domain("d2"), domain("d3"), domain("d4")],
-      usage({ d1: { a: 3 }, d2: { a: 1, b: 2 }, d4: { ro: 5 } }),
-      writable,
+      usage({ d1: { a: 3 }, d2: { a: 1, b: 2 }, d4: { b: 5 } }),
     );
     expect(plan).toEqual({
-      move: [{ domainId: "d1", projectId: "a" }],
+      move: [
+        { domainId: "d1", projectId: "a" },
+        { domainId: "d4", projectId: "b" },
+      ],
       keep: [
         { domainId: "d2", reason: "shared" },
         { domainId: "d3", reason: "unused" },
-        { domainId: "d4", reason: "read-only" },
       ],
     });
   });
 
   test("a project with zero tickets on the domain does not count", () => {
-    const plan = planDomainScopes([domain("d1")], usage({ d1: { a: 0, b: 2 } }), writable);
+    const plan = planDomainScopes([domain("d1")], usage({ d1: { a: 0, b: 2 } }));
     expect(plan.move).toEqual([{ domainId: "d1", projectId: "b" }]);
   });
 
   test("project domains are never planned", () => {
     const own = Domain.parse({ id: "p", name: "P", color, owner: { scope: "project", projectId: "a" } });
-    expect(planDomainScopes([own], usage({ p: { a: 1 } }), writable)).toEqual({ move: [], keep: [] });
+    expect(planDomainScopes([own], usage({ p: { a: 1 } }))).toEqual({ move: [], keep: [] });
   });
 });
 
@@ -97,7 +96,7 @@ describe("applyDomainMove", () => {
     expect(listTickets(doc).find((t) => t.id === ticket.id)?.domainId).toBe(sync.id);
   });
 
-  test("an existing sharing copy is kept as is", () => {
+  test("an existing project copy is kept as is", () => {
     const { ws, sync } = workspaceWithSync();
     const doc = projectDoc("a");
     doc.getMap("projectDomains").set(sync.id, { name: "Sync partagé", color, guidelines: [] });

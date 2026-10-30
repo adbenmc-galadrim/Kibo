@@ -1,6 +1,5 @@
-import { getProjectMeta, readProject, trackingMigrationCommands } from "@kibo/core";
+import { readProject, trackingMigrationCommands } from "@kibo/core";
 import { KiboError } from "@kibo/schema";
-import { writable } from "../config/domain-scope-migration";
 import { type Docs, KIBO_COMMAND } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
 
@@ -42,18 +41,10 @@ export function markMigrated(settings: Pick<ProjectSettings, "set">, projectId: 
   settings.set(projectId, OVERVIEW_MIGRATED_KEY, at);
 }
 
-export function migrateTracking(deps: TrackingMigrationDeps): { migrated: number; skipped: number } {
+export function migrateTracking(deps: TrackingMigrationDeps): { migrated: number } {
   let migrated = 0;
-  let skipped = 0;
   for (const projectId of deps.docs.projectIds()) {
-    if (!writable(deps.docs, projectId)) {
-      skipped += 1;
-      deps.log(
-        `tracking migration skipped: project "${getProjectMeta(deps.docs.project(projectId)).name}" is read-only`,
-      );
-      continue;
-    }
     if (migrateProject(deps, projectId) > 0) migrated += 1;
   }
-  return { migrated, skipped };
+  return { migrated };
 }

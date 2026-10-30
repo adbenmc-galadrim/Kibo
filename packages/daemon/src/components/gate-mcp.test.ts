@@ -49,9 +49,6 @@ function harness(quotas: Quotas = createQuotas()) {
     design: async () => null,
     embed: async () => null,
     config: async () => null,
-    sharing: async () => {
-      throw new KiboError("INTERNAL", "unexpected");
-    },
     settings: async () => DEFAULT_COMPONENT_SETTINGS,
     project: async () => {
       throw new KiboError("INTERNAL", "unexpected");

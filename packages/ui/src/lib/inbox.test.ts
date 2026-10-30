@@ -76,17 +76,9 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
   });
 });
 
-test("a new ticket can go to the inbox first, then to the projects one can write to", () => {
+test("a new ticket can go to the inbox first, then to the loaded projects", () => {
   const kibo = kiboProject();
-  const readOnly: ProjectSnapshot = {
-    ...kibo,
-    meta: { ...kibo.meta, id: "fac" },
-    sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] },
-  };
-  const snapshots = new Map([
-    ["kibo", kibo],
-    ["fac", readOnly],
-  ]);
+  const snapshots = new Map([["kibo", kibo]]);
   expect(newTicketProjects(projectsFixture, snapshots).map((p) => p.id)).toEqual([INBOX_ID, "kibo"]);
 });
 

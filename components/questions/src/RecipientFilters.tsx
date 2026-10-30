@@ -15,7 +15,6 @@ type Props = {
   client: string | null;
   counts: RecipientCounts;
   value: string | null;
-  readOnly: boolean;
   onChange(recipient: string | null): void;
 };
 
@@ -84,7 +83,7 @@ function AddRecipient() {
   );
 }
 
-export function RecipientFilters({ recipients, client, counts, value, readOnly, onChange }: Props) {
+export function RecipientFilters({ recipients, client, counts, value, onChange }: Props) {
   const count = (id: string) => counts.byRecipient.get(id) ?? 0;
   const shown = recipients
     .filter((r) => r.id === value || count(r.id) > 0)
@@ -106,7 +105,7 @@ export function RecipientFilters({ recipients, client, counts, value, readOnly, 
           <Pill key={r.id} value={r.id} name={recipientName(recipients, r.id, client)} count={count(r.id)} />
         ))}
       </ToggleGroup>
-      {!readOnly && <AddRecipient />}
+      <AddRecipient />
     </div>
   );
 }

@@ -7,7 +7,7 @@ export function signalGroup(pid: number, signal: NodeJS.Signals | 0): boolean {
     process.kill(-pid, signal);
     return true;
   } catch (e) {
-    // macOS answers EPERM, not ESRCH, for a group whose members are all zombies
+    // macOS answers EPERM, not ESRCH, for a group whose processes are all zombies
     if (isGone(e)) return false;
     throw e;
   }

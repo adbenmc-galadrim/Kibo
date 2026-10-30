@@ -3,21 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   batchStatusOfResults,
+  KiboError,
   MEMORY_NOTE_PATH,
   RETIRED_ACTION_DETAIL,
   type RetiredAction,
 } from "@kibo/schema";
 import { applyBatch } from "./apply-batch";
-import {
-  type Harness,
-  HUMAN,
-  harness,
-  propose,
-  readOnly,
-  seed,
-  statusOf,
-  titleOf,
-} from "./fakes.test-helper";
+import { type Harness, HUMAN, harness, propose, seed, statusOf, titleOf } from "./fakes.test-helper";
 
 const open: Harness[] = [];
 afterEach(() => {
@@ -79,14 +71,13 @@ describe("applyBatch", () => {
     const data = {
       ...h.data,
       runCommand: (projectId: string, command: Parameters<typeof h.data.runCommand>[1]) => {
-        const out = h.data.runCommand(projectId, command);
-        readOnly(h);
-        return out;
+        if (command.method === "createTicket") throw new KiboError("CONFLICT", "projet verrouillé");
+        return h.data.runCommand(projectId, command);
       },
     };
     const results = await applyBatch({ data, agents: () => h.agents }, batch, all(batch.actions), HUMAN);
     expect(outcomes(results)).toEqual(["applied", "failed", "skipped", "skipped", "applied"]);
-    expect(results[1]?.detail).toContain("read-only");
+    expect(results[1]?.detail).toContain("projet verrouillé");
     expect(results[2]?.detail).toBe("dépend de new:1 (échouée)");
     expect(results[3]?.detail).toBe("dépend de new:1 (échouée)");
     expect(batchStatusOfResults(results)).toBe("partial");

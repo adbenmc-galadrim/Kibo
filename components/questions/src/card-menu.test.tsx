@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { Q14, Q16, seedSilo } from "./question-fixtures.test-helper";
@@ -61,12 +61,4 @@ test("an archived card keeps « Restaurer » in line and its menu only offers «
   expect(within(card).getByRole("button", { name: "Restaurer" })).toBeTruthy();
   await user.click(within(card).getByRole("button", { name: "Actions de Q2" }));
   expect(menuItems()).toEqual(["Supprimer"]);
-});
-
-test("read-only projects show no card menu", async () => {
-  const m = mount();
-  act(() => m.setAccess("read-only"));
-  await screen.findByText("Lecture seule");
-  await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(3));
-  expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull();
 });

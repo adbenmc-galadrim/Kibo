@@ -329,66 +329,6 @@ test("an unavailable CI is stated, a missing GitHub account is not", async () =>
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
-test("shows member names and provisional keys", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    config: { filter: "all" },
-    shared: true,
-    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
-    seed: (run) =>
-      run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect((await screen.findByText("KIB-…")).className).toContain("italic");
-  expect(await screen.findByText("Léa")).toBeTruthy();
-});
-
-test("cards cannot be moved in a read-only project", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    config: { filter: "all" },
-    shared: true,
-    seed: (run) => run({ method: "createTicket", title: "Lecture" }),
-  });
-  m.setAccess("read-only");
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  await screen.findByText("KIB-…");
-  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
-  expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
-  expect(screen.getByRole("article", { name: /Lecture/ }).getAttribute("tabindex")).toBeNull();
-  await userEvent
-    .setup()
-    .pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
-});
-
-test("in a shared project, 'Moi + agents' follows the account id", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "u-adam",
-    shared: true,
-    config: { filter: "mine-and-agents" },
-    seed: (run) => {
-      run({ method: "createTicket", title: "À moi", assignee: { kind: "human", ref: "u-adam" } });
-      run({ method: "createTicket", title: "Au nom local", assignee: { kind: "human", ref: "adam" } });
-    },
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect(await screen.findByText("À moi")).toBeTruthy();
-  expect(screen.queryByText("Au nom local")).toBeNull();
-});
-
 test("a column scrolls its cards inside its own background", async () => {
   setup();
   const column = await screen.findByRole("region", { name: "À faire" });

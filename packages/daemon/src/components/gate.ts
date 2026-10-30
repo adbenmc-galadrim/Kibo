@@ -11,7 +11,6 @@ import {
   type KiboErrorCode,
   type ProjectCommand,
   type ProjectInfo,
-  type ProjectSyncInfo,
   type QuestionRecipient,
   splitRef,
 } from "@kibo/schema";
@@ -36,7 +35,6 @@ export type GateHandlers = {
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
   embed(projectId: string, instance: Instance, url: string): Promise<unknown>;
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
-  sharing(projectId: string): Promise<ProjectSyncInfo>;
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
@@ -76,8 +74,6 @@ function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: Comp
     case "mcp.read":
     case "mcp.import":
       return h.mcp(projectId, inst.id, call);
-    case "sharing.get":
-      return h.sharing(projectId);
     case "settings.get":
       return h.settings(projectId);
     case "project.get":

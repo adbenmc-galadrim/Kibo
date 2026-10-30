@@ -1,5 +1,5 @@
 import type { Actor, Question, TicketRun } from "@kibo/schema";
-import { AgentBadge, AgentMention, type MentionTexts, useAgentMention, useMembers } from "@kibo/sdk";
+import { AgentBadge, AgentMention, type MentionTexts, useAgentMention } from "@kibo/sdk";
 import { fr } from "./fr";
 import { actorName, relativeAge } from "./questions-logic";
 
@@ -28,7 +28,7 @@ function RunMention({ run }: { run: TicketRun }) {
 }
 
 function HumanAuthor({ actor }: { actor: Actor }) {
-  const name = actorName(actor, useMembers());
+  const name = actorName(actor);
   return (
     <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
       <span
@@ -54,14 +54,13 @@ export const answerValue = (q: Question): string =>
   q.answer === null ? "" : q.answer.kind === "text" ? q.answer.text : (q.answer.option ?? "");
 
 export function QuestionAnswerLine({ question, now }: { question: Question; now: number }) {
-  const members = useMembers();
   const a = question.answer;
   if (a === null) return null;
   return (
     <div className="grid gap-1 rounded-md bg-muted/50 px-2.5 py-2 text-xs">
       <p className="font-medium">{fr.answer(answerValue(question))}</p>
       <p className="text-2xs text-muted-foreground">
-        {fr.answeredBy(actorName(a.by, members), relativeAge(a.at, now))}
+        {fr.answeredBy(actorName(a.by), relativeAge(a.at, now))}
       </p>
     </div>
   );

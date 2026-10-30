@@ -26,8 +26,6 @@ test("send opens a session on the first message and resumes it after", () => {
   expect(kit.store.openSession(PROJECT_ID)).toMatchObject({ runId: first.id, sessionId: first.sessionId });
   kit.svc.send(PROJECT_ID, "Et ensuite ?");
   expect(kit.calls).toEqual(["start:Silo:Bonjour", `answer:${first.id}:Et ensuite ?`]);
-  kit.setWritable(false);
-  expect(() => kit.svc.send(PROJECT_ID, "Encore")).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
 });
 
 test("prepare composes the first turn with the overview and the next turns with the digest", async () => {
@@ -170,7 +168,7 @@ test("an apply that throws records every chosen action as failed", async () => {
   expect(decided.results).toEqual([{ actionId: 1, outcome: "failed", detail: "disk gone", created: null }]);
 });
 
-test("decide refuses unknown batches, action ids outside the batch and read-only projects", async () => {
+test("decide refuses unknown batches and action ids outside the batch", async () => {
   const run = await openTurn();
   kit.svc.propose(run, proposal());
   const pending = kit.store.pendingBatch(PROJECT_ID);
@@ -180,8 +178,6 @@ test("decide refuses unknown batches, action ids outside the batch and read-only
   await expect(decide({ batchId: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   await expect(decide({ projectId: "other" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   await expect(decide({ actionIds: [9] })).rejects.toMatchObject({ code: "INVALID_INPUT" });
-  kit.setWritable(false);
-  await expect(decide({})).rejects.toMatchObject({ code: "FORBIDDEN" });
   expect(kit.store.pendingBatch(PROJECT_ID)?.id).toBe(pending.id);
 });
 
@@ -220,8 +216,6 @@ test("view returns the current session, its run, its batches and the past sessio
   expect(past.batches.map((b) => b.status)).toEqual(["abandoned"]);
   expect(() => kit.svc.view(PROJECT_ID, "unknown")).toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
   expect(() => kit.svc.propose(old, proposal())).toThrow(expect.objectContaining({ code: "CONFLICT" }));
-  kit.setWritable(false);
-  expect(() => kit.svc.view(PROJECT_ID)).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
 });
 
 test("summaries list one entry per project with an open session, with pendingBatchId", async () => {

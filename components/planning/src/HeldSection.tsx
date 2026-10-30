@@ -9,7 +9,7 @@ export type HeldHandlers = {
   onResume(step: HeldStep): void;
   onResumeIn(step: HeldStep, sprintId: string): void;
 };
-type Props = HeldHandlers & { groups: readonly HeldGroup[]; readOnly: boolean };
+type Props = HeldHandlers & { groups: readonly HeldGroup[] };
 
 export function heldEntries(step: HeldStep, handlers: HeldHandlers): MenuEntry[] {
   const resume: MenuEntry = { label: fr.held.resume, icon: Play, onSelect: () => handlers.onResume(step) };
@@ -42,15 +42,7 @@ function StepMenu({ step, entries }: { step: HeldStep; entries: readonly MenuEnt
 
 const MONO = "font-mono text-(--tracking-dim) text-[11px] leading-[14px]";
 
-function StepCard({
-  step,
-  readOnly,
-  handlers,
-}: {
-  step: HeldStep;
-  readOnly: boolean;
-  handlers: HeldHandlers;
-}) {
+function StepCard({ step, handlers }: { step: HeldStep; handlers: HeldHandlers }) {
   return (
     <article
       aria-label={`${step.key} ${step.title}`}
@@ -62,7 +54,7 @@ function StepCard({
           ·
         </span>
         <span className={MONO}>{step.featureKey}</span>
-        {!readOnly && <StepMenu step={step} entries={heldEntries(step, handlers)} />}
+        <StepMenu step={step} entries={heldEntries(step, handlers)} />
       </div>
       <button
         type="button"
@@ -76,20 +68,12 @@ function StepCard({
   );
 }
 
-function Group({
-  group,
-  readOnly,
-  handlers,
-}: {
-  group: HeldGroup;
-  readOnly: boolean;
-  handlers: HeldHandlers;
-}) {
+function Group({ group, handlers }: { group: HeldGroup; handlers: HeldHandlers }) {
   return (
     <fieldset aria-label={group.reason} className="m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0">
       <p className="text-(--tracking-mfg) text-[13px] leading-[18px]">{group.reason}</p>
       {group.steps.map((s) => (
-        <StepCard key={s.ticketId} step={s} readOnly={readOnly} handlers={handlers} />
+        <StepCard key={s.ticketId} step={s} handlers={handlers} />
       ))}
       {group.dependents > 0 && (
         <span className="flex h-[14px] items-center gap-1.5 px-0.5 text-(--tracking-dim) text-[11.5px] leading-[14px]">
@@ -101,7 +85,7 @@ function Group({
   );
 }
 
-export function HeldSection({ groups, readOnly, ...handlers }: Props) {
+export function HeldSection({ groups, ...handlers }: Props) {
   const count = groups.reduce((n, g) => n + g.steps.length, 0);
   if (count === 0) return null;
   const title = fr.held.title(count);
@@ -112,7 +96,7 @@ export function HeldSection({ groups, readOnly, ...handlers }: Props) {
         <span className="font-semibold text-(--tracking-fg) text-[13px] leading-[16px]">{title}</span>
       </div>
       {groups.map((g) => (
-        <Group key={g.reason} group={g} readOnly={readOnly} handlers={handlers} />
+        <Group key={g.reason} group={g} handlers={handlers} />
       ))}
     </section>
   );

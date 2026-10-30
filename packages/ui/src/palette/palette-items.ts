@@ -12,7 +12,6 @@ import { withInbox } from "../lib/inbox";
 import { HELP_DIALOGS, type HelpDialog } from "../shell/help-dialogs";
 import { helpLabel } from "../shell/help-labels";
 import { isRetiredScreen, retiredRoute } from "../shell/retired-routes";
-import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
 import { findTicket, targetToHash } from "../tabs/target-hash";
 import { isTracked, type LocalAction, sprintItems, trackingItems } from "./tracking-items";
@@ -154,8 +153,8 @@ function actions(ctx: PaletteContext): PaletteItem[] {
   });
   const out: PaletteItem[] = [];
   const snapshot = project ? ctx.snapshots.get(project.id) : undefined;
-  const editable = project !== undefined && (!snapshot || canEdit(snapshot));
-  if (project && editable) {
+  const editable = project !== undefined;
+  if (project) {
     out.push(
       action("newTicket", fr.palette.newTicket, "new", {
         kind: "action",

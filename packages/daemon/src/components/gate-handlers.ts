@@ -1,10 +1,4 @@
-import {
-  listQuestionRecipients,
-  localSyncInfo,
-  readInstanceData,
-  readProject,
-  writeInstanceData,
-} from "@kibo/core";
+import { listQuestionRecipients, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
 import {
   type ComponentManifest,
   KiboError,
@@ -75,7 +69,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       if (call.kind === "data.get" || call.kind === "data.keys")
         return readData(docs, projectId, instanceId, call);
       const value = call.kind === "data.set" ? call.value : null;
-      docs.assertWritable(projectId);
       writeInstanceData(docs.project(projectId), instanceId, call.key, value);
       changed(projectId);
       return null;
@@ -123,7 +116,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       );
       return null;
     },
-    sharing: async (projectId) => localSyncInfo(docs.project(projectId)),
     project: async (projectId) => {
       const today = docs.today();
       const info = projectInfo(readProject(docs.project(projectId), today, docs.activity(projectId)), today);

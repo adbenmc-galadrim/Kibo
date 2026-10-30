@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, renderHook } from "@testing-library/react";
 import { kiboProject } from "../lib/fixtures";
-import { siloProject } from "../project-agent/fixtures";
 import { PANEL_OPEN_KEY, useProjectAgentPanel } from "./use-project-agent-panel";
 
 const realMatchMedia = window.matchMedia;
@@ -30,14 +29,6 @@ test("show() opens the panel; there is no tab", () => {
   expect(result.current.open).toBe(true);
   act(() => result.current.toggle());
   expect(result.current.open).toBe(false);
-});
-
-test("a read-only project never opens the panel nor touches the preference", () => {
-  const { result } = renderHook(() => useProjectAgentPanel(siloProject("read-only")));
-  act(() => result.current.show());
-  act(() => result.current.toggle());
-  expect(result.current.open).toBe(false);
-  expect(localStorage.getItem(PANEL_OPEN_KEY)).toBeNull();
 });
 
 test("under 1180 px the panel starts closed, even if it was left open, and opening it keeps the wide preference", () => {

@@ -15,13 +15,13 @@ import {
   TicketProgress,
 } from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
-import { getKeyAllocator, isFeatureNode, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { pruneQuestions } from "./questions";
 import {
   assignShortKey,
   checkShortKey,
+  isFeatureNode,
   nextFeatureSlot,
   nextShortKey,
   type ShortKeyAllocation,
@@ -74,7 +74,6 @@ function readTicket(n: LoroTreeNode): Ticket {
   return {
     id: n.id,
     key: (d.get("key") as string | null | undefined) ?? null,
-    pendingSeq: (d.get("pendingSeq") as number | null | undefined) ?? null,
     title: d.get("title") as string,
     description: text instanceof LoroText ? text.toString() : "",
     statusId: d.get("statusId") as StatusId,
@@ -106,13 +105,10 @@ function writeDescription(n: LoroTreeNode, value: string): void {
 }
 
 type TicketKeys = {
-  key: string | null;
-  pendingSeq: number | null;
+  key: string;
   feature: boolean;
   shortKey: (ticketId: string) => ShortKeyAllocation | null;
 };
-
-const serverKeys = (doc: LoroDoc): boolean => getKeyAllocator(doc) === "server";
 
 const parentShortKey = (doc: LoroDoc, parent: LoroTreeNode | undefined): ShortKeyAllocation | null =>
   parent === undefined || isFeatureNode(parent) ? null : nextShortKey(doc, parent.id);
@@ -120,16 +116,13 @@ const parentShortKey = (doc: LoroDoc, parent: LoroTreeNode | undefined): ShortKe
 function stepKeys(doc: LoroDoc, parent: LoroTreeNode | undefined): TicketKeys {
   const parentKey = parentShortKey(doc, parent);
   const shortKey = () => parentKey;
-  if (serverKeys(doc)) return { key: null, pendingSeq: nextPendingSeq(doc), feature: false, shortKey };
   const key = formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
-  return { key, pendingSeq: null, feature: false, shortKey };
+  return { key, feature: false, shortKey };
 }
 
 function featureKeys(doc: LoroDoc): TicketKeys {
-  if (serverKeys(doc))
-    return { key: null, pendingSeq: nextPendingSeq(doc), feature: true, shortKey: () => null };
   const slot = nextFeatureSlot(doc, null);
-  return { key: slot.key, pendingSeq: null, feature: true, shortKey: (ticketId) => ({ ticketId, ...slot }) };
+  return { key: slot.key, feature: true, shortKey: (ticketId) => ({ ticketId, ...slot }) };
 }
 
 function assertRoot(doc: LoroDoc, ticketId: string, parentId: string | null): void {
@@ -153,7 +146,6 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const keys = input.feature === true ? featureKeys(doc) : stepKeys(doc, parent);
   const node = parent ? parent.createNode(stepIndex(parent)) : ticketTree(doc).createNode();
   node.data.set("key", keys.key);
-  node.data.set("pendingSeq", keys.pendingSeq);
   if (keys.feature) node.data.set("feature", true);
   node.data.set("title", title);
   node.data.set("statusId", input.statusId ?? "todo");

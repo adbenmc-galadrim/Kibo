@@ -6,7 +6,6 @@ import { graphInput } from "./filter";
 const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key: id,
-  pendingSeq: null,
   hold: null,
   keyLabel: id,
   title: id,

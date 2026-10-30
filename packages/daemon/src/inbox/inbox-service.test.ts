@@ -5,7 +5,6 @@ import { join } from "node:path";
 import {
   type ChangeMessage,
   INBOX_ID,
-  KiboError,
   type ProjectMeta,
   type ProjectSnapshot,
   type Ticket,
@@ -56,13 +55,12 @@ describe("inbox", () => {
     expect(a.key).toBe("INB-1");
     expect(s.handle({ method: "listProjects" })).toEqual([]);
     const snapshot = snapshotOf(s, INBOX_ID);
-    expect([
-      snapshot.meta.key,
-      snapshot.pages,
-      snapshot.instances,
-      snapshot.sync.shared,
-      snapshot.nextTicketKey,
-    ]).toEqual(["INB", [], [], false, "INB-2"]);
+    expect([snapshot.meta.key, snapshot.pages, snapshot.instances, snapshot.nextTicketKey]).toEqual([
+      "INB",
+      [],
+      [],
+      "INB-2",
+    ]);
     store.close();
     const again = openStore(dir);
     const s2 = createService(again, { user: "adam" });
@@ -213,7 +211,7 @@ describe("fileTicket", () => {
     );
   });
 
-  test("refusals change nothing: read-only target, being shared, unknown ticket or parent", () => {
+  test("refusals change nothing: unknown ticket or parent", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
     const p = s.handle(newProject) as ProjectMeta;
@@ -222,14 +220,6 @@ describe("fileTicket", () => {
     s.onChange((m) => seen.push(m));
     const bytes = () => [store.load(projectDocId(INBOX_ID)), store.load(projectDocId(p.id))];
     const before = bytes();
-    let guard: KiboError | null = new KiboError("FORBIDDEN", "read-only");
-    s.docs.setWriteGuard((id) => {
-      if (id === p.id && guard) throw guard;
-    });
-    expect(() => s.handle({ method: "fileTicket", ticketId: t.id, projectId: p.id })).toThrow("FORBIDDEN");
-    guard = new KiboError("CONFLICT", "being shared");
-    expect(() => s.handle({ method: "fileTicket", ticketId: t.id, projectId: p.id })).toThrow("CONFLICT");
-    guard = null;
     expect(() => s.handle({ method: "fileTicket", ticketId: "9@9", projectId: p.id })).toThrow("NOT_FOUND");
     expect(() =>
       s.handle({ method: "fileTicket", ticketId: t.id, projectId: p.id, parentId: "9@9" }),

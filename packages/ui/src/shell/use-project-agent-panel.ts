@@ -1,7 +1,6 @@
 import { isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { useCallback, useState } from "react";
 import { usePref } from "../lib/local-pref";
-import { canEdit } from "../state/access";
 import { useNarrowScreen } from "./nav/use-narrow-screen";
 import { useOpened } from "./use-opened";
 
@@ -22,7 +21,7 @@ export function useProjectAgentPanel(project: ProjectSnapshot | null): ProjectAg
   const narrow = useNarrowScreen();
   const pref = narrow ? overlay : wide;
   const setPref = narrow ? setOverlay : setWide;
-  const available = project !== null && !isInbox(project.meta.id) && canEdit(project);
+  const available = project !== null && !isInbox(project.meta.id);
   const show = useCallback(() => {
     if (available) setPref("1");
   }, [available, setPref]);

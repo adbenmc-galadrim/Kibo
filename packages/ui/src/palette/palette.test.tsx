@@ -17,7 +17,6 @@ import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in_progress"): TicketView => ({
   id: `${n}@1`,
   key: `KIB-${n}`,
-  pendingSeq: null,
   hold: null,
   keyLabel: `KIB-${n}`,
   title,
@@ -81,7 +80,6 @@ const snapshot: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-19",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const context: PaletteContext = {
   projects: [summary],

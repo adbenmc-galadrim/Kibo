@@ -2,7 +2,6 @@ import type { ProjectCommand, ProjectSnapshot } from "@kibo/schema";
 import { useMemo } from "react";
 import { client } from "../../api";
 import { useProjectAgent } from "../../project-agent/use-project-agent";
-import { canEdit } from "../../state/access";
 import { useDaemonToday } from "../use-daemon-today";
 import type { SprintDecision } from "./SprintReportBanner";
 import { sprintFeatures, sprintTiming } from "./sprint-facts";
@@ -27,7 +26,7 @@ export function useSprintView(project: ProjectSnapshot, sprintId: string, fixedN
     features,
     proposal,
     timing: sprint && today !== null ? sprintTiming(sprint, today) : null,
-    editable: canEdit(project),
+    editable: true,
     command,
     decide,
   };

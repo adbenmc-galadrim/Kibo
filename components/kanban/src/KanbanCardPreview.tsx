@@ -3,11 +3,11 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { MoreHorizontal } from "lucide-react";
 import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
 
-type Props = CardFacts & { readOnly: boolean; refused?: boolean };
+type Props = CardFacts & { refused?: boolean };
 
 export function KanbanCardPreview(props: Props) {
-  const { ticket: t, readOnly, refused = false } = props;
-  const menu = !readOnly && (
+  const { ticket: t, refused = false } = props;
+  const menu = (
     <span className="inline-flex size-6 items-center justify-center">
       <MoreHorizontal absoluteStrokeWidth size={14} className="size-3.5" />
     </span>

@@ -24,11 +24,10 @@ const page = (id: string, title: string, parentId: string | null): Page => ({
   parentId,
 });
 
-const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
+const countedPages = () => {
   const silo = siloFeatureProject();
   const counted: ProjectSnapshot = {
     ...silo,
-    sync: { ...silo.sync, access },
     pages: [page("p-questions", "Questions", null)],
     instances: [
       {
@@ -65,7 +64,7 @@ const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
 };
 
 test("the ⋯ of an editable row shows for its own row only and its count yields to it", () => {
-  const { row, count } = countedPages("write");
+  const { row, count } = countedPages();
   const line = row.parentElement;
   expect(line?.classList.contains("k-page-row")).toBe(true);
   expect(count.classList.contains("k-yield")).toBe(true);
@@ -73,9 +72,4 @@ test("the ⋯ of an editable row shows for its own row only and its count yields
   expect(action?.classList.contains("k-page-action")).toBe(true);
   expect(action?.className).not.toContain("group-hover/menu-item");
   expect(action?.className).not.toContain("group-focus-within/menu-item");
-});
-
-test("the count of a read-only row has no ⋯ to yield to and stays shown", () => {
-  const { count } = countedPages("read-only");
-  expect(count.classList.contains("k-yield")).toBe(false);
 });

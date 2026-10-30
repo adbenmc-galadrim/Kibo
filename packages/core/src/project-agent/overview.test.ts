@@ -164,8 +164,8 @@ describe("ticket card and sheet", () => {
     expect(ticketCard(snapshot, ticket({ id: "t8", startable: true })).startReason).toBeNull();
   });
 
-  test("a pending ticket shows its key label", () => {
-    const pending = ticket({ id: "t9", key: null, pendingSeq: 1 });
+  test("an old ticket without a key shows its key label", () => {
+    const pending = ticket({ id: "t9", key: null });
     expect(ticketCard(snapshot, pending).key).toBe("SILO-…");
   });
 

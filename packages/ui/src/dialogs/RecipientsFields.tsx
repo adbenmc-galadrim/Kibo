@@ -13,7 +13,6 @@ import { Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { type KeyboardEvent, useId, useState } from "react";
 import { client } from "../api";
 import { frProject } from "../i18n/fr-project";
-import { canEdit } from "../state/access";
 import { useSnapshots } from "../state/use-snapshots";
 
 const t = frProject.recipients;
@@ -115,7 +114,7 @@ export function RecipientsFields({ projectId }: { projectId: string }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (!snapshot || !canEdit(snapshot)) return null;
+  if (!snapshot) return null;
   const counts = openCountByRecipient(snapshot.questions);
   const recipients = snapshot.questionRecipients;
   const send = async (command: ProjectCommand, open = 0): Promise<boolean> => {

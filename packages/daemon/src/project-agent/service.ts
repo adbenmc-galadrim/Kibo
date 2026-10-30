@@ -39,7 +39,6 @@ export type ProjectAgentService = {
 export type ProjectAgentCore = Omit<ProjectAgentService, "rpc">;
 
 function view(ctx: AgentContext, projectId: string, runId?: string): ProjectAgentView {
-  ctx.data.assertWritable(projectId);
   const sessions = ctx.store.sessions(projectId);
   const session =
     runId === undefined ? ctx.store.openSession(projectId) : sessions.find((s) => s.runId === runId);
@@ -56,7 +55,6 @@ function view(ctx: AgentContext, projectId: string, runId?: string): ProjectAgen
 }
 
 function send(ctx: AgentContext, projectId: string, text: string): RunView {
-  ctx.data.assertWritable(projectId);
   const open = ctx.store.openSession(projectId);
   if (open) {
     const answered = ctx.agents().answer(open.runId, text);
@@ -70,7 +68,6 @@ function send(ctx: AgentContext, projectId: string, text: string): RunView {
 }
 
 function reset(ctx: AgentContext, projectId: string): ProjectAgentView {
-  ctx.data.assertWritable(projectId);
   const open = ctx.store.openSession(projectId);
   if (open) {
     const at = ctx.now();

@@ -4,7 +4,7 @@ import { type Docs, KIBO_COMMAND } from "../docs";
 import type { RpcExtension } from "../rpc-extensions";
 import { activeRunOf } from "../runs/active-run";
 
-export type StepDocs = Pick<Docs, "project" | "activity" | "run" | "assertWritable" | "today">;
+export type StepDocs = Pick<Docs, "project" | "activity" | "run" | "today">;
 export type StepRpcDeps = { docs: StepDocs; runs(): readonly RunView[]; now(): number };
 export type SetDeliveryStepInput = Extract<TrackingRpcRequest, { method: "setDeliveryStep" }>;
 
@@ -17,7 +17,6 @@ export function setDeliveryStep(deps: StepRpcDeps, req: SetDeliveryStepInput): T
   const { docs } = deps;
   const ticket = ticketByKey(docs, req.projectId, req.ticketKey);
   if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
-  docs.assertWritable(req.projectId);
   const ownRuns = deps.runs().filter((r) => r.projectId === req.projectId);
   const runId = activeRunOf(ownRuns, ticket.id)?.id ?? null;
   const delivery = {

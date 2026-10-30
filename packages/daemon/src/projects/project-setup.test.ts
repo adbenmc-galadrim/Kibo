@@ -99,7 +99,6 @@ test("a seeded project is marked migrated and the tracking migration runs nothin
   };
   expect(migrateTracking({ docs, settings, log: () => {}, now: () => Date.parse(NOW) })).toEqual({
     migrated: 0,
-    skipped: 0,
   });
   expect(runs).toEqual([]);
 });

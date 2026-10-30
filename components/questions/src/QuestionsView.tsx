@@ -79,7 +79,6 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           client={data.client}
           recipients={data.recipients}
           now={now}
-          readOnly={data.readOnly}
           viewer={data.viewer}
           runOf={data.runOf}
           ticketLabel={keyOf(data)}
@@ -104,7 +103,7 @@ export function QuestionsView() {
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<string | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
-  useNewQuestionIntent(data.readOnly, setCreating);
+  useNewQuestionIntent(setCreating);
   useSpotlightFilters(data.questions, { scope, ticketId, recipient }, (shown) => {
     setScope(shown.scope);
     setTicketId(shown.ticketId);
@@ -139,7 +138,6 @@ export function QuestionsView() {
         scope={scope}
         ticket={ticketId === null ? null : data.ticketOf(ticketId)}
         tickets={asked}
-        readOnly={data.readOnly}
         onScope={setScope}
         onTicket={setTicketId}
         onNew={() => setCreating("")}
@@ -149,12 +147,10 @@ export function QuestionsView() {
             client={data.client}
             counts={counts}
             value={recipient}
-            readOnly={data.readOnly}
             onChange={setRecipient}
           />
         }
         actions={
-          !data.readOnly &&
           toExport.length > 0 && (
             <ExportButton
               label={exportText.label}
@@ -168,7 +164,7 @@ export function QuestionsView() {
       <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5">
         <BlockingLine blocking={summary.blocking} open={summary.open} />
         {!data.loading && data.questions.length === 0 ? (
-          <EmptyPage onNew={data.readOnly ? undefined : () => setCreating("")} />
+          <EmptyPage onNew={() => setCreating("")} />
         ) : (
           !data.loading &&
           groups.length === 0 && (

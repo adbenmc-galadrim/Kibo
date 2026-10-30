@@ -34,7 +34,6 @@ const { TicketTab } = await import("../pages/TicketTab");
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
   key: "KIB-12",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-12",
   title: "Schéma Loro des tickets",
@@ -154,7 +153,6 @@ const project = (main: TicketView): ProjectSnapshot => ({
   bindings: [],
   nextTicketKey: "KIB-13",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 
 const showSheet = (main: TicketView) =>

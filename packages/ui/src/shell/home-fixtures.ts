@@ -36,7 +36,6 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   session: null,
   updatedAt: null,
   feature: null,
-  pendingSeq: null,
   hold: null,
   keyLabel: p.key ?? "",
   ...p,
@@ -159,7 +158,6 @@ export function siloHomeSnapshot(): ProjectSnapshot {
       sprint("s42", "S42", "2026-10-12", "2026-10-16"),
       sprint("s43", "S43", "2026-10-19", "2026-10-23"),
     ],
-    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   };
 }
 

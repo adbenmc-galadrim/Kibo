@@ -64,7 +64,7 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
-  const { ticketProject, project, projectRef, currentProject, forget } = useProjectFocus(activeProjectId);
+  const { ticketProject, project, currentProject, forget } = useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
@@ -83,7 +83,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
 
   const host = useWorkspaceHost({
     activeProjectId,
-    projectRef,
     set,
     go,
     openView: views.openView,

@@ -92,7 +92,6 @@ export function createPlanService({ data, events }: PlanServiceDeps): PlanServic
       return { ok: true, keys: predictKeys(checked.batch.actions, data.forecast(projectId)) };
     },
     async apply(projectId, actions) {
-      data.assertWritable(projectId);
       const { ctx, checked } = validate(projectId, actions);
       if (!checked.ok)
         return { problems: problemsOf(checked.problems), results: [], created: [], stoppedAt: null };

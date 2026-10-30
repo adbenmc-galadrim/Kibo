@@ -7,7 +7,6 @@ import {
   type ImportRef,
   KiboError,
   type Link,
-  type MemberInfo,
   type OnHold,
   type PrChecks,
   type PrReview,
@@ -44,7 +43,7 @@ export type PrSummary = {
   checks: PrChecks | null;
 };
 export type BranchSummary = { name: string; base: string | null };
-export type AssigneeSummary = Assignee & { name: string | null; me: boolean };
+export type AssigneeSummary = Assignee & { me: boolean };
 export type TicketSummary = {
   id: string;
   key: string;
@@ -75,7 +74,6 @@ export type TicketsSource = {
   links: Link[];
   sprints: readonly SprintSource[];
   viewer?: string;
-  sync?: { members: readonly MemberInfo[] };
 };
 
 const isPlanRef = (r: ExternalRef): r is ImportRef => r.kind === "import_ref" && r.source === "plan";
@@ -101,9 +99,8 @@ function branchOf(t: TicketView): BranchSummary | null {
 function assigneeOf(t: TicketView, source: TicketsSource): AssigneeSummary | null {
   if (t.assignee === null) return null;
   const { kind, ref } = t.assignee;
-  if (kind === "agent") return { kind, ref, name: null, me: false };
-  const name = source.sync?.members.find((m) => m.userId === ref)?.name ?? null;
-  return { kind, ref, name, me: name === null && ref === source.viewer };
+  if (kind === "agent") return { kind, ref, me: false };
+  return { kind, ref, me: ref === source.viewer };
 }
 
 const refOf = (t: TicketView): TicketRef => ({

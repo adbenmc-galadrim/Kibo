@@ -28,10 +28,10 @@ test("the inbox accepts ticket and link commands only", () => {
 });
 
 test("project operations are refused on the inbox only", () => {
-  expect(codeOf(() => assertNotInbox("inbox", "sharing"))).toBe(
-    "INVALID_INPUT: sharing is not available for the inbox",
+  expect(codeOf(() => assertNotInbox("inbox", "export"))).toBe(
+    "INVALID_INPUT: export is not available for the inbox",
   );
-  expect(codeOf(() => assertNotInbox("p1", "sharing"))).toBeNull();
+  expect(codeOf(() => assertNotInbox("p1", "export"))).toBeNull();
   expect(codeOf(() => assertNotInboxForAgents("inbox"))).toBe(
     "INVALID_INPUT: inbox tickets cannot be assigned to an agent",
   );

@@ -14,16 +14,14 @@ export type CardMenuActions = {
 export function cardMenuEntries(input: {
   ticket: TicketView;
   statuses: Status[];
-  readOnly: boolean;
   deliver: DeliverEntry | null;
   execution: AgentExecution;
   texts: typeof fr;
   sdk: Pick<KiboSdk, "toast">;
   actions: CardMenuActions;
 }): MenuEntry[] {
-  const { ticket, statuses, readOnly, deliver, execution, texts, sdk, actions } = input;
+  const { ticket, statuses, deliver, execution, texts, sdk, actions } = input;
   const open: MenuAction = { label: texts.open, icon: ExternalLink, onSelect: actions.open };
-  if (readOnly) return [open];
   const targets: MenuAction[] = [...statuses]
     .sort((a, b) => a.order - b.order)
     .filter((s) => s.id !== ticket.statusId)

@@ -21,7 +21,6 @@ const MIN = 60_000;
 const ticket = (id: string, key: string, title: string, statusId: TicketView["statusId"]): TicketView => ({
   id,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title,
@@ -50,7 +49,7 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   feature: null,
 });
 
-export function siloProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
+export function siloProject(): ProjectSnapshot {
   return {
     meta: {
       id: "silo",
@@ -80,13 +79,6 @@ export function siloProject(access: "write" | "read-only" = "write"): ProjectSna
     bindings: [],
     nextTicketKey: "SILO-13",
     sprints: [],
-    sync: {
-      shared: access !== "write",
-      keyAllocator: access === "write" ? "local" : "server",
-      role: access === "write" ? null : "viewer",
-      access,
-      members: [],
-    },
   };
 }
 

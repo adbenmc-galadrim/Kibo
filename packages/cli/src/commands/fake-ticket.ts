@@ -33,7 +33,6 @@ export function fakeTicket(input: TicketInput): TicketView {
   return {
     id: input.id,
     key: input.key,
-    pendingSeq: null,
     hold: input.hold ?? null,
     title: input.title ?? `Titre ${input.key}`,
     description: input.description ?? "",

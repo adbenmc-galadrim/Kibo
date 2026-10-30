@@ -2,7 +2,7 @@ import type { KiboSdk } from "@kibo/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LABEL_ALL, LABEL_FILTER_KEY, labelFilterOf } from "./filter";
 
-export function useLabelFilter(sdk: KiboSdk, writable: boolean) {
+export function useLabelFilter(sdk: KiboSdk) {
   const [label, setLabel] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const chosen = useRef(false);
@@ -26,13 +26,12 @@ export function useLabelFilter(sdk: KiboSdk, writable: boolean) {
     (next: string | null) => {
       chosen.current = true;
       setLabel(next);
-      if (!writable) return;
       sdk.data.set(LABEL_FILTER_KEY, next ?? LABEL_ALL).then(
         () => setFailed(false),
         () => setFailed(true),
       );
     },
-    [sdk, writable],
+    [sdk],
   );
 
   return { label, choose, failed };

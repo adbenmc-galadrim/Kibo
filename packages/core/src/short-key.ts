@@ -1,5 +1,5 @@
 import { KiboError, ShortKey } from "@kibo/schema";
-import type { LoroDoc } from "loro-crdt";
+import type { LoroDoc, LoroTreeNode } from "loro-crdt";
 import { valid } from "./config-store";
 import { featureSeqOf, setFeatureSeq } from "./project";
 import { getNode, walkDepthFirst } from "./tree";
@@ -8,6 +8,14 @@ const FEATURE_PREFIX = "F";
 export const MAX_FEATURE_SEQ = 999;
 
 const tickets = (doc: LoroDoc) => doc.getTree("tickets");
+
+const FEATURE_KEY = /^F\d+$/;
+
+export const isFeatureKey = (key: unknown): key is string =>
+  typeof key === "string" && FEATURE_KEY.test(key) && Number(key.slice(1)) <= MAX_FEATURE_SEQ;
+
+export const isFeatureNode = (node: LoroTreeNode): boolean =>
+  node.data.get("feature") === true || isFeatureKey(node.data.get("key"));
 
 export function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
   const used = new Set<string>();

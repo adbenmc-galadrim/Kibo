@@ -44,7 +44,6 @@ export type Kit = {
   dir: string;
   setProject(next: ProjectSnapshot): void;
   current(): ProjectSnapshot;
-  setWritable(writable: boolean): void;
   setFolder(folder: string | null): void;
   setApply(apply: ProjectAgentOps["apply"]): void;
   setAgentBody(body: string): void;
@@ -123,7 +122,6 @@ export function serviceKit(): Kit {
       ticket({ id: "t11", key: "SILO-11", title: "Panneau", statusId: "in_progress" }),
     ],
   });
-  let writable = true;
   let folder: string | null = null;
   let apply = applyAll;
   let clock = 100;
@@ -141,9 +139,6 @@ export function serviceKit(): Kit {
     },
     projectName: () => snapshot.meta.name,
     projectFolder: () => folder,
-    assertWritable() {
-      if (!writable) throw new KiboError("FORBIDDEN", "read only");
-    },
     viewer: () => "adam",
     agents: () => AGENTS,
     guidelines: () => [],
@@ -194,9 +189,6 @@ export function serviceKit(): Kit {
       snapshot = next;
     },
     current: () => snapshot,
-    setWritable: (next) => {
-      writable = next;
-    },
     setFolder: (next) => {
       folder = next;
     },

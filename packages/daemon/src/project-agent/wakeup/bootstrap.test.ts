@@ -3,8 +3,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createProjectDoc, executeProjectCommand } from "@kibo/core";
-import { KiboError, Question, Ticket, WAKEUP_PREFIX } from "@kibo/schema";
-import { projectWritable, startWakeup, type WakeupBootInput, type WakeupDocs } from "./bootstrap";
+import { Question, Ticket, WAKEUP_PREFIX } from "@kibo/schema";
+import { projectKnown, startWakeup, type WakeupBootInput, type WakeupDocs } from "./bootstrap";
 import { openWakeupStore } from "./store";
 
 const dirs: string[] = [];
@@ -17,15 +17,12 @@ const home = () => {
   return d;
 };
 
-function docs(readOnly: readonly string[] = []): WakeupDocs {
+function docs(): WakeupDocs {
   return {
     projectIds: () => ["p1", "p2"],
     today: () => "2026-10-16",
     project: () => {
       throw new Error("the snapshot is not read here");
-    },
-    assertWritable(projectId) {
-      if (readOnly.includes(projectId)) throw new KiboError("PERMISSION_DENIED", "read only");
     },
   };
 }
@@ -39,11 +36,11 @@ const input = (h: string, d: WakeupDocs): WakeupBootInput => ({
   agent: () => ({ send: unused }),
 });
 
-test("a project is writable only when it exists and accepts writes, without ever throwing", () => {
-  const writable = projectWritable(docs(["p2"]));
-  expect(writable("p1")).toBe(true);
-  expect(writable("p2")).toBe(false);
-  expect(writable("p9")).toBe(false);
+test("a project is known only when it exists, without ever throwing", () => {
+  const known = projectKnown(docs());
+  expect(known("p1")).toBe(true);
+  expect(known("p2")).toBe(true);
+  expect(known("p9")).toBe(false);
 });
 
 function questionsDoc() {

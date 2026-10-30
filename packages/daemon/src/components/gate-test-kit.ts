@@ -45,8 +45,6 @@ export const stubDocs: Docs = {
   onProjectRemoved: unused,
   imported: unused,
   onProjectDoc: unused,
-  assertWritable: unused,
-  setWriteGuard: unused,
   projectMeta: unused,
   updateProjectMeta: unused,
   identity: unused,
@@ -81,9 +79,6 @@ export const idleHandlers: GateHandlers = {
   design: async () => null,
   embed: async () => null,
   config: async () => null,
-  sharing: async () => {
-    throw new KiboError("INTERNAL", "unexpected");
-  },
   settings: async () => DEFAULT_COMPONENT_SETTINGS,
   project: async () => {
     throw new KiboError("INTERNAL", "unexpected");
@@ -137,9 +132,6 @@ export function testGate(quotas: Quotas = createQuotas()) {
       config: async (_projectId, instance, patch) => {
         handled.push(`config:${instance.id}:${Object.keys(patch).join(",")}`);
         return null;
-      },
-      sharing: async () => {
-        throw new KiboError("INTERNAL", "unexpected");
       },
       settings: async () => DEFAULT_COMPONENT_SETTINGS,
       project: async () => {

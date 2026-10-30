@@ -36,7 +36,7 @@ test("loads once, reloads on the listed events only, and unsubscribes on unmount
   await waitFor(() => expect(hook.result.current.data).toEqual([]));
   hook.rerender();
   expect(requests).toHaveLength(1);
-  act(() => emit({ type: "sandbox.changed" }));
+  act(() => emit({ type: "backups.changed" }));
   expect(requests).toHaveLength(1);
   act(() => emit({ type: "sessions.changed" }));
   await waitFor(() => expect(requests).toHaveLength(2));

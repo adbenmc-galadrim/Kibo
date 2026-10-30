@@ -19,7 +19,6 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
   const key = p.key === undefined ? `SILO-${p.id.replace(/\D/g, "") || "1"}` : p.key;
   return {
     key,
-    pendingSeq: null,
     title: `Ticket ${p.id}`,
     description: "",
     statusId: "todo",
@@ -121,9 +120,8 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
     instances: [],
     rules: [],
     bindings: [],
-    nextTicketKey: null,
+    nextTicketKey: "SILO-1",
     sprints: [],
-    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     ...p,
   };
 }

@@ -123,10 +123,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
 
   return {
     startProjectRun(input) {
-      const id = createProjectRun(
-        { registry, agentOf, assertWritable: opts.data.assertWritable, projectKey: opts.data.projectKey },
-        input,
-      );
+      const id = createProjectRun({ registry, agentOf, projectKey: opts.data.projectKey }, input);
       tick();
       return registry.get(id);
     },

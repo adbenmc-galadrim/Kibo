@@ -7,7 +7,6 @@ import { fr } from "./fr";
 const ticket = {
   id: "1@1",
   key: "KIB-1",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-1",
   title: "Arbre",
@@ -57,7 +56,6 @@ test("an editable card offers open, move to the other statuses, delete", () => {
   const entries = cardMenuEntries({
     ticket,
     statuses: DEFAULT_WORKFLOW,
-    readOnly: false,
     deliver: null,
     execution: "shown",
     texts: fr,
@@ -71,28 +69,10 @@ test("an editable card offers open, move to the other statuses, delete", () => {
   expect(a.move).toHaveBeenCalledWith("blocked");
 });
 
-test("read-only keeps only Ouvrir", () => {
-  expect(
-    labels(
-      cardMenuEntries({
-        ticket,
-        statuses: DEFAULT_WORKFLOW,
-        readOnly: true,
-        deliver: { disabledReason: null },
-        execution: "shown",
-        texts: fr,
-        sdk,
-        actions: actions(),
-      }),
-    ),
-  ).toEqual(["Ouvrir"]);
-});
-
 const entriesWith = (deliver: { disabledReason: string | null } | null, a = actions()) =>
   cardMenuEntries({
     ticket,
     statuses: DEFAULT_WORKFLOW,
-    readOnly: false,
     deliver,
     execution: "shown",
     texts: fr,
@@ -127,7 +107,6 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   const entries = cardMenuEntries({
     ticket,
     statuses: DEFAULT_WORKFLOW,
-    readOnly: false,
     deliver: { disabledReason: null },
     execution: "hidden",
     texts: fr,
@@ -162,7 +141,6 @@ test("a done card offers Livrer la retouche when the execution is shown", () => 
   const entries = cardMenuEntries({
     ticket: { ...ticket, statusId: "done" },
     statuses: DEFAULT_WORKFLOW,
-    readOnly: false,
     deliver: { disabledReason: null },
     execution: "shown",
     texts: fr,

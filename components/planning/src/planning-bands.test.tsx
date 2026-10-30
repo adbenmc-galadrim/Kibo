@@ -19,7 +19,7 @@ const tones = (root: HTMLElement, key: string) =>
     c.getAttribute("data-tone"),
   );
 
-test("the bands toggle is active and remembers the layout of the instance", async () => {
+test("the bands toggle is active and keeps the layout of the instance", async () => {
   const { m } = setupPlanning();
   const toggle = await screen.findByRole("button", { name: "Bandes" });
   expect(toggle.hasAttribute("disabled")).toBe(false);

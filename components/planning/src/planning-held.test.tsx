@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, setSystemTime, spyOn, test } from "bun:test";
 import type { ProjectCommand } from "@kibo/schema";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { cardIn, column, setupPlanning } from "./planning-kit";
 import { addHeldStep, HOLD_RULE, seedPlanning, seedPlanningHeld, TODAY } from "./test-seed";
@@ -80,13 +80,6 @@ test("Reprendre dans ▸ S43 lifts the hold, then plans its feature from an ende
   await waitFor(() =>
     expect(within(screen.getByRole("region", { name: "À planifier" })).queryByRole("region")).toBeNull(),
   );
-});
-
-test("read only, the steps on hold have no menu", async () => {
-  const { m } = setupPlanning(TODAY, { seedWith: seedPlanningHeld });
-  act(() => m.setAccess("read-only"));
-  const section = await heldSection();
-  await waitFor(() => expect(within(section).queryByRole("button", { name: /^Actions de / })).toBeNull());
 });
 
 test("the legend is folded until clicked, then names the held case in cyan right after the blocked one", async () => {

@@ -28,7 +28,6 @@ const { DependenciesSection } = await import("./DependenciesSection");
 const ticket = (n: number, title: string): TicketView => ({
   id: `${n}@1`,
   key: `BOU-${n}`,
-  pendingSeq: null,
   hold: null,
   keyLabel: `BOU-${n}`,
   title,
@@ -86,7 +85,6 @@ const project: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "BOU-16",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const draw = (editable = true) =>
   render(

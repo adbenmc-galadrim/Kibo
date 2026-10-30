@@ -69,7 +69,6 @@ describe("ticket", () => {
   const base = {
     id: "1@1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "Setup",
     description: "",
     statusId: "todo",

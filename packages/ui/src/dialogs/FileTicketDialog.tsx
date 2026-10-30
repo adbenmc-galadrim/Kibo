@@ -20,7 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useId, useState } from "react";
 import { client } from "../api";
 import { frInbox } from "../i18n/fr-inbox";
-import { canEdit } from "../state/access";
 
 export type FileTicketDialogProps = {
   ticket: TicketView;
@@ -40,8 +39,7 @@ const describeFileError = (e: unknown): string =>
 
 function keyText(snapshot: ProjectSnapshot | undefined): string {
   if (!snapshot) return "";
-  const next = snapshot.nextTicketKey;
-  return snapshot.sync.keyAllocator === "server" || next === null ? t.serverKey : t.nextKey(next);
+  return t.nextKey(snapshot.nextTicketKey);
 }
 
 export function FileTicketDialog({
@@ -54,8 +52,7 @@ export function FileTicketDialog({
 }: FileTicketDialogProps) {
   const id = useId();
   const targets = projects.filter((x) => {
-    const snapshot = snapshots.get(x.id);
-    return !isInbox(x.id) && snapshot !== undefined && canEdit(snapshot);
+    return !isInbox(x.id) && snapshots.has(x.id);
   });
   const [projectId, setProjectId] = useState(targets[0]?.id ?? "");
   const [busy, setBusy] = useState(false);

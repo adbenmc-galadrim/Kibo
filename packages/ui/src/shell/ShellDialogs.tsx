@@ -14,7 +14,6 @@ import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
 import { fileScope, newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
-import { canEdit } from "../state/access";
 import type { DialogsState } from "./dialogs-state";
 import {
   ConfirmDialog,
@@ -164,10 +163,7 @@ export function ShellDialogs({
         <NewTicketDialog
           projects={newTicketProjects(projects, snapshots)}
           snapshots={snapshots}
-          initialProjectId={
-            state.newTicket.projectId ??
-            (ticketProject && canEdit(ticketProject) ? ticketProject.meta.id : INBOX_ID)
-          }
+          initialProjectId={state.newTicket.projectId ?? (ticketProject ? ticketProject.meta.id : INBOX_ID)}
           lockProject={state.newTicket.parentId != null || state.newTicket.instanceId != null}
           viewer={viewer}
           defaults={state.newTicket}

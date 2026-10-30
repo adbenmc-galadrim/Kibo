@@ -1,4 +1,4 @@
-import { listQuestionRecipients, localSyncInfo, readProject } from "@kibo/core";
+import { listQuestionRecipients, readProject } from "@kibo/core";
 import {
   type CiRun,
   type ComponentCall,
@@ -9,8 +9,6 @@ import {
   type FetchResponse,
   KiboError,
   type McpCallResult,
-  type MemberInfo,
-  type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
   type ProjectEvent,
@@ -35,7 +33,6 @@ export type MockCallDeps = {
   manifest: ComponentManifest;
   configPatches: Record<string, unknown>[];
   runs(): TicketRun[];
-  access(): ProjectAccess;
   peek(runId: string): RunPeek;
   settings(): ComponentSettings;
   delivery: MockRunDelivery;
@@ -43,9 +40,7 @@ export type MockCallDeps = {
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   events?: ProjectEvent[];
-  shared?: boolean;
   today: string;
-  members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
   storybooks?: StorybookOrigin[];
@@ -113,16 +108,6 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
             title: c.item.title,
           },
         });
-      case "sharing.get":
-        return deps.shared
-          ? {
-              shared: true,
-              keyAllocator: "server",
-              role: "editor",
-              access: deps.access(),
-              members: deps.members ?? [],
-            }
-          : { ...localSyncInfo(deps.doc), access: deps.access() };
       case "settings.get":
         return deps.settings();
       case "project.get":

@@ -100,7 +100,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const integrations = portSlot<IntegrationRpc>();
   const projectAgent = portSlot<ProjectAgentSummaries>();
   const answerWake = portSlot<AnswerWakePort>();
-  let writeGuard: ((projectId: string) => void) | null = null;
   ensureSettingsTable(store.db);
   const settings = createProjectSettings(store.db);
   ensureIconsTable(store.db);
@@ -124,7 +123,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
-    assertWritable: (id) => docs.assertWritable(id),
     save: (id) => docs.save(id),
     restore,
     emit: (message) => docs.emit(message),
@@ -187,13 +185,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     onProjectDoc(listener) {
       docListeners.add(listener);
       return () => docListeners.delete(listener);
-    },
-    assertWritable: (projectId) => writeGuard?.(projectId),
-    setWriteGuard(guard) {
-      writeGuard = guard;
-      return () => {
-        if (writeGuard === guard) writeGuard = null;
-      };
     },
     projectMeta: (projectId) => {
       const doc = docs.project(projectId);

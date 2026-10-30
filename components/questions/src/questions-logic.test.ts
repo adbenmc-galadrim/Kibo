@@ -66,7 +66,6 @@ const answered = (over: Partial<Question>): Question =>
 const ticket = (id: string, keyLabel: string): TicketView => ({
   id,
   key: keyLabel,
-  pendingSeq: null,
   hold: null,
   keyLabel,
   title: `Ticket ${keyLabel}`,

@@ -92,11 +92,10 @@ test("shows the declared branch", () => {
 });
 
 test("names the assignee", () => {
-  const human = { kind: "human" as const, ref: "7787aae9", name: null, me: false };
-  expect(lines({ assignee: { ...human, name: "Adam" } })).toContain("Assigné : Adam");
+  const human = { kind: "human" as const, ref: "7787aae9", me: false };
   expect(lines({ assignee: { ...human, me: true } })).toContain("Assigné : moi");
   expect(lines({ assignee: human })).toContain("Assigné : 7787aae9");
-  expect(lines({ assignee: { kind: "agent", ref: "livraison", name: null, me: false } })).toContain(
+  expect(lines({ assignee: { kind: "agent", ref: "livraison", me: false } })).toContain(
     "Assigné : agent livraison",
   );
   expect(lines({})).toContain("Assigné : personne");

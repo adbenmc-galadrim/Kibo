@@ -87,7 +87,7 @@ const renderSidebarState = () =>
     </PageActionsProvider>,
   );
 
-test("under 1180 px the sidebar starts folded and remembers being unfolded", async () => {
+test("under 1180 px the sidebar starts folded and stays unfolded once opened", async () => {
   const restore = narrowViewport(true);
   localStorage.removeItem("kibo.sidebar.narrow-open");
   const first = renderSidebarState();

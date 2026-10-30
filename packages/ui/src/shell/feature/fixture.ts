@@ -18,7 +18,6 @@ const at = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).g
 const ticket = (id: string, key: string, title: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title,
@@ -218,7 +217,6 @@ export function siloFeatureProject(): ProjectSnapshot {
     bindings: [],
     nextTicketKey: "SILO-94",
     sprints: SPRINTS,
-    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     tickets: [F3, F3_STEP, F5, ...STEPS, F7, F7_STEP],
   };
 }

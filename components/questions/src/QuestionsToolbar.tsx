@@ -21,7 +21,6 @@ type Props = {
   scope: Scope;
   ticket: TicketView | null;
   tickets: readonly TicketView[];
-  readOnly: boolean;
   onScope(scope: Scope): void;
   onTicket(ticketId: string | null): void;
   onNew(): void;
@@ -72,7 +71,7 @@ const SEGMENT =
   "h-5.75 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
 
 export function QuestionsToolbar(props: Props) {
-  const { scope, ticket, tickets, readOnly, onScope, onTicket, onNew, filters, actions } = props;
+  const { scope, ticket, tickets, onScope, onTicket, onNew, filters, actions } = props;
   return (
     <div className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5">
       <ToggleGroup
@@ -96,14 +95,10 @@ export function QuestionsToolbar(props: Props) {
       <TicketMenu ticket={ticket} tickets={tickets} onTicket={onTicket} />
       <span className="flex-1" />
       {actions}
-      {readOnly ? (
-        <span className="text-xs text-muted-foreground">{fr.readOnly}</span>
-      ) : (
-        <Button size="sm" className="h-6.5 text-xs" onClick={onNew}>
-          <Plus aria-hidden />
-          {fr.newQuestion}
-        </Button>
-      )}
+      <Button size="sm" className="h-6.5 text-xs" onClick={onNew}>
+        <Plus aria-hidden />
+        {fr.newQuestion}
+      </Button>
     </div>
   );
 }

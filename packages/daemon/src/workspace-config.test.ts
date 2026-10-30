@@ -36,8 +36,6 @@ function docsWith(): Docs {
     onProjectRemoved: unused,
     imported: unused,
     onProjectDoc: unused,
-    assertWritable: unused,
-    setWriteGuard: unused,
     projectMeta: unused,
     updateProjectMeta: unused,
     identity: unused,
@@ -103,7 +101,7 @@ test("readConfig lists the workspace and project domains with their owner and gu
   expect(call(s, { method: "getProject", projectId: kibo.id }).domains).toEqual([sync]);
 });
 
-test("a project domain command runs in its project, emits config, and respects the write guard", () => {
+test("a project domain command runs in its project and emits config", () => {
   const { s, project, config } = service();
   const kibo = project("Kibo", "KIB");
   const inKibo = { scope: "project", projectId: kibo.id } as const;
@@ -113,14 +111,6 @@ test("a project domain command runs in its project, emits config, and respects t
   expect(listProjectDomains(s.docs.project(kibo.id))).toEqual([ui]);
   expect(listDomains(s.docs.workspace)).toEqual([]);
   expect(topics).toContain("config");
-  s.docs.setWriteGuard((id) => {
-    throw new KiboError("FORBIDDEN", `project ${id} is read-only`);
-  });
-  expect(() => config({ method: "createDomain", domain: { name: "CI", color }, owner: inKibo })).toThrow(
-    "FORBIDDEN",
-  );
-  expect(() => config({ method: "deleteDomain", domainId: ui.id, owner: inKibo })).toThrow("FORBIDDEN");
-  expect(listProjectDomains(s.docs.project(kibo.id))).toEqual([ui]);
 });
 
 test("a project domain cannot be deleted while its tickets use it", () => {

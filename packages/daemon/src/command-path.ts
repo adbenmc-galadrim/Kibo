@@ -20,7 +20,6 @@ export type CommandPath = {
 export type CommandPathDeps = {
   store: Store;
   project(id: string): LoroDoc;
-  assertWritable(projectId: string): void;
   save(projectId: string): void;
   restore(projectId: string): void;
   emit(message: ChangeMessage): void;
@@ -73,7 +72,6 @@ export function createCommandPath(deps: CommandPathDeps): CommandPath {
     });
   };
   const guarded = <T>(projectId: string, work: Work<T>): T => {
-    deps.assertWritable(projectId);
     const done: CommandEvent[] = [];
     let out: T;
     try {

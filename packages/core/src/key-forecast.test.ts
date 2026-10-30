@@ -46,12 +46,6 @@ describe("keyForecast", () => {
     });
   });
 
-  test("a project keyed by the sync server forecasts nothing", () => {
-    const d = seeded();
-    d.getMap("meta").set("keyAllocator", "server");
-    expect(keyForecast(d)).toMatchObject({ nextTicketKey: null, nextFeatureSeq: null });
-  });
-
   test("predicted keys are the keys the commands give", () => {
     const d = seeded();
     executeProjectCommand(d, { method: "updateTicket", ticketId: ticket(d, "Pris").id, shortKey: "F4" });

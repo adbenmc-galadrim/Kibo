@@ -15,7 +15,6 @@ import {
   type ProjectCommand,
   type ProjectEvent,
   type ProjectInfo,
-  type ProjectSyncInfo,
   ruleCovers,
   type Ticket,
 } from "@kibo/schema";
@@ -162,10 +161,6 @@ export function createSdk(
       await call({ kind: "config.set", patch });
     },
     mcp: mcpApi(manifest, guard, call, ctx.config),
-    async sharing() {
-      guard.needRead("ticket");
-      return call<ProjectSyncInfo>({ kind: "sharing.get" });
-    },
     settings: {
       async get() {
         guard.needRead("ticket");

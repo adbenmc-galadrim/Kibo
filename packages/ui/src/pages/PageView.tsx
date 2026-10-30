@@ -6,7 +6,6 @@ import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { compactInstances } from "../lib/format-grid";
 import { PageActions } from "../shell/page-actions";
-import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
 import { PageBoundary } from "./PageBoundary";
 import { PageContext, usePageState } from "./PageContext";
@@ -34,20 +33,19 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
   const projectId = project.meta.id;
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
-  const editable = canEdit(project);
-  const addButton = (page.kind === "dashboard" || !first) && editable && (
+  const addButton = (page.kind === "dashboard" || !first) && (
     <Button variant="outline" onClick={() => setAdding(true)}>
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>
   );
-  const layoutMode = editable && wide && page.kind === "dashboard" && first !== undefined;
+  const layoutMode = wide && page.kind === "dashboard" && first !== undefined;
   const grid = page.kind === "dashboard" && first !== undefined && !(editing && layoutMode);
   const target = usePageSpotlight(page.id, spotlight);
   const state = usePageState(grid ? instances.map((i) => i.id) : [], target);
   return (
     <PageContext.Provider value={state}>
       <div className="flex h-full min-h-0 flex-col">
-        {editable && <NewTicketAction pageId={page.id} instances={instances} />}
+        <NewTicketAction pageId={page.id} instances={instances} />
         {layoutMode && !editing && (
           <PageActions>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
@@ -65,7 +63,7 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
         ) : page.kind === "view" ? (
           <div data-view-body className="flex min-h-0 flex-1 flex-col">
             <PageBoundary resetKey={first.id}>
-              <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable={editable} />
+              <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable />
             </PageBoundary>
           </div>
         ) : editing && layoutMode ? (
@@ -91,16 +89,14 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
                   instance={i}
                   layout={layout}
                   viewer={viewer}
-                  editable={editable}
+                  editable
                 />
               </PageBoundary>
             )}
             trailing={
               <div className="flex flex-wrap items-center gap-3">
                 {addButton}
-                {editable && !wide && (
-                  <p className="text-xs text-muted-foreground">{fr.page.editLayoutNarrow}</p>
-                )}
+                {!wide && <p className="text-xs text-muted-foreground">{fr.page.editLayoutNarrow}</p>}
               </div>
             }
           />

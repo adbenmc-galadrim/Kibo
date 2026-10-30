@@ -5,7 +5,7 @@ import { createGate } from "./gate";
 import { eventsDb, findInstance, idleHandlers, refused, testGate } from "./gate-test-kit";
 import { createQuotas } from "./quotas";
 
-test("sharing.get and settings.get reach their handlers for the caller's project", async () => {
+test("settings.get reaches its handler for the caller's project", async () => {
   const asked: string[] = [];
   const gate = createGate({
     instance: findInstance,
@@ -13,22 +13,17 @@ test("sharing.get and settings.get reach their handlers for the caller's project
     events: createEventLog(eventsDb()),
     handlers: {
       ...idleHandlers,
-      sharing: async (projectId) => {
-        asked.push(projectId);
-        return { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
-      },
       settings: async (projectId) => {
         asked.push(projectId);
         return { tracking: { openLimit: 3 }, agentExecution: "hidden" };
       },
     },
   });
-  expect(await gate.call("p2", "builtin", { kind: "sharing.get" })).toMatchObject({ access: "write" });
   expect(await gate.call("p3", "builtin", { kind: "settings.get" })).toEqual({
     tracking: { openLimit: 3 },
     agentExecution: "hidden",
   });
-  expect(asked).toEqual(["p2", "p3"]);
+  expect(asked).toEqual(["p3"]);
 });
 
 test("questions.recipients reaches the recipients handler", async () => {

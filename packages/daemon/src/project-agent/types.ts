@@ -17,7 +17,6 @@ export type ProjectAgentDataPort = {
   project(projectId: string): ProjectSnapshot;
   projectName(projectId: string): string;
   projectFolder(projectId: string): string | null;
-  assertWritable(projectId: string): void;
   viewer(projectId: string): string;
   agents(projectId: string): AgentSummary[];
   guidelines(projectId: string): Guideline[];

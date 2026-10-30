@@ -2,8 +2,6 @@ import {
   DEFAULT_RECIPIENTS,
   type EntityType,
   KiboError,
-  type MemberInfo,
-  type ProjectSyncInfo,
   type QuestionRecipient,
   type RunPeek,
   type Selection,
@@ -54,28 +52,6 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
   return state;
 }
 
-const EMPTY_SHARING: ProjectSyncInfo = {
-  shared: false,
-  keyAllocator: "local",
-  role: null,
-  access: "write",
-  members: [],
-};
-
-const readSharing: Read<ProjectSyncInfo> = (sdk) => sdk.sharing();
-const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
-export function useSharing(): ProjectSyncInfo {
-  return useSdkValue(useSdk(), readSharing, watchProject, EMPTY_SHARING);
-}
-
-export function useMembers(): MemberInfo[] {
-  return useSharing().members;
-}
-
-export function useReadOnly(): boolean {
-  return useSharing().access !== "write";
-}
-
 export function useVisible(): boolean {
   const { visibility } = useSdk();
   return useSyncExternalStore(visibility.subscribe, visibility.visible, visibility.visible);
@@ -111,6 +87,7 @@ export function useAgentMention(): AgentMentionHandlers {
   return { peek: sdk.runs.peek, onOpen: sdk.openRun };
 }
 
+const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
 const readRecipients: Read<QuestionRecipient[]> = (sdk) => sdk.questions.recipients();
 const FIRST_RECIPIENTS: QuestionRecipient[] = [...DEFAULT_RECIPIENTS];
 

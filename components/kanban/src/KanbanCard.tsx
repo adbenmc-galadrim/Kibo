@@ -17,7 +17,6 @@ const stopDrag = (e: PointerEvent) => e.stopPropagation();
 type Props = CardFacts & {
   selected: boolean | null;
   statuses: Status[];
-  readOnly: boolean;
   deliver: DeliverEntry | null;
   execution: AgentExecution;
   onOpen: () => void;
@@ -27,20 +26,9 @@ type Props = CardFacts & {
 };
 
 export function KanbanCard(props: Props) {
-  const {
-    ticket: t,
-    selected,
-    statuses,
-    readOnly,
-    deliver,
-    execution,
-    onOpen,
-    onMove,
-    onRemove,
-    onDeliver,
-  } = props;
+  const { ticket: t, selected, statuses, deliver, execution, onOpen, onMove, onRemove, onDeliver } = props;
   const sdk = useSdk();
-  const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
+  const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
     sortable.setNodeRef(node);
@@ -55,14 +43,13 @@ export function KanbanCard(props: Props) {
   const entries = cardMenuEntries({
     ticket: t,
     statuses,
-    readOnly,
     deliver,
     execution,
     texts: fr,
     sdk,
     actions: { open: onOpen, move: onMove, remove: onRemove, deliver: onDeliver },
   });
-  const menu = !readOnly && (
+  const menu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -94,13 +81,13 @@ export function KanbanCard(props: Props) {
           style={style}
           {...attributes}
           {...listeners}
-          tabIndex={readOnly ? undefined : attributes.tabIndex}
+          tabIndex={attributes.tabIndex}
           aria-label={`${t.keyLabel} ${t.title}`}
           data-key={t.keyLabel}
           data-selected={selected === true}
           className={cn(
             CARD_CLASS,
-            !readOnly && "cursor-grab touch-none",
+            "cursor-grab touch-none",
             isDragging && "opacity-40",
             insertion &&
               "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",

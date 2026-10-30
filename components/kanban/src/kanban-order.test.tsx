@@ -56,21 +56,3 @@ test("an order written by another member is applied on the next project change",
   await waitFor(() => expect(keys()).toEqual(["KIB-2", "KIB-1"]));
   expect(m.snapshot().tickets.find((t) => t.key === "KIB-1")?.statusId).toBe("todo");
 });
-
-test("a card is not sortable in a read-only project", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    config: { filter: "all" },
-    shared: true,
-    seed: (run) => run({ method: "createTicket", title: "Lecture" }),
-  });
-  m.setAccess("read-only");
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  await screen.findByText("KIB-…");
-  await waitFor(() => expect(screen.getByRole("article").getAttribute("aria-disabled")).toBe("true"));
-  expect(screen.getByRole("article").className).not.toContain("cursor-grab");
-});

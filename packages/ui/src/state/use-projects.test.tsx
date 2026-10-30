@@ -35,7 +35,6 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 
 const pending = new Map<string, (s: ProjectSnapshot) => void>();

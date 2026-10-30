@@ -4,7 +4,7 @@ import type { Docs } from "../../docs";
 import { openWakeupStore } from "./store";
 import { createWakeupScheduler } from "./wakeup";
 
-export type WakeupDocs = Pick<Docs, "projectIds" | "project" | "assertWritable" | "today">;
+export type WakeupDocs = Pick<Docs, "projectIds" | "project" | "today">;
 
 export type WakeupBootInput = {
   home: string;
@@ -29,16 +29,8 @@ export function answeredLines(docs: Pick<Docs, "project" | "today">) {
   };
 }
 
-export function projectWritable(docs: Pick<Docs, "projectIds" | "assertWritable">) {
-  return (projectId: string): boolean => {
-    if (!docs.projectIds().includes(projectId)) return false;
-    try {
-      docs.assertWritable(projectId);
-      return true;
-    } catch {
-      return false;
-    }
-  };
+export function projectKnown(docs: Pick<Docs, "projectIds">) {
+  return (projectId: string): boolean => docs.projectIds().includes(projectId);
 }
 
 export function startWakeup(input: WakeupBootInput): WakeupBoot {
@@ -47,7 +39,7 @@ export function startWakeup(input: WakeupBootInput): WakeupBoot {
   const scheduler = createWakeupScheduler({
     store,
     send: (projectId, text) => input.agent().send(projectId, text),
-    writable: projectWritable(docs),
+    writable: projectKnown(docs),
     answered: answeredLines(docs),
     grace: input.answerGrace,
   });

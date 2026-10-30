@@ -36,21 +36,20 @@ function Legend({ error }: { error: string | null }) {
   );
 }
 
-function EmptyPlanning({ readOnly, onNewFeature }: { readOnly: boolean; onNewFeature(): void }) {
+function EmptyPlanning({ onNewFeature }: { onNewFeature(): void }) {
   return (
     <output
       aria-label={fr.empty.label}
       className="flex shrink-0 flex-wrap items-center gap-3 rounded-[10px] border border-(--tracking-border) border-dashed px-4 py-3 text-(--tracking-mfg) text-[12.5px] leading-[16px]"
     >
       <span className="min-w-0 flex-1 basis-64">{fr.empty.text}</span>
-      {!readOnly && <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />}
+      <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />
     </output>
   );
 }
 
 export type PlanningViewProps = Omit<HeldHandlers, "onOpen"> & {
   model: PlanningModel;
-  readOnly: boolean;
   target: string | null;
   dragged: Card | null;
   error: string | null;
@@ -69,15 +68,13 @@ const limitHolder = (model: PlanningModel): string | null =>
   model.currentSprintId ?? model.sprints[0]?.sprint.id ?? null;
 
 export function PlanningView(props: PlanningViewProps) {
-  const { model, readOnly, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
+  const { model, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
   const dropsIn = (columnId: string, own: string | null) =>
     dragged !== null && target === columnId && (own ?? BACKLOG_ID) !== columnId;
   const sprints = model.sprints.map((c) => c.sprint);
-  const menuOf = (c: Card) => (readOnly ? [] : cardEntries(c, sprints, props.onPlan));
+  const menuOf = (c: Card) => cardEntries(c, sprints, props.onPlan);
   const cards = (list: readonly Card[]) =>
-    list.map((c) => (
-      <FeatureCard key={c.id} card={c} readOnly={readOnly} menu={menuOf(c)} onOpen={() => onOpen(c.id)} />
-    ));
+    list.map((c) => <FeatureCard key={c.id} card={c} menu={menuOf(c)} onOpen={() => onOpen(c.id)} />);
   const holder = limitHolder(model);
   const limitNote = model.overLimit && (
     <Warning tone="amber">{fr.overLimit(model.open, model.limit)}</Warning>
@@ -86,14 +83,13 @@ export function PlanningView(props: PlanningViewProps) {
     <div className="flex h-full min-h-0 flex-col gap-3.5 bg-(--tracking-bg) px-6 py-[18px] font-sans">
       <PlanningHeader
         model={model}
-        readOnly={readOnly}
         layout={props.layout}
         onLayout={props.onLayout}
         onOpen={onOpen}
         onNewFeature={props.onNewFeature}
         onNewSprint={props.onNewSprint}
       />
-      {model.total === 0 && <EmptyPlanning readOnly={readOnly} onNewFeature={props.onNewFeature} />}
+      {model.total === 0 && <EmptyPlanning onNewFeature={props.onNewFeature} />}
       {props.bands ? (
         <PlanningBands timeline={props.bands} onOpen={onOpen} />
       ) : (
@@ -105,7 +101,6 @@ export function PlanningView(props: PlanningViewProps) {
               held={
                 <HeldSection
                   groups={model.held}
-                  readOnly={readOnly}
                   onOpen={onOpen}
                   onResume={props.onResume}
                   onResumeIn={props.onResumeIn}
@@ -120,7 +115,7 @@ export function PlanningView(props: PlanningViewProps) {
                 column={column}
                 dropping={dropsIn(column.sprint.id, dragged?.sprintId ?? null)}
                 onOpen={() => onOpenSprint(column.sprint)}
-                onEdit={readOnly ? undefined : () => onEditSprint(column.sprint)}
+                onEdit={() => onEditSprint(column.sprint)}
                 footer={column.sprint.id === holder && limitNote}
               >
                 {cards(column.cards)}

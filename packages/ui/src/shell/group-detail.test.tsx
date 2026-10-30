@@ -11,7 +11,6 @@ const { GroupDetail } = await import("./GroupDetail");
 const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key: `KIB-${id}`,
-  pendingSeq: null,
   hold: null,
   keyLabel: `KIB-${id}`,
   title: `Ticket ${id}`,
@@ -80,7 +79,6 @@ const project: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-8",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   tickets,
 };
 

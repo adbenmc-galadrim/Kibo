@@ -213,16 +213,6 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   ).toBeTruthy();
 });
 
-test("a read-only project hides the editing actions", () => {
-  const project = siloFeatureProject();
-  renderFeature({ ...project, sync: { ...project.sync, access: "read-only" } });
-  expect(screen.queryByRole("button", { name: "Ajouter une étape" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Déplacer en S43" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Modifier le résultat attendu" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Choisir le sprint" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Dépendance" })).toBeNull();
-});
-
 const menuOf = (extra: MenuEntry[]) => (
   <ul aria-label="Menu de la fiche">
     {extra.flatMap((e) =>

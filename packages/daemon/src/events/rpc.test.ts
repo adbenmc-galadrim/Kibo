@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { KiboError, type RpcRequest } from "@kibo/schema";
+import type { RpcRequest } from "@kibo/schema";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { type EventsHarness, eventsHarness } from "./events.test-helper";
 import { listProjectEvents } from "./rpc";
@@ -35,20 +35,6 @@ test("listProjectEvents pages the journal of a project", async () => {
     items: [{ data: { code: "S42" } }],
     nextBefore: null,
   });
-});
-
-test("a viewer of a read-only project still reads its journal", async () => {
-  h.run({
-    method: "createSprint",
-    code: "S42",
-    name: "Saisie hors ligne",
-    start: "2026-10-12",
-    end: "2026-10-16",
-  });
-  h.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only");
-  });
-  expect(await list({})).toMatchObject({ items: [{ kind: "sprint_created" }] });
 });
 
 test("a page larger than 200 events or an unknown project is refused", async () => {

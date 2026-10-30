@@ -44,7 +44,6 @@ export const answer = (at: number): Question["answer"] => ({
 export const ticket = (id: string, keyLabel: string, over: Partial<TicketView> = {}): TicketView => ({
   id,
   key: keyLabel,
-  pendingSeq: null,
   hold: null,
   keyLabel,
   title: `Ticket ${keyLabel}`,

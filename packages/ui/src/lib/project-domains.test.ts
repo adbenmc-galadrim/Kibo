@@ -13,17 +13,11 @@ const otherProject = Domain.parse({
 const own = Domain.parse({ id: "d2", name: "Intégrations", color: "#8B5CF6", owner: inKibo });
 const config = { domains: [workspaceDomain, own, otherProject] };
 
-test("a local project shows its domains then the workspace ones, never another project's", () => {
-  const local = { domains: [own], sync: { keyAllocator: "local" } };
+test("a project shows its domains then the workspace ones, never another project's", () => {
+  const local = { domains: [own] };
   expect(projectDomainsOf(local, config)).toEqual([own, workspaceDomain]);
   expect(projectDomainsOf({}, config)).toEqual([workspaceDomain]);
   expect(projectDomainsOf(undefined, config)).toEqual([workspaceDomain]);
-});
-
-test("a shared project shows its own domains only", () => {
-  const shared = { domains: [own], sync: { keyAllocator: "server" } };
-  expect(projectDomainsOf(shared, config)).toEqual([own]);
-  expect(projectDomainsOf({ domains: [], sync: { keyAllocator: "server" } }, config)).toEqual([]);
 });
 
 test("nothing is known before the configuration is loaded", () => {

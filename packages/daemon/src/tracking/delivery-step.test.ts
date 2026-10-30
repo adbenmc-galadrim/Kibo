@@ -34,7 +34,6 @@ function setup(runs: (projectId: string, ticketId: string) => RunView[] = () => 
     project: (id) => service.docs.project(id),
     activity: (id) => service.docs.activity(id),
     today: () => "2026-10-16",
-    assertWritable: (id) => service.docs.assertWritable(id),
     run(id, command, meta) {
       events.push({ command, meta });
       return service.docs.run(id, command, meta);
@@ -80,14 +79,10 @@ test("an update step is written as an update, the next plain step as a delivery"
   expect(setDeliveryStep(deps, req).delivery?.kind).toBe("delivery");
 });
 
-test("refuses an unknown key and a read-only project without writing", () => {
-  const { service, project, events, deps } = setup();
+test("refuses an unknown key without writing", () => {
+  const { project, events, deps } = setup();
   const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "SILO-9", step: 3 } as const;
   expect(() => setDeliveryStep(deps, req)).toThrow(new KiboError("NOT_FOUND", "ticket SILO-9 not found"));
-  service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  expect(() => setDeliveryStep(deps, { ...req, ticketKey: "SILO-1" })).toThrow("read-only project");
   expect(events).toEqual([]);
 });
 

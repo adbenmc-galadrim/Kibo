@@ -1,12 +1,10 @@
-import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
-import { type RefObject, useMemo } from "react";
-import { canEdit } from "../state/access";
+import type { TabTarget } from "@kibo/schema";
+import { useMemo } from "react";
 import type { Host } from "./Host";
 import type { DialogsState } from "./ShellDialogs";
 
 type Deps = {
   activeProjectId: string | null;
-  projectRef: RefObject<ProjectSnapshot | null>;
   set(patch: Partial<DialogsState>): void;
   go(target: TabTarget | null, newTab?: boolean, keep?: boolean): void;
   openView: Host["openView"];
@@ -14,7 +12,7 @@ type Deps = {
 };
 
 export function useWorkspaceHost(d: Deps): Host {
-  const { activeProjectId, projectRef, set, go, openView, showProjectAgent } = d;
+  const { activeProjectId, set, go, openView, showProjectAgent } = d;
   return useMemo<Host>(
     () => ({
       openTicket: (ticketId) => {
@@ -27,7 +25,6 @@ export function useWorkspaceHost(d: Deps): Host {
         if (activeProjectId) set({ editProject: activeProjectId, editFocus: field });
       },
       openNewTicket: (nt) => {
-        if (projectRef.current && !canEdit(projectRef.current)) return;
         set({ newTicket: activeProjectId ? { ...nt, projectId: activeProjectId } : nt });
       },
       openFile: (ref) => set({ preview: ref }),
@@ -36,6 +33,6 @@ export function useWorkspaceHost(d: Deps): Host {
       openProjectAgent: showProjectAgent,
       projectId: activeProjectId,
     }),
-    [activeProjectId, projectRef, set, go, openView, showProjectAgent],
+    [activeProjectId, set, go, openView, showProjectAgent],
   );
 }

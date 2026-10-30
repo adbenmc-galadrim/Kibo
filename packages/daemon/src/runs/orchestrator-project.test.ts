@@ -175,11 +175,6 @@ test("a second open project run of the same project is a conflict, another proje
   expect(start(h, "Autre", "p2").projectId).toBe("p2");
 });
 
-test("a read-only project refuses a project run", () => {
-  const h = setup({ scenario: "done", profiles, readOnly: true });
-  expect(() => start(h)).toThrow("FORBIDDEN");
-});
-
 test("answer on a project run that is not the latest of its project is refused", async () => {
   const h = setup({ scenario: "done", profiles });
   const older = start(h);

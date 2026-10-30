@@ -5,16 +5,14 @@ import { Domain } from "./workspace-config";
 const color = "#14B8A6";
 const local = (id: string, domainIds: string[], ticketDomains: (string | null)[]) => ({
   id,
-  shared: false,
   domainIds,
   ticketDomains,
 });
 
 describe("usageOwner", () => {
-  test("the project when it owns the id, else the workspace for a local project, else nobody", () => {
+  test("the project when it owns the id, else the workspace", () => {
     expect(usageOwner(local("a", ["d"], []), "d")).toEqual({ scope: "project", projectId: "a" });
     expect(usageOwner(local("a", [], []), "d")).toEqual({ scope: "workspace" });
-    expect(usageOwner({ ...local("a", [], []), shared: true }, "d")).toBeNull();
   });
 });
 
@@ -24,11 +22,10 @@ describe("countDomainUsage", () => {
     expect(usage).toEqual({ workspace: {}, projects: { a: { d: 2 }, b: { d: 1 } } });
   });
 
-  test("a workspace domain counts the local projects without a domain of the same id", () => {
+  test("a workspace domain counts the projects without a domain of the same id", () => {
     const usage = countDomainUsage([
       local("copy", ["secu"], ["secu", "secu"]),
       local("plain", [], ["secu", null]),
-      { id: "shared", shared: true, domainIds: [], ticketDomains: ["secu"] },
     ]);
     expect(usage).toEqual({ workspace: { secu: 1 }, projects: { copy: { secu: 2 } } });
   });

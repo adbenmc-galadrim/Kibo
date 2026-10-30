@@ -9,7 +9,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { openLimitOf, type SprintView } from "@kibo/schema";
-import { type EntityMap, useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { type EntityMap, useEntities, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
@@ -74,7 +74,6 @@ export function Planning() {
 
 function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
   const sdk = useSdk();
-  const readOnly = useReadOnly();
   const { tickets, links, sprints, questions, events } = data;
   const { tracking } = useComponentSettings();
   const model = planningModel({
@@ -90,7 +89,7 @@ function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
-  useNewFeatureIntent(readOnly, () => setDialog({ kind: "feature" }));
+  useNewFeatureIntent(() => setDialog({ kind: "feature" }));
   const [error, setError] = useState<string | null>(null);
   const [layout, setLayout] = useState<PlanningLayout>(() => initialLayout(sdk.config));
   const chooseLayout = (next: PlanningLayout) => {
@@ -159,7 +158,7 @@ function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
       overId: e.over ? String(e.over.id) : null,
       cards,
     });
-    if (readOnly || drop === null) return;
+    if (drop === null) return;
     void plan(drop.ticketId, drop.sprintId);
   };
   return (
@@ -173,7 +172,6 @@ function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
     >
       <PlanningView
         model={model}
-        readOnly={readOnly}
         target={target}
         dragged={dragged}
         error={error}

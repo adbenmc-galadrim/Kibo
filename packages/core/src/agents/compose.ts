@@ -81,7 +81,6 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
   return {
     id: "example",
     key,
-    pendingSeq: null,
     title: "Ticket d'exemple",
     description: "Ticket fictif : il montre le brief que reçoit l'agent sur un ticket de ce projet.",
     statusId: "todo",

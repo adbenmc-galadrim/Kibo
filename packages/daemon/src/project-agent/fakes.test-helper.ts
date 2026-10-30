@@ -6,7 +6,6 @@ import {
   type Agent,
   type AgentsState,
   type Batch,
-  KiboError,
   type ProjectCommand,
   type ProjectMeta,
   type ProposedAction,
@@ -158,11 +157,6 @@ export function harness(): Harness {
     },
   };
 }
-
-export const readOnly = (h: Harness): (() => void) =>
-  h.service.docs.setWriteGuard((projectId) => {
-    if (projectId === h.project.id) throw new KiboError("FORBIDDEN", "project is read-only");
-  });
 
 export async function contextOf(h: Harness): Promise<BatchContext> {
   const notes = await h.data.notes(h.project.id);

@@ -5,14 +5,12 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 
-const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
         return Promise.resolve(null);
       },
       subscribe: () => () => undefined,

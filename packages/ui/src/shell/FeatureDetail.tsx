@@ -4,7 +4,6 @@ import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Lock, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { frFeature as t } from "../i18n/fr-group";
-import { canEdit } from "../state/access";
 import { useNow } from "../state/use-agents";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { DependenciesCard } from "./feature/DependenciesCard";
@@ -50,7 +49,6 @@ export function FeatureDetail({
   const descriptionCommand = useTicketCommand(project.meta.id);
   const sprintCommand = useTicketCommand(project.meta.id);
   const linkCommand = useTicketCommand(project.meta.id);
-  const editable = canEdit(project);
   const ciRuns = useProjectCiRuns(project.meta.id);
   const journal = useFeatureJournal(project, f.id);
   const proposal = useSprintProposal(project.meta.id, f.key);
@@ -80,21 +78,21 @@ export function FeatureDetail({
             badge={featureBadge(f.feature)}
             steps={featureSteps({ feature: f.id, tickets: project.tickets, links: project.links })}
             held={held.length}
-            editable={editable}
+            editable
             command={titleCommand}
             actions={actions?.([])}
           />
           <ExpectedResult
             ticketId={f.id}
             description={f.description}
-            editable={editable}
+            editable
             command={descriptionCommand}
             onOpenFile={openFile}
           />
           <div className="flex min-h-[25px] w-full items-center gap-[8px]">
             <h2 className="text-[15px] leading-[18px] font-semibold">{t.journey}</h2>
             <span className="text-[12.5px] leading-[15px] text-(--tracking-dim)">{t.journeyHint}</span>
-            {editable && host && (
+            {host && (
               <Button
                 variant="ghost"
                 className={GHOST}
@@ -107,7 +105,7 @@ export function FeatureDetail({
           </div>
           <StepsTimeline
             steps={active}
-            held={{ steps: held, projectId: project.meta.id, editable }}
+            held={{ steps: held, projectId: project.meta.id, editable: true }}
             workflow={project.workflow}
             now={now}
             nextId={next?.step.ticketId ?? null}
@@ -119,7 +117,7 @@ export function FeatureDetail({
           <SprintCard
             facts={facts}
             sprints={project.sprints}
-            editable={editable}
+            editable
             proposal={proposal.proposal}
             onSetSprint={setSprint}
             onApplyProposal={proposal.apply}
@@ -131,23 +129,20 @@ export function FeatureDetail({
           )}
           <DependenciesCard
             dependencies={featureDependencies(project, f.id)}
-            {...(editable && {
-              adding: {
-                candidates: dependencyCandidates(project, f.id),
-                onAdd: (from: string) =>
-                  void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
-              },
-            })}
+            adding={{
+              candidates: dependencyCandidates(project, f.id),
+              onAdd: (from: string) =>
+                void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
+            }}
             onOpenTicket={onOpenTicket}
           />
           <QuestionsCard
             questions={featureQuestions(project, f.id, now)}
             onOpenQuestion={(id) => host?.openView("questions", undefined, { kind: "question", id })}
-            {...(editable &&
-              host && {
-                onNewQuestion: () =>
-                  host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
-              })}
+            {...(host && {
+              onNewQuestion: () =>
+                host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
+            })}
           />
           <ActivityCard items={activity} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">

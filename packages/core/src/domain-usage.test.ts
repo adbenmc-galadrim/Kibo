@@ -4,8 +4,8 @@ import { createProjectDoc } from "./project";
 import { upsertProjectDomain } from "./project-domains";
 import { createTicket } from "./tickets";
 
-const project = (id: string, shared = false) => {
-  const doc = createProjectDoc({
+const project = (id: string) =>
+  createProjectDoc({
     id,
     key: id.toUpperCase(),
     name: id,
@@ -19,9 +19,6 @@ const project = (id: string, shared = false) => {
     description: null,
     client: null,
   });
-  if (shared) doc.getMap("meta").set("keyAllocator", "server");
-  return doc;
-};
 
 test("usage is counted per owner: the project copy and the workspace domain apart", () => {
   const copy = project("copy");
@@ -31,9 +28,7 @@ test("usage is counted per owner: the project copy and the workspace domain apar
   const plain = project("plain");
   createTicket(plain, { title: "C", domainId: "secu" });
   createTicket(plain, { title: "D" });
-  const shared = project("shared", true);
-  createTicket(shared, { title: "E", domainId: "secu" });
-  expect(domainUsageOfProjects([copy, plain, shared])).toEqual({
+  expect(domainUsageOfProjects([copy, plain])).toEqual({
     workspace: { secu: 1 },
     projects: { copy: { secu: 2 } },
   });

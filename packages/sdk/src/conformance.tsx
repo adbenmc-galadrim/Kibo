@@ -88,11 +88,6 @@ export function runConformance(
     const projects: [string, ConformanceSeed | undefined, Partial<MockSdkOptions>][] = [
       ["empty project", undefined, {}],
       ["seeded project", seed, {}],
-      [
-        "shared project with provisional keys",
-        seed,
-        { shared: true, members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
-      ],
     ];
     const check = (options: MockSdkOptions) =>
       renderWithinPermissions(mod.Component, manifest, declared, options, runs, mockOpts.config ?? null);

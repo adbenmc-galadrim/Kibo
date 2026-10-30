@@ -1,4 +1,4 @@
-import type { Assignee, MemberInfo, TicketView } from "@kibo/schema";
+import type { Assignee, TicketView } from "@kibo/schema";
 import { assigneeLabel } from "@kibo/sdk";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
@@ -8,7 +8,6 @@ import type { TicketCommand } from "./use-ticket-command";
 type Props = {
   ticket: TicketView;
   viewer: string;
-  members: MemberInfo[];
   editable: boolean;
   command: TicketCommand;
 };
@@ -34,20 +33,14 @@ const initials = (label: string): string =>
     .slice(0, 2)
     .toUpperCase();
 
-const meLabel = (viewer: string, members: readonly MemberInfo[]): string => {
-  const name = members.find((m) => m.userId === viewer)?.name;
-  return name ? t.meNamed(name) : t.me;
-};
-
-function labelOf(assignee: Assignee | null, viewer: string, members: MemberInfo[]): string {
+function labelOf(assignee: Assignee | null, viewer: string): string {
   if (!assignee) return t.nobody;
-  return assignee.ref === viewer ? meLabel(viewer, members) : assigneeLabel(assignee, members);
+  return assignee.ref === viewer ? t.me : assigneeLabel(assignee);
 }
 
-export function AssigneeSelect({ ticket, viewer, members, editable, command }: Props) {
+export function AssigneeSelect({ ticket, viewer, editable, command }: Props) {
   const assignee = ticket.assignee?.kind === "agent" ? null : ticket.assignee;
-  const others = members.filter((m) => m.userId !== viewer);
-  const label = labelOf(assignee, viewer, members);
+  const label = labelOf(assignee, viewer);
   if (!editable) return <span>{label}</span>;
   const pick = (value: string) =>
     void command.run({ method: "updateTicket", ticketId: ticket.id, assignee: assigneeOf(value, viewer) });
@@ -59,19 +52,14 @@ export function AssigneeSelect({ ticket, viewer, members, editable, command }: P
             aria-hidden
             className="grid size-5 place-items-center rounded-full border bg-(--tracking-muted) text-[8px] font-semibold"
           >
-            {initials(assigneeLabel(assignee, members))}
+            {initials(assigneeLabel(assignee))}
           </span>
         )}
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={NOBODY}>{t.nobody}</SelectItem>
-        <SelectItem value={ME}>{meLabel(viewer, members)}</SelectItem>
-        {others.map((m) => (
-          <SelectItem key={m.userId} value={m.userId}>
-            {m.name}
-          </SelectItem>
-        ))}
+        <SelectItem value={ME}>{t.me}</SelectItem>
       </SelectContent>
     </Select>
   );

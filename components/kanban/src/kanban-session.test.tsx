@@ -20,7 +20,6 @@ const renderCard = (patch: Partial<TicketView>) => {
         ciRuns={[]}
         blocked={false}
         blocking={null}
-        members={[]}
         questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
         menu={null}
         title={<span>{base.title}</span>}

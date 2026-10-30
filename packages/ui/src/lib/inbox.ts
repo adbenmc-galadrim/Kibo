@@ -9,7 +9,6 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { fr } from "../i18n/fr";
-import { canEdit } from "../state/access";
 
 const INBOX_COLOR = "#64748B";
 
@@ -61,10 +60,7 @@ export function newTicketProjects(
   projects: readonly ProjectMeta[],
   snapshots: ReadonlyMap<string, ProjectSnapshot>,
 ): ProjectMeta[] {
-  const writable = projects.filter((p) => {
-    const snapshot = snapshots.get(p.id);
-    return !isInbox(p.id) && snapshot !== undefined && canEdit(snapshot);
-  });
+  const writable = projects.filter((p) => !isInbox(p.id) && snapshots.has(p.id));
   return [inboxMeta(), ...writable];
 }
 

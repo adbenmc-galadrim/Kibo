@@ -27,8 +27,6 @@ export type Docs = {
   onProjectRemoved(listener: (projectId: string) => void): () => void;
   imported(projectId: string): void;
   onProjectDoc(listener: (projectId: string, doc: LoroDoc) => void): () => void;
-  assertWritable(projectId: string): void;
-  setWriteGuard(guard: (projectId: string) => void): () => void;
   projectMeta(projectId: string): ProjectMeta;
   updateProjectMeta(projectId: string, patch: ProjectPatch): ProjectMeta;
   identity(projectId: string): string;

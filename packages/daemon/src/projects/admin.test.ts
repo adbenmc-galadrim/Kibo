@@ -2,13 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  INBOX_ID,
-  KiboError,
-  type ProjectMeta,
-  type ProjectSnapshot,
-  type ProjectSummary,
-} from "@kibo/schema";
+import { INBOX_ID, type ProjectMeta, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
 import {
   LOCAL_DUPLICATION_KEY,
@@ -106,11 +100,8 @@ test("the folder is local only, must exist, and is refused while runs are active
   busy.close();
 });
 
-test("worktree settings are local and work on a read-only project", () => {
+test("worktree settings are local", () => {
   const s = setup();
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
   const worktree = {
     baseRef: "origin/dev",
     pathTemplate: "../silo-{slug}",
@@ -128,11 +119,8 @@ test("worktree settings are local and work on a read-only project", () => {
   s.close();
 });
 
-test("storybook settings are local, checked, and work on a read-only project", () => {
+test("storybook settings are local and checked", () => {
   const s = setup();
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
   const storybook = { origin: "https://sb.example.com", portEnv: "STORYBOOK_PORT" };
   const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
     s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
@@ -152,21 +140,6 @@ test("storybook settings are local, checked, and work on a read-only project", (
   expect(update({ storybook: null }).storybook).toBeNull();
   expect(s.settings.get(s.project.id, LOCAL_STORYBOOK_KEY)).toBeNull();
   expect(s.summary()?.storybook).toBeNull();
-  s.close();
-});
-
-test("a read-only project refuses doc fields and its folder", () => {
-  const s = setup();
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  const update = (patch: { name?: string; folder?: string }) =>
-    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, LOCAL_CONTEXT);
-  expect(() => update({ name: "Noyau" })).toThrow("FORBIDDEN");
-  expect(s.summary()?.name).toBe("Kibo");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("name")).toBe("Kibo");
-  expect(() => update({ folder: "/tmp/ok/x" })).toThrow("FORBIDDEN");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
   s.close();
 });
 
@@ -291,9 +264,6 @@ test("an existing folder is an absolute path to a directory", () => {
 
 test("duplication settings are local, need a local session, and null restores the defaults", () => {
   const s = setup();
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
   const duplication = {
     enabled: false,
     minLines: 12,

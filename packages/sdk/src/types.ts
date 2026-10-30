@@ -25,7 +25,6 @@ import type {
   ProjectEvent,
   ProjectInfo,
   ProjectSnapshot,
-  ProjectSyncInfo,
   Question,
   QuestionRecipient,
   RunDenials,
@@ -148,7 +147,6 @@ export type KiboSdk = {
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   setConfig(patch: Record<string, unknown>): Promise<void>;
   mcp: McpApi;
-  sharing(): Promise<ProjectSyncInfo>;
   capabilities: readonly Capability[];
   capability(name: Capability): void;
   assets: AssetsApi;

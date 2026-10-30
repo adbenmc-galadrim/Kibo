@@ -4,8 +4,6 @@ import type {
   ComponentFormat,
   DeliveryAgent,
   McpCallResult,
-  MemberInfo,
-  ProjectAccess,
   ProjectAsset,
   ProjectCommand,
   ProjectEditRequest,
@@ -48,7 +46,6 @@ export type MockSdk = {
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
   setRuns(runs: TicketRun[]): void;
-  setAccess(access: ProjectAccess): void;
   focusRequests: boolean[];
   selections: (Selection | null)[];
   setVisible(visible: boolean): void;
@@ -76,8 +73,6 @@ export type MockSdkOptions = {
   description?: string | null;
   client?: string | null;
   folder?: string | null;
-  shared?: boolean;
-  members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
   storybooks?: StorybookOrigin[];

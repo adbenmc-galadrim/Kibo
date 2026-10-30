@@ -17,16 +17,14 @@ export const PROJECT_WORKSPACE_LABEL = "projet";
 type CreateDeps = {
   registry: RunRegistry;
   agentOf: (ref: string) => Agent;
-  assertWritable: (projectId: string) => void;
   projectKey: (projectId: string) => string | null;
 };
 
 export function createProjectRun(
-  { registry, agentOf, assertWritable, projectKey }: CreateDeps,
+  { registry, agentOf, projectKey }: CreateDeps,
   input: ProjectRunInput,
 ): string {
   const agent = agentOf(PROJECT_AGENT_REF);
-  assertWritable(input.projectId);
   const open = registry.all().some((r) => r.projectId === input.projectId && !isTerminal(r.state));
   if (open) throw new KiboError("CONFLICT", `project ${input.projectId} already has an open project run`);
   const id = crypto.randomUUID();

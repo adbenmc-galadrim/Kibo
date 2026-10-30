@@ -14,18 +14,9 @@ const base = {
 };
 
 describe("ticket key", () => {
-  test("a ticket with a key and no pending sequence is valid", () => {
-    expect(Ticket.safeParse({ ...base, key: "KIB-12", pendingSeq: null }).success).toBe(true);
-  });
-
-  test("a ticket waiting for its key needs a pending sequence", () => {
-    expect(Ticket.safeParse({ ...base, key: null, pendingSeq: 3 }).success).toBe(true);
-    expect(Ticket.safeParse({ ...base, key: null, pendingSeq: null }).success).toBe(false);
-  });
-
-  test("the pending sequence is a positive integer", () => {
-    expect(Ticket.safeParse({ ...base, key: null, pendingSeq: 0 }).success).toBe(false);
-    expect(Ticket.safeParse({ ...base, key: null, pendingSeq: 1.5 }).success).toBe(false);
+  test("a ticket has a key, an old one still waiting for its key parses", () => {
+    expect(Ticket.safeParse({ ...base, key: "KIB-12" }).success).toBe(true);
+    expect(Ticket.safeParse({ ...base, key: null }).success).toBe(true);
   });
 
   test("the label shows the key, or the project prefix with an ellipsis", () => {

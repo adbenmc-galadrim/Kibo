@@ -23,7 +23,7 @@ export function crashyServer(id: string, marker: string): McpServerInput {
   };
 }
 
-export function groupMembers(pgid: number): number[] {
+export function groupProcesses(pgid: number): number[] {
   return lines(Bun.spawnSync(["pgrep", "-g", String(pgid)]).stdout.toString());
 }
 

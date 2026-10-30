@@ -14,7 +14,6 @@ export const frTicketEdit = {
   assignee: "Assigné",
   nobody: "Personne",
   me: "Moi",
-  meNamed: (name: string) => `${name} (moi)`,
   agentAssignee: "Choisis un profil via Assigner à un agent",
   actions: (key: string) => `Actions ${key}`,
   openInTab: "Ouvrir dans un onglet",

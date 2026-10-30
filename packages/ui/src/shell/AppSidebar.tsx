@@ -12,7 +12,6 @@ import { House, Inbox, Search, Settings2, Ticket } from "lucide-react";
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
-import { canEdit } from "../state/access";
 import type { HelpDialog } from "./help-dialogs";
 import { RailProjectMenu } from "./nav/lazy-nav";
 import { NavRow } from "./nav/NavRow";
@@ -71,7 +70,7 @@ function SearchButton({ onSearch }: { onSearch(): void }) {
 
 export function AppSidebar(p: Props) {
   const { active, activeTarget, screen, onOpen } = p;
-  const editable = active !== null && canEdit(active);
+  const editable = active !== null;
   const onTarget = (kind: TabTarget["kind"], projectId: string) =>
     activeTarget !== null && activeTarget.kind === kind && targetProjectId(activeTarget) === projectId;
   const link: Link = (target) => ({

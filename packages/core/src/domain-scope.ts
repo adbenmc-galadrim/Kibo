@@ -7,7 +7,7 @@ import { hasProjectDomain, upsertProjectDomain } from "./project-domains";
 export { domainsOf };
 
 export type DomainUsageByProject = ReadonlyMap<string, ReadonlyMap<string, number>>;
-export type KeepReason = "unused" | "shared" | "read-only";
+export type KeepReason = "unused" | "shared";
 export type ScopePlan = {
   move: { domainId: string; projectId: string }[];
   keep: { domainId: string; reason: KeepReason }[];
@@ -19,11 +19,7 @@ export function usersOf(usage: DomainUsageByProject, domainId: string): string[]
   return [...byProject.entries()].filter(([, tickets]) => tickets > 0).map(([projectId]) => projectId);
 }
 
-export function planDomainScopes(
-  domains: readonly Domain[],
-  usage: DomainUsageByProject,
-  writable: (projectId: string) => boolean,
-): ScopePlan {
+export function planDomainScopes(domains: readonly Domain[], usage: DomainUsageByProject): ScopePlan {
   const plan: ScopePlan = { move: [], keep: [] };
   for (const domain of domains) {
     if (domain.owner.scope !== "workspace") continue;
@@ -31,7 +27,6 @@ export function planDomainScopes(
     const [only] = users;
     if (only === undefined) plan.keep.push({ domainId: domain.id, reason: "unused" });
     else if (users.length > 1) plan.keep.push({ domainId: domain.id, reason: "shared" });
-    else if (!writable(only)) plan.keep.push({ domainId: domain.id, reason: "read-only" });
     else plan.move.push({ domainId: domain.id, projectId: only });
   }
   return plan;

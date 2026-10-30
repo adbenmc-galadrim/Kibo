@@ -1,6 +1,5 @@
 import {
   AiEvent,
-  CLOSE_CODES,
   CodeEvent,
   type CodeRequest,
   type CodeResult,
@@ -15,6 +14,7 @@ import {
   type RunChanged,
   type RunMomentsEvent,
   type RunState,
+  SESSION_REVOKED_CLOSE,
   type TicketRun,
   type Topic,
 } from "@kibo/schema";
@@ -149,7 +149,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     socket.onclose = (e) => {
       socket = null;
       setOpen(false);
-      if (e.code === CLOSE_CODES.authFailed) {
+      if (e.code === SESSION_REVOKED_CLOSE) {
         opts.onUnauthorized?.();
         return;
       }

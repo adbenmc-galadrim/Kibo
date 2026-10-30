@@ -5,7 +5,6 @@ import { fr } from "../i18n/fr";
 import { instanceFormat } from "../lib/format-grid";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import { componentIcon } from "../registry";
-import { canEdit } from "../state/access";
 import { InstanceFrame } from "./InstanceFrame";
 import { InstanceMenu } from "./InstanceMenu";
 
@@ -59,7 +58,7 @@ export function WidgetBody({
         surface="widget"
         format={instanceFormat({ ...instance, layout }, page)}
         apis={apis}
-        editable={canEdit(project)}
+        editable
       />
     </div>
   );

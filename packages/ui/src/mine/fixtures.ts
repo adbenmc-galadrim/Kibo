@@ -14,7 +14,6 @@ export function mineTicket(
   return {
     id: `${seq}@1`,
     key,
-    pendingSeq: key === null ? seq : null,
     hold: null,
     keyLabel: key ?? "KIB-…",
     title: key ?? `Ticket ${seq}`,

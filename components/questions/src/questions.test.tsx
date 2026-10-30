@@ -112,17 +112,6 @@ test("an imported answer is shown like any other", async () => {
   expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
-test("read-only projects hide the forms", async () => {
-  const m = mount("view");
-  act(() => m.setAccess("read-only"));
-  expect(await screen.findByText("Lecture seule")).toBeTruthy();
-  await screen.findByText(OPEN);
-  expect(screen.queryByRole("button", { name: "Valider le choix provisoire" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Nouvelle question" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Coller la réponse" })).toBeNull();
-});
-
 test("the view filters by state and ticket", async () => {
   const m = mount("view");
   const user = userEvent.setup();

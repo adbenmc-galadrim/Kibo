@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { KiboError, type ProjectMeta, type ProjectSnapshot } from "@kibo/schema";
+import type { ProjectMeta, ProjectSnapshot } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { createService } from "../service";
@@ -50,13 +50,9 @@ test("the open limit is written to the project doc, synced, and can be cleared",
   s.close();
 });
 
-test("an open limit out of range or on a read-only project is refused", () => {
+test("an open limit out of range is refused", () => {
   const s = setup();
   expect(() => s.update({ openLimit: 0 })).toThrow("INVALID_INPUT");
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  expect(() => s.update({ openLimit: 4 })).toThrow("FORBIDDEN");
   expect(s.snapshot().meta.tracking).toBeNull();
   s.close();
 });

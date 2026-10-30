@@ -18,7 +18,6 @@ const errorText = (e: unknown): string =>
   (e instanceof Error ? e.message : String(e)).slice(0, ACTION_DETAIL_MAX);
 
 function decidableBatch(ctx: AgentContext, input: DecideInput): Batch {
-  ctx.data.assertWritable(input.projectId);
   const batch = ctx.store.batch(input.batchId);
   if (!batch || batch.projectId !== input.projectId)
     throw new KiboError("NOT_FOUND", `batch ${input.batchId} not found`);

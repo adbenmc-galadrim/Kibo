@@ -63,7 +63,6 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   }),
   z.object({ kind: z.literal("mcp.read"), server: McpServerId, uri: z.string().min(1).max(2048) }),
   z.object({ kind: z.literal("mcp.import"), server: McpServerId, item: McpImportItem }),
-  z.object({ kind: z.literal("sharing.get") }),
   z.object({ kind: z.literal("settings.get") }),
   z.object({ kind: z.literal("project.get") }),
   z.object({ kind: z.literal("assets.list") }),

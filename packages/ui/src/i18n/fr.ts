@@ -167,7 +167,6 @@ export const fr = {
   newTicket: {
     title: "Nouveau ticket",
     key: (key: string) => `Clé ${key}`,
-    keyPending: "Clé attribuée à la synchronisation",
     project: "Projet",
     projectFixed: (project: string) => `Projet : ${project}`,
     projectLocked: "Un sous-ticket reste dans le projet de son parent.",

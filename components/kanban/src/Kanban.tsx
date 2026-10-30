@@ -22,7 +22,6 @@ import {
   useQuestionsChipData,
   useSdk,
   useSelection,
-  useSharing,
   withoutAgentAssignee,
 } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
@@ -64,13 +63,11 @@ export function Kanban() {
   const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
-  const sharing = useSharing();
-  const readOnly = sharing.access !== "write";
   const delivery = useDeliverFlow();
   const agentKnown = useDeliveryAgentKnown();
   const { agentExecution } = useComponentSettings();
   const columnOrder = useColumnOrder(sdk);
-  const labelFilter = useLabelFilter(sdk, !readOnly);
+  const labelFilter = useLabelFilter(sdk);
   const [selection, setSelection] = useSelection();
   const selected = selection ? new Set(selection.ids) : null;
   const sensors = useSensors(
@@ -103,13 +100,12 @@ export function Kanban() {
     ciRuns: ticketCiRuns(t, ciRuns),
     blocked: isBlocked(t, questionList),
     blocking: blockingQuestion(t, questionList),
-    members: sharing.members,
     questions,
   });
   const deliverOf = (t: TicketView) =>
     menuDeliverEntry({
       ticket: t,
-      editable: !readOnly,
+      editable: true,
       agentKnown,
       parent: tickets.some((x) => x.parentId === t.id),
       run: runOf.get(t.id) ?? null,
@@ -159,7 +155,6 @@ export function Kanban() {
   const onDragOver = (e: DragOverEvent) => setTargetColumn(dropInColumn(e, visible)?.statusId ?? null);
   const onDragEnd = (e: DragEndEvent) => {
     endDrag();
-    if (readOnly) return;
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
     if (!drop || !t) return;
@@ -203,9 +198,7 @@ export function Kanban() {
           ]}
         />
       </KanbanToolbar>
-      {!loading && scoped.length === 0 && (
-        <KanbanEmpty onNew={readOnly ? undefined : () => sdk.openNewTicket({})} />
-      )}
+      {!loading && scoped.length === 0 && <KanbanEmpty onNew={() => sdk.openNewTicket({})} />}
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
@@ -225,7 +218,7 @@ export function Kanban() {
               ids={visible[s.id] ?? []}
               targeted={targetColumn === s.id}
               forbidden={forbidden(s.id)}
-              onAdd={readOnly ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
+              onAdd={() => sdk.openNewTicket({ statusId: s.id })}
             >
               {(columns.get(s.id) ?? []).map((t) => (
                 <KanbanCard
@@ -233,7 +226,6 @@ export function Kanban() {
                   {...factsOf(t)}
                   selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
-                  readOnly={readOnly}
                   deliver={deliverOf(t)}
                   execution={agentExecution}
                   onDeliver={(mode) => delivery.deliver(t, mode)}
@@ -249,7 +241,6 @@ export function Kanban() {
           {draggedTicket ? (
             <KanbanCardPreview
               {...factsOf(draggedTicket)}
-              readOnly={readOnly}
               refused={targetColumn !== null && forbidden(targetColumn)}
             />
           ) : null}

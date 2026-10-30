@@ -15,7 +15,6 @@ export const Ticket = z
   .object({
     id: NodeId,
     key: TicketKey.nullable(),
-    pendingSeq: z.number().int().positive().nullable(),
     title: z.string().trim().min(1),
     description: z.string(),
     statusId: StatusId,
@@ -39,9 +38,6 @@ export const Ticket = z
     }
     if (t.statusId !== "blocked" && t.blockedReason !== null) {
       ctx.addIssue({ code: "custom", path: ["blockedReason"], message: "reason only allowed when blocked" });
-    }
-    if (t.key === null && t.pendingSeq === null) {
-      ctx.addIssue({ code: "custom", path: ["key"], message: "a ticket needs a key or a pending sequence" });
     }
   });
 export type Ticket = z.infer<typeof Ticket>;

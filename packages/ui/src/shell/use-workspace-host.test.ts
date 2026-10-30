@@ -8,7 +8,6 @@ function host(activeProjectId: string | null) {
   const { result } = renderHook(() =>
     useWorkspaceHost({
       activeProjectId,
-      projectRef: { current: null },
       set: (patch) => patches.push(patch),
       go: () => {},
       openView: () => {},

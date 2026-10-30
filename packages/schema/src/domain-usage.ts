@@ -2,7 +2,6 @@ import type { Domain, DomainOwner } from "./workspace-config";
 
 export type UsageProject = {
   id: string;
-  shared: boolean;
   domainIds: readonly string[];
   ticketDomains: readonly (string | null)[];
 };
@@ -12,12 +11,9 @@ export type DomainUsageCount = {
   projects: Record<string, Record<string, number>>;
 };
 
-export function usageOwner(
-  project: Pick<UsageProject, "id" | "shared" | "domainIds">,
-  domainId: string,
-): DomainOwner | null {
+export function usageOwner(project: Pick<UsageProject, "id" | "domainIds">, domainId: string): DomainOwner {
   if (project.domainIds.includes(domainId)) return { scope: "project", projectId: project.id };
-  return project.shared ? null : { scope: "workspace" };
+  return { scope: "workspace" };
 }
 
 const bump = (counts: Record<string, number>, id: string) => {
@@ -36,8 +32,8 @@ export function countDomainUsage(projects: readonly UsageProject[]): DomainUsage
     for (const domainId of project.ticketDomains) {
       if (domainId === null) continue;
       const owner = usageOwner(project, domainId);
-      if (owner?.scope === "workspace") bump(usage.workspace, domainId);
-      if (owner?.scope === "project") bump(projectCounts(usage, project.id), domainId);
+      if (owner.scope === "workspace") bump(usage.workspace, domainId);
+      if (owner.scope === "project") bump(projectCounts(usage, project.id), domainId);
     }
   }
   return usage;
