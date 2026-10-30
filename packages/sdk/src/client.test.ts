@@ -61,7 +61,7 @@ test("a 401 on rpc notifies onUnauthorized before throwing", async () => {
   expect(events).toHaveLength(2);
 });
 
-test("topic, run and project messages reach their own listeners", async () => {
+test("topic and project messages reach their own listeners", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -70,7 +70,6 @@ test("topic, run and project messages reach their own listeners", async () => {
       open(ws) {
         ws.send(JSON.stringify({ projectId: "p1" }));
         ws.send(JSON.stringify({ topic: "agents" }));
-        ws.send(JSON.stringify({ type: "run.changed", runId: "r1", state: "running" }));
       },
       message() {},
     },
@@ -79,18 +78,16 @@ test("topic, run and project messages reach their own listeners", async () => {
   const seen: string[] = [];
   const done = Promise.withResolvers<void>();
   const offProject = client.subscribe((id) => seen.push(`project:${id}`));
-  const offAgents = client.subscribeTopic("agents", () => seen.push("agents"));
-  const offConfig = client.subscribeTopic("config", () => seen.push("config"));
-  const offRuns = client.onRunChanged((e) => {
-    seen.push(`run:${e.runId}:${e.state}`);
+  const offAgents = client.subscribeTopic("agents", () => {
+    seen.push("agents");
     done.resolve();
   });
+  const offConfig = client.subscribeTopic("config", () => seen.push("config"));
   await done.promise;
-  expect(seen).toEqual(["project:p1", "agents", "run:r1:running"]);
+  expect(seen).toEqual(["project:p1", "agents"]);
   offProject();
   offAgents();
   offConfig();
-  offRuns();
   server.stop(true);
 });
 
@@ -267,6 +264,33 @@ test("a revoked session (close 4401) stops the reconnection and reports it", asy
   await unauthorized.promise;
   await Bun.sleep(1200);
   expect([upgrades, reports, client.online()]).toEqual([1, 1, false]);
+  off();
+  server.stop(true);
+});
+
+test("a typed event without a listener never reloads a project", async () => {
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "run.changed", runId: "r1", state: "running" }));
+        ws.send(JSON.stringify({ type: "run.moments", runId: "r1", moments: [] }));
+        ws.send(JSON.stringify({ projectId: "p1" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: (string | null)[] = [];
+  const done = Promise.withResolvers<void>();
+  const off = client.subscribe((id) => {
+    seen.push(id);
+    if (id === "p1") done.resolve();
+  });
+  await done.promise;
+  expect(seen).toEqual(["p1"]);
   off();
   server.stop(true);
 });

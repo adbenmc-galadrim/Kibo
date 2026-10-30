@@ -10,8 +10,6 @@ import {
   type RpcRequest,
   type RpcResponse,
   type RpcResult,
-  type RunChanged,
-  type RunState,
   SESSION_REVOKED_CLOSE,
   type Topic,
 } from "@kibo/schema";
@@ -23,7 +21,6 @@ export type KiboClient = {
   pair(token: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
-  onRunChanged(listener: (e: RunChanged) => void): () => void;
   subscribeCode(listener: (event: CodeEvent) => void): () => void;
   subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
   subscribeEvents(listener: (event: Phase7Event) => void): () => void;
@@ -59,7 +56,6 @@ export function createClient(opts: ClientOptions): KiboClient {
 
   const listeners = new Set<(projectId: string | null) => void>();
   const topics = new Map<Topic, Set<() => void>>();
-  const runListeners = new Set<(e: RunChanged) => void>();
   const codeListeners = new Set<(event: CodeEvent) => void>();
   const integrationListeners = new Set<(event: IntegrationEvent) => void>();
   const eventListeners = new Set<(event: Phase7Event) => void>();
@@ -73,7 +69,6 @@ export function createClient(opts: ClientOptions): KiboClient {
   };
   const active = () =>
     listeners.size +
-    runListeners.size +
     codeListeners.size +
     integrationListeners.size +
     eventListeners.size +
@@ -105,13 +100,8 @@ export function createClient(opts: ClientOptions): KiboClient {
         projectId?: string | null;
         topic?: Topic;
         type?: string;
-        runId?: string;
-        state?: RunState;
       };
-      if (msg.type === "run.changed" && msg.runId && msg.state) {
-        for (const l of runListeners) l({ type: "run.changed", runId: msg.runId, state: msg.state });
-        return;
-      }
+      if (msg.type !== undefined) return;
       if (msg.topic) {
         for (const l of topics.get(msg.topic) ?? []) l();
         return;
@@ -158,14 +148,6 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         set.delete(listener);
-        release();
-      };
-    },
-    onRunChanged(listener) {
-      runListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        runListeners.delete(listener);
         release();
       };
     },

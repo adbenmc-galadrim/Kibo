@@ -38,7 +38,6 @@ mock.module("../api", () =>
       subscribe: none,
       subscribeEvents: none,
       subscribeAi: none,
-      onRunChanged: none,
       onConnection: none,
       online: () => true,
     },
