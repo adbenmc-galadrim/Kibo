@@ -2,7 +2,7 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
-## Non publié
+## 0.33.0-alpha.1 — 2026-10-30
 
 Kibo se recentre sur le suivi : l'exécution des agents sur les tickets, les composants tiers et le partage quittent l'application. L'agent de projet et son historique restent.
 
