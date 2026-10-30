@@ -163,11 +163,11 @@ test("the widened agent covers the Vue d'ensemble from x 720 and keeps only the 
   expect(DIALOG_SCREENS["agent-agrandi"]).toEqual({ x: 720, y: 0, w: 720, h: 1440 });
   const kept = masksOf("agent-agrandi");
   expect(kept.map((m) => [m.x, m.y])).toEqual([
-    [16, 1216],
-    [279, 1074],
-    [279, 1113],
-    [279, 1152],
-    [279, 1191],
+    [16, 1396],
+    [279, 1260],
+    [279, 1299],
+    [279, 1338],
+    [279, 1377],
   ]);
   for (const m of kept) expect(masksOf("vue-ensemble")).toContainEqual(m);
 });
