@@ -11,7 +11,7 @@ Contenu :
   avec une ligne ; déclencheurs append-only posés.
 - `kibo.db` : le doc de l'espace de travail, `project_events`, `component_events` (gardée),
   `remote_sessions` (une locale, une distante) et les tables mortes `agent_settings`,
-  `file_versions`, `component_drafts`.
+  `file_versions`, `component_drafts`, `market_*` et `sync_*` (liaisons GitHub Issues).
 - `runs/<id>/` : un dossier par run.
 
 Régénérer depuis `packages/daemon` :

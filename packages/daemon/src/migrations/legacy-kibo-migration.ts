@@ -3,7 +3,17 @@ import { immediateTransaction } from "../sqlite-busy";
 import { dropTables, tableExists } from "./legacy-sqlite";
 
 export const LEGACY_KIBO_MARKER = "legacy_tables_dropped_at";
-export const DROPPED_KIBO_TABLES: readonly string[] = ["agent_settings", "file_versions", "component_drafts"];
+export const DROPPED_KIBO_TABLES: readonly string[] = [
+  "agent_settings",
+  "file_versions",
+  "component_drafts",
+  "market_sources",
+  "market_pins",
+  "market_index_cache",
+  "sync_items",
+  "sync_cursors",
+  "sync_outbox",
+];
 
 export type LegacyKiboResult = { droppedTables: string[]; removedRemoteSessions: number };
 

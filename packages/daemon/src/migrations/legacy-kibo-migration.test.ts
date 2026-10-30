@@ -36,7 +36,17 @@ test("the dead tables and remote sessions go, docs, events, component events and
     droppedTables: [...DROPPED_KIBO_TABLES],
     removedRemoteSessions: 1,
   });
-  expect(DROPPED_KIBO_TABLES).toEqual(["agent_settings", "file_versions", "component_drafts"]);
+  expect(DROPPED_KIBO_TABLES).toEqual([
+    "agent_settings",
+    "file_versions",
+    "component_drafts",
+    "market_sources",
+    "market_pins",
+    "market_index_cache",
+    "sync_items",
+    "sync_cursors",
+    "sync_outbox",
+  ]);
   for (const table of DROPPED_KIBO_TABLES) expect(tableNames(db)).not.toContain(table);
   expect(db.query("SELECT count(*) AS n FROM component_events").get()).toEqual({ n: 1 });
   expect(db.query("SELECT * FROM docs").all()).toEqual(docs);
