@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import type { DaemonClient } from "../daemon-client";
 import { runCli } from "../index";
@@ -119,7 +118,7 @@ test("goes through kibo tickets step, without a daemon, with code 1 and the stab
     const err: string[] = [];
     const cliIo = {
       home,
-      toolchain: DEV_TOOLCHAIN,
+
       out: (l: string) => out.push(l),
       err: (l: string) => err.push(l),
     };

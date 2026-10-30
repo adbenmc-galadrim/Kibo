@@ -15,7 +15,6 @@ function cli(home: string) {
   const err: string[] = [];
   const io = {
     home,
-    toolchain: DEV_TOOLCHAIN,
     out: (l: string) => out.push(l),
     err: (l: string) => err.push(l),
   };

@@ -1,9 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { copyFixture, DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { startDevServer } from "./commands/dev";
 import { runCli } from "./index";
 
 const cleanups: (() => void | Promise<void>)[] = [];
@@ -21,21 +19,22 @@ function io() {
     err,
     io: {
       home,
-      toolchain: DEV_TOOLCHAIN,
       out: (l: string) => out.push(l),
       err: (l: string) => err.push(l),
     },
   };
 }
 
-describe("kibo component", () => {
-  test("usage on unknown commands", async () => {
+describe("kibo", () => {
+  test("usage on unknown commands, component commands included", async () => {
     const t = io();
     expect(await runCli(["nope"], t.io)).toBe(2);
-    expect(t.err.join("\n")).toContain("kibo component new <id>");
-    expect(await runCli(["component", "explode", "x"], t.io)).toBe(2);
+    expect(t.err.join("\n")).toContain("kibo tickets list");
+    for (const command of ["new", "test", "dev"]) {
+      expect(await runCli(["component", command, "x"], t.io)).toBe(2);
+    }
+    expect(t.err.join("\n")).not.toContain("kibo component");
     expect(t.err.join("\n")).not.toContain("kibo market");
-    expect(t.err.join("\n")).not.toContain("kibo component publish");
   });
 
   test("the tickets help lists session and step --update", async () => {
@@ -121,67 +120,4 @@ describe("kibo component", () => {
     expect(await runCli(["tickets", "list", "--project", "SILO", "--home", elsewhere], t.io)).toBe(1);
     expect(t.err.at(-1)).toBe("Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.");
   });
-
-  test("new scaffolds into KIBO_HOME/components/src", async () => {
-    const t = io();
-    expect(await runCli(["component", "new", "burndown", "--kind", "widget", "--server"], t.io)).toBe(0);
-    const dir = join(t.home, "components", "src", "burndown");
-    expect(existsSync(join(dir, "server.ts"))).toBe(true);
-    expect(t.out).toEqual([
-      `Composant créé : ${dir}`,
-      "Ensuite : kibo component dev burndown, puis kibo component test burndown",
-    ]);
-    expect(await runCli(["component", "new", "burndown"], t.io)).toBe(1);
-    expect(await runCli(["component", "new", "Bad_Id"], t.io)).toBe(1);
-    expect(t.err.every((l) => l.startsWith("Erreur INVALID_INPUT : "))).toBe(true);
-  });
-
-  test("new --template writes the template manifest and refuses an unknown one", async () => {
-    const t = io();
-    expect(await runCli(["component", "new", "cube", "--template", "3d"], t.io)).toBe(0);
-    const manifest = JSON.parse(
-      readFileSync(join(t.home, "components", "src", "cube", "kibo.component.json"), "utf8"),
-    );
-    expect(manifest.capabilities).toEqual(["webgl", "assets"]);
-    expect(await runCli(["component", "new", "other", "--template", "bogus"], t.io)).toBe(1);
-    expect(t.err).toEqual(["Erreur INVALID_INPUT : unknown template bogus"]);
-    expect(existsSync(join(t.home, "components", "src", "other"))).toBe(false);
-  });
-
-  test("test validates a folder outside the monorepo and reports each step", async () => {
-    const t = io();
-    const f = copyFixture("hello");
-    cleanups.push(f.dispose);
-    expect(await runCli(["component", "test", f.dir], t.io)).toBe(0);
-    expect(t.out).toContain("✓ Tests");
-    expect(t.out).toContain("Composant valide : il apparaît dans « Mes composants ».");
-    const bad = copyFixture("undeclared");
-    cleanups.push(bad.dispose);
-    expect(await runCli(["component", "test", bad.dir], t.io)).toBe(1);
-    expect(t.out).toContain("  permission utilisée mais non déclarée : read:link");
-  }, 240_000);
-
-  test("dev refuses a missing folder", async () => {
-    const t = io();
-    expect(await runCli(["component", "dev", "missing"], t.io)).toBe(1);
-    expect(t.err).toEqual([
-      `Erreur NOT_FOUND : component folder not found: ${join(t.home, "components", "src", "missing")}`,
-    ]);
-    expect(await runCli(["component", "dev", "x", "--port", "http"], t.io)).toBe(1);
-    expect(t.err.at(-1)).toBe("Erreur INVALID_INPUT : invalid port: http");
-  });
-
-  test("dev serves a live preview", async () => {
-    const f = copyFixture("hello");
-    cleanups.push(f.dispose);
-    const dev = await startDevServer(f.dir, DEV_TOOLCHAIN, { port: 0 });
-    cleanups.push(dev.stop);
-    const html = await (await fetch(dev.url)).text();
-    expect(html).toContain('<script type="module" src="/app.js"></script>');
-    const js = await fetch(`${dev.url}/app.js`);
-    expect(js.status).toBe(200);
-    expect(await js.text()).toContain("mountDev");
-    expect((await fetch(`${dev.url}/app.css`)).status).toBe(200);
-    expect((await fetch(`${dev.url}/version`)).status).toBe(200);
-  }, 120_000);
 });

@@ -295,7 +295,7 @@ install:
 dogfood home=kibo_home:
     bun scripts/dogfood/seed-kibo.ts --home {{ quote(home) }} --folder {{ quote(root) }}
 
-# Lance la commande kibo des sources (ex. just kibo component new x)
+# Lance la commande kibo des sources (ex. just kibo tickets list --project SILO)
 [group("divers")]
 [positional-arguments]
 kibo *args:

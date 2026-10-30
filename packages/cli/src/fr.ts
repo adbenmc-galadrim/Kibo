@@ -160,9 +160,6 @@ export const frRpc = {
 export const fr = {
   usage: [
     "Usage :",
-    "  kibo component new <id> [--kind widget|view|both] [--server] [--template blank|3d|game|chart|table]",
-    "  kibo component test <id|dossier>",
-    "  kibo component dev <id|dossier> [--port <n>]",
     ...FEATURES_USAGE,
     ...TICKETS_USAGE,
     ...SPRINTS_USAGE,
@@ -173,24 +170,6 @@ export const fr = {
     "",
     DAEMON_HELP,
   ].join("\n"),
-  created: (dir: string) => `Composant créé : ${dir}`,
-  next: (id: string) => `Ensuite : kibo component dev ${id}, puis kibo component test ${id}`,
-  step: (name: string, ok: boolean) => `${ok ? "✓" : "✗"} ${name}`,
-  steps: {
-    manifest: "Manifeste",
-    imports: "Imports",
-    typecheck: "Types",
-    tests: "Tests",
-    conformance: "Conformité",
-    permissions: "Permissions",
-  },
-  tests: (passed: number, failed: number) =>
-    `Tests : ${passed} réussi${passed > 1 ? "s" : ""}, ${failed} en échec`,
-  missing: (p: string) => `  permission utilisée mais non déclarée : ${p}`,
-  unused: (p: string) => `  permission déclarée mais inutilisée : ${p}`,
-  valid: "Composant valide : il apparaît dans « Mes composants ».",
-  invalid: "Composant invalide.",
-  dev: (url: string) => `Aperçu : ${url} (Ctrl+C pour arrêter)`,
   daemonInfoCorrupt: (file: string) =>
     `Le fichier ${file} est corrompu : relance l'application Kibo, ou supprime ce fichier puis réessaie.`,
   pairingFailed: "Appairage refusé : le jeton de ~/.kibo/token ne correspond pas.",
