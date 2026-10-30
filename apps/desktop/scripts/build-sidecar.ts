@@ -26,13 +26,13 @@ function appVersionOfTauriConf(): string {
   return readAppVersion(readFileSync(join(root, "apps/desktop/src-tauri/tauri.conf.json"), "utf8"));
 }
 
-type Binary = { entrypoints: string[]; loadsToolchain: boolean; define?: Record<string, string> };
+type Binary = { entrypoints: string[]; define?: Record<string, string> };
 
-async function compile({ entrypoints, loadsToolchain, define }: Binary, outfile: string): Promise<void> {
+async function compile({ entrypoints, define }: Binary, outfile: string): Promise<void> {
   mkdirSync(dirname(outfile), { recursive: true });
   const result = await Bun.build({
     entrypoints: entrypoints.map((e) => join(root, e)),
-    compile: { outfile, autoloadPackageJson: loadsToolchain, autoloadBunfig: false, autoloadDotenv: false },
+    compile: { outfile, autoloadPackageJson: false, autoloadBunfig: false, autoloadDotenv: false },
     plugins: [loro],
     ...(define && { define }),
   });
@@ -45,10 +45,9 @@ async function compile({ entrypoints, loadsToolchain, define }: Binary, outfile:
 
 const daemon: Binary = {
   entrypoints: ["apps/desktop/sidecar/entry.ts"],
-  loadsToolchain: true,
   define: { "process.env.KIBO_VERSION": JSON.stringify(appVersionOfTauriConf()) },
 };
-const hook: Binary = { entrypoints: ["packages/daemon/src/runs/kibo-hook.ts"], loadsToolchain: false };
+const hook: Binary = { entrypoints: ["packages/daemon/src/runs/kibo-hook.ts"] };
 
 if (values.out) {
   await compile(daemon, resolve(values.out));

@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { userInfo } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { resolveToolchain } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
 import { sandboxPortFor } from "./components/daemon-info";
 import { cliStatus, installCli } from "./components/install-cli";
@@ -23,7 +22,6 @@ const { values } = parseArgs({
   options: {
     port: { type: "string", default: "4317" },
     "sandbox-port": { type: "string" },
-    toolchain: { type: "string" },
     ui: { type: "string" },
     dev: { type: "boolean", default: false },
     "claude-bin": { type: "string" },
@@ -80,7 +78,6 @@ const daemon = await Promise.resolve()
       sandboxPort: sandboxPortFor(port, values["sandbox-port"]),
       uiDir: values.ui ?? null,
       dev: values.dev,
-      toolchain: resolveToolchain({ explicit: values.toolchain ?? null }),
       user: userInfo().username,
       notifications: native ? "native" : "browser",
       notify: native ? stdoutNotifier((line) => process.stdout.write(line)) : () => {},

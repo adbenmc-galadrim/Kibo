@@ -1,7 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
   Agent,
   AgentsState,
@@ -94,7 +93,6 @@ async function boot(
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),

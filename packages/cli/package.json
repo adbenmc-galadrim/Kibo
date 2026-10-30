@@ -10,7 +10,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@kibo/devkit": "workspace:*",
     "@kibo/schema": "workspace:*",
     "zod": "3.25.76"
   },

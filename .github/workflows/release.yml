@@ -89,7 +89,6 @@ jobs:
       - uses: actions/download-artifact@v5
         with: { name: ui-dist, path: packages/ui/dist }
       - run: bun apps/desktop/scripts/build-sidecar.ts
-      - run: bun apps/desktop/scripts/build-toolchain.ts
       - name: Importer le certificat de signature
         if: runner.os == 'macOS' && env.MACOS_SIGNING_P12 != ''
         shell: bash

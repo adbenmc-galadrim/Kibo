@@ -140,15 +140,10 @@ desktop-debug: _ui
     bun run --cwd apps/desktop build:debug
     @echo "Binaire : {{ target_dir }}/debug/kibo"
 
-# Compile le démon, kibo-hook et l'agent de démo pour l'hôte
+# Compile le démon et kibo-hook pour l'hôte
 [group("desktop")]
 sidecar:
     bun run --cwd apps/desktop sidecar
-
-# Copie la chaîne d'outils des composants dans le bundle
-[group("desktop")]
-toolchain:
-    bun run --cwd apps/desktop toolchain
 
 # Smoke test de l'app de bureau (construit le debug s'il manque)
 [group("desktop")]
@@ -160,11 +155,6 @@ desktop-smoke: _ui
 desktop-test:
     cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
     bun test apps/desktop/scripts
-
-# Smoke test de la commande kibo installée par le démon compilé
-[group("desktop")]
-cli-smoke:
-    bun apps/desktop/scripts/cli-smoke.ts
 
 # Paquet .dmg macOS (contient le .app)
 [arg("arch", long="arch")]
@@ -234,7 +224,7 @@ budget: _ui
 ci desktop="":
     bun install --frozen-lockfile
     {{ just }} check typecheck
-    {{ just }} budget cli-smoke test
+    {{ just }} budget test
     KIBO_E2E_THEME=dark bun run --cwd e2e test
     {{ if desktop == "1" { just + " desktop-debug desktop-test desktop-smoke" } else { "true" } }}
 
@@ -309,7 +299,7 @@ clean rust="":
     set -euo pipefail
     shopt -s nullglob
     paths=(packages/*/dist components/*/dist apps/*/dist e2e/test-results e2e/playwright-report test-results playwright-report
-      apps/desktop/src-tauri/binaries apps/desktop/src-tauri/toolchain apps/desktop/src-tauri/builtin apps/desktop/src-tauri/gen)
+      apps/desktop/src-tauri/binaries apps/desktop/src-tauri/gen)
     [[ "{{ rust }}" == "1" ]] && paths+=(apps/desktop/src-tauri/target)
     while IFS= read -r f; do paths+=("$f"); done < <(find packages components apps e2e scripts -name node_modules -prune -o \( -name '*.tsbuildinfo' -o -name dist-types \) -print)
     for p in "${paths[@]}"; do
@@ -331,12 +321,12 @@ _package os bundles arch:
     fi
     [[ "$host" != other ]] || { echo "Plateforme non prise en charge : $(uname)." >&2; exit 1; }
     if [[ "{{ arch }}" != "{{ host_arch }}" ]]; then
-      echo "Architecture {{ arch }} impossible ici : le sidecar (bun --compile) et la chaîne d'outils native" >&2
-      echo "ne se construisent que pour l'hôte ({{ host_arch }}). La release utilise un runner par architecture." >&2
+      echo "Architecture {{ arch }} impossible ici : le sidecar (bun --compile) ne se construit" >&2
+      echo "que pour l'hôte ({{ host_arch }}). La release utilise un runner par architecture." >&2
       exit 1
     fi
     target="{{ arch }}-$suffix"
-    {{ just }} _ui sidecar toolchain
+    {{ just }} _ui sidecar
     flags=(--target "$target" --config '{"bundle":{"createUpdaterArtifacts":false}}')
     [[ -n "{{ bundles }}" ]] && flags+=(--bundles "{{ bundles }}")
     (cd apps/desktop && env -u TAURI_SIGNING_PRIVATE_KEY -u TAURI_SIGNING_PRIVATE_KEY_PASSWORD NO_STRIP=true bun run tauri build "${flags[@]}")

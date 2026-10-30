@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ComponentCall, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { type Daemon, startDaemon } from "../daemon";
@@ -28,7 +27,6 @@ export async function bootEmbedDaemon(testOrigins: string): Promise<EmbedDaemon>
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     integrations: parseIntegrationFlags({ "test-origins": testOrigins, "memory-secrets": true }),
   });

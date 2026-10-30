@@ -1,4 +1,3 @@
-import type { Toolchain } from "@kibo/devkit";
 import { type HostLoad, KiboError, type Session } from "@kibo/schema";
 import { type Clock, createClock, parseFixedNow } from "./clock";
 import type { ComponentsDeps } from "./components/service";
@@ -16,7 +15,6 @@ export type DaemonOptions = {
   sandboxPort: number;
   uiDir: string | null;
   dev: boolean;
-  toolchain: Toolchain;
   user: string;
   notifications?: Session["notifications"];
   notify?: (notice: Notice) => void;

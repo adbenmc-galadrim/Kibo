@@ -3,7 +3,6 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
@@ -24,7 +23,6 @@ async function launch(opts: Partial<DaemonOptions> = {}) {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     ...opts,
     home,

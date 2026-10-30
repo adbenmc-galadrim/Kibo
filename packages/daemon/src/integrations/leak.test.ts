@@ -2,7 +2,6 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest, RpcResult } from "@kibo/schema";
 import { z } from "zod";
 import { type Daemon, startDaemon } from "../daemon";
@@ -104,7 +103,6 @@ beforeAll(async () => {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     redactor: output.redactor,
     integrations: parseIntegrationFlags({

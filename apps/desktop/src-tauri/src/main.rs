@@ -271,7 +271,6 @@ fn main() {
         .setup(|app| {
             let resource_dir = app.path().resource_dir()?;
             let ui_dir = resource_dir.join("ui");
-            let toolchain_dir = resource_dir.join("toolchain");
             let (mut events, child) = app
                 .shell()
                 .sidecar("kibo-daemon")?
@@ -281,8 +280,6 @@ fn main() {
                     "0",
                     "--ui",
                     &ui_dir.to_string_lossy(),
-                    "--toolchain",
-                    &toolchain_dir.to_string_lossy(),
                 ])
                 .spawn()?;
             app.manage(Daemon(Mutex::new(Some(child))));

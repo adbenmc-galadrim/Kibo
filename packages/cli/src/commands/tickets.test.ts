@@ -3,7 +3,6 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "@kibo/daemon/daemon";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { type ProjectCommand, Sprint, Ticket } from "@kibo/schema";
 import { connectDaemon, type DaemonClient } from "../daemon-client";
 import { runCli } from "../index";
@@ -83,7 +82,6 @@ describe("kibo tickets against a real daemon", () => {
       sandboxPort: 0,
       uiDir: null,
       dev: false,
-      toolchain: DEV_TOOLCHAIN,
       user: "adam",
       integrations: { testOrigins: [], memorySecrets: true },
     });

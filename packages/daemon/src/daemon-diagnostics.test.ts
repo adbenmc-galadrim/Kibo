@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { AppInfo, isAppVersion, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { startDaemon } from "./daemon";
@@ -31,7 +30,6 @@ async function launch() {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),

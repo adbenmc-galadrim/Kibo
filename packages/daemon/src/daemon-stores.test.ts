@@ -3,7 +3,6 @@ import { afterEach, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { z } from "zod";
 import { startDaemon } from "./daemon";
 import { openDaemonStores } from "./daemon-stores";
@@ -27,7 +26,6 @@ async function start(home: string) {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     integrations: { testOrigins: [], memorySecrets: true },
   });

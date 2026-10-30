@@ -61,6 +61,15 @@ test("deux binaires externes accompagnent l'application : le démon et le hook",
   expect(conf.bundle.externalBin).toEqual(["binaries/kibo-daemon", "binaries/kibo-hook"]);
 });
 
+test("resources contain the UI only", () => {
+  expect(conf.bundle.resources).toEqual({ "../../../packages/ui/dist/": "ui/" });
+});
+
+test("the Linux packages depend on nothing beyond the system", () => {
+  expect(conf.bundle.linux.deb.depends).toBeUndefined();
+  expect(conf.bundle.linux.rpm.depends).toBeUndefined();
+});
+
 test("bundles explicit targets without msi, which refuses an alpha version", () => {
   expect(conf.bundle.targets).toEqual(["app", "dmg", "deb", "rpm", "appimage"]);
   expect(conf.bundle.createUpdaterArtifacts).toBe(true);

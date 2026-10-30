@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ProjectCommand, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { createGitFixture, installFakeGh } from "./code/testing/git-fixture";
@@ -44,7 +43,6 @@ async function launch(home: string, extra: Partial<DaemonOptions> = {}): Promise
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     home,
     ...extra,

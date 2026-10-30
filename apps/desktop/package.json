@@ -5,11 +5,10 @@
   "type": "module",
   "scripts": {
     "sidecar": "bun scripts/build-sidecar.ts",
-    "toolchain": "bun scripts/build-toolchain.ts",
     "tauri": "tauri",
-    "build": "bun run sidecar && bun run toolchain && tauri build",
-    "build:debug": "bun run sidecar && bun run toolchain && tauri build --debug --no-bundle",
-    "dev": "bun run sidecar && bun run toolchain && tauri dev",
+    "build": "bun run sidecar && tauri build",
+    "build:debug": "bun run sidecar && tauri build --debug --no-bundle",
+    "dev": "bun run sidecar && tauri dev",
     "smoke": "bun scripts/desktop-smoke.ts",
     "test": "bun test scripts"
   },

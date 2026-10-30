@@ -1,7 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
   AgentsState,
   ProjectAgentView,
@@ -84,7 +83,6 @@ async function boot(home: string, env: Env, prPollMs: number): Promise<Daemon> {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),

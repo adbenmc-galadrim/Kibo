@@ -21,7 +21,6 @@ jobs:
       - run: bun run knip
       - run: bun run --cwd packages/ui build
       - run: bun run budget
-      - run: bun apps/desktop/scripts/cli-smoke.ts
   unit:
     name: unit (${{ matrix.group }} ${{ matrix.shard }}/${{ matrix.of }})
     strategy:
@@ -114,7 +113,7 @@ jobs:
       - name: smoke
         timeout-minutes: 3
         run: bun run --cwd apps/desktop smoke
-  cli-smoke-macos:
+  cli-macos:
     runs-on: macos-latest
     timeout-minutes: 10
     steps:
@@ -122,4 +121,4 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.2 }
       - run: bun install --frozen-lockfile
-      - run: bun apps/desktop/scripts/cli-smoke.ts
+      - run: bun packages/cli/src/bin.ts --help

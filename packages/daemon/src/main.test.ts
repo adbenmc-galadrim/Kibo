@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { readDaemonInfo } from "./components/daemon-info";
 
 async function readLines(proc: { stdout: ReadableStream<Uint8Array> }, n: number): Promise<string> {
@@ -166,9 +165,9 @@ test("tells the ui to leave notifications to the desktop shell", async () => {
   expect(code).toBe(0);
 });
 
-test("accepts the sandbox port and toolchain options", async () => {
+test("accepts the sandbox port option", async () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
-  const args = ["--port", "0", "--sandbox-port", "0", "--toolchain", DEV_TOOLCHAIN.root];
+  const args = ["--port", "0", "--sandbox-port", "0"];
   const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), ...args], {
     env: { ...process.env, KIBO_HOME: home },
     stdout: "pipe",
@@ -193,10 +192,9 @@ test("accepts the sandbox port and toolchain options", async () => {
   expect(code).toBe(0);
 });
 
-test("an invalid toolchain stops the start with a clear message", async () => {
+test("the toolchain option no longer exists", async () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-main-"));
-  const missing = join(home, "no-toolchain");
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), "--port", "0", "--toolchain", missing], {
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "main.ts"), "--port", "0", "--toolchain", home], {
     env: { ...process.env, KIBO_HOME: home },
     stdout: "pipe",
     stderr: "pipe",
@@ -208,8 +206,7 @@ test("an invalid toolchain stops the start with a clear message", async () => {
   rmSync(home, { recursive: true, force: true });
   expect(code).not.toBe(0);
   expect(out).not.toContain("KIBO_READY");
-  expect(out).toMatch(/^KIBO_FATAL NOT_FOUND toolchain not found in /);
-  expect(err).toContain(`[kibo-daemon] cannot start: toolchain not found in ${missing}`);
+  expect(err).toContain("--toolchain");
   expect(info).toBeNull();
 });
 
