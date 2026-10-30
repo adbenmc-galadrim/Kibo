@@ -57,12 +57,8 @@ test("the rpm payload is compressed with zstd", () => {
   expect(conf.bundle.linux.rpm.compression).toEqual({ type: "zstd", level: 3 });
 });
 
-test("three external binaries ship with the app: the daemon, the hook and the demo agent", () => {
-  expect(conf.bundle.externalBin).toEqual([
-    "binaries/kibo-daemon",
-    "binaries/kibo-hook",
-    "binaries/kibo-demo-agent",
-  ]);
+test("deux binaires externes accompagnent l'application : le démon et le hook", () => {
+  expect(conf.bundle.externalBin).toEqual(["binaries/kibo-daemon", "binaries/kibo-hook"]);
 });
 
 test("bundles explicit targets without msi, which refuses an alpha version", () => {
