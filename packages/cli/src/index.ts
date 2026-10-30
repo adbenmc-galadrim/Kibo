@@ -16,7 +16,7 @@ import { frQuestions } from "./fr-questions";
 import { frSprints } from "./fr-sprints";
 import { frFeatures } from "./fr-write";
 
-export type CliIo = { home: string; out(line: string): void; err(line: string): void };
+type CliIo = { home: string; out(line: string): void; err(line: string): void };
 
 export function cliIo(): CliIo {
   return {

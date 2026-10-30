@@ -45,7 +45,7 @@ const inFolder = (projects: readonly ProjectSummary[], cwd: string): ProjectSumm
 const PREFIXED_KEY = /^([A-Za-z]{2,6})-\d+$/;
 const FEATURE_KEY = /^F\d+$/i;
 
-export type ProjectChoice = { project: ProjectSummary } | { problem: string; code: 1 | 2 };
+type ProjectChoice = { project: ProjectSummary } | { problem: string; code: 1 | 2 };
 
 export function chooseProject(
   projects: readonly ProjectSummary[],

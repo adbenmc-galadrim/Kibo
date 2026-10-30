@@ -5,7 +5,7 @@ export type SprintRef = { id: string; code: string; name: string };
 export type FeatureRef = { key: string; shortKey: string | null; title: string };
 export type TrackingFields = { sprint: SprintRef | null; feature: FeatureRef | null; optional: boolean };
 export type SprintSource = Pick<SprintView, "id" | "code" | "name" | "state" | "start" | "end">;
-export type SprintSelector = (t: Pick<TrackingFields, "sprint">) => boolean;
+type SprintSelector = (t: Pick<TrackingFields, "sprint">) => boolean;
 
 function rootOf(ticket: TicketView, byId: ReadonlyMap<string, TicketView>): TicketView {
   const parentOf = (t: TicketView) => (t.parentId === null ? undefined : byId.get(t.parentId));

@@ -9,7 +9,7 @@ import { printJson } from "./daemon-session";
 import { notFound, summaryOf, type TicketsContext } from "./tickets-context";
 
 export type WriteContext = TicketsContext & { stdin?: () => string };
-export type Usage = { usage: string | null };
+type Usage = { usage: string | null };
 
 export async function send(ctx: WriteContext, command: ProjectCommand): Promise<unknown> {
   return ctx.client.rpc({ method: "command", projectId: ctx.snapshot.meta.id, command });

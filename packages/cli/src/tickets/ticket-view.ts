@@ -68,7 +68,7 @@ export type TicketSummary = {
   startReason: StartReason | null;
   onHold: OnHold | null;
 } & TrackingFields;
-export type TicketsSource = {
+type TicketsSource = {
   workflow: Status[];
   tickets: TicketView[];
   links: Link[];
@@ -78,12 +78,12 @@ export type TicketsSource = {
 
 const isPlanRef = (r: ExternalRef): r is ImportRef => r.kind === "import_ref" && r.source === "plan";
 
-export const planIdOf = (t: { externalRefs: ExternalRef[] }): string | null =>
+const planIdOf = (t: { externalRefs: ExternalRef[] }): string | null =>
   t.externalRefs.find(isPlanRef)?.id ?? null;
 
 const PR_RANK: Record<PrState, number> = { open: 0, draft: 0, merged: 1, closed: 2 };
 
-export function relevantPr(t: TicketView): PrSummary | null {
+function relevantPr(t: TicketView): PrSummary | null {
   const prs = t.externalRefs.filter((r): r is GithubPrRef => r.kind === "github_pr");
   const best = [...prs].sort((a, b) => PR_RANK[a.state] - PR_RANK[b.state] || b.number - a.number)[0];
   return best
