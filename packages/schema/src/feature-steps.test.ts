@@ -28,3 +28,12 @@ test("each step carries its derived hold", () => {
     "31": null,
   });
 });
+
+test("a blocker comes first even when its rank is later", () => {
+  const steps = featureSteps({
+    feature: "f5",
+    tickets: [step("1", null), step("2", null), step("3", null)],
+    links: [{ from: "3", to: "1", type: "blocks" }],
+  });
+  expect(steps.map((s) => s.ticketId)).toEqual(["2", "3", "1"]);
+});

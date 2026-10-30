@@ -26,7 +26,6 @@ export * from "./config-validate";
 export * from "./daemon-events";
 export * from "./deadline-rows";
 export * from "./delivery";
-export * from "./delivery-order";
 export * from "./design";
 export * from "./design-problem";
 export * from "./design-url";
