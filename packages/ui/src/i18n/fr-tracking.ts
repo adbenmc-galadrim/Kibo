@@ -8,8 +8,4 @@ export const frTracking = {
   addPlanning: "Ajouter la page Planning",
   addOverview: "Ajouter la page Vue d'ensemble",
   newTicket: "Nouveau ticket",
-  hidden: {
-    notice: "Cet écran a été retiré : Kibo ne fait plus que du suivi.",
-    home: "Retour à l'Accueil",
-  },
 };

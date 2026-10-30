@@ -1,7 +1,5 @@
-import type { KiboErrorCode } from "@kibo/schema";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
-import { frIntegrationRows } from "./fr-integration-rows";
 import { frRetired } from "./fr-retired";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
@@ -70,8 +68,6 @@ export const fr = {
     moveFailed: "Impossible de déplacer la page.",
   },
   header: {
-    noRuns: "Aucun run pour l'instant.",
-    reply: "Répondre",
     userMenu: (user: string) => `Menu de ${user}`,
     theme: "Thème",
     settings: "Paramètres",
@@ -80,43 +76,14 @@ export const fr = {
     helpWhatsNew: "Quoi de neuf",
     helpReport: "Signaler un problème",
     helpAbout: "À propos de Kibo",
-    creations: (awaiting: number, running: number) => {
-      const parts = [
-        ...(awaiting > 0 ? [`${awaiting} ${awaiting > 1 ? "attendent" : "attend"} une action`] : []),
-        ...(running > 0 ? [`${running} en cours`] : []),
-      ];
-      return parts.length > 0 ? `Créations · ${parts.join(", ")}` : "Créations";
-    },
   },
   overview: {
     greeting: (user: string) => `Bonjour ${user}`,
     summary: (projects: number, open: number) =>
       `${projects} projet${projects > 1 ? "s" : ""} · ${open} ticket${open > 1 ? "s" : ""} ouvert${open > 1 ? "s" : ""}`,
     empty: "Aucun projet pour l'instant.",
-    inProgress: "en cours",
-    todo: "à faire",
-    blocked: "bloqué",
     progress: (done: number, total: number) => `${done} terminé${done > 1 ? "s" : ""} sur ${total}`,
     inbox: (n: number) => `Boîte de réception · ${n} ticket${n > 1 ? "s" : ""} sans projet`,
-  },
-  newProject: {
-    title: "Nouveau projet",
-    subtitle: "Un projet Kibo est lié à un dossier local (repo git). Tout reste sur ta machine.",
-    name: "Nom",
-    key: "Clé",
-    keyHelp: "2 à 6 majuscules, préfixe des tickets (KIB-12).",
-    keyReserved: (key: string) => `La clé ${key} est réservée à la boîte de réception.`,
-    folder: "Dossier du projet",
-    folderHelp: "Facultatif. Chemin absolu du dépôt.",
-    start: "Démarrer depuis",
-    submit: "Créer le projet",
-    errors: {
-      INVALID_INPUT: "Projet refusé : cette clé est peut-être déjà prise, ou un champ est invalide.",
-      STORE_CORRUPT: "Le stockage du workspace est illisible.",
-      UNAUTHORIZED: "Ce navigateur n'est plus appairé : recharge la page.",
-      TIMEOUT: "Le démon n'a pas répondu à temps.",
-      INTERNAL: "Erreur interne du démon.",
-    } satisfies Partial<Record<KiboErrorCode, string>>,
   },
   newPage: {
     title: "Nouvelle page",
@@ -133,20 +100,12 @@ export const fr = {
   projectHome: {
     created: (name: string) => `Projet créé : ${name}`,
     help: "Ajoute une première page pour y poser un Kanban ou une liste de tickets.",
-    propose: "Proposer",
   },
   mine: {
-    tabs: "Filtre des tickets",
-    assigned: "Assignés à moi",
-    agents: "Mes agents",
     summary: (tickets: number, projects: number) =>
       `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
-    assign: "Assigner",
-    noFolder: "Ajoute un dossier au projet pour lancer un agent.",
-    file: "Rattacher…",
     empty: {
       assigned: "Aucun ticket ouvert ne t'est assigné.",
-      agents: "Aucun ticket ouvert n'est confié à un agent.",
     },
   },
   page: {
@@ -182,51 +141,11 @@ export const fr = {
     description: "Description",
     domain: "Domaine",
     noDomain: "Aucun",
-    assignAgent: "Assigner à un agent",
     domainFailed: "Impossible de changer le domaine.",
     prState: { open: "ouverte", draft: "brouillon", merged: "fusionnée", closed: "fermée" },
   },
   agents: {
-    bar: "Agents",
-    summary: (used: number, total: number, queued: number, waiting: number, subagents = 0) =>
-      [
-        `${used}/${total} place${used > 1 ? "s" : ""}`,
-        subagents > 0 && `${subagents} sous-agent${subagents > 1 ? "s" : ""}`,
-        queued > 0 && `${queued} en file`,
-        waiting > 0 && `${waiting} attend${waiting > 1 ? "ent" : ""} une réponse`,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-    resize: "Redimensionner le volet des agents",
-    answer: "Répondre",
-    answerTo: (label: string) => `Répondre à ${label}`,
-    daemon: "Kibo · connecté",
-    expand: "Déplier les agents",
-    collapse: "Replier les agents",
-    launch: "Lancer un agent",
-    journal: (label: string) => `Journal de ${label}`,
-    reply: {
-      label: (label: string) => `Réponse à ${label}`,
-      placeholder: "Ta réponse…",
-      hint: "Reprend la session",
-      send: "Envoyer",
-      failed: "Impossible d'envoyer la réponse.",
-    },
-    pause: "Mettre en pause l'admission",
-    resume: "Reprendre l'admission",
-    stop: "Arrêter",
-    events: {
-      loaded: (n: number) => `brief.md + ${n} guideline${n > 1 ? "s" : ""} chargé${n > 1 ? "s" : ""}`,
-      resumed: "reprise de la session",
-      denied: (tools: string) => `actions refusées : ${tools}`,
-    },
     questionCount,
-    position: (n: number) => `En file #${n}`,
-    workspace: {
-      worktree: (branch: string) => `worktree ${branch}`,
-      repo: "dossier du projet",
-      isolated: "dossier isolé",
-    },
     errors: {
       WORKSPACE_FAILED: "espace de travail indisponible",
       PROJECT_FOLDER_MISSING: "projet sans dossier local",
@@ -243,13 +162,10 @@ export const fr = {
     workspace: "Workspace",
     general: "Général",
     appearance: "Apparence",
-    domains: "Domaines & guidelines",
     integrations: "Intégrations",
-    components: "Composants",
     shortcuts: "Raccourcis",
     generalSubtitle: "Mises à jour et outils en ligne de commande.",
   },
-  integrations: { rows: frIntegrationRows },
   marketSources: { title: "Sources de composants" },
   ...frCode,
   ...frComponents,
@@ -257,10 +173,7 @@ export const fr = {
     cancel: "Annuler",
     close: "Fermer",
     error: "Une erreur est survenue.",
-    confirm: "Confirmer",
     delete: "Supprimer",
     rename: "Renommer",
-    save: "Enregistrer",
-    copied: "Copié",
   },
 } as const;

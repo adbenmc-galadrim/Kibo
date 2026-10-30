@@ -40,7 +40,6 @@ export const frFiles = {
   loadFailed: "Impossible de lister les fichiers du projet.",
   list: "Fichiers du projet",
   columns: { name: "Nom", kind: "Genre", size: "Taille", date: "Date" },
-  kinds: KINDS,
   kind: (kind: ProjectAssetKind) => KINDS[kind],
   size: formatBytes,
   date: (ms: number) => day.format(new Date(ms)),
@@ -55,7 +54,6 @@ export const frFiles = {
   removeHelp:
     "Le fichier est effacé de cet appareil. Les widgets qui l'utilisent afficheront « Fichier introuvable ».",
   cancel: "Annuler",
-  close: "Fermer",
   unsupported: (name: string) => {
     const dot = name.lastIndexOf(".");
     return `Format non pris en charge : ${dot < 0 ? name : name.slice(dot).toLowerCase()}`;
