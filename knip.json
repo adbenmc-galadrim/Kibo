@@ -23,7 +23,6 @@
       "entry": [
         "src/server.ts",
         "src/daemon.ts",
-        "src/components/component-worker.ts",
         "src/**/fake-*.ts",
         "src/**/*.test.ts",
         "src/**/*test-helper*.{ts,tsx}",
