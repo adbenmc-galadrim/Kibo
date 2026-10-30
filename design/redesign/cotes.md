@@ -99,7 +99,7 @@ Espacements flex relevés (px) : 0 (145), 1,5 (10), 2 (16), 3 (25), 4 (47), 5 (3
 ## P1 bis · Vue d'ensemble
 
 Board `P1 bis · Vue d'ensemble` (sombre) et `P1 bis · Vue d'ensemble (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign » ; écran 210 de la page « 35 · Redesign Silo » du fichier « Kibo ».
-Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition-vue-ensemble-v2-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition-vue-ensemble-v2-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -119,9 +119,9 @@ Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -236,36 +236,36 @@ Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition
 131. « F7 » (x 281, y 1027)
 132. « Rapport de centre journalier » (x 304, y 1027)
 133. « aujourd'hui » (x 616,4, y 1032)
-134. « En ce moment » (x 302, y 1094,5)
-135. « 2 sessions T3 Code » (x 281, y 1114,5)
-136. « F5 » (x 454, y 1085,5)
-137. « SILO-33 » (x 488, y 1085,5)
-138. « Écran d'envoi hors ligne » (x 547, y 1085)
-139. « Étape 7/12 · Porte qualité » (x 859, y 1085,5)
-140. « 42 min » (x 1020, y 1085,5)
-141. « F4 » (x 454, y 1122,5)
-142. « SILO-45 » (x 488, y 1122,5)
-143. « Conflits de saisie » (x 547, y 1122)
-144. « Étape 9/12 · Review » (x 859, y 1122,5)
-145. « 18 min » (x 1023, y 1122,5)
-146. « Activité » (x 304, y 1182,5)
-147. « git » (x 949, y 1183,5)
-148. « full-delivery » (x 984, y 1183,5)
-149. « 15:04 » (x 281, y 1225,5)
-150. « PR #22 ouverte » (x 355, y 1225)
-151. « SILO-32 » (x 959, y 1225,5)
-152. « F5 » (x 1038, y 1225,5)
-153. « 14:51 » (x 281, y 1264,5)
-154. « Étape 7 · Porte qualité » (x 355, y 1264)
-155. « SILO-33 » (x 959, y 1264,5)
-156. « F5 » (x 1038, y 1264,5)
-157. « 14:40 » (x 281, y 1303,5)
-158. « Agent de projet · lot n° 7 proposé » (x 355, y 1303)
-159. « Agent de projet » (x 974, y 1303,5)
-160. « 14:36 » (x 281, y 1342,5)
-161. « PR #18 fusionnée · F3 livrée » (x 355, y 1342)
-162. « SILO-21 » (x 959, y 1342,5)
-163. « F3 » (x 1038, y 1342,5)
+134. « En ce moment » (x 302, y 1130,5)
+135. « 2 sessions T3 Code » (x 281, y 1150,5)
+136. « F5 » (x 454, y 1121,5)
+137. « SILO-33 » (x 488, y 1121,5)
+138. « Écran d'envoi hors ligne » (x 547, y 1121)
+139. « Étape 7/12 · Porte qualité » (x 859, y 1121,5)
+140. « 42 min » (x 1020, y 1121,5)
+141. « F4 » (x 454, y 1158,5)
+142. « SILO-45 » (x 488, y 1158,5)
+143. « Conflits de saisie » (x 547, y 1158)
+144. « Étape 9/12 · Review » (x 859, y 1158,5)
+145. « 18 min » (x 1023, y 1158,5)
+146. « Activité » (x 304, y 1218,5)
+147. « git » (x 949, y 1219,5)
+148. « full-delivery » (x 984, y 1219,5)
+149. « 15:04 » (x 281, y 1261,5)
+150. « PR #22 ouverte » (x 355, y 1261)
+151. « SILO-32 » (x 959, y 1261,5)
+152. « F5 » (x 1038, y 1261,5)
+153. « 14:51 » (x 281, y 1300,5)
+154. « Étape 7 · Porte qualité » (x 355, y 1300)
+155. « SILO-33 » (x 959, y 1300,5)
+156. « F5 » (x 1038, y 1300,5)
+157. « 14:40 » (x 281, y 1339,5)
+158. « Agent de projet · lot n° 7 proposé » (x 355, y 1339)
+159. « Agent de projet » (x 974, y 1339,5)
+160. « 14:36 » (x 281, y 1378,5)
+161. « PR #18 fusionnée · F3 livrée » (x 355, y 1378)
+162. « SILO-21 » (x 959, y 1378,5)
+163. « F3 » (x 1038, y 1378,5)
 164. « Agent de projet » (x 1158, y 13)
 165. « Suivi à jour · il y a 4 min » (x 1158, y 32)
 166. « Résumé du jour » (x 1118, y 79)
@@ -283,15 +283,15 @@ Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition
 178. « Valider (3) » (x 1142, y 479)
 179. « Refuser » (x 1227, y 479)
 180. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
-181. « Demander à l'agent de projet… » (x 1130, y 1357)
+181. « Demander à l'agent de projet… » (x 1130, y 1397)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P1 bis · Vue d'ensemble** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P1 bis · Vue d'ensemble** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -341,16 +341,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -364,7 +364,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 301 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -632,7 +632,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -713,121 +713,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1029, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 1031, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 1032, 64 × 15
-        - **live** (bloc) · x 265, y 1069, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1069, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1094,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1096, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1099, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1094,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1114,5, 107 × 15
-          - **box** (bloc) · x 415, y 1069, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1069, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1075, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1084,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1084,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1087, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1085,5, 15 × 15
-              - **box** (bloc) · x 488, y 1085, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1085,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1085, 143 × 16
-              - **box** (bloc) · x 767, y 1085,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1087, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1087, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1085,5, 142 × 15
-              - **box** (bloc) · x 989, y 1085,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1085,5, 39 × 15
-            - **line** (bloc) · x 432, y 1111, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1112, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1121,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1121,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1124, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1122,5, 15 × 15
-              - **box** (bloc) · x 488, y 1122, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1122,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1122, 105 × 16
-              - **box** (bloc) · x 767, y 1122,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1124, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1124, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1122,5, 112 × 15
-              - **box** (bloc) · x 989, y 1122,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1122,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1169, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1169, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1183,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1182,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1181,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1183,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1181,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1183,5, 69 × 15
-          - **line** (bloc) · x 265, y 1213, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1214, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1225,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1225,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1226, 14 × 14
-            - **box** (bloc) · x 355, y 1225, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1225, 91 × 16
-            - **box** (bloc) · x 949, y 1224,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1225,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1224,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1227, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1225,5, 15 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 130 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1303, 194 × 16
-            - **box** (bloc) · x 949, y 1303,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1303,5, 85 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1342, 161 × 16
-            - **box** (bloc) · x 949, y 1341,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1342,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1341,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1344, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1342,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1055, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1056, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1063,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1067, 13 × 13
+        - **live** (bloc) · x 265, y 1105, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1105, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1130,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1132, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1135, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1130,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1150,5, 107 × 15
+          - **box** (bloc) · x 415, y 1105, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1105, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1111, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1120,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1120,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1123, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1121,5, 15 × 15
+              - **box** (bloc) · x 488, y 1121, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1121,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1121, 143 × 16
+              - **box** (bloc) · x 767, y 1121,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1123, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1123, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1121,5, 142 × 15
+              - **box** (bloc) · x 989, y 1121,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1121,5, 39 × 15
+            - **line** (bloc) · x 432, y 1147, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1148, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1157,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1157,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1160, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1158,5, 15 × 15
+              - **box** (bloc) · x 488, y 1158, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1158,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1158, 105 × 16
+              - **box** (bloc) · x 767, y 1158,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1160, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1160, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1158,5, 112 × 15
+              - **box** (bloc) · x 989, y 1158,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1158,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1205, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1205, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1219,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1218,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1217,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1219,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1217,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1219,5, 69 × 15
+          - **line** (bloc) · x 265, y 1249, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1250, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1261,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1261,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1262, 14 × 14
+            - **box** (bloc) · x 355, y 1261, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1261, 91 × 16
+            - **box** (bloc) · x 949, y 1260,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1261,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1260,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1263, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1261,5, 15 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 130 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1339, 194 × 16
+            - **box** (bloc) · x 949, y 1339,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1339,5, 85 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1378, 161 × 16
+            - **box** (bloc) · x 949, y 1377,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1378,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1377,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1380, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1378,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 1100, y 0, 340 × 60 · flex ligne, espacement 10, marges internes 0 18 0 18, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1118, y 15, 30 × 30 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 15 · dimension fixe/fixe
           - icône `bot` 17 px, `brand` — x 1124,5, y 21,5, 17 × 17
@@ -879,11 +883,11 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - **box** (bloc) · x 1118, y 521, 304 × 40 · flex ligne, espacement 8, marges internes 4 0 0 0, alignement start/start · dimension remplit/auto
           - icône `refresh` 13 px, `mfg` — x 1118, y 525, 13 × 13
           - « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » — Geist 12 / 400, interligne 1,5, couleur `mfg` — x 1139, y 525, 283 × 36
-      - **line** (bloc) · x 1100, y 1329, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 1100, y 1330, 340 × 70 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1344, 304 × 42 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Demander à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1357, 179 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1357,5, 15 × 15
+      - **line** (bloc) · x 1100, y 1369, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **box** (bloc) · x 1100, y 1370, 340 × 70 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1384, 304 × 42 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Demander à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1397, 179 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1397,5, 15 × 15
 
 ## P2 · Planning
 
@@ -1088,8 +1092,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Colonnes » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1282, y 73, 55 × 15
             - **box** (bloc) · x 1349, y 69, 65 × 23 · flex ligne, espacement 0, marges internes 4 10 4 10, alignement center/start · rayon 5
               - « Bandes » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 1359, y 73, 45 × 15
-        - **sprints** (bloc) · x 265, y 108, 1151 × 874 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
-          - **col reserve** (bloc) · x 265, y 108, 214 × 874 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
+        - **sprints** (bloc) · x 265, y 108, 1151 × 840 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
+          - **col reserve** (bloc) · x 265, y 108, 214 × 840 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 275, y 118, 194 × 40 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 277, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - icône `inbox` 14 px, `mfg` — x 277, y 121, 14 × 14
@@ -1110,7 +1114,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « suivante : SILO-91 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 366, y 239, 91 × 14
             - **box** (bloc) · x 275, y 273, 194 × 83 · flex colonne, espacement 6, marges internes 8 4 8 4, alignement start/start · dimension remplit/auto
               - « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » — Geist 11,5 / 400, interligne 1,45, couleur `dim` — x 279, y 281, 186 × 67
-          - **col S41** (bloc) · x 491, y 108, 214 × 874 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S41** (bloc) · x 491, y 108, 214 × 840 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 501, y 118, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 503, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S41 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 503, y 120, 24 × 16
@@ -1140,7 +1144,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - icône `circleCheck` 13 px, `green` — x 635, y 301,5, 13 × 13
                 - « livrée » — Geist 11,5 / 400, interligne 1,2, couleur `green` — x 654, y 301, 29 × 14
               - « Voir ses box affectés » — Geist 13 / 500, interligne 1,2, couleur `mfg` — x 513, y 323, 170 × 16
-          - **col S42** (bloc) · x 717, y 108, 214 × 874 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
+          - **col S42** (bloc) · x 717, y 108, 214 × 840 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 727, y 118, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 729, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S42 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 729, y 120, 24 × 16
@@ -1208,7 +1212,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 727, y 547, 194 × 54 · flex ligne, espacement 6, marges internes 6 8 6 8, alignement center/start · fond `amberSoft` · rayon 6 · dimension remplit/auto
               - icône `clockAlert` 13 px, `amber` — x 735, y 567,5, 13 × 13
               - « F4 ne tiendra pas (1 étape restante) · F5 ne tiendra pas (4 étapes restantes) » — Geist 11,5 / 400, interligne 1,2, couleur `amber` — x 754, y 553, 159 × 42
-          - **col S43** (bloc) · x 943, y 108, 214 × 874 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S43** (bloc) · x 943, y 108, 214 × 840 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 953, y 118, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 955, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S43 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 955, y 120, 24 × 16
@@ -1247,7 +1251,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 965, y 382, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « 0/4 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 965, y 382, 59 × 14
                 - « suivante : SILO-71 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1045, y 382, 90 × 14
-          - **col S44** (bloc) · x 1169, y 108, 214 × 874 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S44** (bloc) · x 1169, y 108, 214 × 840 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 1179, y 118, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 1181, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S44 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 1181, y 120, 24 × 16
@@ -1275,6 +1279,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `sprint` 16 px, `fg` — x 1268, y 338,5, 16 × 16
               - « Déposer pour planifier en S44 » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1192, y 360,5, 168 × 15
               - « 26–30 oct. » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1248, y 381,5, 56 × 14
+        - **legend-bar** (bloc) · x 265, y 962, 1151 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/fixe
+          - **legend-toggle** (bloc) · x 265, y 962, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 268,5, y 965,5, 13 × 13
   - **dragging F9** (bloc) · x 1199, y 389, 194 × 73 · flex colonne, espacement 8, marges internes 10 12 10 12, alignement start/start · fond `card` · bordure 1 `fg` · rayon 8
     - **box** (bloc) · x 1211, y 399, 170 × 13 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
       - icône `grip` 13 px, `mfg` — x 1211, y 399, 13 × 13
@@ -2201,7 +2208,7 @@ Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `sc
 ## P1 bis v3 · Vue d'ensemble
 
 Board `P1 bis v3 · Vue d'ensemble` (sombre) et `P1 bis v3 · Vue d'ensemble (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition-vue-ensemble-v3-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition-vue-ensemble-v3-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -2221,9 +2228,9 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -2339,36 +2346,36 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 132. « F7 » (x 281, y 1027)
 133. « Rapport de centre journalier » (x 304, y 1027)
 134. « aujourd'hui » (x 616,4, y 1032)
-135. « En ce moment » (x 302, y 1094,5)
-136. « 2 sessions T3 Code » (x 281, y 1114,5)
-137. « F5 » (x 454, y 1085,5)
-138. « SILO-33 » (x 488, y 1085,5)
-139. « Écran d'envoi hors ligne » (x 547, y 1085)
-140. « Étape 7/12 · Porte qualité » (x 859, y 1085,5)
-141. « 42 min » (x 1020, y 1085,5)
-142. « F4 » (x 454, y 1122,5)
-143. « SILO-45 » (x 488, y 1122,5)
-144. « Conflits de saisie » (x 547, y 1122)
-145. « Étape 9/12 · Review » (x 859, y 1122,5)
-146. « 18 min » (x 1023, y 1122,5)
-147. « Activité » (x 304, y 1182,5)
-148. « git » (x 949, y 1183,5)
-149. « full-delivery » (x 984, y 1183,5)
-150. « 15:04 » (x 281, y 1225,5)
-151. « PR #22 ouverte » (x 355, y 1225)
-152. « SILO-32 » (x 959, y 1225,5)
-153. « F5 » (x 1038, y 1225,5)
-154. « 14:51 » (x 281, y 1264,5)
-155. « Étape 7/12 · Porte qualité » (x 355, y 1264)
-156. « SILO-33 » (x 959, y 1264,5)
-157. « F5 » (x 1038, y 1264,5)
-158. « 14:40 » (x 281, y 1303,5)
-159. « Agent de projet · lot n° 7 proposé » (x 355, y 1303)
-160. « Agent de projet » (x 974, y 1303,5)
-161. « 14:36 » (x 281, y 1342,5)
-162. « PR #18 fusionnée · F3 livrée » (x 355, y 1342)
-163. « SILO-21 » (x 959, y 1342,5)
-164. « F3 » (x 1038, y 1342,5)
+135. « En ce moment » (x 302, y 1130,5)
+136. « 2 sessions T3 Code » (x 281, y 1150,5)
+137. « F5 » (x 454, y 1121,5)
+138. « SILO-33 » (x 488, y 1121,5)
+139. « Écran d'envoi hors ligne » (x 547, y 1121)
+140. « Étape 7/12 · Porte qualité » (x 859, y 1121,5)
+141. « 42 min » (x 1020, y 1121,5)
+142. « F4 » (x 454, y 1158,5)
+143. « SILO-45 » (x 488, y 1158,5)
+144. « Conflits de saisie » (x 547, y 1158)
+145. « Étape 9/12 · Review » (x 859, y 1158,5)
+146. « 18 min » (x 1023, y 1158,5)
+147. « Activité » (x 304, y 1218,5)
+148. « git » (x 949, y 1219,5)
+149. « full-delivery » (x 984, y 1219,5)
+150. « 15:04 » (x 281, y 1261,5)
+151. « PR #22 ouverte » (x 355, y 1261)
+152. « SILO-32 » (x 959, y 1261,5)
+153. « F5 » (x 1038, y 1261,5)
+154. « 14:51 » (x 281, y 1300,5)
+155. « Étape 7/12 · Porte qualité » (x 355, y 1300)
+156. « SILO-33 » (x 959, y 1300,5)
+157. « F5 » (x 1038, y 1300,5)
+158. « 14:40 » (x 281, y 1339,5)
+159. « Agent de projet · lot n° 7 proposé » (x 355, y 1339)
+160. « Agent de projet » (x 974, y 1339,5)
+161. « 14:36 » (x 281, y 1378,5)
+162. « PR #18 fusionnée · F3 livrée » (x 355, y 1378)
+163. « SILO-21 » (x 959, y 1378,5)
+164. « F3 » (x 1038, y 1378,5)
 165. « Agent de projet · Silo » (x 1154, y 20)
 166. « Fais le point du jour » (x 1194, y 83)
 167. « 14:38 » (x 1194, y 106)
@@ -2385,15 +2392,15 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 178. « bloque F6, prévue en S43 » (x 1158, y 448)
 179. « Valider (3) » (x 1142, y 491)
 180. « Refuser » (x 1227, y 491)
-181. « Écris à l'agent de projet… » (x 1130, y 1358)
+181. « Écris à l'agent de projet… » (x 1130, y 1398)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P1 bis v3 · Vue d'ensemble** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P1 bis v3 · Vue d'ensemble** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -2443,16 +2450,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -2466,7 +2473,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -2737,7 +2744,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -2811,121 +2818,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1029, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 1031, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 1032, 64 × 15
-        - **live** (bloc) · x 265, y 1069, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1069, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1094,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1096, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1099, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1094,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1114,5, 107 × 15
-          - **box** (bloc) · x 415, y 1069, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1069, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1075, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1084,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1084,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1087, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1085,5, 15 × 15
-              - **box** (bloc) · x 488, y 1085, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1085,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1085, 143 × 16
-              - **box** (bloc) · x 767, y 1085,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1087, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1087, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1085,5, 142 × 15
-              - **box** (bloc) · x 989, y 1085,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1085,5, 39 × 15
-            - **line** (bloc) · x 432, y 1111, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1112, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1121,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1121,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1124, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1122,5, 15 × 15
-              - **box** (bloc) · x 488, y 1122, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1122,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1122, 105 × 16
-              - **box** (bloc) · x 767, y 1122,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1124, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1124, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1122,5, 112 × 15
-              - **box** (bloc) · x 989, y 1122,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1122,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1169, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1169, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1183,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1182,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1181,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1183,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1181,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1183,5, 69 × 15
-          - **line** (bloc) · x 265, y 1213, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1214, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1225,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1225,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1226, 14 × 14
-            - **box** (bloc) · x 355, y 1225, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1225, 91 × 16
-            - **box** (bloc) · x 949, y 1224,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1225,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1224,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1227, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1225,5, 15 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 148 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1303, 194 × 16
-            - **box** (bloc) · x 949, y 1303,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1303,5, 85 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1342, 161 × 16
-            - **box** (bloc) · x 949, y 1341,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1342,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1341,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1344, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1342,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1055, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1056, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1063,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1067, 13 × 13
+        - **live** (bloc) · x 265, y 1105, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1105, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1130,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1132, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1135, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1130,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1150,5, 107 × 15
+          - **box** (bloc) · x 415, y 1105, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1105, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1111, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1120,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1120,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1123, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1121,5, 15 × 15
+              - **box** (bloc) · x 488, y 1121, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1121,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1121, 143 × 16
+              - **box** (bloc) · x 767, y 1121,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1123, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1123, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1121,5, 142 × 15
+              - **box** (bloc) · x 989, y 1121,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1121,5, 39 × 15
+            - **line** (bloc) · x 432, y 1147, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1148, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1157,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1157,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1160, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1158,5, 15 × 15
+              - **box** (bloc) · x 488, y 1158, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1158,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1158, 105 × 16
+              - **box** (bloc) · x 767, y 1158,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1160, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1160, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1158,5, 112 × 15
+              - **box** (bloc) · x 989, y 1158,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1158,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1205, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1205, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1219,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1218,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1217,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1219,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1217,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1219,5, 69 × 15
+          - **line** (bloc) · x 265, y 1249, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1250, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1261,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1261,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1262, 14 × 14
+            - **box** (bloc) · x 355, y 1261, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1261, 91 × 16
+            - **box** (bloc) · x 949, y 1260,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1261,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1260,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1263, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1261,5, 15 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 148 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1339, 194 × 16
+            - **box** (bloc) · x 949, y 1339,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1339,5, 85 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1378, 161 × 16
+            - **box** (bloc) · x 949, y 1377,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1378,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1377,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1380, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1378,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -2940,7 +2951,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1274 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -2983,16 +2994,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 491, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 486, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 491, 45 × 15
-      - **line** (bloc) · x 1100, y 1331, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1332, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1346, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1358, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1358,5, 15 × 15
+      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
 
 ## P1 bis v3 · En retard au 18 oct.
 
 Board `P1 bis v3 · En retard au 18 oct.` (sombre) et `P1 bis v3 · En retard au 18 oct. (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/proposition-vue-ensemble-v3-retard-light.png`, 1440 × 1440 px (échelle 1).
+Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/proposition-vue-ensemble-v3-retard-light.png`, 1440 × 1480 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -3012,9 +3023,9 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1363)
-18. « AB » (x 21, y 1402)
-19. « Adam Ben Mchichi » (x 48, y 1400,5)
+17. « Paramètres » (x 41, y 1403)
+18. « AB » (x 21, y 1442)
+19. « Adam Ben Mchichi » (x 48, y 1440,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -3135,36 +3146,36 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 137. « F7 » (x 281, y 1066)
 138. « Rapport de centre journalier » (x 304, y 1066)
 139. « aujourd'hui » (x 656,1, y 1071)
-140. « En ce moment » (x 302, y 1133,5)
-141. « 2 sessions T3 Code » (x 281, y 1153,5)
-142. « F5 » (x 454, y 1124,5)
-143. « SILO-33 » (x 488, y 1124,5)
-144. « Écran d'envoi hors ligne » (x 547, y 1124)
-145. « Étape 7/12 · Porte qualité » (x 859, y 1124,5)
-146. « 42 min » (x 1020, y 1124,5)
-147. « F4 » (x 454, y 1161,5)
-148. « SILO-45 » (x 488, y 1161,5)
-149. « Conflits de saisie » (x 547, y 1161)
-150. « Étape 9/12 · Review » (x 859, y 1161,5)
-151. « 18 min » (x 1023, y 1161,5)
-152. « Activité » (x 304, y 1221,5)
-153. « git » (x 949, y 1222,5)
-154. « full-delivery » (x 984, y 1222,5)
-155. « 15:04 » (x 281, y 1264,5)
-156. « PR #22 ouverte » (x 355, y 1264)
-157. « SILO-32 » (x 959, y 1264,5)
-158. « F5 » (x 1038, y 1264,5)
-159. « 14:51 » (x 281, y 1303,5)
-160. « Étape 7/12 · Porte qualité » (x 355, y 1303)
-161. « SILO-33 » (x 959, y 1303,5)
-162. « F5 » (x 1038, y 1303,5)
-163. « 14:40 » (x 281, y 1342,5)
-164. « Agent de projet · lot n° 7 proposé » (x 355, y 1342)
-165. « Agent de projet » (x 974, y 1342,5)
-166. « 14:36 » (x 281, y 1381,5)
-167. « PR #18 fusionnée · F3 livrée » (x 355, y 1381)
-168. « SILO-21 » (x 959, y 1381,5)
-169. « F3 » (x 1038, y 1381,5)
+140. « En ce moment » (x 302, y 1169,5)
+141. « 2 sessions T3 Code » (x 281, y 1189,5)
+142. « F5 » (x 454, y 1160,5)
+143. « SILO-33 » (x 488, y 1160,5)
+144. « Écran d'envoi hors ligne » (x 547, y 1160)
+145. « Étape 7/12 · Porte qualité » (x 859, y 1160,5)
+146. « 42 min » (x 1020, y 1160,5)
+147. « F4 » (x 454, y 1197,5)
+148. « SILO-45 » (x 488, y 1197,5)
+149. « Conflits de saisie » (x 547, y 1197)
+150. « Étape 9/12 · Review » (x 859, y 1197,5)
+151. « 18 min » (x 1023, y 1197,5)
+152. « Activité » (x 304, y 1257,5)
+153. « git » (x 949, y 1258,5)
+154. « full-delivery » (x 984, y 1258,5)
+155. « 15:04 » (x 281, y 1300,5)
+156. « PR #22 ouverte » (x 355, y 1300)
+157. « SILO-32 » (x 959, y 1300,5)
+158. « F5 » (x 1038, y 1300,5)
+159. « 14:51 » (x 281, y 1339,5)
+160. « Étape 7/12 · Porte qualité » (x 355, y 1339)
+161. « SILO-33 » (x 959, y 1339,5)
+162. « F5 » (x 1038, y 1339,5)
+163. « 14:40 » (x 281, y 1378,5)
+164. « Agent de projet · lot n° 7 proposé » (x 355, y 1378)
+165. « Agent de projet » (x 974, y 1378,5)
+166. « 14:36 » (x 281, y 1417,5)
+167. « PR #18 fusionnée · F3 livrée » (x 355, y 1417)
+168. « SILO-21 » (x 959, y 1417,5)
+169. « F3 » (x 1038, y 1417,5)
 170. « Agent de projet · Silo » (x 1154, y 20)
 171. « Fais le point du jour » (x 1194, y 83)
 172. « 16 oct. · 14:38 » (x 1194, y 106)
@@ -3181,15 +3192,15 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 183. « bloque F6, prévue en S43 » (x 1158, y 468)
 184. « Valider (3) » (x 1142, y 511)
 185. « Refuser » (x 1227, y 511)
-186. « Écris à l'agent de projet… » (x 1130, y 1398)
+186. « Écris à l'agent de projet… » (x 1130, y 1438)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P1 bis v3 · En retard au 18 oct.** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P1 bis v3 · En retard au 18 oct.** (bloc) · x 0, y 0, 1440 × 1480 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1480 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1480 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -3239,16 +3250,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
-      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1396, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1403,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1403, 69 × 16
+      - **box** (bloc) · x 10, y 1428, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1436, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1442, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1440,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1441, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1480 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1480 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -3262,7 +3273,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1431 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -3541,7 +3552,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 824, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 826, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 824, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 863, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 863, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 863, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 877,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 876,5, 74 × 17
@@ -3622,121 +3633,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1068, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 650,1, y 1070, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 656,1, y 1071, 64 × 15
-        - **live** (bloc) · x 265, y 1108, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1108, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1133,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1135, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1138, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1133,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1153,5, 107 × 15
-          - **box** (bloc) · x 415, y 1108, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1108, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1114, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1123,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1123,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1126, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1124,5, 15 × 15
-              - **box** (bloc) · x 488, y 1124, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1124,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1124, 143 × 16
-              - **box** (bloc) · x 767, y 1124,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1126, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1126, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1124,5, 142 × 15
-              - **box** (bloc) · x 989, y 1124,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1124,5, 39 × 15
-            - **line** (bloc) · x 432, y 1150, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1151, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1160,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1160,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1163, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1161,5, 15 × 15
-              - **box** (bloc) · x 488, y 1161, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1161,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1161, 105 × 16
-              - **box** (bloc) · x 767, y 1161,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1163, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1163, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1163, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1163, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1161,5, 112 × 15
-              - **box** (bloc) · x 989, y 1161,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1161,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1208, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1208, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1222,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1221,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1220,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1222,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1220,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1222,5, 69 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 91 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1303, 148 × 16
-            - **box** (bloc) · x 949, y 1302,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1303,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1302,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1305, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1303,5, 15 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1342, 194 × 16
-            - **box** (bloc) · x 949, y 1342,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1342,5, 85 × 15
-          - **line** (bloc) · x 265, y 1369, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1370, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1381,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1381,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1382, 14 × 14
-            - **box** (bloc) · x 355, y 1381, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1381, 161 × 16
-            - **box** (bloc) · x 949, y 1380,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1381,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1380,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1383, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1381,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1094, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1095, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1102,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1106, 13 × 13
+        - **live** (bloc) · x 265, y 1144, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1144, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1169,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1171, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1174, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1169,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1189,5, 107 × 15
+          - **box** (bloc) · x 415, y 1144, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1144, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1150, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1159,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1159,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1162, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1160,5, 15 × 15
+              - **box** (bloc) · x 488, y 1160, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1160,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1160, 143 × 16
+              - **box** (bloc) · x 767, y 1160,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1162, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1162, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1160,5, 142 × 15
+              - **box** (bloc) · x 989, y 1160,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1160,5, 39 × 15
+            - **line** (bloc) · x 432, y 1186, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1187, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1196,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1196,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1199, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1197,5, 15 × 15
+              - **box** (bloc) · x 488, y 1197, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1197,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1197, 105 × 16
+              - **box** (bloc) · x 767, y 1197,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1199, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1199, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1199, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1199, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1197,5, 112 × 15
+              - **box** (bloc) · x 989, y 1197,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1197,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1244, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1244, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1258,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1257,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1256,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1258,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1256,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1258,5, 69 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 91 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1339, 148 × 16
+            - **box** (bloc) · x 949, y 1338,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1339,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1338,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1341, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1339,5, 15 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1378, 194 × 16
+            - **box** (bloc) · x 949, y 1378,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1378,5, 85 × 15
+          - **line** (bloc) · x 265, y 1405, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1406, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1417,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1417,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1418, 14 × 14
+            - **box** (bloc) · x 355, y 1417, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1417, 161 × 16
+            - **box** (bloc) · x 949, y 1416,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1417,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1416,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1419, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1417,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1480 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1480 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -3751,7 +3766,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1354 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -3794,11 +3809,11 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 511, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 506, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 511, 45 × 15
-      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
+      - **line** (bloc) · x 1100, y 1411, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1412, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1426, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1438, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1438,5, 15 × 15
 
 ## P1 bis v3 · Pour commencer
 
@@ -4184,139 +4199,133 @@ Exports : `exports/proposition-nouveau-projet-dark.png` et `exports/proposition-
 82. « F7 » (x 281, y 539)
 83. « Rapport de centre journalier » (x 304, y 539)
 84. « aujourd'hui » (x 616,4, y 544)
-85. « étape livrée » (x 299, y 578)
-86. « en review » (x 397, y 578)
-87. « en cours » (x 484, y 578)
-88. « bloquée » (x 565, y 578)
-89. « à faire » (x 644, y 578)
-90. « glissement prévu » (x 713, y 578)
-91. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
-92. « 12–16 oct. » (x 686, y 631,5)
-93. « F3 » (x 281, y 673,5)
-94. « Réaffecter un box » (x 317, y 673)
-95. « livrée » (x 566, y 673,5)
-96. « 4/4 » (x 720, y 673,5)
-97. « F4 » (x 281, y 712,5)
-98. « Saisir un constat hors ligne » (x 317, y 712)
-99. « à risque » (x 566, y 712,5)
-100. « 3/5 » (x 720, y 712,5)
-101. « F5 » (x 281, y 751,5)
-102. « Envoyer les photos d'un constat » (x 317, y 751)
-103. « à risque » (x 566, y 751,5)
-104. « 1/5 » (x 720, y 751,5)
-105. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-106. « Prochaine à finir » (x 304, y 841,5)
-107. « la plus avancée du sprint » (x 601, y 842,5)
-108. « F4 » (x 281, y 875,5)
-109. « Saisir un constat hors ligne » (x 306, y 874)
-110. « 3/5 » (x 720, y 875,5)
-111. « SILO-45 » (x 297, y 902,5)
-112. « Conflits de saisie » (x 356, y 902)
-113. « changements demandés » (x 466, y 902,5)
-114. « SILO-46 » (x 297, y 924,5)
-115. « Démo client » (x 356, y 924)
-116. « Étape suivante » (x 293, y 963)
-117. « /full-delivery SILO-45 » (x 387, y 963)
-118. « Copier » (x 685, y 963)
-119. « Activité » (x 304, y 1032,5)
-120. « git » (x 633, y 1033,5)
-121. « full-delivery » (x 668, y 1033,5)
-122. « 15:04 » (x 281, y 1075,5)
-123. « PR #22 ouverte » (x 355, y 1075)
-124. « SILO-32 » (x 643, y 1075,5)
-125. « F5 » (x 722, y 1075,5)
-126. « 14:51 » (x 281, y 1114,5)
-127. « Étape 7/12 · Porte qualité » (x 355, y 1114)
-128. « SILO-33 » (x 643, y 1114,5)
-129. « F5 » (x 722, y 1114,5)
-130. « 14:40 » (x 281, y 1153,5)
-131. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
-132. « Agent de projet » (x 658, y 1153,5)
-133. « 14:36 » (x 281, y 1192,5)
-134. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-135. « SILO-21 » (x 643, y 1192,5)
-136. « F3 » (x 722, y 1192,5)
-137. « En review » (x 814, y 630,5)
-138. « 3 » (x 894, y 631,5)
-139. « #22 » (x 818, y 672)
-140. « Route d'envoi des photos » (x 848, y 672)
-141. « SILO-32 » (x 818, y 693)
-142. « F5 » (x 897, y 693)
-143. « CI verte » (x 836, y 713)
-144. « #20 » (x 818, y 749)
-145. « Conflits de saisie » (x 848, y 749)
-146. « SILO-45 » (x 818, y 770)
-147. « F4 » (x 897, y 770)
-148. « changements demandés » (x 836, y 790)
-149. « #23 » (x 818, y 826)
-150. « Passage à Expo SDK 54 » (x 848, y 826)
-151. « SILO-61 » (x 818, y 846)
-152. « CI en cours » (x 835, y 865)
-153. « Questions » (x 814, y 917,5)
-154. « 3 » (x 898, y 918,5)
-155. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 959)
-156. « F6 » (x 813, y 984)
-157. « Q14 · Client · il y a 3 j » (x 840, y 984)
-158. « bloquante » (x 965, y 984)
-159. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1022)
-160. « F5 » (x 813, y 1046)
-161. « Q16 · Produit · hier » (x 840, y 1046)
-162. « Un rapport par chef de centre ou par client ? » (x 791, y 1083)
-163. « F7 » (x 813, y 1107)
-164. « Q17 · Client · il y a 2 h » (x 840, y 1107)
-165. « Agent de projet · Silo » (x 1154, y 20)
-166. « Fais le point du jour » (x 1194, y 83)
-167. « 14:38 » (x 1194, y 106)
-168. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
-169. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
-170. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
-171. « Lot n° 7 » (x 1132, y 282)
-172. « 3 actions » (x 1357, y 282,5)
-173. « Reporter F5 en S43 » (x 1158, y 319)
-174. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
-175. « Planifier F9 en S44 » (x 1158, y 374)
-176. « seule fonctionnalité à planifier » (x 1158, y 393)
-177. « Relancer le client sur Q14 » (x 1158, y 429)
-178. « bloque F6, prévue en S43 » (x 1158, y 448)
-179. « Valider (3) » (x 1142, y 491)
-180. « Refuser » (x 1227, y 491)
-181. « Écris à l'agent de projet… » (x 1130, y 958)
-182. « Nouveau projet » (x 484, y 193)
-183. « Un projet suivi : ses pages et ses sprints sont créés aussitôt. » (x 484, y 221)
-184. « Nom » (x 484, y 255)
-185. « Silo » (x 496, y 287)
-186. « Clé » (x 484, y 331)
-187. « SILO » (x 496, y 363)
-188. « 2 à 6 lettres majuscules, unique. » (x 484, y 395)
-189. « Client » (x 686, y 331)
-190. « Silo SA » (x 698, y 363)
-191. « Facultatif. Destinataire des questions client. » (x 686, y 395)
-192. « Début du premier sprint » (x 484, y 430)
-193. « 19/10/2026 » (x 496, y 462)
-194. « Nombre de sprints » (x 806, y 430)
-195. « 6 » (x 818, y 462)
-196. « Durée d'un sprint » (x 484, y 506)
-197. « 1 semaine » (x 508, y 531)
-198. « 2 semaines » (x 611, y 531)
-199. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 520, y 580)
-200. « S1 » (x 498, y 606,5)
-201. « 19–23 oct. » (x 521, y 606)
-202. « S4 » (x 498, y 629,5)
-203. « 9–13 nov. » (x 521, y 629)
-204. « S2 » (x 647, y 606,5)
-205. « 26–30 oct. » (x 670, y 606)
-206. « S5 » (x 647, y 629,5)
-207. « 16–20 nov. » (x 670, y 629)
-208. « S3 » (x 796, y 606,5)
-209. « 2–6 nov. » (x 819, y 606)
-210. « S6 » (x 796, y 629,5)
-211. « 23–27 nov. » (x 819, y 629)
-212. « Dossier du dépôt » (x 484, y 674)
-213. « Aucun dossier » (x 518, y 706)
-214. « Choisir… » (x 887, y 706,5)
-215. « Facultatif. Sans dossier, pas de suivi git. » (x 484, y 738)
-216. « Annuler » (x 824, y 784)
-217. « Créer » (x 908, y 784)
+85. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
+86. « 12–16 oct. » (x 686, y 631,5)
+87. « F3 » (x 281, y 673,5)
+88. « Réaffecter un box » (x 317, y 673)
+89. « livrée » (x 566, y 673,5)
+90. « 4/4 » (x 720, y 673,5)
+91. « F4 » (x 281, y 712,5)
+92. « Saisir un constat hors ligne » (x 317, y 712)
+93. « à risque » (x 566, y 712,5)
+94. « 3/5 » (x 720, y 712,5)
+95. « F5 » (x 281, y 751,5)
+96. « Envoyer les photos d'un constat » (x 317, y 751)
+97. « à risque » (x 566, y 751,5)
+98. « 1/5 » (x 720, y 751,5)
+99. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+100. « Prochaine à finir » (x 304, y 841,5)
+101. « la plus avancée du sprint » (x 601, y 842,5)
+102. « F4 » (x 281, y 875,5)
+103. « Saisir un constat hors ligne » (x 306, y 874)
+104. « 3/5 » (x 720, y 875,5)
+105. « SILO-45 » (x 297, y 902,5)
+106. « Conflits de saisie » (x 356, y 902)
+107. « changements demandés » (x 466, y 902,5)
+108. « SILO-46 » (x 297, y 924,5)
+109. « Démo client » (x 356, y 924)
+110. « Étape suivante » (x 293, y 963)
+111. « /full-delivery SILO-45 » (x 387, y 963)
+112. « Copier » (x 685, y 963)
+113. « Activité » (x 304, y 1032,5)
+114. « git » (x 633, y 1033,5)
+115. « full-delivery » (x 668, y 1033,5)
+116. « 15:04 » (x 281, y 1075,5)
+117. « PR #22 ouverte » (x 355, y 1075)
+118. « SILO-32 » (x 643, y 1075,5)
+119. « F5 » (x 722, y 1075,5)
+120. « 14:51 » (x 281, y 1114,5)
+121. « Étape 7/12 · Porte qualité » (x 355, y 1114)
+122. « SILO-33 » (x 643, y 1114,5)
+123. « F5 » (x 722, y 1114,5)
+124. « 14:40 » (x 281, y 1153,5)
+125. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
+126. « Agent de projet » (x 658, y 1153,5)
+127. « 14:36 » (x 281, y 1192,5)
+128. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+129. « SILO-21 » (x 643, y 1192,5)
+130. « F3 » (x 722, y 1192,5)
+131. « En review » (x 814, y 630,5)
+132. « 3 » (x 894, y 631,5)
+133. « #22 » (x 818, y 672)
+134. « Route d'envoi des photos » (x 848, y 672)
+135. « SILO-32 » (x 818, y 693)
+136. « F5 » (x 897, y 693)
+137. « CI verte » (x 836, y 713)
+138. « #20 » (x 818, y 749)
+139. « Conflits de saisie » (x 848, y 749)
+140. « SILO-45 » (x 818, y 770)
+141. « F4 » (x 897, y 770)
+142. « changements demandés » (x 836, y 790)
+143. « #23 » (x 818, y 826)
+144. « Passage à Expo SDK 54 » (x 848, y 826)
+145. « SILO-61 » (x 818, y 846)
+146. « CI en cours » (x 835, y 865)
+147. « Questions » (x 814, y 917,5)
+148. « 3 » (x 898, y 918,5)
+149. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 959)
+150. « F6 » (x 813, y 984)
+151. « Q14 · Client · il y a 3 j » (x 840, y 984)
+152. « bloquante » (x 965, y 984)
+153. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1022)
+154. « F5 » (x 813, y 1046)
+155. « Q16 · Produit · hier » (x 840, y 1046)
+156. « Un rapport par chef de centre ou par client ? » (x 791, y 1083)
+157. « F7 » (x 813, y 1107)
+158. « Q17 · Client · il y a 2 h » (x 840, y 1107)
+159. « Agent de projet · Silo » (x 1154, y 20)
+160. « Fais le point du jour » (x 1194, y 83)
+161. « 14:38 » (x 1194, y 106)
+162. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
+163. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
+164. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
+165. « Lot n° 7 » (x 1132, y 282)
+166. « 3 actions » (x 1357, y 282,5)
+167. « Reporter F5 en S43 » (x 1158, y 319)
+168. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
+169. « Planifier F9 en S44 » (x 1158, y 374)
+170. « seule fonctionnalité à planifier » (x 1158, y 393)
+171. « Relancer le client sur Q14 » (x 1158, y 429)
+172. « bloque F6, prévue en S43 » (x 1158, y 448)
+173. « Valider (3) » (x 1142, y 491)
+174. « Refuser » (x 1227, y 491)
+175. « Écris à l'agent de projet… » (x 1130, y 958)
+176. « Nouveau projet » (x 484, y 193)
+177. « Un projet suivi : ses pages et ses sprints sont créés aussitôt. » (x 484, y 221)
+178. « Nom » (x 484, y 255)
+179. « Silo » (x 496, y 287)
+180. « Clé » (x 484, y 331)
+181. « SILO » (x 496, y 363)
+182. « 2 à 6 lettres majuscules, unique. » (x 484, y 395)
+183. « Client » (x 686, y 331)
+184. « Silo SA » (x 698, y 363)
+185. « Facultatif. Destinataire des questions client. » (x 686, y 395)
+186. « Début du premier sprint » (x 484, y 430)
+187. « 19/10/2026 » (x 496, y 462)
+188. « Nombre de sprints » (x 806, y 430)
+189. « 6 » (x 818, y 462)
+190. « Durée d'un sprint » (x 484, y 506)
+191. « 1 semaine » (x 508, y 531)
+192. « 2 semaines » (x 611, y 531)
+193. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 520, y 580)
+194. « S1 » (x 498, y 606,5)
+195. « 19–23 oct. » (x 521, y 606)
+196. « S4 » (x 498, y 629,5)
+197. « 9–13 nov. » (x 521, y 629)
+198. « S2 » (x 647, y 606,5)
+199. « 26–30 oct. » (x 670, y 606)
+200. « S5 » (x 647, y 629,5)
+201. « 16–20 nov. » (x 670, y 629)
+202. « S3 » (x 796, y 606,5)
+203. « 2–6 nov. » (x 819, y 606)
+204. « S6 » (x 796, y 629,5)
+205. « 23–27 nov. » (x 819, y 629)
+206. « Dossier du dépôt » (x 484, y 674)
+207. « Aucun dossier » (x 518, y 706)
+208. « Choisir… » (x 887, y 706,5)
+209. « Facultatif. Sans dossier, pas de suivi git. » (x 484, y 738)
+210. « Annuler » (x 824, y 784)
+211. « Créer » (x 908, y 784)
 
 ### Blocs
 
@@ -4605,26 +4614,10 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 541, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 543, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 544, 64 × 15
-          - **line** (bloc) · x 265, y 567, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 568, 810 × 35 · flex ligne, espacement 16, marges internes 10 16 10 16, alignement center/start · fond `panel` · dimension remplit/auto
-            - **box** (bloc) · x 281, y 578, 82 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 281, y 580,5, 12 × 10 · fond `fg` · rayon 2 · dimension fixe/fixe
-              - « étape livrée » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 299, y 578, 64 × 15
-            - **box** (bloc) · x 379, y 578, 71 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 379, y 580,5, 12 × 10 · fond `purple` · rayon 2 · dimension fixe/fixe
-              - « en review » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 397, y 578, 53 × 15
-            - **box** (bloc) · x 466, y 578, 65 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 466, y 580,5, 12 × 10 · fond `blue` · rayon 2 · dimension fixe/fixe
-              - « en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 484, y 578, 47 × 15
-            - **box** (bloc) · x 547, y 578, 63 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 547, y 580,5, 12 × 10 · fond `red` · rayon 2 · dimension fixe/fixe
-              - « bloquée » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 565, y 578, 45 × 15
-            - **box** (bloc) · x 626, y 578, 53 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 626, y 580,5, 12 × 10 · fond `border` · rayon 2 · dimension fixe/fixe
-              - « à faire » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 644, y 578, 35 × 15
-            - **box** (bloc) · x 695, y 578, 112 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-              - **box** (bloc) · x 695, y 580,5, 12 × 10 · fond `redSoft` · bordure 1 `red` · rayon 2 · dimension fixe/fixe
-              - « glissement prévu » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 713, y 578, 94 × 15
+          - **legend-line** (bloc) · x 265, y 567, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 568, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 575,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 579, 13 × 13
         - **box** (bloc) · x 265, y 617, 810 × 602 · flex ligne, espacement 16, marges internes 0, alignement start/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 617, 494 × 602 · flex colonne, espacement 14, marges internes 0, alignement start/start · dimension remplit/auto
             - **card / Sprint S42 · Saisie hors ligne** (bloc) · x 265, y 617, 494 × 197 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
@@ -7168,7 +7161,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
 ## P1 bis · Vue d'ensemble · en attente
 
 Board `P1 bis · Vue d'ensemble · en attente` (sombre) et `P1 bis · Vue d'ensemble · en attente (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/proposition-attente-vue-ensemble-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/proposition-attente-vue-ensemble-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -7188,9 +7181,9 @@ Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/propos
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -7307,37 +7300,37 @@ Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/propos
 133. « F7 » (x 281, y 997)
 134. « Rapport de centre journalier » (x 304, y 997)
 135. « aujourd'hui » (x 616,4, y 1002)
-136. « En ce moment » (x 302, y 1064,5)
-137. « 2 sessions T3 Code » (x 281, y 1084,5)
-138. « F5 » (x 454, y 1055,5)
-139. « SILO-33 » (x 488, y 1055,5)
-140. « Écran d'envoi hors ligne » (x 547, y 1055)
-141. « Étape 7/12 · Porte qualité » (x 859, y 1055,5)
-142. « 42 min » (x 1020, y 1055,5)
-143. « F4 » (x 454, y 1092,5)
-144. « SILO-45 » (x 488, y 1092,5)
-145. « Conflits de saisie » (x 547, y 1092)
-146. « Étape 9/12 · Review » (x 859, y 1092,5)
-147. « 18 min » (x 1023, y 1092,5)
-148. « Activité » (x 304, y 1152,5)
-149. « git » (x 949, y 1153,5)
-150. « full-delivery » (x 984, y 1153,5)
-151. « 15:10 » (x 281, y 1195,5)
-152. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1195)
-153. « SILO-82 » (x 959, y 1195,5)
-154. « F7 » (x 1038, y 1195,5)
-155. « 15:10 » (x 281, y 1234,5)
-156. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1234)
-157. « SILO-33 » (x 959, y 1234,5)
-158. « F5 » (x 1038, y 1234,5)
-159. « 15:10 » (x 281, y 1273,5)
-160. « Mise en attente · Règle de fusion à valider p… » (x 355, y 1273)
-161. « SILO-45 » (x 959, y 1273,5)
-162. « F4 » (x 1038, y 1273,5)
-163. « 15:04 » (x 281, y 1312,5)
-164. « PR #22 ouverte » (x 355, y 1312)
-165. « SILO-32 » (x 959, y 1312,5)
-166. « F5 » (x 1038, y 1312,5)
+136. « En ce moment » (x 302, y 1100,5)
+137. « 2 sessions T3 Code » (x 281, y 1120,5)
+138. « F5 » (x 454, y 1091,5)
+139. « SILO-33 » (x 488, y 1091,5)
+140. « Écran d'envoi hors ligne » (x 547, y 1091)
+141. « Étape 7/12 · Porte qualité » (x 859, y 1091,5)
+142. « 42 min » (x 1020, y 1091,5)
+143. « F4 » (x 454, y 1128,5)
+144. « SILO-45 » (x 488, y 1128,5)
+145. « Conflits de saisie » (x 547, y 1128)
+146. « Étape 9/12 · Review » (x 859, y 1128,5)
+147. « 18 min » (x 1023, y 1128,5)
+148. « Activité » (x 304, y 1188,5)
+149. « git » (x 949, y 1189,5)
+150. « full-delivery » (x 984, y 1189,5)
+151. « 15:10 » (x 281, y 1231,5)
+152. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1231)
+153. « SILO-82 » (x 959, y 1231,5)
+154. « F7 » (x 1038, y 1231,5)
+155. « 15:10 » (x 281, y 1270,5)
+156. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1270)
+157. « SILO-33 » (x 959, y 1270,5)
+158. « F5 » (x 1038, y 1270,5)
+159. « 15:10 » (x 281, y 1309,5)
+160. « Mise en attente · Règle de fusion à valider p… » (x 355, y 1309)
+161. « SILO-45 » (x 959, y 1309,5)
+162. « F4 » (x 1038, y 1309,5)
+163. « 15:04 » (x 281, y 1348,5)
+164. « PR #22 ouverte » (x 355, y 1348)
+165. « SILO-32 » (x 959, y 1348,5)
+166. « F5 » (x 1038, y 1348,5)
 167. « Agent de projet · Silo » (x 1154, y 20)
 168. « Fais le point du jour » (x 1194, y 83)
 169. « 14:38 » (x 1194, y 106)
@@ -7354,15 +7347,15 @@ Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/propos
 180. « bloque F6, prévue en S43 » (x 1158, y 448)
 181. « Valider (3) » (x 1142, y 491)
 182. « Refuser » (x 1227, y 491)
-183. « Écris à l'agent de projet… » (x 1130, y 1358)
+183. « Écris à l'agent de projet… » (x 1130, y 1398)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P1 bis · Vue d'ensemble · en attente** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P1 bis · Vue d'ensemble · en attente** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -7412,16 +7405,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -7435,7 +7428,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -7709,7 +7702,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 810 × 201 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 810 × 237 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -7770,124 +7763,128 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 876,2, y 999, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 1001, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 1002, 64 × 15
-        - **live** (bloc) · x 265, y 1039, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1039, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1064,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1066, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1069, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1064,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1084,5, 107 × 15
-          - **box** (bloc) · x 415, y 1039, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1039, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1045, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1054,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1054,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1057, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1055,5, 15 × 15
-              - **box** (bloc) · x 488, y 1055, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1055,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1055, 143 × 16
-              - **box** (bloc) · x 767, y 1055,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1057, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1057, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1057, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1057, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1057, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1057, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1057, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1055,5, 142 × 15
-              - **box** (bloc) · x 989, y 1055,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1055,5, 39 × 15
-            - **line** (bloc) · x 432, y 1081, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1082, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1091,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1091,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1094, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1092,5, 15 × 15
-              - **box** (bloc) · x 488, y 1092, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1092,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1092, 105 × 16
-              - **box** (bloc) · x 767, y 1092,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1094, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1094, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1094, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1094, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1094, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1092,5, 112 × 15
-              - **box** (bloc) · x 989, y 1092,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1092,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1139, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1139, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1153,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1152,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1151,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1153,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1151,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1153,5, 69 × 15
-          - **line** (bloc) · x 265, y 1183, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1184, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1195,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1195,5, 36 × 15
-            - icône `pause` 14 px, `mfg` — x 331, y 1196, 14 × 14
-            - **box** (bloc) · x 355, y 1195, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Mise en attente · Serveur MinIO de recette i… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1195, 262 × 16
-            - **box** (bloc) · x 949, y 1194,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-82 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1195,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1194,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1197, 12 × 12
-                - « F7 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1195,5, 15 × 15
-          - **line** (bloc) · x 265, y 1222, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1223, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1234,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1234,5, 36 × 15
-            - icône `pause` 14 px, `mfg` — x 331, y 1235, 14 × 14
-            - **box** (bloc) · x 355, y 1234, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Mise en attente · Serveur MinIO de recette i… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1234, 262 × 16
-            - **box** (bloc) · x 949, y 1233,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1234,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1233,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1236, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1234,5, 15 × 15
-          - **line** (bloc) · x 265, y 1261, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1262, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1273,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1273,5, 36 × 15
-            - icône `pause` 14 px, `mfg` — x 331, y 1274, 14 × 14
-            - **box** (bloc) · x 355, y 1273, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Mise en attente · Règle de fusion à valider p… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1273, 265 × 16
-            - **box** (bloc) · x 949, y 1272,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1273,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1272,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1275, 12 × 12
-                - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1273,5, 15 × 15
-          - **line** (bloc) · x 265, y 1300, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1301, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1312,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1312,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1313, 14 × 14
-            - **box** (bloc) · x 355, y 1312, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1312, 91 × 16
-            - **box** (bloc) · x 949, y 1311,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1312,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1311,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1314, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1312,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1025, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1026, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1033,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1037, 13 × 13
+        - **live** (bloc) · x 265, y 1075, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1075, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1100,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1102, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1105, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1100,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1120,5, 107 × 15
+          - **box** (bloc) · x 415, y 1075, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1075, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1081, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1090,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1090,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1093, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1091,5, 15 × 15
+              - **box** (bloc) · x 488, y 1091, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1091,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1091, 143 × 16
+              - **box** (bloc) · x 767, y 1091,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1093, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1093, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1093, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1093, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1093, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1093, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1093, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1091,5, 142 × 15
+              - **box** (bloc) · x 989, y 1091,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1091,5, 39 × 15
+            - **line** (bloc) · x 432, y 1117, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1118, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1127,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1127,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1130, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1128,5, 15 × 15
+              - **box** (bloc) · x 488, y 1128, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1128,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1128, 105 × 16
+              - **box** (bloc) · x 767, y 1128,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1130, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1130, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1130, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1130, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1130, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1128,5, 112 × 15
+              - **box** (bloc) · x 989, y 1128,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1128,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1175, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1175, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1189,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1188,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1187,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1189,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1187,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1189,5, 69 × 15
+          - **line** (bloc) · x 265, y 1219, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1220, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1231,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1231,5, 36 × 15
+            - icône `pause` 14 px, `mfg` — x 331, y 1232, 14 × 14
+            - **box** (bloc) · x 355, y 1231, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Mise en attente · Serveur MinIO de recette i… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1231, 262 × 16
+            - **box** (bloc) · x 949, y 1230,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-82 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1231,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1230,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1233, 12 × 12
+                - « F7 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1231,5, 15 × 15
+          - **line** (bloc) · x 265, y 1258, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1259, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1270,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1270,5, 36 × 15
+            - icône `pause` 14 px, `mfg` — x 331, y 1271, 14 × 14
+            - **box** (bloc) · x 355, y 1270, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Mise en attente · Serveur MinIO de recette i… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1270, 262 × 16
+            - **box** (bloc) · x 949, y 1269,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1270,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1269,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1272, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1270,5, 15 × 15
+          - **line** (bloc) · x 265, y 1297, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1298, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1309,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:10 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1309,5, 36 × 15
+            - icône `pause` 14 px, `mfg` — x 331, y 1310, 14 × 14
+            - **box** (bloc) · x 355, y 1309, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Mise en attente · Règle de fusion à valider p… » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1309, 265 × 16
+            - **box** (bloc) · x 949, y 1308,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1309,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1308,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1311, 12 × 12
+                - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1309,5, 15 × 15
+          - **line** (bloc) · x 265, y 1336, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1337, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1348,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1348,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1349, 14 × 14
+            - **box** (bloc) · x 355, y 1348, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1348, 91 × 16
+            - **box** (bloc) · x 949, y 1347,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1348,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1347,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1350, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1348,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -7902,7 +7899,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1274 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -7945,11 +7942,11 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 491, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 486, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 491, 45 × 15
-      - **line** (bloc) · x 1100, y 1331, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1332, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1346, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1358, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1358,5, 15 × 15
+      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
 
 ## P2 · Planning · en attente
 
@@ -8205,8 +8202,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `link` 12 px, `dim` — x 947, y 175,5, 12 × 12
               - « 2 en dépendent » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 963, y 174, 86 × 15
               - icône `chevRight` 12 px, `dim` — x 1053, y 175,5, 12 × 12
-        - **sprints** (bloc) · x 265, y 216, 1151 × 766 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
-          - **col reserve** (bloc) · x 265, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
+        - **sprints** (bloc) · x 265, y 216, 1151 × 732 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
+          - **col reserve** (bloc) · x 265, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 275, y 226, 194 × 40 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 277, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - icône `inbox` 14 px, `mfg` — x 277, y 229, 14 × 14
@@ -8227,7 +8224,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « suivante : SILO-91 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 366, y 348, 91 × 14
             - **box** (bloc) · x 275, y 382, 194 × 83 · flex colonne, espacement 6, marges internes 8 4 8 4, alignement start/start · dimension remplit/auto
               - « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » — Geist 11,5 / 400, interligne 1,45, couleur `dim` — x 279, y 390, 186 × 67
-          - **col S41** (bloc) · x 491, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S41** (bloc) · x 491, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 501, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 503, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S41 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 503, y 228, 24 × 16
@@ -8257,7 +8254,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - icône `circleCheck` 13 px, `green` — x 635, y 409,5, 13 × 13
                 - « livrée » — Geist 11,5 / 400, interligne 1,2, couleur `green` — x 654, y 409, 29 × 14
               - « Voir ses box affectés » — Geist 13 / 500, interligne 1,2, couleur `mfg` — x 513, y 431, 170 × 16
-          - **col S42** (bloc) · x 717, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
+          - **col S42** (bloc) · x 717, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 727, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 729, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S42 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 729, y 228, 24 × 16
@@ -8320,7 +8317,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « 1/2 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 739, y 618, 56 × 14
                 - **dot** (pastille) · x 850, y 622, 6 × 6 · fond `brand` · dimension fixe/fixe
                 - « SILO-33 » — Geist Mono 11 / 400, interligne 1,2, couleur `brandText` — x 862, y 618, 47 × 14
-          - **col S43** (bloc) · x 943, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S43** (bloc) · x 943, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 953, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 955, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S43 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 955, y 228, 24 × 16
@@ -8359,7 +8356,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 965, y 491, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « 0/4 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 965, y 491, 59 × 14
                 - « suivante : SILO-71 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1045, y 491, 90 × 14
-          - **col S44** (bloc) · x 1169, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S44** (bloc) · x 1169, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 1179, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 1181, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S44 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 1181, y 228, 24 × 16
@@ -8387,6 +8384,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `sprint` 16 px, `fg` — x 1268, y 447,5, 16 × 16
               - « Déposer pour planifier en S44 » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1192, y 469,5, 168 × 15
               - « 26–30 oct. » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1248, y 490,5, 56 × 14
+        - **legend-bar** (bloc) · x 265, y 962, 1151 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/fixe
+          - **legend-toggle** (bloc) · x 265, y 962, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 268,5, y 965,5, 13 × 13
   - **dragging F9** (bloc) · x 1199, y 497, 194 × 74 · flex colonne, espacement 8, marges internes 10 12 10 12, alignement start/start · fond `card` · bordure 1 `fg` · rayon 8
     - **box** (bloc) · x 1211, y 507, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
       - icône `grip` 13 px, `mfg` — x 1211, y 507,5, 13 × 13
@@ -12382,8 +12382,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `link` 12 px, `dim` — x 947, y 175,5, 12 × 12
               - « 2 en dépendent » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 963, y 174, 86 × 15
               - icône `chevRight` 12 px, `dim` — x 1053, y 175,5, 12 × 12
-        - **sprints** (bloc) · x 265, y 216, 1151 × 766 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
-          - **col reserve** (bloc) · x 265, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
+        - **sprints** (bloc) · x 265, y 216, 1151 × 732 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
+          - **col reserve** (bloc) · x 265, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 275, y 226, 194 × 40 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 277, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - icône `inbox` 14 px, `mfg` — x 277, y 229, 14 × 14
@@ -12404,7 +12404,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « suivante : SILO-91 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 366, y 348, 91 × 14
             - **box** (bloc) · x 275, y 382, 194 × 83 · flex colonne, espacement 6, marges internes 8 4 8 4, alignement start/start · dimension remplit/auto
               - « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » — Geist 11,5 / 400, interligne 1,45, couleur `dim` — x 279, y 390, 186 × 67
-          - **col S41** (bloc) · x 491, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S41** (bloc) · x 491, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 501, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 503, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S41 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 503, y 228, 24 × 16
@@ -12434,7 +12434,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - icône `circleCheck` 13 px, `green` — x 635, y 409,5, 13 × 13
                 - « livrée » — Geist 11,5 / 400, interligne 1,2, couleur `green` — x 654, y 409, 29 × 14
               - « Voir ses box affectés » — Geist 13 / 500, interligne 1,2, couleur `mfg` — x 513, y 431, 170 × 16
-          - **col S42** (bloc) · x 717, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
+          - **col S42** (bloc) · x 717, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 727, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 729, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S42 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 729, y 228, 24 × 16
@@ -12493,7 +12493,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « 1/2 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 739, y 618, 56 × 14
                 - **dot** (pastille) · x 850, y 622, 6 × 6 · fond `brand` · dimension fixe/fixe
                 - « SILO-33 » — Geist Mono 11 / 400, interligne 1,2, couleur `brandText` — x 862, y 618, 47 × 14
-          - **col S43** (bloc) · x 943, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S43** (bloc) · x 943, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 953, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 955, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S43 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 955, y 228, 24 × 16
@@ -12532,7 +12532,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 965, y 491, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « 0/4 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 965, y 491, 59 × 14
                 - « suivante : SILO-71 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1045, y 491, 90 × 14
-          - **col S44** (bloc) · x 1169, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S44** (bloc) · x 1169, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 1179, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 1181, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S44 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 1181, y 228, 24 × 16
@@ -12559,6 +12559,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `sprint` 16 px, `fg` — x 1268, y 447,5, 16 × 16
               - « Déposer pour planifier en S44 » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1192, y 469,5, 168 × 15
               - « 26–30 oct. » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1248, y 490,5, 56 × 14
+        - **legend-bar** (bloc) · x 265, y 962, 1151 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/fixe
+          - **legend-toggle** (bloc) · x 265, y 962, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 268,5, y 965,5, 13 × 13
   - **menu** (bloc) · x 498, y 169, 200 × 68 · flex colonne, espacement 0, marges internes 4, alignement start/start · fond `card` · bordure 1 `border` · rayon 8
     - **item Reprendre** (bloc) · x 502, y 173, 192 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 5 · dimension remplit/fixe
       - icône `play` 14 px, `mfg` — x 510, y 181, 14 × 14
@@ -13432,14 +13435,6 @@ Exports : `exports/proposition-graphe-fonctionnalites-dark.png` et `exports/prop
 94. « Tests E2E de l'envoi » (x 439, y 699)
 95. « Démo client » (x 439, y 733)
 96. « en retard · glisse en S43 » (x 432, y 760)
-97. « À faire » (x 283, y 960)
-98. « En cours » (x 346, y 960)
-99. « En review » (x 420, y 960)
-100. « Bloqué » (x 499, y 960)
-101. « En attente » (x 564, y 960)
-102. « Fonctionnalité » (x 652, y 960)
-103. « Colonne = sprint » (x 759, y 960)
-104. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -13534,7 +13529,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
       - **line** (bloc) · x 241, y 95, 1199 × 1 · fond `soft` · dimension remplit/fixe
       - **canvas** (bloc) · x 241, y 96, 1199 × 904 · fond `canvas` · dimension remplit/remplit
         - **lane S41** (bloc) · x 241, y 96, 150 × 904 · fond `canvas`
-        - icône `edges` 1199 px, `mfg` — x 241, y 96, 1199 × 904
         - **lane S42** (bloc) · x 391, y 96, 290 × 904 · fond `panel`
         - **lane S43** (bloc) · x 681, y 96, 260 × 904 · fond `canvas`
         - **lane S44** (bloc) · x 941, y 96, 250 × 904 · fond `panel`
@@ -13757,31 +13751,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **box** (bloc) · x 415, y 760, 138 × 14 · flex ligne, espacement 5, marges internes 0, alignement center/start
             - icône `clockAlert` 12 px, `red` — x 415, y 761, 12 × 12
             - « en retard · glisse en S43 » — Geist 11 / 400, interligne 1,2, couleur `red` — x 432, y 760, 121 × 14
-        - **legend** (bloc) · x 257, y 952, 703 × 30 · flex ligne, espacement 14, marges internes 8 12 8 12, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
-          - **box** (bloc) · x 269, y 960, 49 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **ring** (pastille) · x 269, y 963, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-            - « À faire » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 283, y 960, 35 × 14
-          - **box** (bloc) · x 332, y 960, 60 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 332, y 963, 8 × 8 · fond `blue` · dimension fixe/fixe
-            - « En cours » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 346, y 960, 46 × 14
-          - **box** (bloc) · x 406, y 960, 65 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 406, y 963, 8 × 8 · fond `purple` · dimension fixe/fixe
-            - « En review » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 420, y 960, 51 × 14
-          - **box** (bloc) · x 485, y 960, 51 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 485, y 963, 8 × 8 · fond `red` · dimension fixe/fixe
-            - « Bloqué » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 499, y 960, 37 × 14
-          - **box** (bloc) · x 550, y 960, 68 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 550, y 963, 8 × 8 · fond `hold` · dimension fixe/fixe
-            - « En attente » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 564, y 960, 54 × 14
-          - **box** (bloc) · x 632, y 960, 95 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **box** (bloc) · x 632, y 962, 14 × 10 · bordure 1 `mfg` dashed · rayon 3 · dimension fixe/fixe
-            - « Fonctionnalité » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 652, y 960, 75 × 14
-          - **box** (bloc) · x 741, y 960, 104 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - icône `sprint` 12 px, `mfg` — x 741, y 961, 12 × 12
-            - « Colonne = sprint » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 759, y 960, 86 × 14
-          - **box** (bloc) · x 859, y 960, 89 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 859, y 963,5, 7 × 7 · fond `brand` · dimension fixe/fixe
-            - « Session active » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 872, y 960, 76 × 14
+        - **legend-bar** (bloc) · x 257, y 952, 32 × 30 · flex ligne, espacement 0, marges internes 0 6 0 6, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
+          - **legend-toggle** (bloc) · x 263, y 957, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 266,5, y 960,5, 13 × 13
 
 ## P5c · Graphe, PRs
 
@@ -15254,14 +15226,6 @@ Exports : `exports/proposition-attente-graphe-dark.png` et `exports/proposition-
 92. « Sélection multiple » (x 729, y 521)
 93. « Validation par lot » (x 729, y 555)
 94. « Démo client » (x 729, y 589)
-95. « À faire » (x 283, y 960)
-96. « En cours » (x 346, y 960)
-97. « En review » (x 420, y 960)
-98. « Bloqué » (x 499, y 960)
-99. « En attente » (x 564, y 960)
-100. « Fonctionnalité » (x 652, y 960)
-101. « Colonne = sprint » (x 759, y 960)
-102. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -15356,7 +15320,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
       - **line** (bloc) · x 241, y 95, 1199 × 1 · fond `soft` · dimension remplit/fixe
       - **canvas** (bloc) · x 241, y 96, 1199 × 904 · fond `canvas` · dimension remplit/remplit
         - **lane S41** (bloc) · x 241, y 96, 150 × 904 · fond `canvas`
-        - icône `edges` 1199 px, `mfg` — x 241, y 96, 1199 × 904
         - **lane S42** (bloc) · x 391, y 96, 290 × 904 · fond `panel`
         - **lane S43** (bloc) · x 681, y 96, 260 × 904 · fond `canvas`
         - **lane S44** (bloc) · x 941, y 96, 250 × 904 · fond `panel`
@@ -15576,36 +15539,14 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **box** (bloc) · x 705, y 582, 212 × 28 · flex ligne, espacement 6, marges internes 7 8 7 8, alignement center/start · fond `card` · bordure 1 `border` · rayon 6 · dimension fixe/fixe
             - **ring** (pastille) · x 713, y 591, 10 × 10 · bordure 1,5 `dim` · dimension fixe/fixe
             - « Démo client » — Geist 11,5 / 400, interligne 1,2, couleur `fg` — x 729, y 589, 63 × 14
-        - **legend** (bloc) · x 257, y 952, 703 × 30 · flex ligne, espacement 14, marges internes 8 12 8 12, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
-          - **box** (bloc) · x 269, y 960, 49 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **ring** (pastille) · x 269, y 963, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-            - « À faire » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 283, y 960, 35 × 14
-          - **box** (bloc) · x 332, y 960, 60 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 332, y 963, 8 × 8 · fond `blue` · dimension fixe/fixe
-            - « En cours » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 346, y 960, 46 × 14
-          - **box** (bloc) · x 406, y 960, 65 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 406, y 963, 8 × 8 · fond `purple` · dimension fixe/fixe
-            - « En review » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 420, y 960, 51 × 14
-          - **box** (bloc) · x 485, y 960, 51 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 485, y 963, 8 × 8 · fond `red` · dimension fixe/fixe
-            - « Bloqué » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 499, y 960, 37 × 14
-          - **box** (bloc) · x 550, y 960, 68 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 550, y 963, 8 × 8 · fond `hold` · dimension fixe/fixe
-            - « En attente » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 564, y 960, 54 × 14
-          - **box** (bloc) · x 632, y 960, 95 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **box** (bloc) · x 632, y 962, 14 × 10 · bordure 1 `mfg` dashed · rayon 3 · dimension fixe/fixe
-            - « Fonctionnalité » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 652, y 960, 75 × 14
-          - **box** (bloc) · x 741, y 960, 104 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - icône `sprint` 12 px, `mfg` — x 741, y 961, 12 × 12
-            - « Colonne = sprint » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 759, y 960, 86 × 14
-          - **box** (bloc) · x 859, y 960, 89 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 859, y 963,5, 7 × 7 · fond `brand` · dimension fixe/fixe
-            - « Session active » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 872, y 960, 76 × 14
+        - **legend-bar** (bloc) · x 257, y 952, 32 × 30 · flex ligne, espacement 0, marges internes 0 6 0 6, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
+          - **legend-toggle** (bloc) · x 263, y 957, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 266,5, y 960,5, 13 × 13
 
 ## P1 bis · Agent agrandi
 
 Board `P1 bis · Agent agrandi` (sombre) et `P1 bis · Agent agrandi (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-agent-agrandi-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-agent-agrandi-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -15625,9 +15566,9 @@ Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-a
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -15743,36 +15684,36 @@ Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-a
 132. « F7 » (x 281, y 1027)
 133. « Rapport de centre journalier » (x 304, y 1027)
 134. « aujourd'hui » (x 674,8, y 1032)
-135. « En ce moment » (x 302, y 1094,5)
-136. « 2 sessions T3 Code » (x 281, y 1114,5)
-137. « F5 » (x 454, y 1085,5)
-138. « SILO-33 » (x 488, y 1085,5)
-139. « Écran d'envoi hors ligne » (x 547, y 1085)
-140. « Étape 7/12 · Porte qualité » (x 1200, y 1085,5)
-141. « 42 min » (x 1361, y 1085,5)
-142. « F4 » (x 454, y 1122,5)
-143. « SILO-45 » (x 488, y 1122,5)
-144. « Conflits de saisie » (x 547, y 1122)
-145. « Étape 9/12 · Review » (x 1200, y 1122,5)
-146. « 18 min » (x 1364, y 1122,5)
-147. « Activité » (x 304, y 1182,5)
-148. « git » (x 1290, y 1183,5)
-149. « full-delivery » (x 1325, y 1183,5)
-150. « 15:04 » (x 281, y 1225,5)
-151. « PR #22 ouverte » (x 355, y 1225)
-152. « SILO-32 » (x 1300, y 1225,5)
-153. « F5 » (x 1379, y 1225,5)
-154. « 14:51 » (x 281, y 1264,5)
-155. « Étape 7/12 · Porte qualité » (x 355, y 1264)
-156. « SILO-33 » (x 1300, y 1264,5)
-157. « F5 » (x 1379, y 1264,5)
-158. « 14:40 » (x 281, y 1303,5)
-159. « Agent de projet · lot n° 7 proposé » (x 355, y 1303)
-160. « Agent de projet » (x 1315, y 1303,5)
-161. « 14:36 » (x 281, y 1342,5)
-162. « PR #18 fusionnée · F3 livrée » (x 355, y 1342)
-163. « SILO-21 » (x 1300, y 1342,5)
-164. « F3 » (x 1379, y 1342,5)
+135. « En ce moment » (x 302, y 1130,5)
+136. « 2 sessions T3 Code » (x 281, y 1150,5)
+137. « F5 » (x 454, y 1121,5)
+138. « SILO-33 » (x 488, y 1121,5)
+139. « Écran d'envoi hors ligne » (x 547, y 1121)
+140. « Étape 7/12 · Porte qualité » (x 1200, y 1121,5)
+141. « 42 min » (x 1361, y 1121,5)
+142. « F4 » (x 454, y 1158,5)
+143. « SILO-45 » (x 488, y 1158,5)
+144. « Conflits de saisie » (x 547, y 1158)
+145. « Étape 9/12 · Review » (x 1200, y 1158,5)
+146. « 18 min » (x 1364, y 1158,5)
+147. « Activité » (x 304, y 1218,5)
+148. « git » (x 1290, y 1219,5)
+149. « full-delivery » (x 1325, y 1219,5)
+150. « 15:04 » (x 281, y 1261,5)
+151. « PR #22 ouverte » (x 355, y 1261)
+152. « SILO-32 » (x 1300, y 1261,5)
+153. « F5 » (x 1379, y 1261,5)
+154. « 14:51 » (x 281, y 1300,5)
+155. « Étape 7/12 · Porte qualité » (x 355, y 1300)
+156. « SILO-33 » (x 1300, y 1300,5)
+157. « F5 » (x 1379, y 1300,5)
+158. « 14:40 » (x 281, y 1339,5)
+159. « Agent de projet · lot n° 7 proposé » (x 355, y 1339)
+160. « Agent de projet » (x 1315, y 1339,5)
+161. « 14:36 » (x 281, y 1378,5)
+162. « PR #18 fusionnée · F3 livrée » (x 355, y 1378)
+163. « SILO-21 » (x 1300, y 1378,5)
+164. « F3 » (x 1379, y 1378,5)
 165. « Agent de projet · Silo » (x 775, y 20)
 166. « Nouvel agent » (x 758, y 73,5)
 167. « Fais le point du jour » (x 737, y 116)
@@ -15797,15 +15738,15 @@ Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-a
 186. « bloque F6, prévue en S43 » (x 990, y 428)
 187. « Valider (3) » (x 974, y 471)
 188. « Refuser » (x 1059, y 471)
-189. « Écris à l'agent de projet… » (x 962, y 1358)
+189. « Écris à l'agent de projet… » (x 962, y 1398)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P1 bis · Agent agrandi** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P1 bis · Agent agrandi** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -15855,16 +15796,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 1199 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 1199 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 1199 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -15878,7 +15819,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 1302, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 1323, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 1199 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 1199 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 1199 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 1151 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -16149,7 +16090,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 1159, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 1159, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1176, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 1151 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 1151 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 1151 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -16223,122 +16164,126 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 1137,1, y 1029, 34,5 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 668,8, y 1031, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 674,8, y 1032, 64 × 15
-        - **live** (bloc) · x 265, y 1069, 1151 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1069, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1094,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1096, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1099, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1094,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1114,5, 107 × 15
-          - **box** (bloc) · x 415, y 1069, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1069, 1000 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1075, 968 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1084,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1084,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1087, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1085,5, 15 × 15
-              - **box** (bloc) · x 488, y 1085, 608 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1085,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1085, 143 × 16
-              - **box** (bloc) · x 1108, y 1085,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 1108, y 1087, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 1108, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1115, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1122, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1129, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1136, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1143, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1150, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1157, y 1087, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1164, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1171, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1178, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1185, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 1200, y 1085,5, 142 × 15
-              - **box** (bloc) · x 1330, y 1085,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1361, y 1085,5, 39 × 15
-            - **line** (bloc) · x 432, y 1111, 968 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1112, 968 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1121,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1121,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1124, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1122,5, 15 × 15
-              - **box** (bloc) · x 488, y 1122, 608 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1122,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1122, 105 × 16
-              - **box** (bloc) · x 1108, y 1122,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 1108, y 1124, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 1108, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1115, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1122, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1129, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1136, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1143, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1150, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1157, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1164, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1171, y 1124, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1178, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 1185, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 1200, y 1122,5, 112 × 15
-              - **box** (bloc) · x 1330, y 1122,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1364, y 1122,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1169, 1151 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1169, 1151 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1183,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1182,5, 53 × 17
-            - **chip** (bloc) · x 1284, y 1181,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 1290, y 1183,5, 15 × 15
-            - **chip** (bloc) · x 1319, y 1181,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 1325, y 1183,5, 69 × 15
-          - **line** (bloc) · x 265, y 1213, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1214, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1225,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1225,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1226, 14 × 14
-            - **box** (bloc) · x 355, y 1225, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1225, 91 × 16
-            - **box** (bloc) · x 1290, y 1224,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1225,5, 51 × 15
-              - **fchip** (bloc) · x 1357, y 1224,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1363, y 1227, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1225,5, 15 × 15
-          - **line** (bloc) · x 265, y 1252, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 148 × 16
-            - **box** (bloc) · x 1290, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1357, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1363, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1303, 194 × 16
-            - **box** (bloc) · x 1290, y 1303,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 1315, y 1303,5, 85 × 15
-          - **line** (bloc) · x 265, y 1330, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1342, 161 × 16
-            - **box** (bloc) · x 1290, y 1341,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1342,5, 51 × 15
-              - **fchip** (bloc) · x 1357, y 1341,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1363, y 1344, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1342,5, 15 × 15
-  - **agent-overlay** (bloc) · x 720, y 0, 720 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `panel`
-    - **vline** (bloc) · x 720, y 0, 1 × 1400 · fond `border` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 721, y 0, 719 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension remplit/remplit
+          - **legend-line** (bloc) · x 265, y 1055, 1151 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1056, 1151 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1063,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1067, 13 × 13
+        - **live** (bloc) · x 265, y 1105, 1151 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1105, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1130,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1132, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1135, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1130,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1150,5, 107 × 15
+          - **box** (bloc) · x 415, y 1105, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1105, 1000 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1111, 968 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1120,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1120,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1123, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1121,5, 15 × 15
+              - **box** (bloc) · x 488, y 1121, 608 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1121,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1121, 143 × 16
+              - **box** (bloc) · x 1108, y 1121,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 1108, y 1123, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 1108, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1115, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1122, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1129, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1136, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1143, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1150, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1157, y 1123, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1164, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1171, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1178, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1185, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 1200, y 1121,5, 142 × 15
+              - **box** (bloc) · x 1330, y 1121,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1361, y 1121,5, 39 × 15
+            - **line** (bloc) · x 432, y 1147, 968 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1148, 968 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1157,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1157,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1160, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1158,5, 15 × 15
+              - **box** (bloc) · x 488, y 1158, 608 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1158,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1158, 105 × 16
+              - **box** (bloc) · x 1108, y 1158,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 1108, y 1160, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 1108, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1115, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1122, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1129, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1136, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1143, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1150, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1157, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1164, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1171, y 1160, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1178, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 1185, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 1200, y 1158,5, 112 × 15
+              - **box** (bloc) · x 1330, y 1158,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1364, y 1158,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1205, 1151 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1205, 1151 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1219,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1218,5, 53 × 17
+            - **chip** (bloc) · x 1284, y 1217,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 1290, y 1219,5, 15 × 15
+            - **chip** (bloc) · x 1319, y 1217,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 1325, y 1219,5, 69 × 15
+          - **line** (bloc) · x 265, y 1249, 1151 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1250, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1261,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1261,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1262, 14 × 14
+            - **box** (bloc) · x 355, y 1261, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1261, 91 × 16
+            - **box** (bloc) · x 1290, y 1260,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1261,5, 51 × 15
+              - **fchip** (bloc) · x 1357, y 1260,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1363, y 1263, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1261,5, 15 × 15
+          - **line** (bloc) · x 265, y 1288, 1151 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 148 × 16
+            - **box** (bloc) · x 1290, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1357, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1363, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 1151 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1339, 194 × 16
+            - **box** (bloc) · x 1290, y 1339,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 1315, y 1339,5, 85 × 15
+          - **line** (bloc) · x 265, y 1366, 1151 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 1151 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 925 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1378, 161 × 16
+            - **box** (bloc) · x 1290, y 1377,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1300, y 1378,5, 51 × 15
+              - **fchip** (bloc) · x 1357, y 1377,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1363, y 1380, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1379, y 1378,5, 15 × 15
+  - **agent-overlay** (bloc) · x 720, y 0, 720 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `panel`
+    - **vline** (bloc) · x 720, y 0, 1 × 1440 · fond `border` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 721, y 0, 719 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension remplit/remplit
       - **agent-header** (bloc) · x 721, y 0, 719 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 737, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 743,5, y 20,5, 15 × 15
@@ -16353,8 +16298,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 721, y 56, 719 × 1 · fond `soft` · dimension remplit/fixe
-      - **agent-body** (bloc) · x 721, y 57, 719 × 1343 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · dimension remplit/remplit
-        - **agent-list** (bloc) · x 721, y 57, 210 × 1343 · flex colonne, espacement 8, marges internes 8, alignement start/start · fond `bg` · dimension fixe/remplit
+      - **agent-body** (bloc) · x 721, y 57, 719 × 1383 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · dimension remplit/remplit
+        - **agent-list** (bloc) · x 721, y 57, 210 × 1383 · flex colonne, espacement 8, marges internes 8, alignement start/start · fond `bg` · dimension fixe/remplit
           - **agent-list-top** (bloc) · x 729, y 65, 194 × 32 · flex ligne, espacement 4, marges internes 0, alignement center/start · dimension fixe/auto
             - **Button / outline** (bloc) · x 729, y 65, 194 × 32 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6 · dimension remplit/fixe
               - icône `plus` 13 px, `fg` — x 739, y 74,5, 13 × 13
@@ -16373,9 +16318,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Relances client » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 737, y 232, 94 × 16
               - **box** (bloc) · x 737, y 251, 106 × 15 · flex ligne, espacement 4, marges internes 0, alignement center/start
                 - « 2 oct. · 3 messages » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 737, y 251, 106 × 15
-        - **vline** (bloc) · x 931, y 57, 1 × 1343 · fond `border` · dimension fixe/remplit
-        - **agent-reading** (bloc) · x 932, y 57, 508 × 1343 · flex colonne, espacement 0, marges internes 0, alignement center/start · dimension remplit/remplit
-          - **conversation** (bloc) · x 932, y 57, 508 × 1274 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+        - **vline** (bloc) · x 931, y 57, 1 × 1383 · fond `border` · dimension fixe/remplit
+        - **agent-reading** (bloc) · x 932, y 57, 508 × 1383 · flex colonne, espacement 0, marges internes 0, alignement center/start · dimension remplit/remplit
+          - **conversation** (bloc) · x 932, y 57, 508 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
             - **user-row** (bloc) · x 950, y 73, 472 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
               - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
                 - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -16418,12 +16363,12 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 974, y 471, 57 × 15
                 - **Button / outline** (bloc) · x 1049, y 466, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
                   - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1059, y 471, 45 × 15
-          - **line** (bloc) · x 932, y 1331, 508 × 1 · fond `soft` · dimension remplit/fixe
-          - **compose-column** (bloc) · x 932, y 1332, 508 × 68 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/auto
-            - **compose** (bloc) · x 932, y 1332, 508 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-              - **box** (bloc) · x 950, y 1346, 472 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-                - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 962, y 1358, 147 × 16
-                - icône `send` 15 px, `mfg` — x 1395, y 1358,5, 15 × 15
+          - **line** (bloc) · x 932, y 1371, 508 × 1 · fond `soft` · dimension remplit/fixe
+          - **compose-column** (bloc) · x 932, y 1372, 508 × 68 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/auto
+            - **compose** (bloc) · x 932, y 1372, 508 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+              - **box** (bloc) · x 950, y 1386, 472 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+                - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 962, y 1398, 147 × 16
+                - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
 
 ## Phase 34
 
@@ -16707,7 +16652,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
 ## P34 · Vue d'ensemble, livrée aujourd'hui
 
 Board `P34 · Vue d'ensemble, livrée aujourd'hui` (sombre) et `P34 · Vue d'ensemble, livrée aujourd'hui (clair)`, page « Phase 34 » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-p34-vue-ensemble-livree-dark.png` et `exports/proposition-p34-vue-ensemble-livree-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-p34-vue-ensemble-livree-dark.png` et `exports/proposition-p34-vue-ensemble-livree-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -16727,9 +16672,9 @@ Exports : `exports/proposition-p34-vue-ensemble-livree-dark.png` et `exports/pro
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -16845,36 +16790,36 @@ Exports : `exports/proposition-p34-vue-ensemble-livree-dark.png` et `exports/pro
 132. « F7 » (x 281, y 1027)
 133. « Rapport de centre journalier » (x 304, y 1027)
 134. « aujourd'hui » (x 616,4, y 1032)
-135. « En ce moment » (x 302, y 1094,5)
-136. « 2 sessions T3 Code » (x 281, y 1114,5)
-137. « F5 » (x 454, y 1085,5)
-138. « SILO-33 » (x 488, y 1085,5)
-139. « Écran d'envoi hors ligne » (x 547, y 1085)
-140. « Étape 7/12 · Porte qualité » (x 859, y 1085,5)
-141. « 42 min » (x 1020, y 1085,5)
-142. « F4 » (x 454, y 1122,5)
-143. « SILO-45 » (x 488, y 1122,5)
-144. « Conflits de saisie » (x 547, y 1122)
-145. « Étape 9/12 · Review » (x 859, y 1122,5)
-146. « 18 min » (x 1023, y 1122,5)
-147. « Activité » (x 304, y 1182,5)
-148. « git » (x 949, y 1183,5)
-149. « full-delivery » (x 984, y 1183,5)
-150. « 15:04 » (x 281, y 1225,5)
-151. « PR #22 ouverte » (x 355, y 1225)
-152. « SILO-32 » (x 959, y 1225,5)
-153. « F5 » (x 1038, y 1225,5)
-154. « 14:51 » (x 281, y 1264,5)
-155. « Étape 7/12 · Porte qualité » (x 355, y 1264)
-156. « SILO-33 » (x 959, y 1264,5)
-157. « F5 » (x 1038, y 1264,5)
-158. « 14:40 » (x 281, y 1303,5)
-159. « Agent de projet · lot n° 7 proposé » (x 355, y 1303)
-160. « Agent de projet » (x 974, y 1303,5)
-161. « 14:36 » (x 281, y 1342,5)
-162. « PR #18 fusionnée · F3 livrée » (x 355, y 1342)
-163. « SILO-21 » (x 959, y 1342,5)
-164. « F3 » (x 1038, y 1342,5)
+135. « En ce moment » (x 302, y 1130,5)
+136. « 2 sessions T3 Code » (x 281, y 1150,5)
+137. « F5 » (x 454, y 1121,5)
+138. « SILO-33 » (x 488, y 1121,5)
+139. « Écran d'envoi hors ligne » (x 547, y 1121)
+140. « Étape 7/12 · Porte qualité » (x 859, y 1121,5)
+141. « 42 min » (x 1020, y 1121,5)
+142. « F4 » (x 454, y 1158,5)
+143. « SILO-45 » (x 488, y 1158,5)
+144. « Conflits de saisie » (x 547, y 1158)
+145. « Étape 9/12 · Review » (x 859, y 1158,5)
+146. « 18 min » (x 1023, y 1158,5)
+147. « Activité » (x 304, y 1218,5)
+148. « git » (x 949, y 1219,5)
+149. « full-delivery » (x 984, y 1219,5)
+150. « 15:04 » (x 281, y 1261,5)
+151. « PR #22 ouverte » (x 355, y 1261)
+152. « SILO-32 » (x 959, y 1261,5)
+153. « F5 » (x 1038, y 1261,5)
+154. « 14:51 » (x 281, y 1300,5)
+155. « Étape 7/12 · Porte qualité » (x 355, y 1300)
+156. « SILO-33 » (x 959, y 1300,5)
+157. « F5 » (x 1038, y 1300,5)
+158. « 14:40 » (x 281, y 1339,5)
+159. « Agent de projet · lot n° 7 proposé » (x 355, y 1339)
+160. « Agent de projet » (x 974, y 1339,5)
+161. « 14:36 » (x 281, y 1378,5)
+162. « PR #18 fusionnée · F3 livrée » (x 355, y 1378)
+163. « SILO-21 » (x 959, y 1378,5)
+164. « F3 » (x 1038, y 1378,5)
 165. « Agent de projet · Silo » (x 1154, y 20)
 166. « Fais le point du jour » (x 1194, y 83)
 167. « 14:38 » (x 1194, y 106)
@@ -16891,15 +16836,15 @@ Exports : `exports/proposition-p34-vue-ensemble-livree-dark.png` et `exports/pro
 178. « bloque F6, prévue en S43 » (x 1158, y 448)
 179. « Valider (3) » (x 1142, y 491)
 180. « Refuser » (x 1227, y 491)
-181. « Écris à l'agent de projet… » (x 1130, y 1358)
+181. « Écris à l'agent de projet… » (x 1130, y 1398)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P34 · Vue d'ensemble, livrée aujourd'hui** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P34 · Vue d'ensemble, livrée aujourd'hui** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -16949,16 +16894,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -16972,7 +16917,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -17243,7 +17188,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -17317,121 +17262,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1029, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 1031, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 1032, 64 × 15
-        - **live** (bloc) · x 265, y 1069, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1069, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1094,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1096, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1099, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1094,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1114,5, 107 × 15
-          - **box** (bloc) · x 415, y 1069, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1069, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1075, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1084,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1084,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1087, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1085,5, 15 × 15
-              - **box** (bloc) · x 488, y 1085, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1085,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1085, 143 × 16
-              - **box** (bloc) · x 767, y 1085,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1087, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1087, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1085,5, 142 × 15
-              - **box** (bloc) · x 989, y 1085,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1085,5, 39 × 15
-            - **line** (bloc) · x 432, y 1111, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1112, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1121,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1121,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1124, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1122,5, 15 × 15
-              - **box** (bloc) · x 488, y 1122, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1122,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1122, 105 × 16
-              - **box** (bloc) · x 767, y 1122,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1124, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1124, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1122,5, 112 × 15
-              - **box** (bloc) · x 989, y 1122,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1122,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1169, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1169, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1183,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1182,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1181,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1183,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1181,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1183,5, 69 × 15
-          - **line** (bloc) · x 265, y 1213, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1214, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1225,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1225,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1226, 14 × 14
-            - **box** (bloc) · x 355, y 1225, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1225, 91 × 16
-            - **box** (bloc) · x 949, y 1224,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1225,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1224,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1227, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1225,5, 15 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 148 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1303, 194 × 16
-            - **box** (bloc) · x 949, y 1303,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1303,5, 85 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1342, 161 × 16
-            - **box** (bloc) · x 949, y 1341,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1342,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1341,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1344, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1342,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1055, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1056, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1063,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1067, 13 × 13
+        - **live** (bloc) · x 265, y 1105, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1105, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1130,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1132, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1135, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1130,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1150,5, 107 × 15
+          - **box** (bloc) · x 415, y 1105, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1105, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1111, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1120,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1120,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1123, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1121,5, 15 × 15
+              - **box** (bloc) · x 488, y 1121, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1121,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1121, 143 × 16
+              - **box** (bloc) · x 767, y 1121,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1123, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1123, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1121,5, 142 × 15
+              - **box** (bloc) · x 989, y 1121,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1121,5, 39 × 15
+            - **line** (bloc) · x 432, y 1147, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1148, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1157,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1157,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1160, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1158,5, 15 × 15
+              - **box** (bloc) · x 488, y 1158, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1158,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1158, 105 × 16
+              - **box** (bloc) · x 767, y 1158,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1160, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1160, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1158,5, 112 × 15
+              - **box** (bloc) · x 989, y 1158,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1158,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1205, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1205, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1219,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1218,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1217,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1219,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1217,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1219,5, 69 × 15
+          - **line** (bloc) · x 265, y 1249, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1250, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1261,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1261,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1262, 14 × 14
+            - **box** (bloc) · x 355, y 1261, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1261, 91 × 16
+            - **box** (bloc) · x 949, y 1260,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1261,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1260,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1263, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1261,5, 15 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 148 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1339, 194 × 16
+            - **box** (bloc) · x 949, y 1339,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1339,5, 85 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1378, 161 × 16
+            - **box** (bloc) · x 949, y 1377,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1378,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1377,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1380, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1378,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -17446,7 +17395,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1274 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -17489,11 +17438,11 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 491, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 486, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 491, 45 × 15
-      - **line** (bloc) · x 1100, y 1331, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1332, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1346, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1358, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1358,5, 15 × 15
+      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
 
 ## P34 · Planning
 
@@ -17749,8 +17698,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `link` 12 px, `dim` — x 947, y 175,5, 12 × 12
               - « 2 en dépendent » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 963, y 174, 86 × 15
               - icône `chevRight` 12 px, `dim` — x 1053, y 175,5, 12 × 12
-        - **sprints** (bloc) · x 265, y 216, 1151 × 766 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
-          - **col reserve** (bloc) · x 265, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
+        - **sprints** (bloc) · x 265, y 216, 1151 × 732 · flex ligne, espacement 12, marges internes 0, alignement stretch/start · dimension remplit/remplit
+          - **col reserve** (bloc) · x 265, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · bordure 1 `border` dashed · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 275, y 226, 194 × 40 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 277, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - icône `inbox` 14 px, `mfg` — x 277, y 229, 14 × 14
@@ -17771,7 +17720,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « suivante : SILO-91 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 366, y 348, 91 × 14
             - **box** (bloc) · x 275, y 382, 194 × 83 · flex colonne, espacement 6, marges internes 8 4 8 4, alignement start/start · dimension remplit/auto
               - « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » — Geist 11,5 / 400, interligne 1,45, couleur `dim` — x 279, y 390, 186 × 67
-          - **col S41** (bloc) · x 491, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S41** (bloc) · x 491, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 501, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 503, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S41 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 503, y 228, 24 × 16
@@ -17801,7 +17750,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - icône `circleCheck` 13 px, `green` — x 635, y 409,5, 13 × 13
                 - « livrée » — Geist 11,5 / 400, interligne 1,2, couleur `green` — x 654, y 409, 29 × 14
               - « Voir ses box affectés » — Geist 13 / 500, interligne 1,2, couleur `mfg` — x 513, y 431, 170 × 16
-          - **col S42** (bloc) · x 717, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
+          - **col S42** (bloc) · x 717, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `card` · bordure 1 `mfg` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 727, y 226, 194 × 79 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 729, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S42 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 729, y 228, 24 × 16
@@ -17864,7 +17813,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « 1/2 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 739, y 618, 56 × 14
                 - **dot** (pastille) · x 850, y 622, 6 × 6 · fond `brand` · dimension fixe/fixe
                 - « SILO-33 » — Geist Mono 11 / 400, interligne 1,2, couleur `brandText` — x 862, y 618, 47 × 14
-          - **col S43** (bloc) · x 943, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S43** (bloc) · x 943, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 953, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 955, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S43 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 955, y 228, 24 × 16
@@ -17903,7 +17852,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 965, y 491, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « 0/4 étapes » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 965, y 491, 59 × 14
                 - « suivante : SILO-71 » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1045, y 491, 90 × 14
-          - **col S44** (bloc) · x 1169, y 216, 214 × 766 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
+          - **col S44** (bloc) · x 1169, y 216, 214 × 732 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 1179, y 226, 194 × 58 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 1181, y 228, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
                 - « S44 » — Geist Mono 13 / 600, interligne 1,2, couleur `fg` — x 1181, y 228, 24 × 16
@@ -17931,6 +17880,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - icône `sprint` 16 px, `fg` — x 1268, y 447,5, 16 × 16
               - « Déposer pour planifier en S44 » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1192, y 469,5, 168 × 15
               - « 26–30 oct. » — Geist 11 / 400, interligne 1,2, couleur `dim` — x 1248, y 490,5, 56 × 14
+        - **legend-bar** (bloc) · x 265, y 962, 1151 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/fixe
+          - **legend-toggle** (bloc) · x 265, y 962, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 268,5, y 965,5, 13 × 13
   - **dragging F9** (bloc) · x 1199, y 497, 194 × 74 · flex colonne, espacement 8, marges internes 10 12 10 12, alignement start/start · fond `card` · bordure 1 `fg` · rayon 8
     - **box** (bloc) · x 1211, y 507, 170 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
       - icône `grip` 13 px, `mfg` — x 1211, y 507,5, 13 × 13
@@ -18008,14 +17960,6 @@ Exports : `exports/proposition-p34-graphe-tout-voir-dark.png` et `exports/propos
 57. « Valider les contrats par l… » (x 725, y 265)
 58. « F5 » (x 415, y 351,5)
 59. « Envoyer les photos d'un constat » (x 435, y 351)
-60. « À faire » (x 283, y 960)
-61. « En cours » (x 346, y 960)
-62. « En review » (x 420, y 960)
-63. « Bloqué » (x 499, y 960)
-64. « En attente » (x 564, y 960)
-65. « Fonctionnalité » (x 652, y 960)
-66. « Colonne = sprint » (x 759, y 960)
-67. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -18110,7 +18054,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
       - **line** (bloc) · x 241, y 95, 1199 × 1 · fond `soft` · dimension remplit/fixe
       - **canvas** (bloc) · x 241, y 96, 1199 × 904 · fond `canvas` · dimension remplit/remplit
         - **lane S41** (bloc) · x 241, y 96, 150 × 904 · fond `canvas`
-        - icône `edges` 1199 px, `mfg` — x 241, y 96, 1199 × 904
         - **lane S42** (bloc) · x 391, y 96, 290 × 904 · fond `panel`
         - **lane S43** (bloc) · x 681, y 96, 260 × 904 · fond `canvas`
         - **lane S44** (bloc) · x 941, y 96, 250 × 904 · fond `panel`
@@ -18222,37 +18165,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **collapsed head** (bloc) · x 415, y 351, 242 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
             - « F5 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 415, y 351,5, 14 × 14
             - « Envoyer les photos d'un constat » — Geist 12,5 / 600, interligne 1,2, couleur `fg` — x 435, y 351, 191 × 15
+            - icône `clockAlert` 12 px, `red` — x 645, y 352,5, 12 × 12
           - **segs** (bloc) · x 415, y 374, 242 × 5 · flex ligne, espacement 3, marges internes 0, alignement center/start
             - **seg** (bloc) · x 415, y 374, 46 × 5 · fond `fg` · rayon 1 · dimension fixe/fixe
             - **seg** (bloc) · x 464, y 374, 46 × 5 · fond `purple` · rayon 1 · dimension fixe/fixe
             - **seg** (bloc) · x 513, y 374, 46 × 5 · fond `blue` · rayon 1 · dimension fixe/fixe
             - **seg** (bloc) · x 562, y 374, 46 × 5 · fond `border` · rayon 1 · dimension fixe/fixe
             - **seg** (bloc) · x 611, y 374, 46 × 5 · fond `border` · rayon 1 · dimension fixe/fixe
-        - **legend** (bloc) · x 257, y 952, 703 × 30 · flex ligne, espacement 14, marges internes 8 12 8 12, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
-          - **box** (bloc) · x 269, y 960, 49 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **ring** (pastille) · x 269, y 963, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-            - « À faire » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 283, y 960, 35 × 14
-          - **box** (bloc) · x 332, y 960, 60 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 332, y 963, 8 × 8 · fond `blue` · dimension fixe/fixe
-            - « En cours » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 346, y 960, 46 × 14
-          - **box** (bloc) · x 406, y 960, 65 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 406, y 963, 8 × 8 · fond `purple` · dimension fixe/fixe
-            - « En review » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 420, y 960, 51 × 14
-          - **box** (bloc) · x 485, y 960, 51 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 485, y 963, 8 × 8 · fond `red` · dimension fixe/fixe
-            - « Bloqué » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 499, y 960, 37 × 14
-          - **box** (bloc) · x 550, y 960, 68 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 550, y 963, 8 × 8 · fond `hold` · dimension fixe/fixe
-            - « En attente » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 564, y 960, 54 × 14
-          - **box** (bloc) · x 632, y 960, 95 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **box** (bloc) · x 632, y 962, 14 × 10 · bordure 1 `mfg` dashed · rayon 3 · dimension fixe/fixe
-            - « Fonctionnalité » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 652, y 960, 75 × 14
-          - **box** (bloc) · x 741, y 960, 104 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - icône `sprint` 12 px, `mfg` — x 741, y 961, 12 × 12
-            - « Colonne = sprint » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 759, y 960, 86 × 14
-          - **box** (bloc) · x 859, y 960, 89 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 859, y 963,5, 7 × 7 · fond `brand` · dimension fixe/fixe
-            - « Session active » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 872, y 960, 76 × 14
+        - **legend-bar** (bloc) · x 257, y 952, 32 × 30 · flex ligne, espacement 0, marges internes 0 6 0 6, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
+          - **legend-toggle** (bloc) · x 263, y 957, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 266,5, y 960,5, 13 × 13
 
 ## P34 · Graphe, F5 redépliée
 
@@ -18328,14 +18250,6 @@ Exports : `exports/proposition-p34-graphe-redeplie-dark.png` et `exports/proposi
 65. « T3 » (x 629, y 509)
 66. « Démo client » (x 439, y 543)
 67. « en retard · glisse en S43 » (x 432, y 570)
-68. « À faire » (x 283, y 960)
-69. « En cours » (x 346, y 960)
-70. « En review » (x 420, y 960)
-71. « Bloqué » (x 499, y 960)
-72. « En attente » (x 564, y 960)
-73. « Fonctionnalité » (x 652, y 960)
-74. « Colonne = sprint » (x 759, y 960)
-75. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -18430,7 +18344,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
       - **line** (bloc) · x 241, y 95, 1199 × 1 · fond `soft` · dimension remplit/fixe
       - **canvas** (bloc) · x 241, y 96, 1199 × 904 · fond `canvas` · dimension remplit/remplit
         - **lane S41** (bloc) · x 241, y 96, 150 × 904 · fond `canvas`
-        - icône `edges` 1199 px, `mfg` — x 241, y 96, 1199 × 904
         - **lane S42** (bloc) · x 391, y 96, 290 × 904 · fond `panel`
         - **lane S43** (bloc) · x 681, y 96, 260 × 904 · fond `canvas`
         - **lane S44** (bloc) · x 941, y 96, 250 × 904 · fond `panel`
@@ -18562,7 +18475,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - « Écran d'envoi hors ligne » — Geist 11,5 / 400, interligne 1,2, couleur `fg` — x 439, y 475, 124 × 14
             - **dot** (pastille) · x 622, y 479, 6 × 6 · fond `brand` · dimension fixe/fixe
             - icône `branch` 15 px, `blue` — x 634, y 474,5, 15 × 15
-          - **box** (bloc) · x 415, y 502, 242 × 28 · flex ligne, espacement 6, marges internes 7 8 7 8, alignement center/start · fond `card` · bordure 1 `border` · rayon 6 · dimension fixe/fixe
+          - **box** (bloc) · x 415, y 502, 242 × 28 · flex ligne, espacement 6, marges internes 7 8 7 8, alignement center/start · fond `card` · bordure 1 `brandLine` · rayon 6 · dimension fixe/fixe
             - **ring** (pastille) · x 423, y 511, 10 × 10 · bordure 1,5 `dim` · dimension fixe/fixe
             - « Tests E2E de l'envoi » — Geist 11,5 / 400, interligne 1,2, couleur `fg` — x 439, y 509, 104 × 14
             - **t3-pill** (bloc) · x 613, y 508, 36 × 16 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · fond `brandSoft` · rayon 9
@@ -18574,31 +18487,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **box** (bloc) · x 415, y 570, 138 × 14 · flex ligne, espacement 5, marges internes 0, alignement center/start
             - icône `clockAlert` 12 px, `red` — x 415, y 571, 12 × 12
             - « en retard · glisse en S43 » — Geist 11 / 400, interligne 1,2, couleur `red` — x 432, y 570, 121 × 14
-        - **legend** (bloc) · x 257, y 952, 703 × 30 · flex ligne, espacement 14, marges internes 8 12 8 12, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
-          - **box** (bloc) · x 269, y 960, 49 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **ring** (pastille) · x 269, y 963, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-            - « À faire » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 283, y 960, 35 × 14
-          - **box** (bloc) · x 332, y 960, 60 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 332, y 963, 8 × 8 · fond `blue` · dimension fixe/fixe
-            - « En cours » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 346, y 960, 46 × 14
-          - **box** (bloc) · x 406, y 960, 65 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 406, y 963, 8 × 8 · fond `purple` · dimension fixe/fixe
-            - « En review » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 420, y 960, 51 × 14
-          - **box** (bloc) · x 485, y 960, 51 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 485, y 963, 8 × 8 · fond `red` · dimension fixe/fixe
-            - « Bloqué » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 499, y 960, 37 × 14
-          - **box** (bloc) · x 550, y 960, 68 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 550, y 963, 8 × 8 · fond `hold` · dimension fixe/fixe
-            - « En attente » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 564, y 960, 54 × 14
-          - **box** (bloc) · x 632, y 960, 95 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **box** (bloc) · x 632, y 962, 14 × 10 · bordure 1 `mfg` dashed · rayon 3 · dimension fixe/fixe
-            - « Fonctionnalité » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 652, y 960, 75 × 14
-          - **box** (bloc) · x 741, y 960, 104 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - icône `sprint` 12 px, `mfg` — x 741, y 961, 12 × 12
-            - « Colonne = sprint » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 759, y 960, 86 × 14
-          - **box** (bloc) · x 859, y 960, 89 × 14 · flex ligne, espacement 6, marges internes 0, alignement center/start
-            - **dot** (pastille) · x 859, y 963,5, 7 × 7 · fond `brand` · dimension fixe/fixe
-            - « Session active » — Geist 11,5 / 400, interligne 1,2, couleur `mfg` — x 872, y 960, 76 × 14
+        - **legend-bar** (bloc) · x 257, y 952, 32 × 30 · flex ligne, espacement 0, marges internes 0 6 0 6, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
+          - **legend-toggle** (bloc) · x 263, y 957, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+            - icône `info` 13 px, `dim` — x 266,5, y 960,5, 13 × 13
 
 ## P34 · Kanban, colonne vide repliée
 
@@ -24249,7 +24140,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
 ## P34 · Toast de livraison
 
 Board `P34 · Toast de livraison` (sombre) et `P34 · Toast de livraison (clair)`, page « Phase 34 » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-p34-toast-livree-dark.png` et `exports/proposition-p34-toast-livree-light.png`, 1440 × 1400 px (échelle 1).
+Exports : `exports/proposition-p34-toast-livree-dark.png` et `exports/proposition-p34-toast-livree-light.png`, 1440 × 1440 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -24269,9 +24160,9 @@ Exports : `exports/proposition-p34-toast-livree-dark.png` et `exports/propositio
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1323)
-18. « AB » (x 21, y 1362)
-19. « Adam Ben Mchichi » (x 48, y 1360,5)
+17. « Paramètres » (x 41, y 1363)
+18. « AB » (x 21, y 1402)
+19. « Adam Ben Mchichi » (x 48, y 1400,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -24387,36 +24278,36 @@ Exports : `exports/proposition-p34-toast-livree-dark.png` et `exports/propositio
 132. « F7 » (x 281, y 1027)
 133. « Rapport de centre journalier » (x 304, y 1027)
 134. « aujourd'hui » (x 616,4, y 1032)
-135. « En ce moment » (x 302, y 1094,5)
-136. « 2 sessions T3 Code » (x 281, y 1114,5)
-137. « F5 » (x 454, y 1085,5)
-138. « SILO-33 » (x 488, y 1085,5)
-139. « Écran d'envoi hors ligne » (x 547, y 1085)
-140. « Étape 7/12 · Porte qualité » (x 859, y 1085,5)
-141. « 42 min » (x 1020, y 1085,5)
-142. « F4 » (x 454, y 1122,5)
-143. « SILO-45 » (x 488, y 1122,5)
-144. « Conflits de saisie » (x 547, y 1122)
-145. « Étape 9/12 · Review » (x 859, y 1122,5)
-146. « 18 min » (x 1023, y 1122,5)
-147. « Activité » (x 304, y 1182,5)
-148. « git » (x 949, y 1183,5)
-149. « full-delivery » (x 984, y 1183,5)
-150. « 15:04 » (x 281, y 1225,5)
-151. « PR #22 ouverte » (x 355, y 1225)
-152. « SILO-32 » (x 959, y 1225,5)
-153. « F5 » (x 1038, y 1225,5)
-154. « 14:51 » (x 281, y 1264,5)
-155. « Étape 7/12 · Porte qualité » (x 355, y 1264)
-156. « SILO-33 » (x 959, y 1264,5)
-157. « F5 » (x 1038, y 1264,5)
-158. « 14:40 » (x 281, y 1303,5)
-159. « Agent de projet · lot n° 7 proposé » (x 355, y 1303)
-160. « Agent de projet » (x 974, y 1303,5)
-161. « 14:36 » (x 281, y 1342,5)
-162. « PR #18 fusionnée · F3 livrée » (x 355, y 1342)
-163. « SILO-21 » (x 959, y 1342,5)
-164. « F3 » (x 1038, y 1342,5)
+135. « En ce moment » (x 302, y 1130,5)
+136. « 2 sessions T3 Code » (x 281, y 1150,5)
+137. « F5 » (x 454, y 1121,5)
+138. « SILO-33 » (x 488, y 1121,5)
+139. « Écran d'envoi hors ligne » (x 547, y 1121)
+140. « Étape 7/12 · Porte qualité » (x 859, y 1121,5)
+141. « 42 min » (x 1020, y 1121,5)
+142. « F4 » (x 454, y 1158,5)
+143. « SILO-45 » (x 488, y 1158,5)
+144. « Conflits de saisie » (x 547, y 1158)
+145. « Étape 9/12 · Review » (x 859, y 1158,5)
+146. « 18 min » (x 1023, y 1158,5)
+147. « Activité » (x 304, y 1218,5)
+148. « git » (x 949, y 1219,5)
+149. « full-delivery » (x 984, y 1219,5)
+150. « 15:04 » (x 281, y 1261,5)
+151. « PR #22 ouverte » (x 355, y 1261)
+152. « SILO-32 » (x 959, y 1261,5)
+153. « F5 » (x 1038, y 1261,5)
+154. « 14:51 » (x 281, y 1300,5)
+155. « Étape 7/12 · Porte qualité » (x 355, y 1300)
+156. « SILO-33 » (x 959, y 1300,5)
+157. « F5 » (x 1038, y 1300,5)
+158. « 14:40 » (x 281, y 1339,5)
+159. « Agent de projet · lot n° 7 proposé » (x 355, y 1339)
+160. « Agent de projet » (x 974, y 1339,5)
+161. « 14:36 » (x 281, y 1378,5)
+162. « PR #18 fusionnée · F3 livrée » (x 355, y 1378)
+163. « SILO-21 » (x 959, y 1378,5)
+164. « F3 » (x 1038, y 1378,5)
 165. « Agent de projet · Silo » (x 1154, y 20)
 166. « Fais le point du jour » (x 1194, y 83)
 167. « 14:38 » (x 1194, y 106)
@@ -24433,19 +24324,19 @@ Exports : `exports/proposition-p34-toast-livree-dark.png` et `exports/propositio
 178. « bloque F6, prévue en S43 » (x 1158, y 448)
 179. « Valider (3) » (x 1142, y 491)
 180. « Refuser » (x 1227, y 491)
-181. « Écris à l'agent de projet… » (x 1130, y 1358)
-182. « F3 » (x 1121, y 1326,5)
-183. « Réaffecter un box » (x 1144, y 1326)
-184. « · livrée » (x 1263, y 1326,5)
-185. « 4/4 étapes » (x 1228, y 1350)
+181. « Écris à l'agent de projet… » (x 1130, y 1398)
+182. « F3 » (x 1121, y 1373,5)
+183. « Réaffecter un box » (x 1144, y 1373)
+184. « · livrée » (x 1263, y 1373,5)
+185. « 4/4 étapes » (x 1228, y 1397)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P34 · Toast de livraison** (bloc) · x 0, y 0, 1440 × 1400 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1400 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1400 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P34 · Toast de livraison** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -24495,16 +24386,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1316, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1323,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1323, 69 × 16
-      - **box** (bloc) · x 10, y 1348, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1356, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1362, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1360,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1361, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
+      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -24518,7 +24409,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1351 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -24789,7 +24680,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 785, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 787, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 785, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 824, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 824, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 824, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 838,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 837,5, 74 × 17
@@ -24863,121 +24754,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1029, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 610,4, y 1031, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 616,4, y 1032, 64 × 15
-        - **live** (bloc) · x 265, y 1069, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1069, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1094,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1096, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1099, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1094,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1114,5, 107 × 15
-          - **box** (bloc) · x 415, y 1069, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1069, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1075, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1084,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1084,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1087, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1085,5, 15 × 15
-              - **box** (bloc) · x 488, y 1085, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1085,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1085, 143 × 16
-              - **box** (bloc) · x 767, y 1085,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1087, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1087, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1087, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1087, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1085,5, 142 × 15
-              - **box** (bloc) · x 989, y 1085,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1085,5, 39 × 15
-            - **line** (bloc) · x 432, y 1111, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1112, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1121,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1121,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1124, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1122,5, 15 × 15
-              - **box** (bloc) · x 488, y 1122, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1122,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1122, 105 × 16
-              - **box** (bloc) · x 767, y 1122,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1124, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1124, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1124, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1124, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1122,5, 112 × 15
-              - **box** (bloc) · x 989, y 1122,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1122,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1169, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1169, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1183,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1182,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1181,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1183,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1181,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1183,5, 69 × 15
-          - **line** (bloc) · x 265, y 1213, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1214, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1225,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1225,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1226, 14 × 14
-            - **box** (bloc) · x 355, y 1225, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1225, 91 × 16
-            - **box** (bloc) · x 949, y 1224,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1225,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1224,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1227, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1225,5, 15 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 148 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1303, 194 × 16
-            - **box** (bloc) · x 949, y 1303,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1303,5, 85 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1342, 161 × 16
-            - **box** (bloc) · x 949, y 1341,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1342,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1341,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1344, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1342,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1400 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1400 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1055, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1056, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1063,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1067, 13 × 13
+        - **live** (bloc) · x 265, y 1105, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1105, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1130,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1132, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1135, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1130,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1150,5, 107 × 15
+          - **box** (bloc) · x 415, y 1105, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1105, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1111, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1120,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1120,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1123, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1121,5, 15 × 15
+              - **box** (bloc) · x 488, y 1121, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1121,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1121, 143 × 16
+              - **box** (bloc) · x 767, y 1121,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1123, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1123, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1123, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1123, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1121,5, 142 × 15
+              - **box** (bloc) · x 989, y 1121,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1121,5, 39 × 15
+            - **line** (bloc) · x 432, y 1147, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1148, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1157,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1157,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1160, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1158,5, 15 × 15
+              - **box** (bloc) · x 488, y 1158, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1158,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1158, 105 × 16
+              - **box** (bloc) · x 767, y 1158,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1160, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1160, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1160, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1160, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1158,5, 112 × 15
+              - **box** (bloc) · x 989, y 1158,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1158,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1205, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1205, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1219,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1218,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1217,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1219,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1217,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1219,5, 69 × 15
+          - **line** (bloc) · x 265, y 1249, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1250, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1261,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1261,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1262, 14 × 14
+            - **box** (bloc) · x 355, y 1261, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1261, 91 × 16
+            - **box** (bloc) · x 949, y 1260,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1261,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1260,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1263, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1261,5, 15 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 148 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1339, 194 × 16
+            - **box** (bloc) · x 949, y 1339,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1339,5, 85 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1378, 161 × 16
+            - **box** (bloc) · x 949, y 1377,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1378,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1377,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1380, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1378,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -24992,7 +24887,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1274 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -25035,30 +24930,30 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 491, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 486, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 491, 45 × 15
-      - **line** (bloc) · x 1100, y 1331, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1332, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1346, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1358, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1358,5, 15 × 15
-  - **toast livraison** (bloc) · x 1084, y 1314, 340 × 63 · flex colonne, espacement 8, marges internes 12 14 12 14, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
-    - **box** (bloc) · x 1098, y 1326, 312 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - icône `circleCheck` 15 px, `green` — x 1098, y 1326,5, 15 × 15
-      - « F3 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1121, y 1326,5, 15 × 15
-      - « Réaffecter un box » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1144, y 1326, 111 × 16
-      - « · livrée » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1263, y 1326,5, 37 × 15
-      - icône `x` 13 px, `dim` — x 1397, y 1327,5, 13 × 13
-    - **box** (bloc) · x 1098, y 1350, 190 × 15 · flex ligne, espacement 10, marges internes 0 0 0 23, alignement center/start
-      - **segs** (bloc) · x 1121, y 1354,5, 97 × 6 · flex ligne, espacement 3, marges internes 0, alignement center/start
-        - **seg** (bloc) · x 1121, y 1354,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
-        - **seg** (bloc) · x 1146, y 1354,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
-        - **seg** (bloc) · x 1171, y 1354,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
-        - **seg** (bloc) · x 1196, y 1354,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
-      - « 4/4 étapes » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1228, y 1350, 60 × 15
+      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
+  - **toast livraison** (bloc) · x 1084, y 1361, 340 × 63 · flex colonne, espacement 8, marges internes 12 14 12 14, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
+    - **box** (bloc) · x 1098, y 1373, 312 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - icône `circleCheck` 15 px, `green` — x 1098, y 1373,5, 15 × 15
+      - « F3 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 1121, y 1373,5, 15 × 15
+      - « Réaffecter un box » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1144, y 1373, 111 × 16
+      - « · livrée » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1263, y 1373,5, 37 × 15
+      - icône `x` 13 px, `dim` — x 1397, y 1374,5, 13 × 13
+    - **box** (bloc) · x 1098, y 1397, 190 × 15 · flex ligne, espacement 10, marges internes 0 0 0 23, alignement center/start
+      - **segs** (bloc) · x 1121, y 1401,5, 97 × 6 · flex ligne, espacement 3, marges internes 0, alignement center/start
+        - **seg** (bloc) · x 1121, y 1401,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
+        - **seg** (bloc) · x 1146, y 1401,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
+        - **seg** (bloc) · x 1171, y 1401,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
+        - **seg** (bloc) · x 1196, y 1401,5, 22 × 6 · fond `green` · rayon 2 · dimension fixe/fixe
+      - « 4/4 étapes » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1228, y 1397, 60 × 15
 
 ## P34 · Récapitulatif de sprint
 
 Board `P34 · Récapitulatif de sprint` (sombre) et `P34 · Récapitulatif de sprint (clair)`, page « Phase 34 » du fichier Penpot « Kibo · Redesign ».
-Exports : `exports/proposition-p34-recap-sprint-dark.png` et `exports/proposition-p34-recap-sprint-light.png`, 1440 × 1440 px (échelle 1).
+Exports : `exports/proposition-p34-recap-sprint-dark.png` et `exports/proposition-p34-recap-sprint-light.png`, 1440 × 1480 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
@@ -25078,9 +24973,9 @@ Exports : `exports/proposition-p34-recap-sprint-dark.png` et `exports/propositio
 14. « Kibo » (x 55, y 361)
 15. « Atlas » (x 55, y 393)
 16. « Nimbus » (x 55, y 425)
-17. « Paramètres » (x 41, y 1363)
-18. « AB » (x 21, y 1402)
-19. « Adam Ben Mchichi » (x 48, y 1400,5)
+17. « Paramètres » (x 41, y 1403)
+18. « AB » (x 21, y 1442)
+19. « Adam Ben Mchichi » (x 48, y 1440,5)
 20. « Silo » (x 277, y 16)
 21. « / » (x 308, y 16)
 22. « Vue d'ensemble » (x 323, y 16)
@@ -25201,36 +25096,36 @@ Exports : `exports/proposition-p34-recap-sprint-dark.png` et `exports/propositio
 137. « F7 » (x 281, y 1066)
 138. « Rapport de centre journalier » (x 304, y 1066)
 139. « aujourd'hui » (x 656,1, y 1071)
-140. « En ce moment » (x 302, y 1133,5)
-141. « 2 sessions T3 Code » (x 281, y 1153,5)
-142. « F5 » (x 454, y 1124,5)
-143. « SILO-33 » (x 488, y 1124,5)
-144. « Écran d'envoi hors ligne » (x 547, y 1124)
-145. « Étape 7/12 · Porte qualité » (x 859, y 1124,5)
-146. « 42 min » (x 1020, y 1124,5)
-147. « F4 » (x 454, y 1161,5)
-148. « SILO-45 » (x 488, y 1161,5)
-149. « Conflits de saisie » (x 547, y 1161)
-150. « Étape 9/12 · Review » (x 859, y 1161,5)
-151. « 18 min » (x 1023, y 1161,5)
-152. « Activité » (x 304, y 1221,5)
-153. « git » (x 949, y 1222,5)
-154. « full-delivery » (x 984, y 1222,5)
-155. « 15:04 » (x 281, y 1264,5)
-156. « PR #22 ouverte » (x 355, y 1264)
-157. « SILO-32 » (x 959, y 1264,5)
-158. « F5 » (x 1038, y 1264,5)
-159. « 14:51 » (x 281, y 1303,5)
-160. « Étape 7/12 · Porte qualité » (x 355, y 1303)
-161. « SILO-33 » (x 959, y 1303,5)
-162. « F5 » (x 1038, y 1303,5)
-163. « 14:40 » (x 281, y 1342,5)
-164. « Agent de projet · lot n° 7 proposé » (x 355, y 1342)
-165. « Agent de projet » (x 974, y 1342,5)
-166. « 14:36 » (x 281, y 1381,5)
-167. « PR #18 fusionnée · F3 livrée » (x 355, y 1381)
-168. « SILO-21 » (x 959, y 1381,5)
-169. « F3 » (x 1038, y 1381,5)
+140. « En ce moment » (x 302, y 1169,5)
+141. « 2 sessions T3 Code » (x 281, y 1189,5)
+142. « F5 » (x 454, y 1160,5)
+143. « SILO-33 » (x 488, y 1160,5)
+144. « Écran d'envoi hors ligne » (x 547, y 1160)
+145. « Étape 7/12 · Porte qualité » (x 859, y 1160,5)
+146. « 42 min » (x 1020, y 1160,5)
+147. « F4 » (x 454, y 1197,5)
+148. « SILO-45 » (x 488, y 1197,5)
+149. « Conflits de saisie » (x 547, y 1197)
+150. « Étape 9/12 · Review » (x 859, y 1197,5)
+151. « 18 min » (x 1023, y 1197,5)
+152. « Activité » (x 304, y 1257,5)
+153. « git » (x 949, y 1258,5)
+154. « full-delivery » (x 984, y 1258,5)
+155. « 15:04 » (x 281, y 1300,5)
+156. « PR #22 ouverte » (x 355, y 1300)
+157. « SILO-32 » (x 959, y 1300,5)
+158. « F5 » (x 1038, y 1300,5)
+159. « 14:51 » (x 281, y 1339,5)
+160. « Étape 7/12 · Porte qualité » (x 355, y 1339)
+161. « SILO-33 » (x 959, y 1339,5)
+162. « F5 » (x 1038, y 1339,5)
+163. « 14:40 » (x 281, y 1378,5)
+164. « Agent de projet · lot n° 7 proposé » (x 355, y 1378)
+165. « Agent de projet » (x 974, y 1378,5)
+166. « 14:36 » (x 281, y 1417,5)
+167. « PR #18 fusionnée · F3 livrée » (x 355, y 1417)
+168. « SILO-21 » (x 959, y 1417,5)
+169. « F3 » (x 1038, y 1417,5)
 170. « Agent de projet · Silo » (x 1154, y 20)
 171. « Fais le point du jour » (x 1194, y 83)
 172. « 16 oct. · 14:38 » (x 1194, y 106)
@@ -25247,25 +25142,25 @@ Exports : `exports/proposition-p34-recap-sprint-dark.png` et `exports/propositio
 183. « bloque F6, prévue en S43 » (x 1158, y 468)
 184. « Valider (3) » (x 1142, y 511)
 185. « Refuser » (x 1227, y 511)
-186. « Écris à l'agent de projet… » (x 1130, y 1398)
-187. « Sprint S42 terminé » (x 1023, y 1261)
-188. « 12–16 oct. » (x 1158, y 1262)
-189. « 1 fonctionnalité livrée » (x 1015, y 1288)
-190. « F3 Réaffecter un box » (x 1156, y 1288,5)
-191. « 8 étapes fusionnées » (x 1015, y 1314)
-192. « sur 14 prévues · capacité 5 » (x 1150, y 1314,5)
-193. « F5 passe en S43 » (x 1015, y 1340)
-194. « 4 étapes restantes » (x 1127, y 1340,5)
-195. « Suivant : S43 · 19–23 oct. · 8 étapes prévues » (x 1000, y 1382)
-196. « Ouvrir le planning » (x 1279, y 1382)
+186. « Écris à l'agent de projet… » (x 1130, y 1438)
+187. « Sprint S42 terminé » (x 1023, y 1309)
+188. « 12–16 oct. » (x 1158, y 1310)
+189. « 1 fonctionnalité livrée » (x 1015, y 1336)
+190. « F3 Réaffecter un box » (x 1156, y 1336,5)
+191. « 8 étapes fusionnées » (x 1015, y 1362)
+192. « sur 14 prévues · capacité 5 » (x 1150, y 1362,5)
+193. « F5 passe en S43 » (x 1015, y 1388)
+194. « 4 étapes restantes » (x 1127, y 1388,5)
+195. « Suivant : S43 · 19–23 oct. · 8 étapes prévues » (x 1000, y 1430)
+196. « Ouvrir le planning » (x 1279, y 1430)
 
 ### Blocs
 
 Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
 
-- **P34 · Récapitulatif de sprint** (bloc) · x 0, y 0, 1440 × 1440 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1440 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1440 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
+- **P34 · Récapitulatif de sprint** (bloc) · x 0, y 0, 1440 × 1480 · fond `bg`
+  - **root** (bloc) · x 0, y 0, 1440 × 1480 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
+    - **sidebar** (bloc) · x 0, y 0, 240 × 1480 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
       - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
         - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
         - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
@@ -25315,16 +25210,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
         - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
         - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 1356, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 1363,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1363, 69 × 16
-      - **box** (bloc) · x 10, y 1388, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 1396, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1402, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1400,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 1401, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 858 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
+      - **nav / Paramètres** (bloc) · x 10, y 1396, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `settings` 15 px, `mfg` — x 18, y 1403,5, 15 × 15
+        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1403, 69 × 16
+      - **box** (bloc) · x 10, y 1428, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
+        - **avatar** (bloc) · x 16, y 1436, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
+          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 1442, 14 × 12
+        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 1440,5, 107 × 15
+        - icône `more` 14 px, `dim` — x 210, y 1441, 14 × 14
+    - **vline** (bloc) · x 240, y 0, 1 × 1480 · fond `soft` · dimension fixe/remplit
+    - **main** (bloc) · x 241, y 0, 858 × 1480 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
       - **topbar** (bloc) · x 241, y 0, 858 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
         - **box** (bloc) · x 261, y 16, 158 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
           - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
@@ -25338,7 +25233,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - icône `bot` 15 px, `brand` — x 961, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `brandText` — x 982, y 16,5, 91 × 15
       - **line** (bloc) · x 241, y 48, 858 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 858 × 1391 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
+      - **box** (bloc) · x 241, y 49, 858 × 1431 · flex colonne, espacement 14, marges internes 18 24 24 24, alignement start/start · dimension remplit/remplit
         - **box** (bloc) · x 265, y 67, 810 × 49 · flex ligne, espacement 12, marges internes 0, alignement end/start · dimension remplit/auto
           - **box** (bloc) · x 265, y 67, 420 × 49 · flex colonne, espacement 4, marges internes 0, alignement start/start
             - « Silo » — Geist 24 / 600, interligne 1,2, couleur `fg`, interlettrage -0,3 — x 265, y 67, 43 × 29
@@ -25617,7 +25512,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - **box** (bloc) · x 818, y 824, 79 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
                     - **ring** (pastille) · x 818, y 826, 11 × 11 · bordure 2 `amber` · dimension fixe/fixe
                     - « CI en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 835, y 824, 62 × 15
-        - **card / Échéances** (bloc) · x 265, y 863, 810 × 231 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+        - **card / Échéances** (bloc) · x 265, y 863, 810 × 267 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
           - **box** (bloc) · x 265, y 863, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
             - icône `calendar` 15 px, `mfg` — x 281, y 877,5, 15 × 15
             - « Échéances » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 876,5, 74 × 17
@@ -25698,121 +25593,125 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 900,6, y 1068, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 650,1, y 1070, 76 × 17 · flex ligne, espacement 0, marges internes 1 6 1 6, alignement center/start · fond `primary` · rayon 4
               - « aujourd'hui » — Geist 12 / 600, interligne 1,2, couleur `pfg` — x 656,1, y 1071, 64 × 15
-        - **live** (bloc) · x 265, y 1108, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1108, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
-            - **box** (bloc) · x 281, y 1133,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **halo** (bloc) · x 281, y 1135, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
-                - **dot** (pastille) · x 284, y 1138, 7 × 7 · fond `brand` · dimension fixe/fixe
-              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1133,5, 89 × 16
-            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1153,5, 107 × 15
-          - **box** (bloc) · x 415, y 1108, 1 × 86 · fond `brandLine` · dimension fixe/remplit
-          - **box** (bloc) · x 416, y 1108, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
-            - **box** (bloc) · x 432, y 1114, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1123,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1123,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1126, 12 × 12
-                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1124,5, 15 × 15
-              - **box** (bloc) · x 488, y 1124, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1124,5, 51 × 15
-                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1124, 143 × 16
-              - **box** (bloc) · x 767, y 1124,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1126, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1126, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1126, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1126, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1124,5, 142 × 15
-              - **box** (bloc) · x 989, y 1124,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1124,5, 39 × 15
-            - **line** (bloc) · x 432, y 1150, 627 × 1 · fond `brandLine` · dimension remplit/fixe
-            - **box** (bloc) · x 432, y 1151, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
-              - **box** (bloc) · x 432, y 1160,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                - **fchip** (bloc) · x 432, y 1160,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                  - icône `package` 12 px, `mfg` — x 438, y 1163, 12 × 12
-                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1161,5, 15 × 15
-              - **box** (bloc) · x 488, y 1161, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1161,5, 51 × 15
-                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1161, 105 × 16
-              - **box** (bloc) · x 767, y 1161,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
-                - **segs** (bloc) · x 767, y 1163, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
-                  - **seg** (bloc) · x 767, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 774, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 781, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 788, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 795, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 802, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 809, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 816, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 823, y 1163, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 830, y 1163, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 837, y 1163, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                  - **seg** (bloc) · x 844, y 1163, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
-                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1161,5, 112 × 15
-              - **box** (bloc) · x 989, y 1161,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
-                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1161,5, 36 × 15
-        - **card / Activité** (bloc) · x 265, y 1208, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 1208, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
-            - icône `activity` 15 px, `mfg` — x 281, y 1222,5, 15 × 15
-            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1221,5, 53 × 17
-            - **chip** (bloc) · x 943, y 1220,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1222,5, 15 × 15
-            - **chip** (bloc) · x 978, y 1220,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
-              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1222,5, 69 × 15
-          - **line** (bloc) · x 265, y 1252, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1253, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1264,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1264,5, 36 × 15
-            - icône `pr` 14 px, `purple` — x 331, y 1265, 14 × 14
-            - **box** (bloc) · x 355, y 1264, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1264, 91 × 16
-            - **box** (bloc) · x 949, y 1263,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1264,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1263,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1266, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1264,5, 15 × 15
-          - **line** (bloc) · x 265, y 1291, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1292, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1303,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1303,5, 36 × 15
-            - icône `flag` 14 px, `mfg` — x 331, y 1304, 14 × 14
-            - **box** (bloc) · x 355, y 1303, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1303, 148 × 16
-            - **box** (bloc) · x 949, y 1302,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1303,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1302,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1305, 12 × 12
-                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1303,5, 15 × 15
-          - **line** (bloc) · x 265, y 1330, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1331, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1342,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1342,5, 36 × 15
-            - icône `bot` 14 px, `brand` — x 331, y 1343, 14 × 14
-            - **box** (bloc) · x 355, y 1342, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1342, 194 × 16
-            - **box** (bloc) · x 949, y 1342,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1342,5, 85 × 15
-          - **line** (bloc) · x 265, y 1369, 810 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 1370, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 281, y 1381,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1381,5, 36 × 15
-            - icône `merge` 14 px, `green` — x 331, y 1382, 14 × 14
-            - **box** (bloc) · x 355, y 1381, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1381, 161 × 16
-            - **box** (bloc) · x 949, y 1380,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1381,5, 51 × 15
-              - **fchip** (bloc) · x 1016, y 1380,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 12 px, `mfg` — x 1022, y 1383, 12 × 12
-                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1381,5, 15 × 15
-    - **vline** (bloc) · x 1099, y 0, 1 × 1440 · fond `soft` · dimension fixe/remplit
-    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1440 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
+          - **legend-line** (bloc) · x 265, y 1094, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **legend-bar** (bloc) · x 265, y 1095, 810 × 35 · flex ligne, espacement 0, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
+            - **legend-toggle** (bloc) · x 279, y 1102,5, 20 × 20 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 5 · dimension fixe/fixe
+              - icône `info` 13 px, `dim` — x 282,5, y 1106, 13 × 13
+        - **live** (bloc) · x 265, y 1144, 810 × 86 · flex ligne, espacement 0, marges internes 0, alignement stretch/start · fond `brandSoft` · bordure 1 `brandLine` · rayon 10 · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1144, 150 × 86 · flex colonne, espacement 4, marges internes 0 16 0 16, alignement start/center · dimension fixe/remplit
+            - **box** (bloc) · x 281, y 1169,5, 110 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **halo** (bloc) · x 281, y 1171, 13 × 13 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brand (22 %)` · rayon 6,5 · dimension fixe/fixe
+                - **dot** (pastille) · x 284, y 1174, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - « En ce moment » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 302, y 1169,5, 89 × 16
+            - « 2 sessions T3 Code » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1189,5, 107 × 15
+          - **box** (bloc) · x 415, y 1144, 1 × 86 · fond `brandLine` · dimension fixe/remplit
+          - **box** (bloc) · x 416, y 1144, 659 × 86 · flex colonne, espacement 0, marges internes 6 16 6 16, alignement start/start · dimension remplit/remplit
+            - **box** (bloc) · x 432, y 1150, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1159,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1159,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1162, 12 × 12
+                  - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1160,5, 15 × 15
+              - **box** (bloc) · x 488, y 1160, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1160,5, 51 × 15
+                - « Écran d'envoi hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1160, 143 × 16
+              - **box** (bloc) · x 767, y 1160,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1162, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1162, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1162, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1162, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 7/12 · Porte qualité » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1160,5, 142 × 15
+              - **box** (bloc) · x 989, y 1160,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 42 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1020, y 1160,5, 39 × 15
+            - **line** (bloc) · x 432, y 1186, 627 × 1 · fond `brandLine` · dimension remplit/fixe
+            - **box** (bloc) · x 432, y 1187, 627 × 36 · flex ligne, espacement 12, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **box** (bloc) · x 432, y 1196,5, 44 × 17 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+                - **fchip** (bloc) · x 432, y 1196,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                  - icône `package` 12 px, `mfg` — x 438, y 1199, 12 × 12
+                  - « F4 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 454, y 1197,5, 15 × 15
+              - **box** (bloc) · x 488, y 1197, 267 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+                - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 488, y 1197,5, 51 × 15
+                - « Conflits de saisie » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 547, y 1197, 105 × 16
+              - **box** (bloc) · x 767, y 1197,5, 210 × 15 · flex ligne, espacement 10, marges internes 0, alignement center/start · dimension fixe/auto
+                - **segs** (bloc) · x 767, y 1199, 82 × 12 · flex ligne, espacement 2, marges internes 0, alignement center/start
+                  - **seg** (bloc) · x 767, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 774, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 781, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 788, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 795, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 802, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 809, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 816, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 823, y 1199, 5 × 12 · fond `mfg` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 830, y 1199, 5 × 12 · fond `brand` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 837, y 1199, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                  - **seg** (bloc) · x 844, y 1199, 5 × 12 · fond `border` · rayon 1 · dimension fixe/fixe
+                - « Étape 9/12 · Review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 859, y 1197,5, 112 × 15
+              - **box** (bloc) · x 989, y 1197,5, 70 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension fixe/auto
+                - « 18 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1023, y 1197,5, 36 × 15
+        - **card / Activité** (bloc) · x 265, y 1244, 810 × 200 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **box** (bloc) · x 265, y 1244, 810 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
+            - icône `activity` 15 px, `mfg` — x 281, y 1258,5, 15 × 15
+            - « Activité » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 1257,5, 53 × 17
+            - **chip** (bloc) · x 943, y 1256,5, 27 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « git » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 949, y 1258,5, 15 × 15
+            - **chip** (bloc) · x 978, y 1256,5, 81 × 19 · flex ligne, espacement 4, marges internes 2 6 2 6, alignement center/start · bordure 1 `border` · rayon 4
+              - « full-delivery » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 984, y 1258,5, 69 × 15
+          - **line** (bloc) · x 265, y 1288, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1289, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1300,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 15:04 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1300,5, 36 × 15
+            - icône `pr` 14 px, `purple` — x 331, y 1301, 14 × 14
+            - **box** (bloc) · x 355, y 1300, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #22 ouverte » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1300, 91 × 16
+            - **box** (bloc) · x 949, y 1299,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1300,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1299,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1302, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1300,5, 15 × 15
+          - **line** (bloc) · x 265, y 1327, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1328, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1339,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:51 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1339,5, 36 × 15
+            - icône `flag` 14 px, `mfg` — x 331, y 1340, 14 × 14
+            - **box** (bloc) · x 355, y 1339, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Étape 7/12 · Porte qualité » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1339, 148 × 16
+            - **box** (bloc) · x 949, y 1338,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1339,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1338,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1341, 12 × 12
+                - « F5 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1339,5, 15 × 15
+          - **line** (bloc) · x 265, y 1366, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1367, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1378,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1378,5, 36 × 15
+            - icône `bot` 14 px, `brand` — x 331, y 1379, 14 × 14
+            - **box** (bloc) · x 355, y 1378, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1378, 194 × 16
+            - **box** (bloc) · x 949, y 1378,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 974, y 1378,5, 85 × 15
+          - **line** (bloc) · x 265, y 1405, 810 × 1 · fond `soft` · dimension remplit/fixe
+          - **box** (bloc) · x 265, y 1406, 810 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
+            - **box** (bloc) · x 281, y 1417,5, 40 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
+              - « 14:36 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1417,5, 36 × 15
+            - icône `merge` 14 px, `green` — x 331, y 1418, 14 × 14
+            - **box** (bloc) · x 355, y 1417, 584 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
+              - « PR #18 fusionnée · F3 livrée » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 355, y 1417, 161 × 16
+            - **box** (bloc) · x 949, y 1416,5, 110 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
+              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 959, y 1417,5, 51 × 15
+              - **fchip** (bloc) · x 1016, y 1416,5, 43 × 17 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
+                - icône `package` 12 px, `mfg` — x 1022, y 1419, 12 × 12
+                - « F3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 1038, y 1417,5, 15 × 15
+    - **vline** (bloc) · x 1099, y 0, 1 × 1480 · fond `soft` · dimension fixe/remplit
+    - **agent-panel** (bloc) · x 1100, y 0, 340 × 1480 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel` · dimension fixe/remplit
       - **agent-header** (bloc) · x 1100, y 0, 340 × 56 · flex ligne, espacement 10, marges internes 0 10 0 16, alignement center/start · dimension remplit/fixe
         - **avatar** (bloc) · x 1116, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 14 · dimension fixe/fixe
           - icône `bot` 15 px, `brand` — x 1122,5, y 20,5, 15 × 15
@@ -25827,7 +25726,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - **icon-button / x** (bloc) · x 1402, y 14, 28 × 28 · flex ligne, espacement 0, marges internes 0, alignement center/center · rayon 6 · dimension fixe/fixe
             - icône `x` 15 px, `dim` — x 1408,5, y 20,5, 15 × 15
       - **line** (bloc) · x 1100, y 56, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **conversation** (bloc) · x 1100, y 57, 340 × 1314 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
+      - **conversation** (bloc) · x 1100, y 57, 340 × 1354 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · dimension remplit/remplit
         - **user-row** (bloc) · x 1118, y 73, 304 × 58 · flex ligne, espacement 0, marges internes 0, alignement center/end · dimension remplit/auto
           - **user-message** (bloc) · x 1182, y 73, 240 × 58 · flex colonne, espacement 4, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 10 · dimension fixe/auto
             - « Fais le point du jour » — Geist 13 / 400, interligne 1,45, couleur `fg` — x 1194, y 83, 216 × 19
@@ -25870,35 +25769,35 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Valider (3) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 1142, y 511, 57 × 15
             - **Button / outline** (bloc) · x 1217, y 506, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
               - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1227, y 511, 45 × 15
-      - **line** (bloc) · x 1100, y 1371, 340 × 1 · fond `soft` · dimension remplit/fixe
-      - **compose** (bloc) · x 1100, y 1372, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
-        - **box** (bloc) · x 1118, y 1386, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
-          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1398, 147 × 16
-          - icône `send` 15 px, `mfg` — x 1395, y 1398,5, 15 × 15
-  - **récapitulatif S42** (bloc) · x 984, y 1247, 440 × 169 · flex colonne, espacement 10, marges internes 14 16 14 16, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
-    - **box** (bloc) · x 1000, y 1261, 408 × 17 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - icône `sprint` 15 px, `mfg` — x 1000, y 1262, 15 × 15
-      - « Sprint S42 terminé » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 1023, y 1261, 127 × 17
-      - « 12–16 oct. » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1158, y 1262, 57 × 15
-      - icône `x` 13 px, `dim` — x 1395, y 1263, 13 × 13
-    - **box** (bloc) · x 1000, y 1288, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - **dot** (pastille) · x 1000, y 1292,5, 7 × 7 · fond `green` · dimension fixe/fixe
-      - « 1 fonctionnalité livrée » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1288, 133 × 16
-      - « F3 Réaffecter un box » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1156, y 1288,5, 120 × 15
-    - **box** (bloc) · x 1000, y 1314, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - **dot** (pastille) · x 1000, y 1318,5, 7 × 7 · fond `fg` · dimension fixe/fixe
-      - « 8 étapes fusionnées » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1314, 127 × 16
-      - « sur 14 prévues · capacité 5 » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1150, y 1314,5, 151 × 15
-    - **box** (bloc) · x 1000, y 1340, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - **dot** (pastille) · x 1000, y 1344,5, 7 × 7 · fond `amber` · dimension fixe/fixe
-      - « F5 passe en S43 » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1340, 104 × 16
-      - « 4 étapes restantes » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1127, y 1340,5, 107 × 15
-    - **line** (bloc) · x 1000, y 1366, 408 × 1 · fond `soft` · dimension remplit/fixe
-    - **box** (bloc) · x 1000, y 1377, 408 × 25 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - « Suivant : S43 · 19–23 oct. · 8 étapes prévues » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1000, y 1382, 251 × 15
-      - **Button / outline** (bloc) · x 1269, y 1377, 139 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
-        - « Ouvrir le planning » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1279, y 1382, 100 × 15
-        - icône `arrowRight` 13 px, `fg` — x 1385, y 1383, 13 × 13
+      - **line** (bloc) · x 1100, y 1411, 340 × 1 · fond `soft` · dimension remplit/fixe
+      - **compose** (bloc) · x 1100, y 1412, 340 × 68 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+        - **box** (bloc) · x 1118, y 1426, 304 × 40 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+          - « Écris à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 1130, y 1438, 147 × 16
+          - icône `send` 15 px, `mfg` — x 1395, y 1438,5, 15 × 15
+  - **récapitulatif S42** (bloc) · x 984, y 1295, 440 × 169 · flex colonne, espacement 10, marges internes 14 16 14 16, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
+    - **box** (bloc) · x 1000, y 1309, 408 × 17 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - icône `sprint` 15 px, `mfg` — x 1000, y 1310, 15 × 15
+      - « Sprint S42 terminé » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 1023, y 1309, 127 × 17
+      - « 12–16 oct. » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1158, y 1310, 57 × 15
+      - icône `x` 13 px, `dim` — x 1395, y 1311, 13 × 13
+    - **box** (bloc) · x 1000, y 1336, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - **dot** (pastille) · x 1000, y 1340,5, 7 × 7 · fond `green` · dimension fixe/fixe
+      - « 1 fonctionnalité livrée » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1336, 133 × 16
+      - « F3 Réaffecter un box » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1156, y 1336,5, 120 × 15
+    - **box** (bloc) · x 1000, y 1362, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - **dot** (pastille) · x 1000, y 1366,5, 7 × 7 · fond `fg` · dimension fixe/fixe
+      - « 8 étapes fusionnées » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1362, 127 × 16
+      - « sur 14 prévues · capacité 5 » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1150, y 1362,5, 151 × 15
+    - **box** (bloc) · x 1000, y 1388, 408 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - **dot** (pastille) · x 1000, y 1392,5, 7 × 7 · fond `amber` · dimension fixe/fixe
+      - « F5 passe en S43 » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 1015, y 1388, 104 × 16
+      - « 4 étapes restantes » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1127, y 1388,5, 107 × 15
+    - **line** (bloc) · x 1000, y 1414, 408 × 1 · fond `soft` · dimension remplit/fixe
+    - **box** (bloc) · x 1000, y 1425, 408 × 25 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - « Suivant : S43 · 19–23 oct. · 8 étapes prévues » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 1000, y 1430, 251 × 15
+      - **Button / outline** (bloc) · x 1269, y 1425, 139 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
+        - « Ouvrir le planning » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1279, y 1430, 100 × 15
+        - icône `arrowRight` 13 px, `fg` — x 1385, y 1431, 13 × 13
 
 ## P34 · Code couleur
 

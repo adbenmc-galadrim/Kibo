@@ -494,12 +494,16 @@ x 6 à 323, y 75 à 453), comme en phase 33. Cotes : entrées retirées, « Accu
 « (clair) ») :
 - Vue d'ensemble (P1 bis, P1 bis v3, en attente, Agent agrandi, En retard) : tuile « En cours » en fonctionnalités ouvertes et limite,
   colonnes réordonnées (En retard sous les indicateurs ; Sprint et Prochaine à gauche, Questions puis En review à droite ; Échéances,
-  En ce moment et Activité en pleine largeur), légende de la frise retirée, rangée « Livrée aujourd'hui » sous les indicateurs.
-  Les boards passent à 1 400 px (En retard et récapitulatif de sprint : 1 440 px), même hauteur en sombre et en clair, `root` et
-  calque `agent-overlay` étirés ; leurs exports sont refaits en entier et `e2e/pixel-masks.ts` suit (Vue d'ensemble : 1 400).
+  En ce moment et Activité en pleine largeur), légende de la frise repliée (§47 : bouton `Info` seul dans une bande de 35 px,
+  `S.p34Legend`, aussi sur P6), rangée « Livrée aujourd'hui » sous les indicateurs.
+  Les boards passent à 1 440 px (En retard et récapitulatif de sprint : 1 480 px), même hauteur en sombre et en clair, `root` et
+  calque `agent-overlay` étirés ; leurs exports sont refaits en entier et `e2e/pixel-masks.ts` suit (Vue d'ensemble : 1 440).
 - Planning (P2, en attente, P2b) : alertes fusionnées en une ligne par sprint, ambre de capacité sur S42 et S43 seulement, légende
-  retirée ; bande « En attente » au-dessus des sprints sur la variante en attente.
-- Graphe (P5b, en attente) : cadres à bord plein `border`, lignes de 28 px, points de 10 px, icônes de 15 px, bouton « Tout voir ».
+  repliée (bouton `Info` de 20 px en pied, `S.p34PlanLegend`) ; bande « En attente » au-dessus des sprints sur la variante en attente.
+- Graphe (P5b, en attente) : cadres à bord plein `border` (maquette 04, à la place des pointillés de §47), lignes de 28 px, points de
+  10 px, icônes de 15 px, bouton « Tout voir » ; **aucune flèche entre cadres** (§47, `S.noEdges34`) ; légende repliée (bouton `Info`
+  dans un cadre de 32 × 30 px en bas à gauche, `S.graphLegend34`). Un cadre replié en retard garde sa bordure rouge et l'icône
+  `clockAlert` ; une étape en session (pastille « T3 ») prend la bordure `brandLine`. P5 · Graphe (ancienne référence) n'est pas repris.
 - Kanban (P7, en attente, barre repliée, P8c) : un seul signal par carte (bloqué > changements > attente > attend), PR et « Étape n/12 »
   seulement en En cours et En review, colonne vide repliée en bande de 40 px, compteur « 41 tickets ».
 - Fiche ticket (P8, P8b, P8f, en attente, P8d, P8e) : « Lancer dans T3 » remplace « Copier /full-delivery » (passé au menu « ⋯ »),
@@ -525,4 +529,7 @@ Pièges relevés :
   board flex (`S.relayout34`, ou tous les boards flex du board) force le recalcul.
 - `S.replace()` ramène les calques libres à leur position enregistrée : déplacer un calque par `S.place34`, qui met `S.placed` à jour,
   puis `bringToFront()` pour les superpositions (infobulle, toast, récapitulatif, dialogue).
+- Sur un board fraîchement cloné, une partie des retouches peut ne pas être enregistrée (flèches du Graphe restées après
+  `draw34`) : relire la structure dans un onglet neuf et rejouer la retouche sur le board (`S.fix34` pour les écrans en place).
+- Un texte recoloré doit passer par `S.refont` (sinon le rendu garde l'ancienne couleur, « Créer » blanc sur blanc en sombre).
 - L'onglet plante sur la page « Phase 34 » après de longs lots : dessiner par deux ou trois clés, exporter chaque clé dans un onglet neuf.

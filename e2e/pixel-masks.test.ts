@@ -160,7 +160,7 @@ test("the Graphe on hold compares against its own board on 1000 px, with the mas
 test("the widened agent covers the Vue d'ensemble from x 720 and keeps only the masks left of it", () => {
   expect(PIXEL_HEIGHTS["agent-agrandi"]).toBe(PIXEL_HEIGHTS["vue-ensemble"]);
   expect(referenceOf("agent-agrandi")).toBe("agent-agrandi");
-  expect(DIALOG_SCREENS["agent-agrandi"]).toEqual({ x: 720, y: 0, w: 720, h: 1400 });
+  expect(DIALOG_SCREENS["agent-agrandi"]).toEqual({ x: 720, y: 0, w: 720, h: 1440 });
   const kept = masksOf("agent-agrandi");
   expect(kept.map((m) => [m.x, m.y])).toEqual([
     [16, 1216],

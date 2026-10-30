@@ -22,8 +22,10 @@ Object.assign(S.ICONS, {
   shrink: '<path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8"/><path d="M9 19.8V15m0 0H4.2M9 15l-6 6"/><path d="M15 4.2V9m0 0h4.8M15 9l6-6"/><path d="M9 4.2V9m0 0H4.2M9 9 3 3"/>',
   expand: '<path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/>',
   circleDot: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="1"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
   externalLink: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
 });
+S.legendButton34 = (p) => { const k = S.box(p, { name: "legend-toggle", w: 20, h: 20, radius: 5, dir: "row", align: "center", justify: "center" }); S.icon(k, "info", 13, S.C.dim); return k; };
 S.modeOf = (b) => (/\(clair\)$/.test(b.name) ? "light" : "dark");
 S.find34 = (scope, pred) => penpotUtils.findShapes(pred, scope)[0];
 S.texts34 = (scope) => penpotUtils.findShapes(s => s.type === "text", scope).map(t => t.characters);
@@ -156,7 +158,10 @@ S.p34QuestionsHead = (b) => { const C = S.C, q = S.card34(b, "Questions"); if (!
   S.spacer(head); S.dot(head, C.red, 6); S.txt(head, n + (n > 1 ? " bloquantes" : " bloquante"), { size: 12, weight: 500, color: C.red }); return n; };
 S.p34Legend = (b) => { const ech = S.card34(b, "Échéances"); if (!ech) return null; const kids = [...ech.children].reverse();
   const leg = kids[kids.length - 1], line = kids[kids.length - 2];
-  if (!leg || !S.texts34(leg).includes("étape livrée")) return "none"; leg.remove(); if (line && line.name === "line") line.remove(); return "removed"; };
+  for (const c of ech.children.filter(c => c.name === "legend-bar" || c.name === "legend-line")) c.remove();
+  let out = "none"; if (leg && S.texts34(leg).includes("étape livrée")) { leg.remove(); if (line && line.name === "line") line.remove(); out = "removed"; }
+  S.hline(ech, S.C.soft).name = "legend-line"; const bar = S.row(ech, { name: "legend-bar", fx: true, h: 35, pad: [0, 14], fill: S.C.panel }); S.legendButton34(bar);
+  return out + "+toggle"; };
 S.p34Steps = (b) => { let n = 0;
   for (const t of penpotUtils.findShapes(s => s.type === "text" && (/^Phase \d+\/12/.test(s.characters) || /^\d+ · (Lecture|Mémoire|Repérage|Questions|Worktree|Conception|Code|Porte qualité|PR|Review|Démo|Livré)$/.test(s.characters)), b)) {
     t.characters = /^Phase/.test(t.characters) ? t.characters.replace(/^Phase/, "Étape") : t.characters.replace(/^(\d+) · /, "Étape $1/12 · "); S.refont(t); n++; }
@@ -173,7 +178,7 @@ S.p34Livree = (b) => { if (S.card34(b, "Livrée aujourd'hui")) return "done"; co
   const r = S.showAfter(main, kpis, S.livreeRow({ total: n ? `${n.characters} ${done.characters}` : null })); r.layoutChild.horizontalSizing = "fill"; return "added"; };
 S.p34Fit = async (b) => { await S.wait(800); const main = S.find34(b, s => s.name === "kpis"), body = S.parentOf(b, main);
   const last = [...body.children].reverse().pop(); const need = Math.ceil(Math.max(...body.children.map(c => c.y + c.height)) - b.y + body.flex.bottomPadding);
-  if (need > b.height) S.resizeScreen(b, need); return need; };
+  const h = need <= 1440 ? 1440 : Math.ceil(need / 40) * 40; if (h !== b.height) S.resizeScreen(b, h); return h; };
 S.p34Vue = async (b, o = {}) => { S.setMode(S.modeOf(b)); const out = {};
   out.tile = S.p34Tile(b); out.legend = S.p34Legend(b); out.steps = S.p34Steps(b); out.q = S.p34QuestionsHead(b);
   out.order = S.p34Order(b); if (o.livree) out.livree = S.p34Livree(b); out.h = await S.p34Fit(b); return out; };
@@ -193,7 +198,8 @@ S.p34Capacity = (col) => { const C = S.C, code = col.name.replace(/^col /, ""), 
   load.fills = [{ fillColor: amber ? C.amber : C.dim, fillOpacity: 1 }]; return amber; };
 S.p34PlanLegend = (b) => { const sprints = S.find34(b, z => z.name === "sprints"), body = S.parentOf(b, sprints);
   const leg = body.children.find(c => c.name === "box" && S.texts34(c).includes("étape livrée")); if (leg) leg.remove();
-  sprints.layoutChild.verticalSizing = "fill"; return !!leg; };
+  for (const c of body.children.filter(c => c.name === "legend-bar")) c.remove();
+  sprints.layoutChild.verticalSizing = "fill"; const bar = S.row(body, { name: "legend-bar", fx: true, h: 20 }); S.legendButton34(bar); return !!leg; };
 S.heldBand = (o = {}) => { const C = S.C, groups = S.heldGroups(), n = S.HOLDS.length;
   const band = S.col(null, { name: "held band", fx: true, pad: [10, 14], gap: 8, radius: 10, stroke: C.border, fill: C.panel });
   const h = S.row(band, { fx: true, gap: 8 }); S.icon(h, "pause", 14, C.hold); S.txt(h, "En attente", { size: 13, weight: 600 });
@@ -233,6 +239,9 @@ S.restack34 = (b, gap = 30) => { const cv = S.find34(b, z => z.name === "canvas"
   for (const fr of S.frames34(cv)) (lanes[Math.round(fr.x)] = lanes[Math.round(fr.x)] || []).push(fr);
   for (const list of Object.values(lanes)) { list.sort((a, c) => a.y - c.y); for (let i = 1; i < list.length; i++) list[i].y = list[i - 1].y + list[i - 1].height + gap; }
   return Object.keys(lanes).length; };
+S.noEdges34 = (b) => { const cv = S.find34(b, z => z.name === "canvas"); let n = 0; for (const e of cv.children.filter(c => c.name === "edges")) { e.remove(); n++; } return n; };
+S.graphLegend34 = (b) => { const cv = S.find34(b, z => z.name === "canvas"); for (const c of cv.children.filter(c => c.name === "legend" || c.name === "legend-bar")) c.remove();
+  const bar = S.row(cv, { name: "legend-bar", x: 16, y: Math.round(cv.height) - 18 - 30, w: 32, h: 30, pad: [0, 6], radius: 8, fill: S.C.card, stroke: S.C.border }); S.legendButton34(bar); bar.bringToFront(); return true; };
 S.edges34 = (b, anchor) => { const cv = S.find34(b, z => z.name === "canvas"), old = S.find34(cv, z => z.name === "edges"); const first = old && penpotUtils.findShapes(z => z.type === "path", old)[0];
   const col = first ? first.strokes[0].strokeColor : S.C.mfg, pairs = /en attente/.test(b.name) ? S.EDGES_GA : S.EDGES_P34;
   const box = (k) => { const n = S.find34(cv, z => z.name === "frame " + k); return { x: Math.round(n.x - cv.x), y: Math.round(n.y - cv.y), w: Math.round(n.width), h: Math.round(n.height) }; };
@@ -249,20 +258,23 @@ S.graphToolbar34 = (b, collapsed) => { const main = S.find34(b, z => z.name === 
   const btn = S.btn(bar, collapsed ? "Déplier tout" : "Tout voir", "outline", { sm: true, icon: collapsed ? "expand" : "shrink" }); btn.name = "toggle-all"; return true; };
 S.p34Graph = async (b) => { S.setMode(S.modeOf(b)); const out = { frames: 0 };
   for (const fr of S.frames34(b)) { S.p34Frame(fr); out.frames++; }
-  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.edges34(b); return out; };
+  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.noEdges34(b); out.legend = S.graphLegend34(b); return out; };
 S.collapse34 = (fr) => { const C = S.C, kids = [...fr.children].reverse(), head = kids[0], title = kids.find(c => c.type === "text"), segs = kids.find(c => c.name === "segs");
   const key = S.find34(head, z => z.type === "text" && /^F\d+$/.test(z.characters)).characters;
   for (const c of kids) if (c !== title && c !== segs) c.remove();
   const row = S.showFirst(fr, S.row(null, { name: "collapsed head", gap: 6 })); row.layoutChild.horizontalSizing = "fill";
   S.txt(row, key, { size: 11, mono: true, color: C.dim }); const max = Math.floor((fr.width - 20 - 24) / 6.9);
-  const full = title.characters; title.remove(); S.txt(row, full.length > max ? full.slice(0, max - 1).trimEnd() + "…" : full, { size: 12.5, weight: 600, color: C.fg });
+  const late = String(fr.strokes[0] && fr.strokes[0].strokeColor).toUpperCase() === String(C.red).toUpperCase(), room = late ? max - 3 : max;
+  const full = title.characters; title.remove(); S.txt(row, full.length > room ? full.slice(0, room - 1).trimEnd() + "…" : full, { size: 12.5, weight: 600, color: C.fg });
+  if (late) { S.spacer(row); S.icon(row, "clockAlert", 12, C.red); }
   fr.flex.topPadding = 13; fr.flex.bottomPadding = 13; fr.flex.rowGap = 8; fr.flex.verticalSizing = "fix"; fr.resize(fr.width, 56); return key; };
 S.p34GraphAll = async (b, open = []) => { S.setMode(S.modeOf(b)); const out = [];
   for (const fr of S.frames34(b)) { const k = fr.name.replace(/^frame /, ""); if (open.includes(k)) continue; S.collapse34(fr); out.push(k); }
-  S.graphToolbar34(b, true); await S.wait(800); S.restack34(b); await S.wait(300); S.edges34(b, 28); return out; };
+  S.graphToolbar34(b, true); await S.wait(800); S.restack34(b); await S.wait(300); S.noEdges34(b); return out; };
 S.t3Pill34 = (row) => { const C = S.C, ic = row.children.find(c => c.type === "group" && /^icon/.test(c.name.replace(/\s/g, "")));
   const p = S.row(null, { name: "t3-pill", pad: [1, 6], gap: 4, radius: 9, fill: C.brandSoft }); S.dot(p, C.brand, 6); S.txt(p, "T3", { size: 11, weight: 600, color: C.brandText });
-  if (ic) { S.showBefore(row, ic, p); ic.remove(); } else S.showLast(row, p); return p; };
+  if (ic) { S.showBefore(row, ic, p); ic.remove(); } else S.showLast(row, p);
+  row.strokes = [{ strokeColor: C.brandLine, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "solid" }]; return p; };
 
 // ---------- Questions (spec §50.10) : liste compacte, une ligne par question, une rangée de filtres ----------
 S.Q34 = [
@@ -512,7 +524,7 @@ S.export34 = async (only) => { await S.page("Phase 34"); await S.wait(800); cons
 S.neutral34 = (b, label) => { const C = S.C; let n = 0;
   for (const bt of penpotUtils.findShapes(z => /Button ?\/ ?brand/.test(z.name) && S.texts34(z).includes(label), b)) {
     bt.fills = [{ fillColor: C.primary, fillOpacity: 1 }]; bt.name = "Button/default";
-    for (const t of penpotUtils.findShapes(z => z.type === "text", bt)) t.fills = [{ fillColor: C.pfg, fillOpacity: 1 }];
+    for (const t of penpotUtils.findShapes(z => z.type === "text", bt)) { t.fills = [{ fillColor: C.pfg, fillOpacity: 1 }]; S.refont(t); }
     for (const ic of penpotUtils.findShapes(z => z.type === "path", bt)) if (ic.strokes && ic.strokes.length) ic.strokes = [{ ...ic.strokes[0], strokeColor: C.pfg }];
     n++; }
   return n; };
@@ -559,6 +571,10 @@ S.INPLACE34 = {
   "P9c · Supprimer la question": async (b) => { const r = await S.p34Questions(b); for (const n of ["veil", "dialog"]) { const d = b.children.find(c => c.name === n); if (d) d.bringToFront(); } return r; },
   "P9d · Questions, répondues": (b) => S.p34Questions(b, { qs: [S.Q34[1]], state: "répondue", openCount: 2, summary: "1 répondue" }),
 };
+S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b) }) };
+S.fix34 = async (name, kind) => { await S.page("Proposition"); const b = penpot.currentPage.root.children.find(c => c.name === name); if (!b) throw new Error("missing board: " + name);
+  S.setMode(S.modeOf(b)); S.placed = []; const r = S.FIX34[kind](b); await S.wait(600); const relaid = await S.relayout34(b); return { r, relaid, bottom: S.bottom34(b) }; };
+S.bottom34 = (b) => Math.round(Math.max(...penpotUtils.findShapes(z => z.type === "text", b).map(t => t.y + t.height - b.y)));
 S.inPlace34 = async (name) => { await S.page("Proposition"); const b = penpot.currentPage.root.children.find(c => c.name === name); if (!b) throw new Error("missing board: " + name);
   S.setMode(S.modeOf(b)); S.placed = []; const base = name.replace(/ \(clair\)$/, ""), fn = S.INPLACE34[base]; if (!fn) return null;
   const r = await fn(b); const steps = S.p34Steps(b); await S.wait(600); S.replace(); const relaid = await S.relayout34(b); return { r, steps, relaid, h: b.height }; };

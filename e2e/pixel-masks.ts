@@ -41,7 +41,7 @@ export const MASK_AREA_LIMIT = 0.04;
 const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   planning: 1000,
   fonctionnalite: 1000,
-  "vue-ensemble": 1400,
+  "vue-ensemble": 1440,
   graphe: 1000,
   "graphe-prs": 1000,
   "apercu-maquette": 1000,
