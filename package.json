@@ -13,7 +13,7 @@
     "check": "biome check .",
     "format": "biome check --write .",
     "start": "bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist",
-    "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/kanban components/graph components/github-issues components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
+    "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/kanban components/graph components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
     "test": "bun test packages components ./scripts",
     "budget": "bun packages/ui/scripts/bundle-budget.ts",
     "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved",

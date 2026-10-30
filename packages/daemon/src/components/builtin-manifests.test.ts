@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BUILTIN_ADAPTER_IDS, BUILTIN_IDS, ComponentManifest } from "@kibo/schema";
+import { BUILTIN_IDS, ComponentManifest } from "@kibo/schema";
 import { BUILTIN_MANIFESTS, builtinManifestOf } from "./builtin-manifests";
 
 const COMPONENTS = join(import.meta.dir, "../../../../components");
-const ids: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
+const ids: readonly string[] = BUILTIN_IDS;
 const onDisk = () =>
   readdirSync(COMPONENTS)
     .filter((dir) => ids.includes(dir))

@@ -19,7 +19,6 @@ mock.module("../api", () =>
       subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
         if (req.method === "getPresence") return [];
         return answer(req);
       },

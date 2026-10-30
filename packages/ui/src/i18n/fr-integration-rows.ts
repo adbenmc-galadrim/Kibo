@@ -8,10 +8,6 @@ export const frIntegrationRows = {
     description: (login: string | null) =>
       login ? `PR, reviews, statuts CI · compte ${login}` : "PR, reviews, statuts CI",
   },
-  "github-issues": {
-    title: "GitHub Issues & Projects",
-    description: "Synchronise les tickets d'un composant",
-  },
   "github-actions": { title: "GitHub Actions", description: "Runs et logs liés à la PR et au ticket" },
   figma: {
     title: "Figma",

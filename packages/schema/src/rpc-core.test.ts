@@ -52,3 +52,20 @@ test("components no longer reach the notes", () => {
   ];
   for (const call of calls) expect(ComponentCall.safeParse(call).success).toBe(false);
 });
+
+test("the GitHub Issues binding RPCs no longer parse", () => {
+  const retired = [
+    {
+      method: "createBinding",
+      projectId: "p1",
+      config: { repo: "a/b", project: null, importClosed: false, labels: [] },
+    },
+    { method: "deleteBinding", projectId: "p1", bindingId: "b1" },
+    { method: "syncBinding", projectId: "p1", bindingId: "b1" },
+    { method: "getSyncState", projectId: "p1" },
+    { method: "resolveOutbox", projectId: "p1", outboxId: 1, action: "retry" },
+    { method: "listGithubProjects", repo: "a/b" },
+    { method: "testIntegration", id: "github-issues" },
+  ];
+  for (const request of retired) expect(RpcRequest.safeParse(request).success).toBe(false);
+});

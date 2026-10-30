@@ -145,7 +145,6 @@ export type PullPage = z.infer<typeof PullPage>;
 export const IntegrationId = z.enum([
   "git",
   "github",
-  "github-issues",
   "github-actions",
   "figma",
   "penpot",

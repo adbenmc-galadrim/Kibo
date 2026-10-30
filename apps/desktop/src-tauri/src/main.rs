@@ -272,15 +272,10 @@ fn main() {
             let resource_dir = app.path().resource_dir()?;
             let ui_dir = resource_dir.join("ui");
             let toolchain_dir = resource_dir.join("toolchain");
-            let builtin_dir = resource_dir.join("builtin");
             let (mut events, child) = app
                 .shell()
                 .sidecar("kibo-daemon")?
                 .env("KIBO_NATIVE_NOTIFY", "1")
-                .env(
-                    "KIBO_BUILTIN_DIR",
-                    builtin_dir.to_string_lossy().to_string(),
-                )
                 .args([
                     "--port",
                     "0",

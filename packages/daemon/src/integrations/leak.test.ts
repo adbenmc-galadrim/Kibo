@@ -155,25 +155,6 @@ async function addMcpServers(): Promise<void> {
   await ok({ method: "listMcpServers" });
 }
 
-async function syncedKanban(projectId: string) {
-  const binding = await ok({
-    method: "createBinding",
-    projectId,
-    config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
-  });
-  const page = Created.parse(await run(projectId, { method: "addPage", title: "K", kind: "view" }));
-  const instance = Created.parse(
-    await run(projectId, {
-      method: "addInstance",
-      pageId: page.id,
-      component: "kanban@1.0.0",
-      config: { source: { bindingId: binding.id } },
-    }),
-  );
-  const sync = () => call({ method: "syncBinding", projectId, bindingId: binding.id });
-  return { instanceId: instance.id, sync };
-}
-
 async function githubScenario(): Promise<{ projectId: string; ticketId: string }> {
   await ok({ method: "connectGithub", auth: { mode: "token", token: SECRET } });
   const project = await ok({
@@ -183,15 +164,7 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
     folder: repo,
     color: "#71717A",
   });
-  const kanban = await syncedKanban(project.id);
-  gh.addIssue("adam/kibo", { title: "Depuis GitHub" });
-  gh.addIssue("adam/kibo", { title: `Echo ${SECRET}` });
-  await kanban.sync();
-  const created = Created.parse(
-    await run(project.id, { method: "createTicket", title: "Depuis Kibo" }, kanban.instanceId),
-  );
-  await kanban.sync();
-  expect(gh.repos.get("adam/kibo")?.issues.size).toBe(3);
+  const created = Created.parse(await run(project.id, { method: "createTicket", title: "Depuis Kibo" }));
 
   await run(project.id, {
     method: "upsertExternalRef",
@@ -217,12 +190,6 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   await ok({ method: "linkDesignFrame", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
   await ok({ method: "getDesignFrame", url: FIGMA_NODE, refresh: false });
 
-  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
-  await kanban.sync();
-  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 422, FOREIGN_ECHO);
-  await kanban.sync();
-  const state = JSON.stringify(await ok({ method: "getSyncState", projectId: project.id }));
-  expect(state).toContain("upstream said ***");
   gh.failNext("GET", /^\/user$/, 401, ECHO_AUTH);
   await call({ method: "testIntegration", id: "github" });
   gh.failNext("GET", /^\/user$/, 401, FOREIGN_ECHO);
@@ -260,7 +227,7 @@ function journalsWereWritten(tables: Place[]): void {
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
   expect(table("mcp_calls")).toContain('"tool":"echo_env"');
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
-  expect(table("integration_events")).toContain("upstream said ***");
+  expect(table("integration_events")).toContain("connected as adam (token)");
   expect(table("component_events")).not.toBe("");
   expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);
 }
@@ -275,7 +242,6 @@ test("after a full scenario, no secret appears anywhere", async () => {
 
   expect(responses.some((r) => r.includes("Bad credentials: Bearer ***"))).toBe(true);
   expect(JSON.stringify(snapshot)).toContain("Depuis Kibo");
-  expect(JSON.stringify(snapshot)).toContain("Echo ***");
   expect(events.messages.length).toBeGreaterThan(0);
 
   const whileRunning = rawFiles(home).map(([where, content]): Place => [`${where} (running)`, content]);

@@ -19,8 +19,7 @@
     "externalBin": ["binaries/kibo-daemon", "binaries/kibo-hook"],
     "resources": {
       "../../../packages/ui/dist/": "ui/",
-      "toolchain/": "toolchain/",
-      "builtin/": "builtin/"
+      "toolchain/": "toolchain/"
     },
     "icon": [
       "icons/32x32.png",

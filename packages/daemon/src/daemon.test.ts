@@ -88,7 +88,6 @@ describe("startDaemon", () => {
     expect(body.result.map((s) => s.id)).toEqual([
       "git",
       "github",
-      "github-issues",
       "github-actions",
       "figma",
       "penpot",
@@ -102,7 +101,11 @@ describe("startDaemon", () => {
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
       .all();
     db.close();
-    expect(tables.map((t) => t.name)).toContain("integration_events");
+    const names = tables.map((t) => t.name);
+    expect(names).toContain("integration_events");
+    for (const gone of ["sync_items", "sync_cursors", "sync_outbox", "market_sources", "market_pins"])
+      expect(names).not.toContain(gone);
+    expect((await rpc({ method: "listIntegrations" })).status).toBe(200);
   });
 
   test("stopping the daemon kills every mcp server process", async () => {

@@ -78,14 +78,14 @@ function rpc(wrap: (s: SecretStore) => SecretStore = (s) => s) {
 
 type Row = { id: string; state: string; account: string | null };
 
-test("connect, statuses of the three github rows, repos and projects", async () => {
+test("connect, statuses of the two github rows and repos", async () => {
   const r = rpc();
   const statusOf = async (id: string) =>
     ((await r.handle({ method: "listIntegrations" })) as Row[]).find((s) => s.id === id);
   expect((await statusOf("github"))?.state).toBe("disconnected");
   await r.handle({ method: "connectGithub", auth: { mode: "token", token: gh.token } });
   expect(await statusOf("github")).toMatchObject({ state: "connected", account: "adam" });
-  expect((await statusOf("github-issues"))?.state).toBe("connected");
+  expect(await statusOf("github-issues")).toBeUndefined();
   expect((await statusOf("github-actions"))?.state).toBe("connected");
   host.remoteUrl = null;
   expect((await statusOf("github-actions"))?.state).toBe("disconnected");
@@ -93,24 +93,6 @@ test("connect, statuses of the three github rows, repos and projects", async () 
   gh.addRepo("adam/other");
   expect(await r.handle({ method: "listGithubRepos", query: "OTH" })).toEqual([
     { fullName: "adam/other", private: false, description: null },
-  ]);
-  gh.setProject({
-    nodeId: "PVT_1",
-    owner: "adam",
-    number: 3,
-    title: "Roadmap",
-    repo: "adam/kibo",
-    fieldId: "F1",
-    options: [{ id: "O1", name: "Todo" }],
-  });
-  expect(await r.handle({ method: "listGithubProjects", repo: "adam/kibo" })).toEqual([
-    {
-      owner: "adam",
-      number: 3,
-      nodeId: "PVT_1",
-      title: "Roadmap",
-      statusField: { id: "F1", options: [{ id: "O1", name: "Todo" }] },
-    },
   ]);
   await r.handle({ method: "disconnectIntegration", id: "github" });
   expect((await statusOf("github"))?.state).toBe("disconnected");
@@ -137,7 +119,6 @@ test("github rows report a disconnected account without calling github", async (
   const rows = (await r.handle({ method: "listIntegrations" })) as Row[];
   expect(rows.map((s) => [s.id, s.state])).toEqual([
     ["github", "disconnected"],
-    ["github-issues", "disconnected"],
     ["github-actions", "disconnected"],
   ]);
   await expect(r.handle({ method: "listGithubRepos", query: "" })).rejects.toThrow("NOT_CONNECTED");
@@ -159,7 +140,7 @@ test("in token mode, an unavailable keychain turns the github row into an error 
   });
 });
 
-test("issues and actions rows follow an erroneous github row", async () => {
+test("the actions row follows an erroneous github row", async () => {
   let locked = false;
   const r = rpc((s) => ({
     ...s,
@@ -168,17 +149,14 @@ test("issues and actions rows follow an erroneous github row", async () => {
   await r.handle({ method: "connectGithub", auth: { mode: "token", token: gh.token } });
   locked = true;
   const rows = (await r.handle({ method: "listIntegrations" })) as (Row & { error: unknown })[];
-  for (const id of ["github-issues", "github-actions"]) {
-    expect(rows.find((s) => s.id === id)).toMatchObject({
-      state: "error",
-      error: { code: "SECRET_STORE_UNAVAILABLE", message: "keychain busy" },
-    });
-  }
+  expect(rows.find((s) => s.id === "github-actions")).toMatchObject({
+    state: "error",
+    error: { code: "SECRET_STORE_UNAVAILABLE", message: "keychain busy" },
+  });
   locked = false;
   const healed = (await r.handle({ method: "listIntegrations" })) as Row[];
   expect(healed.map((s) => [s.id, s.state])).toEqual([
     ["github", "connected"],
-    ["github-issues", "connected"],
     ["github-actions", "connected"],
   ]);
 });
@@ -197,7 +175,7 @@ test("in token mode, a token missing from the keychain turns the github rows int
     account: "adam",
     error: { code: "NOT_CONNECTED" },
   });
-  expect(rows.find((s) => s.id === "github-issues")).toMatchObject({
+  expect(rows.find((s) => s.id === "github-actions")).toMatchObject({
     state: "error",
     error: { code: "NOT_CONNECTED" },
   });

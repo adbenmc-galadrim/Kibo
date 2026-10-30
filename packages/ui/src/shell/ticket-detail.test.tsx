@@ -14,7 +14,6 @@ mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: { method: string }) => {
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
         if (req.method === "autoLinks.list") return [];
         return null;
       },
