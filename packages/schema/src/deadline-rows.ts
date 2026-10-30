@@ -21,7 +21,7 @@ export type DeadlineRow = {
   slipTo: Pick<Sprint, "id" | "code"> | null;
   blockedBy: string | null;
 };
-export type DeadlineFeature = {
+type DeadlineFeature = {
   id: string;
   shortKey: string;
   title: string;
@@ -30,7 +30,7 @@ export type DeadlineFeature = {
   state: FeatureState;
   steps: FeatureStep[];
 };
-export type DeadlineInput = {
+type DeadlineInput = {
   sprints: readonly SprintView[];
   features: readonly DeadlineFeature[];
   blockingQuestions: ReadonlyMap<string, string>;

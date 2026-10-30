@@ -2,8 +2,7 @@ import { z } from "zod";
 
 export { TodoItem } from "./todo-item";
 
-export const StepStatus = z.enum(["todo", "doing", "done", "blocked"]);
-export type StepStatus = z.infer<typeof StepStatus>;
+const StepStatus = z.enum(["todo", "doing", "done", "blocked"]);
 
 export const Step = z.object({
   id: z.string().trim().min(1).max(40),

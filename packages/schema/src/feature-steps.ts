@@ -23,7 +23,7 @@ export type FeatureStepSource = Pick<
   TicketView,
   "id" | "key" | "title" | "parentId" | "statusId" | "optional" | "delivery" | "externalRefs" | "onHold"
 >;
-export type FeatureStepsInput = {
+type FeatureStepsInput = {
   feature: string;
   tickets: readonly FeatureStepSource[];
   links: readonly Pick<Link, "from" | "to" | "type">[];

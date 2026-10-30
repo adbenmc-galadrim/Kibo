@@ -25,11 +25,11 @@ const tokenOf = (url: string) => url.slice(`${SANDBOX}/e/`.length);
 describe("embed service", () => {
   test("open mints a relay address on the sandbox port with the attributes of the kind", () => {
     const { s } = service();
-    const view = s.open("w1", "game", TARGET, "itch.io");
+    const view = s.open("w1", "storybook", TARGET, "itch.io");
     expect(view.url).toMatch(/^http:\/\/127\.0\.0\.1:4318\/e\/[0-9a-f]{64}$/);
-    expect(view).toMatchObject({ kind: "game", target: TARGET, expiresAt: 1_000 + 900_000 });
-    expect(view.sandbox).toBe(EMBED_ATTRIBUTES.game.sandbox);
-    expect(view.allow).toBe(EMBED_ATTRIBUTES.game.allow);
+    expect(view).toMatchObject({ kind: "storybook", target: TARGET, expiresAt: 1_000 + 900_000 });
+    expect(view.sandbox).toBe(EMBED_ATTRIBUTES.storybook.sandbox);
+    expect(view.allow).toBe(EMBED_ATTRIBUTES.storybook.allow);
     expect(s.open("w1", "storybook", "http://localhost:6006/iframe.html?id=a--b", "a").sandbox).toBe(
       EMBED_ATTRIBUTES.storybook.sandbox,
     );
@@ -37,7 +37,7 @@ describe("embed service", () => {
 
   test("the relay frames the real target without alias", () => {
     const { s } = service();
-    const relay = s.relay(tokenOf(s.open("w1", "game", TARGET, "itch.io").url));
+    const relay = s.relay(tokenOf(s.open("w1", "storybook", TARGET, "itch.io").url));
     expect(relay?.html).toContain('src="https://itch.io/embed-upload/1?color=333"');
     expect(relay?.headers["content-security-policy"]).toContain("frame-src https://itch.io;");
     expect(relay?.headers["content-security-policy"]).toContain(
@@ -47,14 +47,14 @@ describe("embed service", () => {
 
   test("a test alias redirects the iframe and its csp to the fake server", () => {
     const { s } = service({ aliases: new Map([["itch.io", new URL("http://127.0.0.1:9999")]]) });
-    const relay = s.relay(tokenOf(s.open("w1", "game", TARGET, "itch.io").url));
+    const relay = s.relay(tokenOf(s.open("w1", "storybook", TARGET, "itch.io").url));
     expect(relay?.html).toContain('src="http://127.0.0.1:9999/embed-upload/1?color=333"');
     expect(relay?.headers["content-security-policy"]).toContain("frame-src http://127.0.0.1:9999;");
   });
 
   test("a token answers until it expires, then never again", () => {
     const { s, advance } = service();
-    const token = tokenOf(s.open("w1", "game", TARGET, "itch.io").url);
+    const token = tokenOf(s.open("w1", "storybook", TARGET, "itch.io").url);
     expect(s.relay(token)).not.toBeNull();
     expect(s.relay(token)).not.toBeNull();
     advance(899_999);
@@ -66,11 +66,11 @@ describe("embed service", () => {
 
   test("at most sixteen live tokens per instance, the oldest goes first", () => {
     const { s } = service();
-    const first = tokenOf(s.open("w1", "game", TARGET, "itch.io").url);
-    for (let i = 0; i < 15; i++) s.open("w1", "game", TARGET, "itch.io");
+    const first = tokenOf(s.open("w1", "storybook", TARGET, "itch.io").url);
+    for (let i = 0; i < 15; i++) s.open("w1", "storybook", TARGET, "itch.io");
     expect(s.relay(first)).not.toBeNull();
-    const other = tokenOf(s.open("w2", "game", TARGET, "itch.io").url);
-    s.open("w1", "game", TARGET, "itch.io");
+    const other = tokenOf(s.open("w2", "storybook", TARGET, "itch.io").url);
+    s.open("w1", "storybook", TARGET, "itch.io");
     expect(s.relay(first)).toBeNull();
     expect(s.relay(other)).not.toBeNull();
   });
@@ -86,6 +86,6 @@ describe("embed service", () => {
 
   test("without a sandbox server nothing is minted", () => {
     const { s } = service({ sandbox: null });
-    expect(() => s.open("w1", "game", TARGET, "itch.io")).toThrow("INTERNAL");
+    expect(() => s.open("w1", "storybook", TARGET, "itch.io")).toThrow("INTERNAL");
   });
 });

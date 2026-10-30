@@ -2,13 +2,13 @@ import { z } from "zod";
 
 const climbs = (path: string): boolean => path.split("/").some((s) => s === "..");
 
-export const RelativeFile = z
+const RelativeFile = z
   .string()
   .min(1)
   .max(4096)
   .refine((p) => !p.startsWith("/") && !p.startsWith("~") && !climbs(p), "path must stay relative");
-export const EnvKey = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
-export const Port = z.number().int().min(1).max(65_535);
+const EnvKey = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
+const Port = z.number().int().min(1).max(65_535);
 
 const compiles = (pattern: string): boolean => {
   try {
@@ -51,7 +51,7 @@ const RESERVED_ENV = new Set([
   "RUBYOPT",
 ]);
 const RESERVED_ENV_PREFIXES = ["LD_", "DYLD_", "KIBO_", "GIT_", "BUN_", "NPM_CONFIG_"];
-export const isReservedEnvKey = (key: string): boolean =>
+const isReservedEnvKey = (key: string): boolean =>
   RESERVED_ENV.has(key) || RESERVED_ENV_PREFIXES.some((prefix) => key.startsWith(prefix));
 const PortKey = EnvKey.refine((key) => !isReservedEnvKey(key), "reserved environment variable");
 

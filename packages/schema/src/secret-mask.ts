@@ -19,8 +19,6 @@ const RULES: readonly SecretRule[] = [
   { pattern: /\bAKIA[0-9A-Z]{16}/g, kept: whole },
 ];
 
-export const SECRET_PATTERNS: readonly RegExp[] = RULES.map((r) => r.pattern);
-
 export function maskSecrets(text: string): string {
   return RULES.reduce(
     (masked, rule) =>

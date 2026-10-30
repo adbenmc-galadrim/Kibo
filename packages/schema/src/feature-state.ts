@@ -12,7 +12,7 @@ export type FeatureState = {
   started: boolean;
   held: number;
 };
-export type FeatureStateInput = {
+type FeatureStateInput = {
   steps: readonly Pick<FeatureStep, "ticketId" | "statusId" | "optional" | "onHold">[];
   featureId?: string;
   blockingQuestions: ReadonlySet<string>;

@@ -6,7 +6,7 @@ import { TrackingSettings } from "./tracking-settings";
 import { WorktreeSettings } from "./worktree";
 
 export const PROJECT_DESCRIPTION_MAX = 200;
-export const ProjectDescription = z.string().trim().max(PROJECT_DESCRIPTION_MAX);
+const ProjectDescription = z.string().trim().max(PROJECT_DESCRIPTION_MAX);
 export const PROJECT_CLIENT_MAX = 60;
 export const ProjectClient = z.string().trim().min(1).max(PROJECT_CLIENT_MAX);
 

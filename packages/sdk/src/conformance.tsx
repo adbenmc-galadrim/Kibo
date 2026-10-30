@@ -40,7 +40,6 @@ async function renderWithinPermissions(
   manifest: ComponentManifest,
   declared: string[],
   opts: MockSdkOptions,
-  config: Record<string, unknown> | null,
 ): Promise<void> {
   const m = createMockSdk(manifest, opts);
   const { container } = render(
@@ -55,7 +54,7 @@ async function renderWithinPermissions(
     await settle();
     console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
     expect(m.violations).toEqual([]);
-    expect(diffPermissions(declared, m.used, config).missing).toEqual([]);
+    expect(diffPermissions(declared, m.used).missing).toEqual([]);
   } finally {
     cleanup();
   }
@@ -83,7 +82,7 @@ export function runConformance(
       ["seeded project", seed, {}],
     ];
     const check = (options: MockSdkOptions) =>
-      renderWithinPermissions(mod.Component, manifest, declared, options, opts.config ?? null);
+      renderWithinPermissions(mod.Component, manifest, declared, options);
     for (const format of formatsOf(manifest)) {
       const surface = surfaceFor(manifest, format);
       for (const theme of THEMES) {

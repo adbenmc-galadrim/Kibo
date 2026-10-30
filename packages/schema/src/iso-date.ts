@@ -1,5 +1,5 @@
 export type IsoDate = string;
-export type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export const DAY_MS = 86_400_000;
 const WEEK_DAYS = 7;

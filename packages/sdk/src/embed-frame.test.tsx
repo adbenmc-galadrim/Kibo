@@ -5,9 +5,9 @@ import { EmbedFrame } from "./embed-frame";
 
 const view: EmbedView = {
   url: "about:blank#embed-1",
-  kind: "game",
-  sandbox: EMBED_ATTRIBUTES.game.sandbox,
-  allow: EMBED_ATTRIBUTES.game.allow,
+  kind: "storybook",
+  sandbox: EMBED_ATTRIBUTES.storybook.sandbox,
+  allow: EMBED_ATTRIBUTES.storybook.allow,
   expiresAt: 1_000,
   target: "https://itch.io/embed-upload/1",
 };

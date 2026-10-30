@@ -13,7 +13,6 @@ import {
   MappedRemote,
   McpItemRef,
   McpServerInput,
-  mcpCovered,
   PushOp,
   projectStatus,
   RepoSlug,
@@ -188,14 +187,6 @@ describe("integration contracts", () => {
     expect(projectStatus("done", map, "todo")).toBe("done");
   });
 
-  test("mcp rules cover a whole server or a single tool", () => {
-    expect(mcpCovered(["context7"], "context7", "get-library-docs", null)).toBe(true);
-    expect(mcpCovered(["context7/resolve"], "context7", "get-library-docs", null)).toBe(false);
-    expect(mcpCovered(["context7/resolve"], "context7", null, null)).toBe(false);
-    expect(mcpCovered(["{config.server}"], "fs", "read", { server: "fs" })).toBe(true);
-    expect(mcpCovered(["{config.server}"], "fs", "read", null)).toBe(false);
-  });
-
   test("manifest v1 accepts adapters, secrets and mcp with defaults", () => {
     const base = { id: "probe", version: "1.0.0", kind: "adapter", title: "Probe", reads: [], writes: [] };
     const m = ComponentManifest.parse({
@@ -203,7 +194,6 @@ describe("integration contracts", () => {
       net: ["api.github.com"],
       secrets: [{ name: "github", hosts: ["api.github.com"] }],
     });
-    expect(m.mcp).toEqual([]);
     expect(secretHostsCovered(m)).toEqual([]);
     const loose = ComponentManifest.parse({
       ...base,

@@ -7,7 +7,7 @@ import {
 } from "../../packages/schema/src/index";
 import { SILO_SCENARIO } from "./silo-suivi";
 
-export type ScenarioTurn = { proposals: unknown[]; result: string };
+type ScenarioTurn = { proposals: unknown[]; result: string };
 const QUESTION_REF = /^\{\{question:(.+)\}\}$/;
 
 export type MemoryBatch = {

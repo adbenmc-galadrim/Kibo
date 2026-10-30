@@ -5,7 +5,7 @@ import { type FileOpener, fileResponse } from "./file-response";
 
 export type { FileOpener } from "./file-response";
 
-const FRAMING: ReadonlySet<Capability> = new Set(["design", "embed"]);
+const FRAMING: ReadonlySet<Capability> = new Set(["design"]);
 
 export function sandboxHeaders(
   uiPort: number,

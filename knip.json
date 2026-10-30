@@ -22,7 +22,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/cli": {
-      "entry": ["src/bin.ts", "src/**/*.test.ts"],
+      "entry": ["src/**/*.test.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/ui": {

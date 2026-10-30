@@ -3,8 +3,8 @@ import type { Question } from "./question";
 import type { TicketView } from "./rpc";
 import { FINAL_STATUSES, NOT_STARTED_STATUSES } from "./startable";
 
-export type DeliveryReason = "done" | "blocked" | "question" | "busy" | "status";
-export type DeliveryItem = {
+type DeliveryReason = "done" | "blocked" | "question" | "busy" | "status";
+type DeliveryItem = {
   ticketId: string;
   key: string;
   title: string;
@@ -14,7 +14,7 @@ export type DeliveryItem = {
 };
 type DeliverySource = Pick<TicketView, "id" | "key" | "title" | "parentId" | "statusId" | "startable">;
 export type DeliveryOrderTicket = DeliverySource & { rank: number; openBlockingQuestions: number };
-export type DeliveryOrderInput = {
+type DeliveryOrderInput = {
   tickets: readonly DeliveryOrderTicket[];
   links: readonly Pick<Link, "from" | "to" | "type">[];
   busy: ReadonlySet<string>;

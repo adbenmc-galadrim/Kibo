@@ -15,7 +15,7 @@ import { RunState } from "./run";
 import { SprintCode, SprintName } from "./sprint";
 import { StatusId } from "./status";
 
-export type ToolSpec = { name: ProjectAgentTool; description: string; inputSchema: Record<string, unknown> };
+type ToolSpec = { name: ProjectAgentTool; description: string; inputSchema: Record<string, unknown> };
 
 const object = (properties: Record<string, unknown> = {}, required: string[] = []) => ({
   type: "object",

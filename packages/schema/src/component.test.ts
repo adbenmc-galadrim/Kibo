@@ -11,7 +11,6 @@ import {
   diffPermissions,
   GrantedPermissions,
   grantedOf,
-  isActive,
   isBuiltinId,
   isSafeNotePath,
   NetRule,
@@ -19,7 +18,6 @@ import {
   permissionOfCall,
   RpcRequest,
   ruleCovers,
-  shortHash,
   splitRef,
   validateConfig,
 } from "./index";
@@ -201,13 +199,6 @@ describe("versions", () => {
   test("refs split on the last @", () => {
     expect(splitRef("acme.pr-bar@0.3.0")).toEqual({ id: "acme.pr-bar", version: "0.3.0" });
     expect(() => splitRef("nope")).toThrow("INVALID_INPUT");
-  });
-  test("a version is active when its approved hash is its hash", () => {
-    const h = "a".repeat(64);
-    expect(isActive({ trust: "sandboxed", hash: h, approvedHash: h })).toBe(true);
-    expect(isActive({ trust: null, hash: h, approvedHash: h })).toBe(false);
-    expect(isActive({ trust: "trusted", hash: h, approvedHash: "b".repeat(64) })).toBe(false);
-    expect(shortHash(`3f9a${"0".repeat(56)}c21e`)).toBe("3f9a…c21e");
   });
   test("migrations run from n-1 to n and refuse a downgrade", () => {
     const m = {

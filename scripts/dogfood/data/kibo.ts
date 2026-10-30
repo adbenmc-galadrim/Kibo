@@ -1,4 +1,3 @@
-import type { AgentSettingsPatch } from "@kibo/schema";
 import type { DesiredPage, DesiredProject } from "../src/desired";
 
 export const PROJECT: DesiredProject = { name: "Kibo", key: "KIB", color: "#6366F1" };
@@ -37,10 +36,3 @@ export const GUIDELINE_PATHS = {
   workspace: "conventions.md",
   project: "kibo.md",
 } as const;
-
-export const AGENT_SETTINGS: Record<string, AgentSettingsPatch> = {
-  "kibo-lead": { permissionMode: "default", workspace: "worktree", maxParallel: 1 },
-  "kibo-dev": { permissionMode: "acceptEdits", workspace: "worktree", maxParallel: 2 },
-  "kibo-reviewer": { permissionMode: "plan", workspace: "worktree", maxParallel: 2 },
-  "kibo-runner": { permissionMode: "acceptEdits", workspace: "worktree", maxParallel: 2 },
-};

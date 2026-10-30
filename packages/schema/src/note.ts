@@ -29,7 +29,7 @@ export const NotesInfo = z.object({
 });
 export type NotesInfo = z.infer<typeof NotesInfo>;
 
-export const ASSET_MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
+const ASSET_MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
 export const AssetMime = z.enum(ASSET_MIMES);
 export type AssetMime = z.infer<typeof AssetMime>;
 const ASSET_FILE = "[a-z0-9][a-z0-9._-]{0,120}\\.(png|jpe?g|webp|gif)";

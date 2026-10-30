@@ -24,7 +24,7 @@ export type OverviewIndicators = {
 };
 type OverviewSnapshot = Pick<ProjectSnapshot, "tickets" | "sprints" | "questions" | "meta">;
 type Feature = { ticket: TicketView; state: FeatureState; rank: number };
-export type ReviewCard = { pr: GithubPrRef; ticket: TicketView; feature: { shortKey: string } | null };
+type ReviewCard = { pr: GithubPrRef; ticket: TicketView; feature: { shortKey: string } | null };
 
 const REVIEWED: readonly GithubPrRef["state"][] = ["open", "draft"];
 

@@ -5,7 +5,6 @@ import {
   ComponentManifest,
   ConfigField,
   ConfigSchema,
-  covers,
   DEFAULT_WORKFLOW,
   diffPermissions,
   formatTicketKey,
@@ -21,7 +20,6 @@ import {
   permissionOfCall,
   RpcRequest,
   Sha256,
-  StartComponentDraftInput,
   SYSTEM_AGENT_IDS,
   sniffImage,
   Ticket,
@@ -124,8 +122,20 @@ test("KiboError carries a stable code", () => {
   expect(e.message).toBe("TREE_CYCLE: cannot move under descendant");
 });
 
-describe("mcp and ci_run permissions", () => {
+describe("permissions", () => {
   const base = { id: "probe", version: "1.0.0", kind: "widget", title: "P", reads: [], writes: [] };
+
+  test("a version that gains a secret announces it (N41)", () => {
+    const before = grantedOf(ComponentManifest.parse({ ...base, net: ["api.github.com"] }));
+    const after = grantedOf(
+      ComponentManifest.parse({
+        ...base,
+        net: ["api.github.com"],
+        secrets: [{ name: "github", hosts: ["api.github.com"] }],
+      }),
+    );
+    expect(addedPermissions(before, after)).toEqual(["secret:github@api.github.com"]);
+  });
 
   test("notes.attach and notes.asset are calls with strict names", () => {
     const attach = { kind: "notes.attach", notePath: "a.md", mime: "image/png", bytes: "AA==" };
@@ -153,29 +163,6 @@ describe("mcp and ci_run permissions", () => {
     expect(sniffImage(new TextEncoder().encode("RIFF\0\0\0\0WAVEfmt "))).toBeNull();
     expect(sniffImage(new TextEncoder().encode("<html>"))).toBeNull();
     expect(sniffImage(new Uint8Array())).toBeNull();
-  });
-
-  test("diffPermissions passes the config to mcp rules", () => {
-    const declared = ["mcp:{config.server}", "read:ci_run"];
-    expect(diffPermissions(declared, ["mcp:fs/read"]).missing).toEqual(["mcp:fs/read"]);
-    expect(diffPermissions(declared, ["mcp:fs/read"], { server: "fs" })).toEqual({
-      missing: [],
-      unused: ["read:ci_run"],
-    });
-  });
-
-  test("a version that gains a secret and a server announces both (N41)", () => {
-    const before = grantedOf(ComponentManifest.parse({ ...base, net: ["api.github.com"] }));
-    const after = grantedOf(
-      ComponentManifest.parse({
-        ...base,
-        net: ["api.github.com"],
-        mcp: ["ctx"],
-        secrets: [{ name: "github", hosts: ["api.github.com"] }],
-      }),
-    );
-    expect(addedPermissions(before, after)).toEqual(["secret:github@api.github.com", "mcp:ctx"]);
-    expect(addedPermissions(after, { ...after, mcp: ["ctx", "ctx/echo"] })).toEqual(["mcp:ctx/echo"]);
   });
 });
 
@@ -227,31 +214,6 @@ describe("shared encodings", () => {
   });
 });
 
-test("capabilities are permissions", () => {
-  const granted = grantedOf({
-    reads: [],
-    writes: [],
-    data: false,
-    net: [],
-    secrets: [],
-    mcp: [],
-    capabilities: ["gamepad", "webgl"],
-  });
-  expect(granted.capabilities).toEqual(["gamepad", "webgl"]);
-  expect(permissionList(granted)).toEqual(["cap:gamepad", "cap:webgl"]);
-  expect(
-    GrantedPermissions.parse({ reads: [], writes: [], data: false, net: [], secrets: [], mcp: [] })
-      .capabilities,
-  ).toEqual([]);
-  expect(permissionOfCall({ kind: "assets.list" })).toBe("cap:assets");
-  expect(permissionOfCall({ kind: "assets.url", name: "robot.glb" })).toBe("cap:assets");
-  expect(covers(["cap:assets"], "cap:assets")).toBe(true);
-  expect(diffPermissions(["cap:assets"], ["cap:webgl"]).missing).toEqual(["cap:webgl"]);
-  expect(addedPermissions(granted, { ...granted, capabilities: ["gamepad", "webgl", "audio"] })).toEqual([
-    "cap:audio",
-  ]);
-});
-
 test("config fields may carry a label, help, bounds and an asset kind", () => {
   const schema = ConfigSchema.parse({
     model: { type: "string", nullable: true, default: null, asset: "model", label: "Modèle (.glb)" },
@@ -297,15 +259,6 @@ test("file rpc methods parse", () => {
       size: 64 * 1024 * 1024 + 1,
     }).success,
   ).toBe(false);
-  const created = StartComponentDraftInput.parse({
-    mode: "create",
-    id: "cube",
-    title: "Cube",
-    kind: "widget",
-    withServer: false,
-    description: "Un cube qui tourne lentement dans le widget.",
-  });
-  expect(created.mode === "create" ? created.template : null).toBe("blank");
 });
 
 test("phase 14 methods are part of RpcRequest", () => {
@@ -321,4 +274,27 @@ test("phase 14 events and the help combo", () => {
   expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
   expect(KeyCombo.safeParse("mod+/").success).toBe(true);
   expect(SYSTEM_AGENT_IDS).toEqual(["project-agent"]);
+});
+
+test("capabilities are permissions", () => {
+  const granted = grantedOf({
+    reads: [],
+    writes: [],
+    data: false,
+    net: [],
+    secrets: [],
+    capabilities: ["gamepad", "webgl"],
+  });
+  expect(granted.capabilities).toEqual(["gamepad", "webgl"]);
+  expect(permissionList(granted)).toEqual(["cap:gamepad", "cap:webgl"]);
+  expect(
+    GrantedPermissions.parse({ reads: [], writes: [], data: false, net: [], secrets: [], mcp: [] })
+      .capabilities,
+  ).toEqual([]);
+  expect(permissionOfCall({ kind: "assets.list" })).toBe("cap:assets");
+  expect(permissionOfCall({ kind: "assets.url", name: "robot.glb" })).toBe("cap:assets");
+  expect(diffPermissions(["cap:assets"], ["cap:webgl"]).missing).toEqual(["cap:webgl"]);
+  expect(addedPermissions(granted, { ...granted, capabilities: ["gamepad", "webgl", "audio"] })).toEqual([
+    "cap:audio",
+  ]);
 });

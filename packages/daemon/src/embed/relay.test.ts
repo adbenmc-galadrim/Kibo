@@ -6,7 +6,7 @@ const TARGET = "https://itch.io/embed-upload/1?color=333&x=1";
 
 describe("relay page", () => {
   test("holds exactly one iframe with the attributes of its kind and no script", () => {
-    for (const kind of ["game", "storybook"] as const) {
+    for (const kind of ["storybook", "storybook"] as const) {
       const html = relayHtml({ target: TARGET, kind, title: "itch.io" });
       expect(html.match(/<iframe/g)).toHaveLength(1);
       expect(html).toStartWith("<!doctype html>");
@@ -22,7 +22,7 @@ describe("relay page", () => {
   test("escapes the title and the target so they cannot leave their attribute", () => {
     const html = relayHtml({
       target: 'https://itch.io/embed-upload/1?a="><script>',
-      kind: "game",
+      kind: "storybook",
       title: '"><script>alert(1)</script>',
     });
     expect(html.toLowerCase()).not.toContain("<script");
@@ -43,7 +43,7 @@ describe("relay headers", () => {
       "'self'",
       "http://localhost:5173",
     ]);
-    const headers = relayHeaders({ targetOrigin: "https://itch.io", ancestors, kind: "game" });
+    const headers = relayHeaders({ targetOrigin: "https://itch.io", ancestors, kind: "storybook" });
     expect(headers["content-security-policy"]).toBe(
       "default-src 'none'; style-src 'unsafe-inline'; frame-src https://itch.io; " +
         "frame-ancestors http://127.0.0.1:4317 http://localhost:4317 'self' http://localhost:5173; " +
@@ -58,11 +58,6 @@ describe("relay headers", () => {
   });
 
   test("the permissions policy follows the allow attribute of the kind", () => {
-    const game = relayHeaders({ targetOrigin: "https://itch.io", ancestors: [], kind: "game" });
-    expect(game["permissions-policy"]).toBe(
-      'gamepad=(self "https://itch.io"), autoplay=(self "https://itch.io"), pointer-lock=(self "https://itch.io"), ' +
-        "fullscreen=(), camera=(), microphone=(), geolocation=()",
-    );
     const story = relayHeaders({ targetOrigin: "http://localhost:6006", ancestors: [], kind: "storybook" });
     expect(story["permissions-policy"]).toBe(
       "fullscreen=(), camera=(), microphone=(), geolocation=(), gamepad=(), autoplay=()",

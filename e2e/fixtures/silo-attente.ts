@@ -1,4 +1,4 @@
-export type HoldSpec = { n: number; reason: string };
+type HoldSpec = { n: number; reason: string };
 
 export const SILO_HOLD_SINCE = "2026-10-16";
 export const SILO_HOLDS: readonly HoldSpec[] = [

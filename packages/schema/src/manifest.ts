@@ -25,16 +25,13 @@ export const BuiltinEntityType = z.enum([
 ]);
 export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;
-export const READ_ONLY_ENTITIES: readonly BuiltinEntityType[] = ["project_event"];
+const READ_ONLY_ENTITIES: readonly BuiltinEntityType[] = ["project_event"];
 const WritableEntity = BuiltinEntityType.refine((e) => !READ_ONLY_ENTITIES.includes(e), {
   message: "INVALID_MANIFEST: this entity is read only",
 });
 export type EntityType = BuiltinEntityType;
 
-export const EmbedHost = z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/);
-
-export const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
-export type ComponentId = z.infer<typeof ComponentId>;
+const ComponentId = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*$/);
 export const ComponentKind = z.enum(["widget", "view", "both", "adapter"]);
 export type ComponentKind = z.infer<typeof ComponentKind>;
 
@@ -42,7 +39,7 @@ const Cells = z.object({
   w: z.number().int().min(1).max(GRID_COLUMNS),
   h: z.number().int().min(1).max(MAX_GRID_ROWS),
 });
-export const SizeSpec = z.object({ min: Cells.optional(), max: Cells.optional() });
+const SizeSpec = z.object({ min: Cells.optional(), max: Cells.optional() });
 
 export const ComponentManifest = z.object({
   id: ComponentId,
@@ -67,9 +64,6 @@ export const ComponentManifest = z.object({
         }),
     )
     .default([]),
-  mcp: z
-    .array(z.union([z.string().regex(/^[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?$/), z.literal("{config.server}")]))
-    .default([]),
   configSchema: ConfigSchema.optional(),
   configVersion: z.number().int().nonnegative().default(0),
   changes: z.array(z.string().min(1)).default([]),
@@ -77,7 +71,6 @@ export const ComponentManifest = z.object({
   formats: z.array(ComponentFormat).min(1).max(5).optional(),
   size: SizeSpec.optional(),
   capabilities: z.array(Capability).default([]),
-  embeds: z.array(EmbedHost).default([]),
   selection: z.boolean().default(false),
 });
 export type ComponentManifest = z.infer<typeof ComponentManifest>;
@@ -85,7 +78,7 @@ export type ComponentManifestInput = z.input<typeof ComponentManifest>;
 
 type FormatFields = Pick<ComponentManifest, "kind" | "formats">;
 
-export const DEFAULT_FORMATS: Readonly<Record<ComponentKind, readonly ComponentFormat[]>> = {
+const DEFAULT_FORMATS: Readonly<Record<ComponentKind, readonly ComponentFormat[]>> = {
   widget: ["medium", "large", "half"],
   view: ["full"],
   both: ["medium", "large", "half", "full"],

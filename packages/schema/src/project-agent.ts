@@ -27,8 +27,7 @@ export const ACTION_DETAIL_MAX = 1_000;
 export const NewRef = z.string().regex(/^new:[1-9]\d{0,3}$/);
 export const TicketRef = z.union([TicketKey, NewRef]);
 export type TicketRef = z.infer<typeof TicketRef>;
-export const LinkKind = z.enum(["blocks", "relates"]);
-export type LinkKind = z.infer<typeof LinkKind>;
+const LinkKind = z.enum(["blocks", "relates"]);
 export const ActionId = z.number().int().positive();
 
 const base = {
@@ -137,7 +136,7 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   setHold: "tickets",
 };
 
-export const RETIRED_ACTION_TYPES = ["assignAgent", "deliverAnswers", "cancelRun", "dismissSignal"] as const;
+const RETIRED_ACTION_TYPES = ["assignAgent", "deliverAnswers", "cancelRun", "dismissSignal"] as const;
 export const RetiredAction = z
   .object({ id: ActionId, why: z.string(), type: z.enum(RETIRED_ACTION_TYPES) })
   .passthrough();

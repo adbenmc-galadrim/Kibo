@@ -12,7 +12,7 @@ export function isGitBranchName(name: string): boolean {
   return SAFE.test(name) && !FORBIDDEN.test(name);
 }
 
-export const GitBranchName = z.string().min(1).max(200).refine(isGitBranchName, "invalid git branch name");
+const GitBranchName = z.string().min(1).max(200).refine(isGitBranchName, "invalid git branch name");
 export const branchSlug = (branch: string): string => branch.replaceAll("/", "-");
 
 export const GitBranchRef = z.object({
@@ -22,7 +22,7 @@ export const GitBranchRef = z.object({
 });
 export type GitBranchRef = z.infer<typeof GitBranchRef>;
 
-export const ImportSource = z.string().regex(/^[a-z0-9][a-z0-9-]{0,31}$/);
+const ImportSource = z.string().regex(/^[a-z0-9][a-z0-9-]{0,31}$/);
 export const ImportRef = z.object({
   kind: z.literal("import_ref"),
   source: ImportSource,

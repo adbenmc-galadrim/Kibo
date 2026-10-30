@@ -16,7 +16,7 @@
     "typecheck": "tsc -b packages/schema packages/core packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/kanban components/graph components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
     "test": "bun test packages components ./scripts",
     "budget": "bun packages/ui/scripts/bundle-budget.ts",
-    "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved",
+    "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved,exports,types",
     "knip:exports": "knip --include exports,types"
   },
   "devDependencies": {

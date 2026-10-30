@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { KiboError, type KiboErrorCode } from "./errors";
+import type { KiboErrorCode } from "./errors";
 import { NodeId } from "./ids";
 import { StatusId } from "./status";
 
@@ -12,8 +12,8 @@ export const WebUrl = z
   .refine((u) => u.startsWith("https://") || u.startsWith("http://"), "http(s) url only");
 
 export const McpServerId = z.string().regex(/^[a-z0-9-]{1,32}$/);
-export const RESERVED_MCP_IDS: readonly string[] = ["figma"];
-export const EnvName = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
+const RESERVED_MCP_IDS: readonly string[] = ["figma"];
+const EnvName = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
 
 const SECRET_NAME = /^(github|figma|penpot|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
 export type SecretName = `${"github" | "mcp" | "figma" | "penpot"}${"" | `:${string}`}`;
@@ -56,19 +56,10 @@ export function githubIssueState(ref: GithubIssueRef): "pending" | "linked" | "b
   return ref.url === null ? "broken" : "linked";
 }
 
-export const BINDING_PREFIX = "binding:";
-
-export function bindingIdOf(instanceId: string): string {
-  if (!instanceId.startsWith(BINDING_PREFIX)) {
-    throw new KiboError("INVALID_INPUT", "adapter actions run for a binding only");
-  }
-  return instanceId.slice(BINDING_PREFIX.length);
-}
-
 export const StatusMap = z.record(StatusId, z.string().min(1));
 export type StatusMap = z.infer<typeof StatusMap>;
 
-export const BindingConfig = z.object({
+const BindingConfig = z.object({
   repo: RepoSlug,
   project: z
     .object({
@@ -82,7 +73,6 @@ export const BindingConfig = z.object({
   importClosed: z.boolean().default(false),
   labels: z.array(z.string().trim().min(1)).max(20).default([]),
 });
-export type BindingConfig = z.infer<typeof BindingConfig>;
 
 export const Binding = z.object({
   id: z.string().min(1),
@@ -96,14 +86,12 @@ export type Binding = z.infer<typeof Binding>;
 export const InstanceSource = z.object({ bindingId: z.string().min(1) });
 export type InstanceSource = z.infer<typeof InstanceSource>;
 
-export const SyncedFields = z.object({
+const SyncedFields = z.object({
   title: z.string().min(1),
   description: z.string(),
   statusId: StatusId,
   closed: z.boolean(),
 });
-export type SyncedFields = z.infer<typeof SyncedFields>;
-export type SyncedField = keyof SyncedFields;
 
 const IsoDate = z.string().datetime({ offset: true });
 
@@ -121,14 +109,6 @@ export const MappedRemote = z.object({
   labels: z.array(z.string()),
 });
 export type MappedRemote = z.infer<typeof MappedRemote>;
-
-export const PullInput = z.object({ cursor: z.string().max(4096).nullable() });
-export const PullPage = z.object({
-  items: z.array(MappedRemote),
-  cursor: z.string().max(4096).nullable(),
-  more: z.boolean(),
-});
-export type PullPage = z.infer<typeof PullPage>;
 
 export const IntegrationId = z.enum([
   "git",
@@ -223,56 +203,12 @@ export type McpServerView = McpServerInput & {
 };
 export type McpContent = { type: "text"; text: string } | { type: "image"; data: string; mimeType: string };
 export type McpCallResult = { content: McpContent[]; isError: boolean; truncated: boolean };
-export const McpImportItem = z.object({
-  itemId: z.string().min(1).max(256),
-  title: z.string().trim().min(1).max(500),
-  url: WebUrl.nullable(),
-});
-export type McpImportItem = z.infer<typeof McpImportItem>;
 
 export type GithubRepo = { fullName: RepoSlug; private: boolean; description: string | null };
-export type GithubProject = {
-  owner: string;
-  number: number;
-  nodeId: string;
-  title: string;
-  statusField: { id: string; options: { id: string; name: string }[] } | null;
-};
 export type GithubConnectOptions = {
   ghAvailable: boolean;
   ghLogin: string | null;
   mode: "gh" | "token" | null;
-};
-
-export type BindingState = {
-  bindingId: string;
-  repo: RepoSlug;
-  runner: string;
-  running: boolean;
-  lastPullAt: number | null;
-  lastError: { code: KiboErrorCode; message: string } | null;
-  imported: number;
-  resumeAt: number | null;
-};
-export type OutboxError = {
-  outboxId: number;
-  ticketId: string;
-  op: "create" | "update";
-  code: KiboErrorCode;
-  message: string;
-};
-export type SyncState = {
-  connected: boolean;
-  bindings: BindingState[];
-  pending: string[];
-  errors: OutboxError[];
-};
-export type SyncReport = {
-  pulled: number;
-  created: number;
-  updated: number;
-  pushed: number;
-  conflicts: number;
 };
 
 export const IntegrationEvent = z.discriminatedUnion("type", [

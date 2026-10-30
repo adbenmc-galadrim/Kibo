@@ -49,7 +49,7 @@ const definitionOf = (line: string, name: string): string | null => {
   return trimmed.slice(eq + 1);
 };
 
-export type EnvPortLookup = { found: false } | { found: true; port: number | null };
+type EnvPortLookup = { found: false } | { found: true; port: number | null };
 
 export function findEnvPort(text: string, name: string): EnvPortLookup {
   for (const line of text.split(/\r?\n/)) {
@@ -79,7 +79,7 @@ export const StorybookIndex = z
   .passthrough();
 export type StorybookIndex = z.infer<typeof StorybookIndex>;
 
-export type StoryLookup = { kind: "named"; name: string } | { kind: "missing" } | { kind: "unknown" };
+type StoryLookup = { kind: "named"; name: string } | { kind: "missing" } | { kind: "unknown" };
 
 export function lookupStory(index: StorybookIndex | null, storyId: string): StoryLookup {
   if (index === null) return { kind: "unknown" };

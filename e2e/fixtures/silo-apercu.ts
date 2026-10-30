@@ -1,7 +1,3 @@
-import { SILO_APERCU } from "../pixel-settings";
-
-export { SILO_APERCU };
-
 export const SILO_APERCU_TICKET = 45;
 export const SILO_APERCU_FRAME = {
   fileKey: "AbC123xyz",

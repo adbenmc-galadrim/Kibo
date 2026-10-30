@@ -15,7 +15,7 @@ export const RunState = z.enum([
 export type RunState = z.infer<typeof RunState>;
 
 export const SLOT_STATES: readonly RunState[] = ["starting", "running"];
-export const TERMINAL_STATES: readonly RunState[] = ["done", "failed", "cancelled"];
+const TERMINAL_STATES: readonly RunState[] = ["done", "failed", "cancelled"];
 export const isTerminal = (state: RunState): boolean => TERMINAL_STATES.includes(state);
 
 export const SessionFreshReason = z.enum([
@@ -171,14 +171,6 @@ export type SessionPreview = {
   tokens: number;
   resumable: boolean;
   reason: SessionFreshReason | null;
-};
-export type AssignPreview = {
-  position: number | null;
-  reason: WaitReason | null;
-  guidelines: number;
-  session: SessionPreview | null;
-  model?: string;
-  inherited?: boolean;
 };
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
 export const TicketRun = z.object({

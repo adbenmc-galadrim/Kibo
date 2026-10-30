@@ -2,8 +2,6 @@ import { z } from "zod";
 import { AddDirs } from "./add-dir";
 import { AgentRef, type AgentSettings, type AgentSummary } from "./agent";
 import { AllowRules } from "./allow-rule";
-import type { DeliveryItem } from "./delivery-order";
-import type { RunView } from "./run";
 
 export const AbsPath = z
   .string()
@@ -20,8 +18,7 @@ const compiles = (pattern: string): boolean => {
   }
 };
 
-export const DeliveryPublication = z.enum(["draft", "local"]);
-export type DeliveryPublication = z.infer<typeof DeliveryPublication>;
+const DeliveryPublication = z.enum(["draft", "local"]);
 
 export const ProjectDelivery = z
   .object({
@@ -116,5 +113,3 @@ export function deliveryAgentInfo(
 
 export const deliveryBrief = (ticketKey: string): string => `/full-delivery ${ticketKey}`;
 export const updateDeliveryBrief = (ticketKey: string): string => `/update-delivery ${ticketKey}`;
-
-export type DeliverResult = RunView | { kind: "parent"; items: DeliveryItem[] };
