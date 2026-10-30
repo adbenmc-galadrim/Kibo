@@ -76,15 +76,14 @@ test("config.set refuses an unknown key, a wrong type or a value out of range be
   expect(runs).toEqual([]);
 });
 
-test("the gate routes config.set to the calling instance, built-in or third party, without any permission", async () => {
+test("the gate routes config.set to the calling built-in without any permission", async () => {
   const { gate, handled } = testGate();
   await gate.call("p1", "builtin", { kind: "config.set", patch: { a: 1 } });
-  await gate.call("p1", "thirdparty", { kind: "config.set", patch: { b: 2 } });
-  expect(handled).toEqual(["config:builtin:a", "config:thirdparty:b"]);
+  expect(handled).toEqual(["config:builtin:a"]);
 });
 
-test("an unapproved component is refused config.set before any validation", async () => {
+test("a third-party component is refused config.set before any validation", async () => {
   const { gate, handled } = testGate();
-  await refused(gate.call("p1", "untrusted", { kind: "config.set", patch: {} }), "TRUST_REQUIRED");
+  await refused(gate.call("p1", "thirdparty", { kind: "config.set", patch: {} }), "NOT_FOUND");
   expect(handled).toEqual([]);
 });

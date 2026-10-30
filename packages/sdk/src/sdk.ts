@@ -1,5 +1,4 @@
 import {
-  type AssetMime,
   type CiRun,
   COMMAND_WRITES,
   type CommandResult,
@@ -13,9 +12,6 @@ import {
   KiboError,
   type McpCallResult,
   mcpCovered,
-  type NoteContent,
-  type NoteMeta,
-  type NotesInfo,
   type PresencePeer,
   type ProjectCommand,
   type ProjectEvent,
@@ -25,23 +21,13 @@ import {
   type Ticket,
 } from "@kibo/schema";
 import { assetsApi, designApi, embedApi } from "./capability-apis";
-import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { questionsApi } from "./questions-api";
 import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import { NO_SPOTLIGHT } from "./spotlight";
 import { openSprintOf, sprintsApi } from "./sprints-api";
 import { emitToast } from "./toast-bus";
-import type {
-  EntityMap,
-  InstanceData,
-  KiboSdk,
-  McpApi,
-  NotesApi,
-  ProjectBackend,
-  SdkContext,
-  SdkMode,
-} from "./types";
+import type { EntityMap, InstanceData, KiboSdk, McpApi, ProjectBackend, SdkContext, SdkMode } from "./types";
 
 type Guard = {
   deny(what: string): never;
@@ -89,54 +75,6 @@ function instanceData(manifest: ComponentManifest, guard: Guard, call: Call): In
   };
 }
 
-function notesApi(guard: Guard, call: Call): NotesApi {
-  return {
-    async read(path) {
-      guard.needRead("note");
-      return call<NoteContent>({ kind: "notes.read", path });
-    },
-    async write(path, markdown, expectedMtime) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.write", path, markdown, expectedMtime });
-    },
-    async create(path, markdown) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.create", path, markdown });
-    },
-    async rename(from, to) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.rename", from, to });
-    },
-    async remove(path) {
-      guard.needWrite("note");
-      await call({ kind: "notes.remove", path });
-    },
-    async search(query) {
-      guard.needRead("note");
-      return call<NoteMeta[]>({ kind: "notes.search", query });
-    },
-    async info() {
-      guard.needRead("note");
-      return call<NotesInfo>({ kind: "notes.info" });
-    },
-    async attach(notePath, name, mime, bytes) {
-      guard.needWrite("note");
-      return call<{ path: string }>({
-        kind: "notes.attach",
-        notePath,
-        name,
-        mime,
-        bytes: bytesToBase64(bytes),
-      });
-    },
-    async asset(path) {
-      guard.needRead("note");
-      const asset = await call<{ mime: AssetMime; bytes: string }>({ kind: "notes.asset", path });
-      return { mime: asset.mime, bytes: base64ToBytes(asset.bytes) };
-    },
-  };
-}
-
 function mcpApi(
   manifest: ComponentManifest,
   guard: Guard,
@@ -179,7 +117,6 @@ export function createSdk(
       link: async () => (await backend.snapshot()).links,
       page: async () => (await backend.snapshot()).pages,
       run: () => backend.runs(),
-      note: () => call<NoteMeta[]>({ kind: "list", entity: "note" }),
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
       sprint: async () => (await backend.snapshot()).sprints,
@@ -225,7 +162,6 @@ export function createSdk(
     async setConfig(patch) {
       await call({ kind: "config.set", patch });
     },
-    notes: notesApi(guard, call),
     mcp: mcpApi(manifest, guard, call, ctx.config),
     presence: {
       async list() {

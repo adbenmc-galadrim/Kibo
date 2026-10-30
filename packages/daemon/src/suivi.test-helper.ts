@@ -14,7 +14,6 @@ import type {
 import { z } from "zod";
 import type { Env } from "./code/run";
 import { createGitFixture, type GitFixture, installFakeGh } from "./code/testing/git-fixture";
-import { fakeBuild, okReport } from "./components/service.test-helper";
 import { type Daemon, startDaemon } from "./daemon";
 import { testAgent, testAgentSource } from "./runs/agents-port.test-helper";
 import { FAKE_CLAUDE, type FakeCall, fakeCalls, scenarioPath } from "./runs/fake-claude-scenario";
@@ -87,8 +86,6 @@ async function boot(home: string, env: Env, prPollMs: number): Promise<Daemon> {
     dev: false,
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),
     transcriptRoot: fake,

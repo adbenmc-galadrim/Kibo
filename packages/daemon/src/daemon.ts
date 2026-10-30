@@ -3,7 +3,6 @@ import { backupsRpc } from "./backups/rpc";
 import { declareRefRpc } from "./code/declare-ref";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
-import { componentTrustGuard } from "./components/trust-guard";
 import { migrateDomainScopes } from "./config/domain-scope-migration";
 import { startProjectAdmin } from "./daemon-admin";
 import { startAgents } from "./daemon-agents";
@@ -15,6 +14,7 @@ import { createLocalServices, openDaemonStores } from "./daemon-stores";
 import { lateActivity, startDaemonTracking } from "./daemon-tracking";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
+import { startNotes } from "./notes/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { projectAgentSource } from "./project-agent/definition";
@@ -24,7 +24,6 @@ import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
 import type { Orchestrator } from "./runs/orchestrator";
-import { sandboxRpc } from "./sandbox/rpc";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { ready } from "./service-ports";
@@ -49,7 +48,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const clock = opts.clock ?? clockFromEnv(process.env, console.error);
   let agents: Orchestrator | null = null;
   const activity = lateActivity();
-  const questionImages = questionImageFiles(opts.home, (projectId) => components.notesDir(projectId));
+  const questionImages = questionImageFiles(opts.home, (projectId) => notes.notesDir(projectId));
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
@@ -71,14 +70,16 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
   const tracking = startDaemonTracking({ store, service, clock, activity }, closers);
-  const components = await startDaemonComponents(
+  const notes = await startNotes({ db: store.db, home: opts.home, docs: service.docs });
+  closers.push(() => notes.stop());
+  const components = startDaemonComponents(
     opts,
     service,
     {
       db: store.db,
+      notes: notes.notes,
       sandboxOrigin: () => sandboxOrigin,
       runs: () => [],
-      allowUnsandboxed: () => local.sandbox.allowUnsandboxed(),
       integrations: () => integrations.hooks,
       presence: (projectId) => collab.presence.peers(projectId),
       sharing: (projectId) => collab.syncInfo(projectId),
@@ -97,7 +98,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const projectAgent = startProjectAgent({
     home: opts.home,
     service,
-    notes: components.notes,
+    notes: notes.notes,
     settings: createProjectSettings(store.db),
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
@@ -120,7 +121,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     userHome: opts.userHome ?? homedir(),
     startedAt,
     service,
-    components,
     log: opts.logBuffer ?? createLogBuffer(),
     fixedNow: clock.fixedNow,
     today: clock.today,
@@ -140,7 +140,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     pairingCodes,
     extensions: [
       remoteRpc(remoteAccess, pairingCodes),
-      sandboxRpc(local.sandbox),
       backupsRpc(local.backups),
       app.rpc,
       ...tracking.rpc,
@@ -161,12 +160,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       receive: (runId, payload, toolInput) => agents?.hooks.receive(runId, payload, toolInput) ?? null,
     },
     agentMcp: projectAgent.agent.mcp,
-    assets: components.assets,
     icons: service.icons,
     questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, collab.handler, admin.handler],
+    handlers: [collab.handler, admin.handler],
   });
   front.push(() => server.stop());
   uiPort = server.port;
@@ -179,7 +177,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     {
       port: opts.sandboxPort,
       uiPort: server.port,
-      assets: components.assets,
       extraAncestors: devOrigins,
       files: { open: (token) => components.files.open(token) },
       designs: { open: (token) => integrations.design.open(token) },

@@ -4,10 +4,9 @@ import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ComponentCall, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
-import { type Client, pair } from "../components/exit.test-helper";
-import { okReport } from "../components/service.test-helper";
 import { type Daemon, startDaemon } from "../daemon";
 import { parseIntegrationFlags } from "../integrations/bootstrap";
+import { type Client, pair } from "./daemon-client.test-helper";
 
 const Id = z.object({ id: z.string() });
 
@@ -31,7 +30,6 @@ export async function bootEmbedDaemon(testOrigins: string): Promise<EmbedDaemon>
     dev: false,
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    validate: okReport,
     integrations: parseIntegrationFlags({ "test-origins": testOrigins, "memory-secrets": true }),
   });
   const client = await pair(daemon);

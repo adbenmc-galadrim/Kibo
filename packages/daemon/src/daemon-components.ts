@@ -8,37 +8,24 @@ import type { Service } from "./service";
 
 export type DaemonComponentsInput = Pick<
   ComponentsDeps,
-  | "db"
-  | "sandboxOrigin"
-  | "runs"
-  | "allowUnsandboxed"
-  | "integrations"
-  | "presence"
-  | "sharing"
-  | "projectEvents"
+  "db" | "notes" | "sandboxOrigin" | "runs" | "integrations" | "presence" | "sharing" | "projectEvents"
 >;
 
-export async function startDaemonComponents(
+export function startDaemonComponents(
   opts: DaemonOptions,
   service: Service,
   input: DaemonComponentsInput,
   closers: Closer[],
-): Promise<ComponentsService> {
+): ComponentsService {
   const components = createComponentsService({
     ...input,
     home: opts.home,
-    toolchain: opts.toolchain,
     docs: service.docs,
-    commands: service.commands,
-    ...(opts.build && { build: opts.build }),
-    ...(opts.validate && { validate: opts.validate }),
-    ...(opts.processCommand && { processCommand: opts.processCommand }),
     ...(opts.net && { net: opts.net }),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
   closers.push(service.attachComponents(components), () => components.stop());
-  await components.start();
   return components;
 }
 

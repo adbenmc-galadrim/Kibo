@@ -21,12 +21,10 @@ import {
   type TicketRun,
   validateConfig,
 } from "@kibo/schema";
-import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { mockAssetUrl } from "./mock-assets";
 import type { MockRunDelivery } from "./mock-delivery";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockEmbeds } from "./mock-embed";
-import type { MockNotesFolder } from "./mock-notes";
 import { activityOf } from "./mock-runs";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
@@ -38,7 +36,6 @@ export type MockCallDeps = {
   data: Map<string, unknown>;
   manifest: ComponentManifest;
   configPatches: Record<string, unknown>[];
-  folder: MockNotesFolder;
   runs(): TicketRun[];
   peers(): PresencePeer[];
   access(): ProjectAccess;
@@ -68,7 +65,6 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     link: () => snapshot.links,
     page: () => snapshot.pages,
     run: () => deps.runs(),
-    note: () => deps.folder.list(),
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
     sprint: () => snapshot.sprints,
@@ -84,7 +80,7 @@ function mcpReply(deps: MockCallDeps, key: string): McpCallResult {
 }
 
 export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promise<unknown> {
-  const { data, folder } = deps;
+  const { data } = deps;
   return async (c) => {
     switch (c.kind) {
       case "list":
@@ -108,27 +104,6 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         const action = deps.server?.actions?.[c.name];
         if (!action) throw new KiboError("PERMISSION_DENIED", `unknown action ${c.name}`);
         return action(deps.serverContext(), c.input);
-      }
-      case "notes.read":
-        return folder.read(c.path);
-      case "notes.write":
-        return folder.write(c.path, c.markdown, c.expectedMtime);
-      case "notes.create":
-        return folder.create(c.path, c.markdown);
-      case "notes.rename":
-        return folder.rename(c.from, c.to);
-      case "notes.remove":
-        folder.remove(c.path);
-        return null;
-      case "notes.search":
-        return folder.search(c.query);
-      case "notes.info":
-        return folder.info();
-      case "notes.attach":
-        return { path: folder.attach(c.name, c.mime, base64ToBytes(c.bytes)) };
-      case "notes.asset": {
-        const asset = folder.asset(c.path);
-        return { mime: asset.mime, bytes: bytesToBase64(asset.bytes) };
       }
       case "mcp.call":
         return mcpReply(deps, `${c.server}/${c.tool}`);

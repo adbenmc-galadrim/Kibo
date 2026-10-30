@@ -29,21 +29,13 @@ const environment: Environment = {
   },
 };
 
-const isolated = { kind: "sandbox-exec", available: true, reason: null, fix: null, allowUnsandboxed: false };
 const none = () => () => {};
 mock.module("../api", () =>
   apiMock({
     client: {
       pair: () => Promise.resolve(),
       pairWithCode: () => Promise.resolve(),
-      rpc: async (req: { method: string }) =>
-        req.method === "listComponents" || req.method === "listDrafts"
-          ? []
-          : req.method === "getSandboxStatus"
-            ? isolated
-            : req.method === "getAppInfo"
-              ? environment.app
-              : environment,
+      rpc: async (req: { method: string }) => (req.method === "getAppInfo" ? environment.app : environment),
       subscribe: none,
       subscribeEvents: none,
       subscribeAi: none,

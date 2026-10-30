@@ -39,10 +39,3 @@ export type RemoteAccessStatus = {
   lastError: string | null;
 };
 export type PairingCode = { code: string; expiresAt: number };
-export type SandboxStatus = {
-  kind: "bwrap" | "sandbox-exec" | null;
-  available: boolean;
-  reason: string | null;
-  fix: string | null;
-  allowUnsandboxed: boolean;
-};

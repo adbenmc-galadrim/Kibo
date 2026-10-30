@@ -23,8 +23,6 @@
       "entry": [
         "src/server.ts",
         "src/daemon.ts",
-        "src/component-runtime.ts",
-        "src/components/net-proxy-direct-child.ts",
         "src/components/component-worker.ts",
         "src/**/fake-*.ts",
         "src/**/*.test.ts",

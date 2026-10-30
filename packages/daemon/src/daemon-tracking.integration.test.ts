@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { z } from "zod";
-import { fakeBuild, okReport } from "./components/service.test-helper";
 import { startDaemon } from "./daemon";
 
 const FIXED_NOW = "2026-10-16T14:52:00+02:00";
@@ -25,8 +24,6 @@ async function launch() {
     dev: false,
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     home,
   });
   const d = await started.finally(() => {

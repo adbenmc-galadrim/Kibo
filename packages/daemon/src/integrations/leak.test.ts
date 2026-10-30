@@ -232,14 +232,13 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   return { projectId: project.id, ticketId: created.id };
 }
 
-async function mcpSourceScenario(projectId: string): Promise<void> {
+async function mcpScenario(projectId: string): Promise<void> {
   const page = Created.parse(await run(projectId, { method: "addPage", title: "M", kind: "view" }));
   const instance = Created.parse(
     await run(projectId, {
       method: "addInstance",
       pageId: page.id,
-      component: "mcp-source@1.0.0",
-      config: { server: "fake", mode: "tool", tool: "env", args: "{}", itemsPointer: "/items" },
+      component: "kanban@1.0.0",
     }),
   );
   const mcpCall = (tool: string) =>
@@ -269,7 +268,7 @@ function journalsWereWritten(tables: Place[]): void {
 test("after a full scenario, no secret appears anywhere", async () => {
   await addMcpServers();
   const { projectId, ticketId } = await githubScenario();
-  await mcpSourceScenario(projectId);
+  await mcpScenario(projectId);
   await designScenario(design, { ok, call }, projectId, ticketId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });

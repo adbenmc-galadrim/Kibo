@@ -27,18 +27,14 @@ test("project commands and code writes count, reads and component data do not", 
       call: { kind: "run", command: command.command },
     }),
   ).toBe(true);
-  const notes = (call: ComponentCall) => ({
+  const component = (call: ComponentCall) => ({
     method: "componentCall" as const,
     projectId: "p1",
     instanceId: "i1",
     call,
   });
-  expect(
-    isProjectWrite(notes({ kind: "notes.write", path: "a.md", markdown: "x", expectedMtime: null })),
-  ).toBe(true);
-  expect(isProjectWrite(notes({ kind: "notes.create", path: "a.md", markdown: "" }))).toBe(true);
-  expect(isProjectWrite(notes({ kind: "notes.read", path: "a.md" }))).toBe(false);
-  expect(isProjectWrite(notes({ kind: "action", name: "x", input: null }))).toBe(false);
+  expect(isProjectWrite(component({ kind: "data.keys" }))).toBe(false);
+  expect(isProjectWrite(component({ kind: "action", name: "x", input: null }))).toBe(false);
   const hash = "0".repeat(40);
   expect(
     isCodeWrite({

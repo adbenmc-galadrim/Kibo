@@ -6,14 +6,7 @@ const PROJECT_AGENT_WRITES: ReadonlySet<RpcRequest["method"]> = new Set<RpcReque
   "resetProjectAgent",
 ]);
 
-const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCall["kind"]>([
-  "run",
-  "notes.write",
-  "notes.create",
-  "notes.rename",
-  "notes.remove",
-  "notes.attach",
-]);
+const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCall["kind"]>(["run"]);
 
 const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["method"]>([
   "writeFile",

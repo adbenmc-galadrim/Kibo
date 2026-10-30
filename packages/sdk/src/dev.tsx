@@ -11,7 +11,7 @@ import {
 import { type ComponentType, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { devFr } from "./dev-fr";
-import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo } from "./fixtures";
+import { seedDemo } from "./fixtures";
 import { createMockSdk } from "./mock";
 import { SdkProvider } from "./react";
 import { Button } from "./ui/button";
@@ -56,8 +56,6 @@ function DevShell({ manifest, Component }: { manifest: ComponentManifest; Compon
         seed: (run) => seedDemo(run),
         surface,
         format,
-        notes: DEMO_NOTES,
-        noteAges: DEMO_NOTE_AGES,
       }),
     [manifest, surface, format],
   );

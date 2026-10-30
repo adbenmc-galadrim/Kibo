@@ -1,7 +1,6 @@
-import type { AppInfo, Environment } from "@kibo/schema";
+import { type AppInfo, BUILTIN_IDS, type Environment } from "@kibo/schema";
 import { createAppInfo } from "../app-info";
 import { appVersion } from "../app-version";
-import type { ComponentsService } from "../components/service";
 import type { LogBuffer } from "../log-buffer";
 import type { RpcExtension } from "../rpc-extensions";
 import { call, type Service } from "../service";
@@ -17,7 +16,6 @@ type AppDiagnosticsDeps = {
   userHome: string;
   startedAt: number;
   service: Service;
-  components: Pick<ComponentsService, "registry">;
   log: LogBuffer;
   fixedNow?: string | null;
   today(): string;
@@ -67,7 +65,7 @@ export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => 
       diagnosticCounts({
         workspace: service.docs.workspace,
         project: (id) => service.docs.project(id),
-        components: () => deps.components.registry.list().length,
+        components: () => BUILTIN_IDS.length,
         agents: () => service.agentData.agents(null).filter((agent) => agent.scope !== "system").length,
       }),
     integrations: async () =>

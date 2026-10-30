@@ -6,7 +6,6 @@ import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ProjectCommand, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { createGitFixture, installFakeGh } from "./code/testing/git-fixture";
-import { fakeBuild, okReport } from "./components/service.test-helper";
 import { type Daemon, type DaemonOptions, startDaemon } from "./daemon";
 
 const FIXED_NOW = "2026-10-16T14:52:00+02:00";
@@ -47,8 +46,6 @@ async function launch(home: string, extra: Partial<DaemonOptions> = {}): Promise
     dev: false,
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     home,
     ...extra,
   });

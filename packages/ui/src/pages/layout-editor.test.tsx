@@ -21,7 +21,6 @@ mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: RpcRequest) => {
-        if (req.method === "listComponents" || req.method === "listDrafts") return [];
         calls.push(req);
         const out = answer(req);
         if (out instanceof Error) throw out;

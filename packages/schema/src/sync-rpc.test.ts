@@ -9,8 +9,6 @@ test("phase 7 sync, presence and security RPCs parse", () => {
     { method: "enableRemoteAccess", address: "192.168.1.20", port: 47832, tls: { kind: "self-signed" } },
     { method: "disableRemoteAccess" },
     { method: "createPairingCode" },
-    { method: "getSandboxStatus" },
-    { method: "setAllowUnsandboxed", allow: true },
     { method: "getSyncStatus" },
     {
       method: "connectSyncServer",
@@ -56,5 +54,6 @@ test("invalid phase 7 RPCs are refused", () => {
       caFile: null,
     }).success,
   ).toBe(false);
-  expect(RpcRequest.safeParse({ method: "setAllowUnsandboxed" }).success).toBe(false);
+  expect(RpcRequest.safeParse({ method: "getSandboxStatus" }).success).toBe(false);
+  expect(RpcRequest.safeParse({ method: "setAllowUnsandboxed", allow: true }).success).toBe(false);
 });

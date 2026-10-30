@@ -18,8 +18,7 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         if (req.method === "getBackups") return Promise.resolve({ status: BACKUP_STATUS, backups: [] });
-        if (req.method === "getEnvironment" || req.method === "getSandboxStatus")
-          return new Promise(() => {});
+        if (req.method === "getEnvironment") return new Promise(() => {});
         return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
       },
       subscribe: () => () => undefined,

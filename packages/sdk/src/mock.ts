@@ -23,7 +23,6 @@ import { createMockCalls } from "./mock-calls";
 import { createMockRunDelivery, MOCK_DELIVERY_AGENT_INFO } from "./mock-delivery";
 import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { applyMockHolds } from "./mock-holds";
-import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { recordedTrackingApis } from "./mock-project";
 import { recordedAgentApis } from "./mock-recorded";
@@ -39,7 +38,6 @@ import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend 
 export type { MockFetch } from "./mock-calls";
 export type { MockFrame } from "./mock-design";
 export type { MockEmbedOptions } from "./mock-embed";
-export type { MockNote } from "./mock-notes";
 export type { MockSdk, MockSdkOptions } from "./mock-types";
 
 const PROJECT_KEY = "KIB";
@@ -79,7 +77,6 @@ export function createMockSdk(
   opts.seed?.(run);
   applyMockHolds(doc, run, opts.holds ?? []);
   let runs = opts.runs ?? [];
-  const folder = createMockNotes(opts.notes ?? {}, opts.noteAges ?? {}, PROJECT_KEY, changes.emit);
   const data = new Map<string, unknown>();
   const configPatches: Record<string, unknown>[] = [];
   const violations: string[] = [];
@@ -130,7 +127,6 @@ export function createMockSdk(
       data,
       manifest,
       configPatches,
-      folder,
       runs: () => runs,
       peers: () => peers,
       access: () => access,
@@ -182,8 +178,6 @@ export function createMockSdk(
       throw e;
     }
   };
-  const readNote = <T>(work: () => Promise<T>) => record("read:note", "read note", work);
-  const writeNote = <T>(work: () => Promise<T>) => record("write:note", "write note", work);
   const useData = <T>(work: () => Promise<T>) => record("data", "data", work);
   const useAssets = <T>(work: () => Promise<T>) => record(capPermission("assets"), "cap:assets", work);
 
@@ -203,19 +197,6 @@ export function createMockSdk(
     fetch: (url, init) => record(`net:${url}`, `net ${url}`, () => inner.fetch(url, init)),
     action: <T>(name: string, input?: unknown) =>
       record(null, `action ${name}`, () => inner.action<T>(name, input)),
-    notes: {
-      read: (path) => readNote(() => inner.notes.read(path)),
-      search: (query) => readNote(() => inner.notes.search(query)),
-      info: () => readNote(() => inner.notes.info()),
-      write: (path, markdown, expectedMtime) =>
-        writeNote(() => inner.notes.write(path, markdown, expectedMtime)),
-      create: (path, markdown) => writeNote(() => inner.notes.create(path, markdown)),
-      rename: (from, to) => writeNote(() => inner.notes.rename(from, to)),
-      remove: (path) => writeNote(() => inner.notes.remove(path)),
-      attach: (notePath, name, mime, bytes) =>
-        writeNote(() => inner.notes.attach(notePath, name, mime, bytes)),
-      asset: (path) => readNote(() => inner.notes.asset(path)),
-    },
     mcp: {
       call: (server, tool, args) =>
         record(`mcp:${server}/${tool}`, `mcp ${server}/${tool}`, () => inner.mcp.call(server, tool, args)),
@@ -268,7 +249,6 @@ export function createMockSdk(
     embedCalls: embeds.calls,
     data,
     configPatches,
-    notes: folder.notes,
     run,
     snapshot: () => readProject(doc, today, activityOf(runs)),
     setRuns: (next) => {
@@ -276,7 +256,6 @@ export function createMockSdk(
       runChanges.emit();
       changes.emit();
     },
-    touchNote: folder.touch,
     setAccess: (next) => {
       access = next;
       changes.emit();

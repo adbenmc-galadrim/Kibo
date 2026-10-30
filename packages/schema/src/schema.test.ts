@@ -16,6 +16,7 @@ import {
   KeyCombo,
   KiboError,
   NO_PERMISSIONS,
+  NotesCall,
   Phase7Event,
   ProjectKey,
   permissionList,
@@ -158,24 +159,20 @@ describe("mcp and ci_run permissions", () => {
 
   test("notes.attach and notes.asset are calls with strict names", () => {
     const attach = { kind: "notes.attach", notePath: "a.md", mime: "image/png", bytes: "AA==" };
-    expect(ComponentCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
-    expect(ComponentCall.safeParse({ ...attach, name: "../x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "a/x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "X.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.svg", mime: "image/svg+xml" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", notePath: "../a.md" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "A".repeat(2_800_001) }).success).toBe(
+    expect(NotesCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
+    expect(NotesCall.safeParse({ ...attach, name: "../x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "a/x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "X.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.svg", mime: "image/svg+xml" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", notePath: "../a.md" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", bytes: "A".repeat(2_800_001) }).success).toBe(
       false,
     );
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "<html>" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/x.png" }).success).toBe(true);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/../x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/a/x.png" }).success).toBe(false);
-    expect(permissionOfCall({ ...attach, kind: "notes.attach", mime: "image/png", name: "x.png" })).toBe(
-      "write:note",
-    );
-    expect(permissionOfCall({ kind: "notes.asset", path: "assets/x.png" })).toBe("read:note");
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", bytes: "<html>" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/x.png" }).success).toBe(true);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/../x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/a/x.png" }).success).toBe(false);
   });
 
   test("sniffImage reads the type from the first bytes only", () => {

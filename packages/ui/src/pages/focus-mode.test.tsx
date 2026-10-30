@@ -202,17 +202,6 @@ test("every widget follows the visibility of the tab", async () => {
   }
 });
 
-test("neither the page nor its widgets ask the daemon for the component list", async () => {
-  const view = show();
-  await screen.findByText("arcade content");
-  await screen.findByText("plain content");
-  await act(async () => {
-    await new Promise((r) => setTimeout(r, 10));
-  });
-  expect(calls.some((c) => c.method === "listComponents")).toBe(false);
-  view.unmount();
-});
-
 test("leaving the fullscreen gives the focus back to its button", async () => {
   const view = show();
   const user = userEvent.setup();

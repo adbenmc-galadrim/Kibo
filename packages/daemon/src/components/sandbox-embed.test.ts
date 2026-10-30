@@ -22,7 +22,6 @@ function relayServer(withRelay = true) {
   const s = startSandboxServer({
     port: 0,
     uiPort: 4317,
-    assets: () => null,
     ...(withRelay && { embeds }),
   });
   servers.push(s);

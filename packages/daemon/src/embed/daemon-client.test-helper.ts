@@ -1,5 +1,3 @@
-import { Database } from "bun:sqlite";
-import { join } from "node:path";
 import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 
@@ -45,39 +43,4 @@ export async function pair({ url, token }: { url: string; token: string }): Prom
       return { status, code: reply.error.code };
     },
   };
-}
-
-export type JournalRow = { kind: string; code: string; count: number };
-
-export function readJournal(home: string, ref: string): JournalRow[] {
-  const db = new Database(join(home, "kibo.db"), { readonly: true });
-  try {
-    return db
-      .query<JournalRow, [string]>("SELECT kind, code, count FROM component_events WHERE ref = ? ORDER BY id")
-      .all(ref);
-  } finally {
-    db.close();
-  }
-}
-
-export function runtimeChildren(): number[] {
-  const out = Bun.spawnSync(["ps", "-A", "-o", "pid=,ppid=,stat=,command="]).stdout.toString();
-  return out
-    .split("\n")
-    .map((line) => line.trim().split(/\s+/))
-    .filter(([, ppid, stat, ...command]) => {
-      const child = Number(ppid) === process.pid && !stat?.startsWith("Z");
-      return child && command.join(" ").includes("component-runtime");
-    })
-    .map(([pid]) => Number(pid));
-}
-
-export async function eventually(
-  check: () => boolean | Promise<boolean>,
-  timeoutMs = 5_000,
-): Promise<boolean> {
-  for (const started = Date.now(); Date.now() - started < timeoutMs; await Bun.sleep(50)) {
-    if (await check()) return true;
-  }
-  return check();
 }

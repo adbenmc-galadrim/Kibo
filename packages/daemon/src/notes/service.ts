@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { type ComponentCall, KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
+import { KiboError, type NoteContent, type NoteMeta, type NotesCall, type NotesInfo } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
 import { assertNotInbox } from "../inbox/inbox-rules";
 import { createNotesIndex, type IndexedNote } from "./index";
@@ -36,7 +36,7 @@ export type NotesService = {
   info(projectId: string): NotesInfo;
   list(projectId: string): Promise<NoteMeta[]>;
   setDir(projectId: string, dir: string): Promise<NotesInfo>;
-  handle(projectId: string, call: ComponentCall): Promise<unknown>;
+  handle(projectId: string, call: NotesCall): Promise<unknown>;
   refresh(projectId: string): Promise<void>;
   forget(projectId: string): void;
   close(): void;
@@ -178,7 +178,6 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       const dir = dirOf(projectId);
       switch (call.kind) {
         case "list":
-          if (call.entity !== "note") break;
           await ensure(projectId);
           return index.list(projectId);
         case "notes.read": {
@@ -224,7 +223,6 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
           return { mime: asset.mime, bytes: Buffer.from(asset.bytes).toString("base64") };
         }
       }
-      throw new KiboError("INTERNAL", `${call.kind} is not a notes call`);
     },
     refresh,
     forget(projectId) {

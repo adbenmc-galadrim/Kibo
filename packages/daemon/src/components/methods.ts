@@ -1,20 +1,10 @@
 import type { RpcRequest } from "@kibo/schema";
 
 export const COMPONENT_METHODS = [
-  "listComponents",
   "componentCall",
-  "approveComponent",
-  "revokeComponent",
-  "rehashComponent",
-  "previewPublish",
-  "publishComponent",
-  "updateInstance",
-  "uninstallComponent",
-  "listDrafts",
   "getNotesDir",
   "listNotes",
   "setNotesDir",
-  "getRuntimeInfo",
   "installCli",
   "cliStatus",
   "reportComponentRefusal",

@@ -32,63 +32,6 @@ test("data, programmed fetch and actions work in memory", async () => {
   await expect(m.sdk.action("nope")).rejects.toThrow("PERMISSION_DENIED");
 });
 
-test("notes live in an in-memory folder with conflict detection", async () => {
-  const m = createMockSdk(
-    { ...base, reads: ["note", "ticket"], writes: ["note"] },
-    { notes: { "a.md": "# A\n\nVoir [[b]] et KIB-1.", "b.md": "# B" } },
-  );
-  const list = await m.sdk.list("note");
-  expect(list.map((n) => [n.path, n.title, n.links, n.tickets])).toEqual([
-    ["a.md", "A", ["b.md"], ["KIB-1"]],
-    ["b.md", "B", [], []],
-  ]);
-  const a = await m.sdk.notes.read("a.md");
-  m.touchNote("a.md", "# A modifiée");
-  await expect(m.sdk.notes.write("a.md", "# A2", a.mtime)).rejects.toThrow("CONFLICT");
-  await m.sdk.notes.write("a.md", "# A2", null);
-  expect((await m.sdk.notes.search("a2")).map((n) => n.path)).toEqual(["a.md"]);
-  expect((await m.sdk.notes.info()).displayDir).toBe("~/goinfre/Kibo/notes");
-});
-
-test("notes.create refuses an existing path and is used as write:note", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
-  await expect(m.sdk.notes.create("a.md", "# Autre")).rejects.toThrow("CONFLICT");
-  expect(m.notes.get("a.md")?.markdown).toBe("# A");
-  const created = await m.sdk.notes.create("b.md", "# B");
-  expect([created.path, created.title]).toEqual(["b.md", "B"]);
-  expect(m.used).toEqual(["write:note"]);
-});
-
-test("pasted images are attached and read back in memory, with the daemon's rules", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
-  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
-  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
-    path: "assets/a-20261004-101500.png",
-  });
-  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
-    path: "assets/a-20261004-101500-2.png",
-  });
-  const back = await m.sdk.notes.asset("assets/a-20261004-101500.png");
-  expect(back.mime).toBe("image/png");
-  expect([...back.bytes]).toEqual([...png]);
-  await expect(m.sdk.notes.asset("assets/none.png")).rejects.toThrow("NOT_FOUND");
-  await expect(m.sdk.notes.asset("assets/../a.md")).rejects.toThrow("INVALID_INPUT");
-  const html = new TextEncoder().encode("<html>");
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", html)).rejects.toThrow("INVALID_INPUT");
-  await expect(m.sdk.notes.attach("a.md", "../x.png", "image/png", png)).rejects.toThrow("INVALID_INPUT");
-  const big = new Uint8Array(2 * 1024 * 1024 + 1);
-  big.set(png);
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", big)).rejects.toThrow("TOO_LARGE");
-  expect(m.used).toEqual(["write:note", "read:note"]);
-});
-
-test("notes.attach needs write:note", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: [] }, { notes: { "a.md": "# A" } });
-  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", png)).rejects.toThrow("PERMISSION_DENIED");
-  expect(m.violations).toEqual(["write note"]);
-});
-
 test("runs are served by list in both modes and notify run subscribers", async () => {
   const m = createMockSdk({ ...base, reads: ["ticket", "run"], writes: [] });
   const heard: string[] = [];

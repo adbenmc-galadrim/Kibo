@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DEMO_NOTE_AGES, DEMO_NOTES, seedDemo, seedQuestions } from "./fixtures";
+import { seedDemo, seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
 
 test("the demo data matches design/donnees-fictives.md", async () => {
@@ -10,15 +10,13 @@ test("the demo data matches design/donnees-fictives.md", async () => {
       version: "0.1.0",
       kind: "view",
       title: "Probe",
-      reads: ["ticket", "link", "note"],
+      reads: ["ticket", "link"],
       writes: [],
     },
     {
       seed: (run) => {
         ids = seedDemo(run);
       },
-      notes: DEMO_NOTES,
-      noteAges: DEMO_NOTE_AGES,
     },
   );
   const tickets = await m.sdk.list("ticket");
@@ -31,18 +29,6 @@ test("the demo data matches design/donnees-fictives.md", async () => {
   expect(byKey["KIB-12"]?.assignee).toEqual({ kind: "agent", ref: "opus-dev-1" });
   expect(byKey["KIB-15"]?.waitingOn).toEqual(["KIB-12"]);
   expect((await m.sdk.list("link")).filter((l) => l.type === "blocks")).toHaveLength(6);
-  const notes = await m.sdk.list("note");
-  expect(notes.map((n) => n.path)).toEqual([
-    "decisions-architecture.md",
-    "journal-agents.md",
-    "idees-composants.md",
-    "reunion-kick-off.md",
-  ]);
-  const decisions = notes.find((n) => n.title === "Décisions d'architecture");
-  expect(decisions?.tickets).toEqual(["KIB-12", "KIB-13", "KIB-14"]);
-  expect(notes.filter((n) => n.links.includes(decisions?.path ?? "")).map((n) => n.links.length)).toEqual([
-    1, 2,
-  ]);
 });
 
 test("the demo data seeds a shared project whose keys are still provisional", async () => {

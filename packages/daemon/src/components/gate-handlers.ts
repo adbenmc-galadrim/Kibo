@@ -20,16 +20,12 @@ import {
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
-import type { NotesService } from "../notes/service";
-import type { Backends } from "./backends";
 import type { DataCall, GateHandlers } from "./gate";
 import { type NetProxyOptions, proxyFetch } from "./net-proxy";
 
 export type GateHandlersDeps = {
   docs: Docs;
-  notes: NotesService;
   files: FilesService;
-  backends: () => Backends;
   runs(projectId: string): TicketRun[];
   manifestOf(ref: string): Promise<ComponentManifest>;
   net?: NetProxyOptions;
@@ -88,17 +84,10 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       changed(projectId);
       return null;
     },
-    fetch: (grant, url, init) => {
+    fetch: (url, init) => {
       const hooks = deps.integrations?.() ?? null;
-      return proxyFetch(grant?.net ?? null, url, init, {
-        ...deps.net,
-        ...(hooks && { hooks }),
-        ...(grant && { secrets: grant.secrets }),
-      });
+      return proxyFetch(null, url, init, { ...deps.net, ...(hooks && { hooks }) });
     },
-    action: (ref, projectId, instanceId, config, name, input) =>
-      deps.backends().action(ref, { projectId, instanceId, config, name, input }),
-    notes: (projectId, call) => deps.notes.handle(projectId, call),
     async mcp(projectId, instanceId, call) {
       const gate = deps.integrations?.()?.mcp ?? null;
       if (!gate) throw new KiboError("MCP_UNAVAILABLE", "mcp hub not started");

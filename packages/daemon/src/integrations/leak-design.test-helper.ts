@@ -63,7 +63,7 @@ export async function designScenario(
     await ok({
       method: "command",
       projectId,
-      command: { method: "addInstance", pageId: page.id, component: "tickets@1.0.0" },
+      command: { method: "addInstance", pageId: page.id, component: "mockup@1.0.0" },
     }),
   );
   const frame = Served.parse(

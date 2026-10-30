@@ -10,7 +10,6 @@ mock.module("../api", () =>
   apiMock({
     client: {
       rpc: (req: RpcRequest) => {
-        if (req.method === "listComponents") return Promise.resolve([]);
         if (req.method === "getPresence") return Promise.resolve([]);
         if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
         if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);

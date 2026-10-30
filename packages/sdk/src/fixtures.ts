@@ -110,37 +110,3 @@ export function seedQuestions(run: (cmd: ProjectCommand) => unknown, ticketIds: 
     by: { kind: "human", ref: "adam" },
   });
 }
-
-export const DEMO_NOTES: Record<string, string> = {
-  "decisions-architecture.md": `# Décisions d'architecture
-
-## Stockage
-
-On garde Loro comme CRDT : c'est le seul à gérer nativement le déplacement dans un arbre, indispensable pour les sous-tickets en profondeur illimitée.
-
-Voir KIB-12 et KIB-13.
-
-## Agents
-
-- L'état vient uniquement des hooks Claude Code (KIB-14)
-- Un jeton par run pour le récepteur
-- Réponse à un agent = --resume sessionId
-
-\`\`\`sh
-claude -p --settings .kibo/run-42/settings.json \\
-  --append-system-prompt-file brief.md
-\`\`\`
-`,
-  "journal-agents.md":
-    "# Journal agents\n\nRelire [[decisions-architecture]] avant de brancher le récepteur.\n",
-  "idees-composants.md":
-    "# Idées composants\n\n- Burndown, voir [[decisions-architecture]]\n- Graphe, voir [[decisions-architecture]]\n",
-  "reunion-kick-off.md": "# Réunion kick-off\n\nPremière réunion de cadrage.\n",
-};
-
-export const DEMO_NOTE_AGES: Record<string, number> = {
-  "decisions-architecture.md": 0,
-  "journal-agents.md": 1,
-  "idees-composants.md": 4,
-  "reunion-kick-off.md": 8,
-};

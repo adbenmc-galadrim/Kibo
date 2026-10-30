@@ -3,8 +3,6 @@ import { type ChangeMessage, CodeRequest, KiboError, RpcRequest } from "@kibo/sc
 import type { Server, ServerWebSocket } from "bun";
 import { readCookie, sameSecret } from "./auth";
 import type { CodeService } from "./code/code-service";
-import type { AssetLookup } from "./components/sandbox-server";
-import { serveTrusted } from "./components/trusted-route";
 import { fail, respond, unredacted } from "./http-response";
 import { serveIcon } from "./icons/icon-route";
 import type { IconStore } from "./icons/icon-store";
@@ -37,7 +35,6 @@ export type ServerOptions = {
   hooks?: HookSink;
   agentMcp?: AgentMcpSink;
   code?: CodeService;
-  assets?: AssetLookup;
   icons?: Pick<IconStore, "get">;
   questionImages?: Pick<QuestionImageRouteDeps, "read">;
   sandboxOrigin?: () => string | null;
@@ -205,9 +202,6 @@ export function startServer(opts: ServerOptions): RunningServer {
       const agentRun = AGENT_MCP_PATH.exec(url.pathname)?.[1];
       const agentMcp = opts.agentMcp;
       if (agentRun) return localOnly(l, agentMcp ? () => handleAgentMcp(req, agentRun, agentMcp) : null);
-      if (url.pathname.startsWith("/components/")) {
-        return serveTrusted(req, url, { assets: opts.assets, origins: () => allowedOrigins(l), hasSession });
-      }
       if (url.pathname.startsWith("/icons/")) {
         return serveIcon(req, url, {
           icons: opts.icons ?? { get: () => null },

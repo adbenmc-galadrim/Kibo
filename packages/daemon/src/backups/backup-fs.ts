@@ -3,7 +3,7 @@ import { chmod, cp, lstat, mkdir, readdir, readFile, rename, rm, writeFile } fro
 import { join } from "node:path";
 import { BackupId, BackupInfo, type BackupReason, KiboError } from "@kibo/schema";
 
-export const BACKUP_COPIED = ["components", "notes", "history"] as const;
+export const BACKUP_COPIED = ["notes", "history"] as const;
 export const BACKUP_EXCLUDED = [
   "token",
   "daemon.json",

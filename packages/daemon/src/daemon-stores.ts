@@ -1,5 +1,4 @@
 import { homedir } from "node:os";
-import { osSandbox } from "@kibo/devkit";
 import { BACKUP_TICK_MS, type ChangeMessage } from "@kibo/schema";
 import { appVersion } from "./app-version";
 import { loadOrCreateToken } from "./auth";
@@ -9,13 +8,11 @@ import type { Closer } from "./daemon-shutdown";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { runLegacyMigrations } from "./migrations/legacy";
 import { openRunStore, type RunStore } from "./runs/run-store";
-import { createSandboxService, type SandboxService } from "./sandbox/sandbox-service";
 import { openLocalSettings } from "./settings";
 import { openStore, type Store } from "./store";
 
 export type DaemonStores = { store: Store; runs: RunStore; token: string; redactor: Redactor };
 export type LocalServices = {
-  sandbox: SandboxService;
   backups: BackupsService;
   scheduleBackups(): Closer;
 };
@@ -40,7 +37,6 @@ export function createLocalServices(
   { store, runs }: Pick<DaemonStores, "store" | "runs">,
   emit: (message: ChangeMessage) => void,
 ): LocalServices {
-  const sandbox = createSandboxService({ sandbox: osSandbox(), settings: openLocalSettings(store), emit });
   const backups = createBackupsService({
     home: opts.home,
     userHome: opts.userHome ?? homedir(),
@@ -57,5 +53,5 @@ export function createLocalServices(
       intervalMs: BACKUP_TICK_MS,
       log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
     });
-  return { sandbox, backups, scheduleBackups };
+  return { backups, scheduleBackups };
 }

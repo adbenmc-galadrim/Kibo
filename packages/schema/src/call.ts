@@ -21,15 +21,8 @@ export type FetchInit = z.infer<typeof FetchInit>;
 export type FetchInitInput = z.input<typeof FetchInit>;
 export type FetchResponse = { status: number; headers: Record<string, string>; body: string };
 
-export const ComponentCall = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("list"), entity: BuiltinEntityType }),
-  z.object({ kind: z.literal("run"), command: ProjectCommand }),
-  z.object({ kind: z.literal("data.get"), key: DataKey }),
-  z.object({ kind: z.literal("data.delete"), key: DataKey }),
-  z.object({ kind: z.literal("data.set"), key: DataKey, value: z.unknown() }),
-  z.object({ kind: z.literal("data.keys") }),
-  z.object({ kind: z.literal("fetch"), url: z.string().max(4096), init: FetchInit }),
-  z.object({ kind: z.literal("action"), name: z.string().min(1).max(128), input: z.unknown() }),
+export const NotesCall = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("list"), entity: z.literal("note") }),
   z.object({ kind: z.literal("notes.read"), path: NotePath }),
   z.object({
     kind: z.literal("notes.write"),
@@ -50,6 +43,18 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     bytes: z.string().max(MAX_ASSET_BASE64).pipe(Base64),
   }),
   z.object({ kind: z.literal("notes.asset"), path: AssetPath }),
+]);
+export type NotesCall = z.infer<typeof NotesCall>;
+
+export const ComponentCall = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("list"), entity: BuiltinEntityType }),
+  z.object({ kind: z.literal("run"), command: ProjectCommand }),
+  z.object({ kind: z.literal("data.get"), key: DataKey }),
+  z.object({ kind: z.literal("data.delete"), key: DataKey }),
+  z.object({ kind: z.literal("data.set"), key: DataKey, value: z.unknown() }),
+  z.object({ kind: z.literal("data.keys") }),
+  z.object({ kind: z.literal("fetch"), url: z.string().max(4096), init: FetchInit }),
+  z.object({ kind: z.literal("action"), name: z.string().min(1).max(128), input: z.unknown() }),
   z.object({
     kind: z.literal("mcp.call"),
     server: McpServerId,

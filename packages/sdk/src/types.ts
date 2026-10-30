@@ -1,5 +1,4 @@
 import type {
-  AssetMime,
   AssetUrl,
   Capability,
   CiRun,
@@ -19,9 +18,6 @@ import type {
   Link,
   McpCallResult,
   McpImportItem,
-  NoteContent,
-  NoteMeta,
-  NotesInfo,
   Page,
   PresencePeer,
   ProjectAsset,
@@ -56,7 +52,6 @@ export type EntityMap = {
   link: Link;
   page: Page;
   run: TicketRun;
-  note: NoteMeta;
   ci_run: CiRun;
   question: Question;
   sprint: SprintView;
@@ -72,20 +67,6 @@ export type InstanceData = {
   delete(key: string): Promise<void>;
   keys(): Promise<string[]>;
 };
-
-export type NotesApi = {
-  read(path: string): Promise<NoteContent>;
-  write(path: string, markdown: string, expectedMtime: number | null): Promise<NoteMeta>;
-  create(path: string, markdown: string): Promise<NoteMeta>;
-  rename(from: string, to: string): Promise<NoteMeta>;
-  remove(path: string): Promise<void>;
-  search(query: string): Promise<NoteMeta[]>;
-  info(): Promise<NotesInfo>;
-  attach(notePath: string, name: string, mime: AssetMime, bytes: Uint8Array): Promise<{ path: string }>;
-  asset(path: string): Promise<NoteAsset>;
-};
-
-export type NoteAsset = { mime: AssetMime; bytes: Uint8Array<ArrayBuffer> };
 
 export type McpApi = {
   call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>;
@@ -167,7 +148,6 @@ export type KiboSdk = {
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   setConfig(patch: Record<string, unknown>): Promise<void>;
-  notes: NotesApi;
   mcp: McpApi;
   presence: PresenceApi;
   sharing(): Promise<ProjectSyncInfo>;

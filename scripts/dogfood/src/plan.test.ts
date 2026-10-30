@@ -206,23 +206,13 @@ describe("planTickets", () => {
 });
 
 describe("componentRefs", () => {
-  const summary = (id: string, versions: string[]) => ({
-    id,
-    versions: versions.map((version) => ({ version })),
-  });
-
-  test("prefers the highest installed version, else the manifest of the repository", () => {
+  test("refers to the manifest version of the repository", () => {
     const refs = componentRefs(
-      [summary("kanban", ["1.0.0", "1.2.0", "1.10.0"]), summary("notes", [])],
       new Map([
-        ["notes", "1.0.0"],
+        ["kanban", "1.0.0"],
         ["graph", "2.0.0"],
       ]),
     );
-    expect(Object.fromEntries(refs)).toEqual({
-      kanban: "kanban@1.10.0",
-      notes: "notes@1.0.0",
-      graph: "graph@2.0.0",
-    });
+    expect(Object.fromEntries(refs)).toEqual({ kanban: "kanban@1.0.0", graph: "graph@2.0.0" });
   });
 });

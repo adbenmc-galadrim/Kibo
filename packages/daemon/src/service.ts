@@ -51,7 +51,6 @@ import { readConfig, runConfigCommand } from "./workspace-config";
 
 export type ComponentsPort = {
   handle(req: ComponentRequest): Promise<unknown>;
-  afterCommand(projectId: string): void;
 };
 
 export type { CollabPort } from "./projects/project-rpc";
@@ -143,7 +142,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     published(projectId, done) {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
-      components.get()?.afterCommand(projectId);
       afterQuestionCommands(done, {
         emit: (m) => docs.emit(m),
         images: questionImages,
@@ -196,7 +194,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     imported(projectId) {
       docs.save(projectId);
       docs.emit({ projectId });
-      components.get()?.afterCommand(projectId);
     },
     onProjectDoc(listener) {
       docListeners.add(listener);

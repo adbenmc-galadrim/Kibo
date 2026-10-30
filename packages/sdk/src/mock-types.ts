@@ -25,7 +25,6 @@ import type { MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import type { MockEmbedOptions } from "./mock-embed";
 import type { MockHold } from "./mock-holds";
-import type { MockNote } from "./mock-notes";
 import type { ServerDefinition } from "./server";
 import type { AllowAndResumeInput, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
@@ -48,11 +47,9 @@ export type MockSdk = {
   embedCalls: string[];
   data: Map<string, unknown>;
   configPatches: Record<string, unknown>[];
-  notes: Map<string, MockNote>;
   run(cmd: ProjectCommand): unknown;
   snapshot(): ProjectSnapshot;
   setRuns(runs: TicketRun[]): void;
-  touchNote(path: string, markdown: string): void;
   setAccess(access: ProjectAccess): void;
   setPresence(peers: PresencePeer[]): void;
   focusRequests: boolean[];
@@ -77,8 +74,6 @@ export type MockSdkOptions = {
   runs?: TicketRun[];
   fetch?: MockFetch;
   server?: ServerDefinition;
-  notes?: Record<string, string>;
-  noteAges?: Record<string, number>;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   events?: ProjectEvent[];

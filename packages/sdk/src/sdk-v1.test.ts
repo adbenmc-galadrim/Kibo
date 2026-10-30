@@ -71,12 +71,11 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
 }
 
 describe("builtin mode", () => {
-  test("entities come from the snapshot, notes from componentCall", async () => {
-    const { sdk, calls } = setup({ reads: ["status", "note", "run"] });
+  test("entities come from the snapshot", async () => {
+    const { sdk, calls } = setup({ reads: ["status", "run"] });
     expect((await sdk.list("status")).length).toBe(6);
     expect(await sdk.list("run")).toEqual([run]);
-    await sdk.list("note");
-    expect(calls).toEqual([{ kind: "list", entity: "note" }]);
+    expect(calls).toEqual([]);
     expect(sdk.surface).toBe("widget");
   });
   test("run goes to the command bus", async () => {
@@ -119,15 +118,6 @@ describe("new capabilities", () => {
         init: { method: "POST", headers: {}, body: "{}" },
       },
     ]);
-  });
-  test("notes need read or write note", async () => {
-    const reader = setup({ reads: ["note"] });
-    await reader.sdk.notes.read("a.md");
-    await reader.sdk.notes.search("loro");
-    await reader.sdk.notes.info();
-    await expect(reader.sdk.notes.write("a.md", "x", null)).rejects.toThrow("PERMISSION_DENIED");
-    await expect(reader.sdk.notes.create("a.md", "x")).rejects.toThrow("PERMISSION_DENIED");
-    expect(reader.calls.map((c) => c.kind)).toEqual(["notes.read", "notes.search", "notes.info"]);
   });
   test("actions always reach the backend, reserved commands never do", async () => {
     const { sdk, calls } = setup({ writes: ["ticket"] }, "gated");

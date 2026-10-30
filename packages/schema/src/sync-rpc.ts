@@ -1,12 +1,6 @@
 import { z } from "zod";
 import type { ProjectMeta } from "./project";
-import {
-  type PairingCode,
-  RemoteAccessConfig,
-  type RemoteAccessStatus,
-  type SandboxStatus,
-  type SessionInfo,
-} from "./security";
+import { type PairingCode, RemoteAccessConfig, type RemoteAccessStatus, type SessionInfo } from "./security";
 import { type MemberInfo, MemberRole, type ProjectSyncInfo } from "./sharing";
 import { type DeviceInfo, type PresencePeer, SyncId, type SyncStatus } from "./sync";
 
@@ -19,8 +13,6 @@ export const SYNC_RPC_REQUESTS = [
   RemoteAccessConfig.extend({ method: z.literal("enableRemoteAccess") }),
   z.object({ method: z.literal("disableRemoteAccess") }),
   z.object({ method: z.literal("createPairingCode") }),
-  z.object({ method: z.literal("getSandboxStatus") }),
-  z.object({ method: z.literal("setAllowUnsandboxed"), allow: z.boolean() }),
   z.object({ method: z.literal("getSyncStatus") }),
   z.object({
     method: z.literal("connectSyncServer"),
@@ -64,8 +56,6 @@ export type SyncRpcResult = {
   enableRemoteAccess: RemoteAccessStatus;
   disableRemoteAccess: null;
   createPairingCode: PairingCode;
-  getSandboxStatus: SandboxStatus;
-  setAllowUnsandboxed: SandboxStatus;
   getSyncStatus: SyncStatus;
   connectSyncServer: SyncStatus;
   disconnectSyncServer: null;

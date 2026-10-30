@@ -88,7 +88,7 @@ test("a backup copies both databases as consistent snapshots plus components, no
   copy.close();
   expect(existsSync(join(dir, "kibo.db-wal"))).toBe(false);
   expect(existsSync(join(dir, "runs.db"))).toBe(true);
-  expect(readFileSync(join(dir, "components/src/hello/ui.tsx"), "utf8")).toBe("export const x = 1;");
+  expect(existsSync(join(dir, "components"))).toBe(false);
   expect(readFileSync(join(dir, "notes/DEMO/bienvenue.md"), "utf8")).toBe("# Bienvenue");
   expect(readFileSync(join(dir, "history/agents/global/review-pr/agent.md/1000-abcdef12"), "utf8")).toBe(
     "# Version",
@@ -103,7 +103,7 @@ test("a backup copies both databases as consistent snapshots plus components, no
     reason: "manual",
     appVersion: "1.5.0",
     createdAt: 10,
-    entries: ["kibo.db", "runs.db", "components", "notes", "history"],
+    entries: ["kibo.db", "runs.db", "notes", "history"],
   });
   expect(info.bytes).toBeGreaterThan(0);
   expect(await readBackups(dest)).toEqual([info]);
@@ -111,14 +111,14 @@ test("a backup copies both databases as consistent snapshots plus components, no
   expect(existsSync(dir)).toBe(false);
 });
 
-test("a link inside components is copied as a link, never followed out of the home", async () => {
+test("a link inside the notes is copied as a link, never followed out of the home", async () => {
   const h = home();
   const outside = mkdtempSync(join(tmpdir(), "kibo-outside-"));
   dirs.push(outside);
   writeFileSync(join(outside, "private.txt"), "private");
-  symlinkSync(outside, join(h, "components/src/hello/escape"));
+  symlinkSync(outside, join(h, "notes/DEMO/escape"));
   const info = await writeBackup(input(h, []));
-  const link = join(h, "backups", info.id, "components/src/hello/escape");
+  const link = join(h, "backups", info.id, "notes/DEMO/escape");
   expect(lstatSync(link).isSymbolicLink()).toBe(true);
 });
 

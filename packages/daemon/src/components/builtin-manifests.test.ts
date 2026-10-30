@@ -22,8 +22,9 @@ test("the daemon copy equals components/*/kibo.component.json", () => {
 });
 
 test("builtinManifestOf resolves an exact id@version only", () => {
-  expect(builtinManifestOf("viewer-3d@1.0.0")?.configSchema).toHaveProperty("model");
-  expect(builtinManifestOf("viewer-3d@9.9.9")).toBeNull();
+  expect(builtinManifestOf("mockup@1.0.0")?.configSchema).toHaveProperty("frame");
+  expect(builtinManifestOf("mockup@9.9.9")).toBeNull();
+  expect(builtinManifestOf("notes@1.0.0")).toBeNull();
   expect(builtinManifestOf("ghost@1.0.0")).toBeNull();
 });
 

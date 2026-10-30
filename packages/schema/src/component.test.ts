@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   addedPermissions,
   applyMigrations,
+  BUILTIN_IDS,
   COMMAND_WRITES,
   ComponentCall,
   ComponentManifest,
@@ -33,6 +34,11 @@ test("the game and the snake are no longer built-ins", () => {
   expect(isBuiltinId("snake")).toBe(false);
 });
 
+test("only the six components of the suivi stay built-in", () => {
+  expect([...BUILTIN_IDS].sort()).toEqual(["graph", "kanban", "mockup", "overview", "planning", "questions"]);
+  for (const id of ["notes", "tickets", "mcp-source", "viewer-3d"]) expect(isBuiltinId(id)).toBe(false);
+});
+
 describe("manifest v1", () => {
   test("a v0 manifest is accepted with defaults", () => {
     const m = ComponentManifest.parse(v0);
@@ -42,8 +48,9 @@ describe("manifest v1", () => {
     expect(m.changes).toEqual([]);
     expect(m.sdk).toBe(1);
   });
-  test("note and run are builtin entities", () => {
-    expect(ComponentManifest.safeParse({ ...v0, reads: ["note", "run"] }).success).toBe(true);
+  test("run is a builtin entity, notes are no longer readable by a component", () => {
+    expect(ComponentManifest.safeParse({ ...v0, reads: ["run"] }).success).toBe(true);
+    expect(ComponentManifest.safeParse({ ...v0, reads: ["note"] }).success).toBe(false);
   });
   test("net rules are https host + path prefix only", () => {
     for (const ok of ["api.github.com", "api.github.com/graphql", "a.b-c.io/x/y_z.~"]) {
@@ -117,9 +124,6 @@ describe("permissions", () => {
       }),
     ).toBe("write:setInstanceData");
     expect(permissionOfCall({ kind: "data.keys" })).toBe("data");
-    expect(permissionOfCall({ kind: "notes.search", query: "x" })).toBe("read:note");
-    expect(permissionOfCall({ kind: "notes.remove", path: "a.md" })).toBe("write:note");
-    expect(permissionOfCall({ kind: "notes.create", path: "a.md", markdown: "# A" })).toBe("write:note");
     expect(permissionOfCall({ kind: "action", name: "x", input: null })).toBeNull();
   });
   test("used net URLs are covered by declared rules", () => {

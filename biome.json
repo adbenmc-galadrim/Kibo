@@ -35,10 +35,6 @@
       "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
     },
     {
-      "includes": ["components/notes/src/RenderedMarkdown.tsx"],
-      "linter": { "rules": { "security": { "noDangerouslySetInnerHtml": "off" } } }
-    },
-    {
       "includes": ["**/*.css"],
       "linter": { "rules": { "suspicious": { "noUnknownAtRules": "off" } } }
     }
