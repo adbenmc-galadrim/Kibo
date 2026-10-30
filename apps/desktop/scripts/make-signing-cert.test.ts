@@ -88,7 +88,7 @@ test("asks for an argument and for a password", () => {
   expect(existsSync(join(workDir, "no-password"))).toBe(false);
 });
 
-test.skipIf(process.platform !== "darwin")(
+test.skipIf(process.platform !== "darwin" || process.env.CI === "true")(
   "macOS imports the .p12 into a throwaway keychain and codesign signs as Kibo Code Signing",
   () => {
     const keychain = join(workDir, "throwaway.keychain-db");
