@@ -13,9 +13,7 @@ export const Screen = z.enum([
   "inbox",
   "integrations",
   "appearance",
-  "security",
   "sources",
-  "sync",
   "shortcuts",
   "workspace",
 ]);

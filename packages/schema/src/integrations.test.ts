@@ -10,7 +10,6 @@ import {
   githubStatusOf,
   IntegrationEvent,
   IntegrationId,
-  IntegrationSecretNameSchema,
   MappedRemote,
   McpItemRef,
   McpServerInput,
@@ -20,9 +19,6 @@ import {
   RepoSlug,
   RpcRequest,
   remoteStatusId,
-  SECRET_MARKET_PUBLISHER,
-  SECRET_REMOTE_TLS,
-  SECRET_SYNC_DEVICE,
   SecretNameSchema,
   secretHostsCovered,
   WebUrl,
@@ -55,22 +51,13 @@ describe("integration contracts", () => {
     }
   });
 
-  test("system secret names are exact and stable", () => {
-    expect([SECRET_SYNC_DEVICE, SECRET_MARKET_PUBLISHER, SECRET_REMOTE_TLS]).toEqual([
-      "sync:device",
-      "market:publisher",
-      "remote:tls",
-    ]);
-    for (const ok of ["sync:device", "market:publisher", "remote:tls"]) {
-      expect(SecretNameSchema.safeParse(ok).success).toBe(true);
-      expect(IntegrationSecretNameSchema.safeParse(ok).success).toBe(false);
-    }
-    for (const ko of ["sync", "sync:other", "market", "remote:tls:X"]) {
+  test("the former system secret names are refused", () => {
+    for (const ko of ["sync:device", "market:publisher", "remote:tls"]) {
       expect(SecretNameSchema.safeParse(ko).success).toBe(false);
     }
   });
 
-  test("a component cannot declare a system secret", () => {
+  test("a component cannot declare a former system secret", () => {
     const manifest = (name: string) => ({
       id: "burndown",
       version: "0.1.0",

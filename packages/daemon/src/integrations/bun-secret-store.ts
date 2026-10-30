@@ -1,4 +1,5 @@
 import { KiboError, type SecretName, SecretNameSchema } from "@kibo/schema";
+import { isOrphanSecretName, type OrphanSecretName } from "../migrations/legacy-secrets";
 import type { Redactor } from "./redact";
 import type { SecretStore } from "./types";
 
@@ -44,6 +45,8 @@ export function createBunSecretStore(
       throw new KiboError("INVALID_INPUT", "invalid secret name");
     return { service: KEYCHAIN_SERVICE, name };
   };
+  const deletable = (name: SecretName | OrphanSecretName) =>
+    isOrphanSecretName(name) ? { service: KEYCHAIN_SERVICE, name } : key(name);
   const guarded = async <T>(id: string, native: () => Promise<T>): Promise<T> => {
     if (stuck.has(id)) throw new Error("keychain busy");
     const pending = native();
@@ -99,7 +102,7 @@ export function createBunSecretStore(
       await call("set", () => guarded(`set:${name}`, () => backend.set({ ...k, value })));
     },
     async delete(name) {
-      const k = key(name);
+      const k = deletable(name);
       await call("delete", () => guarded(`delete:${name}`, () => backend.delete(k)));
     },
   };

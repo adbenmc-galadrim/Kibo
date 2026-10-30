@@ -39,13 +39,8 @@ function localJson<T>(
   return null;
 }
 
-export function localFolder(
-  settings: Reader,
-  meta: Pick<ProjectMeta, "id" | "folder">,
-  shared: boolean,
-): string | null {
-  const local = settings.get(meta.id, LOCAL_FOLDER_KEY);
-  return shared ? local : (local ?? meta.folder);
+export function localFolder(settings: Reader, meta: Pick<ProjectMeta, "id" | "folder">): string | null {
+  return settings.get(meta.id, LOCAL_FOLDER_KEY) ?? meta.folder;
 }
 
 export const localWorktree = (settings: Reader, projectId: string): WorktreeSettings | null =>
@@ -63,16 +58,10 @@ export const localDelivery = (settings: Reader, projectId: string): ProjectDeliv
 export const storybookSettingsOf = (settings: Reader, projectId: string): StorybookSettings =>
   localStorybook(settings, projectId) ?? STORYBOOK_DEFAULTS;
 
-export function withLocalSettings(
-  meta: ProjectMeta,
-  settings: ProjectSettings,
-  shared: boolean,
-): ProjectMeta {
-  const folder = settings.get(meta.id, LOCAL_FOLDER_KEY);
+export function withLocalSettings(meta: ProjectMeta, settings: ProjectSettings): ProjectMeta {
   const worktree = localWorktree(settings, meta.id);
   const storybook = localStorybook(settings, meta.id);
   const duplication = localDuplication(settings, meta.id);
   const delivery = localDelivery(settings, meta.id);
-  if (shared) return { ...meta, folder, worktree, storybook, duplication, delivery };
-  return { ...meta, folder: folder ?? meta.folder, worktree, storybook, duplication, delivery };
+  return { ...meta, folder: localFolder(settings, meta), worktree, storybook, duplication, delivery };
 }

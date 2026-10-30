@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { z } from "zod";
 import { startDaemon } from "./daemon";
+import { openDaemonStores } from "./daemon-stores";
+import { SECRETS_PRUNED_MARKER } from "./migrations/legacy-secrets";
 import { FIXTURE_HOME_021 } from "./testing/make-home-0.21";
 import { FIXTURE_HOME_032 } from "./testing/make-home-0.32";
 
@@ -27,6 +29,7 @@ async function start(home: string) {
     dev: false,
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
+    integrations: { testOrigins: [], memorySecrets: true },
   });
   const pair = await fetch(`${daemon.url}/api/pair`, {
     method: "POST",
@@ -72,4 +75,34 @@ test("a daemon started on the 0.21 fixture home migrates once, keeps the project
   const runs = new Database(join(home, "runs.db"), { readonly: true });
   cleanups.push(() => runs.close());
   expect(runs.query("SELECT id, kind FROM runs").all()).toEqual([{ id: "r4", kind: "project" }]);
+}, 20_000);
+
+const prunedMarker = (home: string): unknown => {
+  const runs = new Database(join(home, "runs.db"), { readonly: true, strict: true });
+  try {
+    return runs.query("SELECT value FROM host_settings WHERE key = $key").get({ key: SECRETS_PRUNED_MARKER });
+  } finally {
+    runs.close();
+  }
+};
+
+test("a fresh home never reaches the keychain: its orphan secrets are marked as pruned when it is created", () => {
+  const fresh = mkdtempSync(join(tmpdir(), "kibo-fresh-stores-"));
+  const old = homeFrom(FIXTURE_HOME_032);
+  cleanups.push(() => rmSync(fresh, { recursive: true, force: true }));
+  for (const home of [fresh, old]) {
+    const closers: (() => void)[] = [];
+    openDaemonStores({ home }, closers);
+    for (const close of closers.reverse()) close();
+  }
+  expect(prunedMarker(fresh)).not.toBeNull();
+  expect(prunedMarker(old)).toBeNull();
+});
+
+test("a 0.32 home prunes its orphan secrets at start and records it", async () => {
+  const home = homeFrom(FIXTURE_HOME_032);
+  const { daemon } = await start(home);
+  for (let i = 0; i < 100 && prunedMarker(home) === null; i++) await Bun.sleep(20);
+  await daemon.stop();
+  expect(prunedMarker(home)).not.toBeNull();
 }, 20_000);

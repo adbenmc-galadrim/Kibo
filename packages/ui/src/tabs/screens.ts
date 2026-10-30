@@ -1,7 +1,6 @@
 import type { Screen } from "@kibo/schema";
 import {
   Building2,
-  Cloud,
   Inbox,
   Keyboard,
   List,
@@ -11,7 +10,6 @@ import {
   Plug,
   Puzzle,
   Settings,
-  Shield,
   SlidersHorizontal,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
@@ -34,13 +32,11 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     icon: Palette,
     crumbs: [fr.nav.settings, fr.settings.appearance],
   },
-  security: { title: fr.settings.security, icon: Shield, crumbs: [fr.nav.settings, fr.settings.security] },
   sources: {
     title: fr.marketSources.title,
     icon: Package,
     crumbs: [fr.nav.settings, fr.marketSources.title],
   },
-  sync: { title: fr.sync.title, icon: Cloud, crumbs: [fr.nav.settings, fr.sync.title] },
   shortcuts: {
     title: fr.settings.shortcuts,
     icon: Keyboard,

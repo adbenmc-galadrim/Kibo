@@ -94,6 +94,7 @@ export const frFeature = {
     batchProposed: (seq: number) => `Agent de projet · lot n° ${seq} proposé`,
     batchApplied: (seq: number) => `Lot n° ${seq} validé`,
     batchRejected: (seq: number) => `Lot n° ${seq} refusé`,
+    keysAssigned: "Clés attribuées localement",
   },
   footer: "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.",
   optionalPill: "facultative",

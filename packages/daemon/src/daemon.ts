@@ -12,6 +12,7 @@ import { createLocalServices, openDaemonStores } from "./daemon-stores";
 import { lateActivity, startDaemonTracking } from "./daemon-tracking";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
+import { pruneOrphanSecrets } from "./migrations/legacy-secrets";
 import { startNotes } from "./notes/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
@@ -59,6 +60,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     { store, service, sandboxOrigin: () => sandboxOrigin || null, uiPort: () => uiPort },
     { devOrigins, redactor },
     closers,
+  );
+  pruneOrphanSecrets(integrations.secrets, runs, Date.now).then(
+    (pruned) =>
+      pruned.length > 0 && console.error(`[kibo-daemon] orphan secrets pruned: ${pruned.join(", ")}`),
+    (e: unknown) => console.error("[kibo-daemon] orphan secrets not pruned, next start tries again", e),
   );
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
   const tracking = startDaemonTracking({ store, service, clock, activity }, closers);

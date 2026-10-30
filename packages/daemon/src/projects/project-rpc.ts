@@ -3,7 +3,6 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   executeProjectCommand,
-  getKeyAllocator,
   getProjectMeta,
   listInstances,
   listProjects,
@@ -46,8 +45,7 @@ export type ProjectRpcDeps = {
 
 export const NOT_HANDLED: unique symbol = Symbol("not handled");
 
-const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null =>
-  localFolder(deps.settings, meta, getKeyAllocator(deps.docs.project(meta.id)) === "server");
+const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null => localFolder(deps.settings, meta);
 
 function parsedSetup(setup: unknown): ProjectSetup | null {
   if (setup === undefined) return null;

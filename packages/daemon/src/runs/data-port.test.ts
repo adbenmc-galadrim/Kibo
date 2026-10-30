@@ -126,7 +126,7 @@ test("a shared project takes its domains and domain guidelines from the project,
   rmSync(home, { recursive: true, force: true });
 });
 
-function twoScopes(shared: boolean) {
+function twoScopes() {
   const home = mkdtempSync(join(tmpdir(), "kibo-port-"));
   const store = openStore(home);
   const s = createService(store, { user: "adam" });
@@ -166,7 +166,6 @@ function twoScopes(shared: boolean) {
   };
   const onSync = ticketIn(sync.id);
   const onSecurite = ticketIn(securite.id);
-  if (shared) enableServerAllocation(s.docs.project(meta.id));
   const domainOf = (ticketId: string) => s.agentData.ticketContext(meta.id, ticketId).domain?.name ?? null;
   const contents = s.agentData
     .guidelines(meta.id)
@@ -179,18 +178,10 @@ function twoScopes(shared: boolean) {
 }
 
 test("a local project reads its domains then the workspace ones, and every guideline level", () => {
-  expect(twoScopes(false)).toEqual({
+  expect(twoScopes()).toEqual({
     onSync: "Sync",
     onSecurite: "Sécurité",
     contents: ["project", "project domain", "workspace", "workspace domain"],
-  });
-});
-
-test("a shared project never reads a workspace domain", () => {
-  expect(twoScopes(true)).toEqual({
-    onSync: "Sync",
-    onSecurite: null,
-    contents: ["project", "project domain", "workspace"],
   });
 });
 

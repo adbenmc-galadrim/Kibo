@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { getKeyAllocator, getProjectMeta, readProject } from "@kibo/core";
+import { getProjectMeta, readProject } from "@kibo/core";
 import { type ComponentManifest, type Instance, KiboError, type TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
@@ -76,9 +76,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       manifestOf,
       hasFolder: (projectId) => {
-        const doc = deps.docs.project(projectId);
-        const local = localFolder(settings, getProjectMeta(doc), getKeyAllocator(doc) === "server");
-        return local !== null;
+        return localFolder(settings, getProjectMeta(deps.docs.project(projectId))) !== null;
       },
     }),
   });

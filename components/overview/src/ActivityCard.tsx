@@ -9,6 +9,7 @@ import {
   GitBranch,
   GitMerge,
   GitPullRequest,
+  KeyRound,
   type LucideIcon,
   MessageCircleQuestion,
   Pause,
@@ -46,6 +47,7 @@ const ICONS: Record<ProjectEventKind, [LucideIcon, string]> = {
   question_deleted: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   held: [Pause, "text-(--tracking-mfg)"],
   resumed: [Pause, "text-(--tracking-mfg)"],
+  keys_assigned: [KeyRound, "text-(--tracking-mfg)"],
 };
 
 function Row({ row, onOpenTicket }: { row: ActivityRow; onOpenTicket(id: string): void }) {

@@ -4,6 +4,7 @@ import type { Clock } from "./clock";
 import type { PollPass } from "./code/pr-poller";
 import type { Closer } from "./daemon-shutdown";
 import { startProjectEvents } from "./events/bootstrap";
+import { restoreLocalKeys } from "./migrations/local-keys";
 import { migrateTracking } from "./migrations/tracking";
 import { createProjectSettings } from "./notes/settings";
 import type { ActivitySources } from "./project-activity";
@@ -48,6 +49,7 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   const appSettings = createAppSettingsStore(store.db, clock.now);
   const events = startProjectEvents({ store, service, now: Date.now });
   closers.push(() => events.stop());
+  restoreLocalKeys({ docs: service.docs, settings, sink: events.sink, now: clock.now });
   const emit: Service["docs"]["emit"] = (message) => service.docs.emit(message);
   const sessions = startTicketSessions({
     db: store.db,

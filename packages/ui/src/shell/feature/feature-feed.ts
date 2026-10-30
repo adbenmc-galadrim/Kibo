@@ -95,6 +95,7 @@ const LINES: Record<ProjectEventKind, LineOf> = {
   question_deleted: asTicket("question"),
   held: asTicket("hold"),
   resumed: asTicket("hold"),
+  keys_assigned: () => ({ kind: "status", text: e.keysAssigned }),
 };
 
 const OWN_SUBJECT: ReadonlySet<ProjectEventKind> = new Set(["sprint_set"]);

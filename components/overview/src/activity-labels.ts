@@ -91,6 +91,7 @@ const LABELS: Record<ProjectEventKind, Labeler> = {
   question_deleted: (d, ctx) => `${question(d, ctx) ?? "Question"} supprimée`,
   held: (d) => `Mise en attente${text(d, "reason") === null ? "" : ` · ${text(d, "reason")}`}`,
   resumed: () => "Reprise",
+  keys_assigned: () => "Clés attribuées localement",
 };
 
 export const activityLabel = (event: ProjectEvent, ctx: ActivityContext): string =>

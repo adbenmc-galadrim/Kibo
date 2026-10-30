@@ -98,6 +98,7 @@ const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelinePro
   sprint_created: other,
   batch_proposed: other,
   batch_decided: other,
+  keys_assigned: other,
 };
 
 export const eventLine = (ev: ProjectEvent, project: TimelineProject, runs: Runs = []): Line =>

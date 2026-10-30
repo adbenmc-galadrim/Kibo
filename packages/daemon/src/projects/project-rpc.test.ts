@@ -110,22 +110,18 @@ test("getProject always carries the project's domains, empty for a local project
   expect(snapshot.domains).toEqual([]);
 });
 
-test("listProjects gives the folder of this machine, never the one of another machine for a shared project", () => {
+test("listProjects gives the folder of this machine, then the one of the doc", () => {
   const { service, settings } = setup();
   const create = (key: string) =>
     ProjectMeta.parse(
       service.handle({ method: "createProject", name: key, key, folder: "/elsewhere", color: "#F97316" }),
     );
   const local = create("SILO");
-  const shared = create("ATL");
-  const unset = create("NIM");
+  create("NIM");
   settings.set(local.id, "folder", "/Users/dev/Documents/silo");
-  settings.set(shared.id, "folder", "/Users/dev/Documents/atlas");
-  for (const { id } of [shared, unset]) service.docs.project(id).getMap("meta").set("keyAllocator", "server");
   const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
   expect(listed.map((p) => [p.key, p.folder])).toEqual([
     ["SILO", "/Users/dev/Documents/silo"],
-    ["ATL", "/Users/dev/Documents/atlas"],
-    ["NIM", null],
+    ["NIM", "/elsewhere"],
   ]);
 });

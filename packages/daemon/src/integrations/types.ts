@@ -23,6 +23,7 @@ import type {
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 import type { EmbedGate } from "../embed/types";
+import type { OrphanSecretName } from "../migrations/legacy-secrets";
 import type { ProjectSettings } from "../notes/settings";
 import type { Notice } from "../runs/notifier";
 
@@ -59,7 +60,7 @@ export type SecretStore = {
   has(name: SecretName): Promise<boolean>;
   get(name: SecretName): Promise<string | null>;
   set(name: SecretName, value: string): Promise<void>;
-  delete(name: SecretName): Promise<void>;
+  delete(name: SecretName | OrphanSecretName): Promise<void>;
 };
 export type SecretResolver = (name: SecretName) => Promise<string | null>;
 

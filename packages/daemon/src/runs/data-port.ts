@@ -1,6 +1,5 @@
 import {
   executeProjectCommand,
-  getKeyAllocator,
   listProjectDomainGuidelines,
   listProjectDomains,
   listQuestions,
@@ -43,19 +42,16 @@ export function applyRules(doc: LoroDoc, trigger: RuleTrigger): ProjectCommand[]
   return commands;
 }
 
-const isShared = (doc: LoroDoc) => getKeyAllocator(doc) === "server";
-
 function domainsOf(docs: Docs, projectId: string) {
   const doc = docs.project(projectId);
-  const project = { domains: listProjectDomains(doc), shared: isShared(doc) };
+  const project = { domains: listProjectDomains(doc), shared: false };
   return domainsOfProject({ project, workspace: listDomains(docs.workspace) });
 }
 
 function guidelinesOf(docs: Docs, projectId: string) {
   const doc = docs.project(projectId);
   const own = new Set(listProjectDomains(doc).map((d) => d.id));
-  const visible = (g: Guideline) =>
-    g.owner.scope !== "domain" || (!isShared(doc) && !own.has(g.owner.domainId));
+  const visible = (g: Guideline) => g.owner.scope !== "domain" || !own.has(g.owner.domainId);
   const workspace = listGuidelines(docs.workspace).filter(visible);
   return [...workspace, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
 }

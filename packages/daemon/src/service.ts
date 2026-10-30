@@ -1,10 +1,4 @@
-import {
-  createWorkspaceDoc,
-  getKeyAllocator,
-  getProjectMeta,
-  listProjects,
-  registerProject,
-} from "@kibo/core";
+import { createWorkspaceDoc, getProjectMeta, listProjects, registerProject } from "@kibo/core";
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
@@ -203,7 +197,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     projectMeta: (projectId) => {
       const doc = docs.project(projectId);
-      return withLocalSettings(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
+      return withLocalSettings(getProjectMeta(doc), settings);
     },
     updateProjectMeta: (projectId, patch) => writeProjectMeta(docs, settings, projectId, patch),
     identity: () => opts.user,

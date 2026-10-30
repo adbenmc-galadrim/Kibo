@@ -271,7 +271,6 @@ export const fr = {
     appearance: "Apparence",
     domains: "Domaines & guidelines",
     integrations: "Intégrations",
-    security: "Sécurité",
     components: "Composants",
     shortcuts: "Raccourcis",
     generalSubtitle: "Mises à jour et outils en ligne de commande.",
@@ -285,7 +284,6 @@ export const fr = {
   },
   integrations: { rows: frIntegrationRows },
   marketSources: { title: "Sources de composants" },
-  sync: { title: "Synchronisation" },
   ...frCode,
   ...frComponents,
   common: {

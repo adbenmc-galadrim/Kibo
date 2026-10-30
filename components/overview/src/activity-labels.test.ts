@@ -92,6 +92,7 @@ test("a missing key gives a plain label, never an error", () => {
     "question_deleted",
     "held",
     "resumed",
+    "keys_assigned",
   ];
   for (const kind of kinds) expect(typeof label(event(kind, {}))).toBe("string");
   expect(label(event("pr_opened", {}))).toBe("PR ouverte");
@@ -100,6 +101,7 @@ test("a missing key gives a plain label, never an error", () => {
   expect(label(event("batch_proposed", {}))).toBe("Agent de projet · lot proposé");
   expect(label(event("question_created", {}))).toBe("Question posée");
   expect(label(event("question_deleted", {}))).toBe("Question supprimée");
+  expect(label(event("keys_assigned", {}))).toBe("Clés attribuées localement");
 });
 
 test("a step put on hold says its reason, and its resumption", () => {

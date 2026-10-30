@@ -9,7 +9,7 @@ import {
   GRID_COLUMNS,
   MAX_GRID_ROWS,
 } from "./format";
-import { GITHUB_SECRET_HOSTS, IntegrationSecretNameSchema } from "./integrations";
+import { GITHUB_SECRET_HOSTS, SecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
 
@@ -59,7 +59,7 @@ export const ComponentManifest = z.object({
     .array(
       z
         .object({
-          name: IntegrationSecretNameSchema,
+          name: SecretNameSchema,
           hosts: z.array(z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/)).min(1),
         })
         .refine((s) => s.name !== "github" || s.hosts.every((h) => GITHUB_SECRET_HOSTS.includes(h)), {

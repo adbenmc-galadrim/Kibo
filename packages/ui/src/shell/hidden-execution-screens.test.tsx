@@ -38,7 +38,7 @@ const screenView = (current: Screen) =>
     />,
   );
 
-const RETIRED = ["components", "sources", "domains", "sync", "security"] as const;
+const RETIRED = ["components", "sources", "domains"] as const;
 
 test("the retired screens render nothing", () => {
   for (const current of RETIRED) {

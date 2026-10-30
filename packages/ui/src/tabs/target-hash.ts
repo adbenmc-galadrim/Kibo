@@ -29,9 +29,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
   inbox: "#/inbox",
   integrations: "#/settings/integrations",
   appearance: "#/settings/appearance",
-  security: "#/settings/security",
   sources: "#/settings/components",
-  sync: "#/settings/sync",
   shortcuts: "#/settings/shortcuts",
   workspace: "#/settings/workspace",
 };

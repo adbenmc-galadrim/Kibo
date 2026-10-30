@@ -70,9 +70,7 @@ const ICONS = {
   inbox: SCREENS.inbox.icon,
   integrations: SCREENS.integrations.icon,
   appearance: SCREENS.appearance.icon,
-  security: SCREENS.security.icon,
   sources: SCREENS.sources.icon,
-  sync: SCREENS.sync.icon,
   shortcuts: SCREENS.shortcuts.icon,
   workspace: SCREENS.workspace.icon,
 };
