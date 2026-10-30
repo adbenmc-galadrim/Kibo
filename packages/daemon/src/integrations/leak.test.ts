@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5,9 +6,12 @@ import { join, sep } from "node:path";
 import type { RpcRequest, RpcResult } from "@kibo/schema";
 import { z } from "zod";
 import { type Daemon, startDaemon } from "../daemon";
+import { commandLineOf } from "../mcp/command-line";
+import { createMcpHub } from "../mcp/hub";
 import { ECHO_AUTH, type FakeGithub, LOGS_HOST } from "../testing/fake-github";
 import { FAKE_MCP_STDIO, startFakeMcpHttp } from "../testing/fake-mcp";
 import { parseIntegrationFlags } from "./bootstrap";
+import { createEventLog } from "./events";
 import {
   type CapturedOutput,
   captureIntervalsFrom,
@@ -31,6 +35,8 @@ import {
   PENPOT_TOKEN,
   startDesignFakes,
 } from "./leak-design.test-helper";
+import { createMemorySecretStore } from "./memory-secret-store";
+import { createFakeHost } from "./testing/fake-host";
 
 const SECRET = "ghp_TESTSECRET0123456789abcdefghijklmn";
 const MCP_ENV = "mcp-env-secret-0123456789";
@@ -196,10 +202,43 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   return { projectId: project.id, ticketId: created.id };
 }
 
+async function mcpRelayScenario(): Promise<void> {
+  const fake = createFakeHost();
+  const db = new Database(join(home, "kibo.db"), { strict: true });
+  const hub = createMcpHub({
+    host: { ...fake, db, home, transaction: (fn) => db.transaction(fn)() },
+    secrets: createMemorySecretStore(output.redactor),
+    events: createEventLog(db, output.redactor, Date.now),
+    redact: output.redactor.redact,
+  });
+  try {
+    const stdio = {
+      transport: "stdio" as const,
+      id: "direct",
+      name: "Direct",
+      command: process.execPath,
+      args: [FAKE_MCP_STDIO],
+      envNames: ["FAKE_TOKEN"],
+    };
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: MCP_ENV });
+    const echoed = await hub.call("direct", "echo_env", {}, null);
+    expect(echoed.content).toEqual([{ type: "text", text: "invalid token ***" }]);
+    await hub.call("direct", "log_env", {}, null);
+    await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
+    expect(output.lines().join("\n")).not.toContain(MCP_ENV);
+  } finally {
+    await hub.stop();
+    db.close();
+    fake.close();
+  }
+}
+
 function journalsWereWritten(tables: Place[]): void {
   const live = (where: string) => !where.includes(`${sep}backups${sep}`);
   const table = (name: string) =>
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
+  expect(table("mcp_calls")).toContain('"tool":"echo_env"');
+  expect(table("mcp_calls")).not.toContain(MCP_ENV);
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
   expect(table("integration_events")).toContain("connected as adam (token)");
   expect(table("component_events")).not.toBe("");
@@ -209,6 +248,7 @@ function journalsWereWritten(tables: Place[]): void {
 test("after a full scenario, no secret appears anywhere", async () => {
   await addMcpServers();
   const { projectId, ticketId } = await githubScenario();
+  await mcpRelayScenario();
   await designScenario(design, { ok, call }, projectId, ticketId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });
