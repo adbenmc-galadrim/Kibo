@@ -74,4 +74,7 @@ S.exportA3 = async (only) => { await S.page("Proposition"); await S.wait(800); c
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y; await S.wait(10000);
     try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
+// Phase 34 : boards de la page « Phase 34 » ⇒ proposition-p34-<clé>-<dark|light>.png (S.export34 de 61-phase-34.js).
+// Écrans existants retouchés en place (S.INPLACE34) : seules les zones changées sont recopiées dans les exports en place.
+S.exportP34 = (only) => S.export34(only);
 return "export ok";

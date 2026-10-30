@@ -27,9 +27,9 @@ S.sidebar = (p, active, o = {}) => { const C = S.C;
   S.navItem(sb, "home", "Aujourd'hui", { active: active === "Aujourd'hui" });
   S.box(sb, { w: 4, h: 12 });
   const h = S.row(sb, { fx: true, h: 24, pad: [0, 8] }); S.txt(h, "Projets", { size: 11, weight: 500, color: C.dim, ls: 0.4, upper: true }); S.spacer(h); S.icon(h, "plus", 13, C.dim);
-  S.navItem(sb, null, "Silo", { chev: "chevDown", dot: S.D.project.color });
+  S.navItem(sb, null, "Silo", { chev: o.folded ? "chevRight" : "chevDown", dot: S.D.project.color });
   const counts = o.counts || { "Questions": "3" };
-  for (const pg of (o.pages || ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]))
+  for (const pg of (o.folded ? [] : o.pages || ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]))
     S.navItem(sb, S.NAV_ICON[pg], pg, { indent: 18, active: active === pg, count: counts[pg] || null });
   for (const [n, c] of S.D.projects.slice(1)) S.navItem(sb, null, n, { chev: "chevRight", dot: c });
   S.box(sb, { w: 4, h: 4, fy: true });

@@ -714,6 +714,46 @@ liste. Les deux anciens agents remplacent « Session du 6 octobre » et « Sessi
 de la phase 18 (désormais nommés par leur première question). Agrandi : volet de 720 px, liste de 210 px, colonne de lecture de
 520 px ; en étroit (340 px), la liste s'ouvre par-dessus la conversation (titre « Agents », bouton « Fermer la liste »).
 
+### Phase 34 · Aujourd'hui, fin de parcours et lancement dans T3
+
+Spec §50, vendredi 16 octobre 2026. Maquettes : page « Phase 34 » du fichier « Kibo · Redesign »
+(`design/redesign/scripts/61-phase-34.js`), exports `proposition-p34-*`. Scénario `silo-t3` (§50.12) = `silo-attente`, puis le faux
+`t3` : un fil en cours sur SILO-34, un fil qui attend une réponse sur SILO-45.
+
+Barre latérale : Aujourd'hui, Projets (Silo, Kibo, Atlas, Nimbus), Paramètres ; plus de Mes tickets ni de Boîte de réception.
+
+Aujourd'hui : « vendredi 16 octobre · 4 projets · 31 tickets ouverts ».
+
+| Section | En-tête à droite | Lignes |
+|---|---|---|
+| Ce qui bloque · 1 | « 1 ticket bloqué · 1 question bloquante · tous projets » | SILO-51 Lecture du fichier Excel · « question · bloque F6 · Q14 » · SILO |
+| PR à relire · 3 | — | #20 Conflits de saisie · « changements demandés » (ambre) · SILO-45 · SILO ; #22 Route d'envoi des photos · « à relire · CI verte » · SILO-32 · SILO ; #23 Passage à Expo SDK 54 · « à relire · CI en cours » · SILO-61 · SILO |
+| Démarrable · 2 | « aucune dépendance en attente » | SILO-46 Démo client · « F4 · Saisir un constat hors ligne » · SILO ; SILO-62 Journal des erreurs avec Sentry · « hors fonctionnalité » · SILO ; bouton « Lancer dans T3 » |
+
+| Projet | Clé | Client | Progression | Ouverts | Bloqués | À risque | Sprint |
+|---|---|---|---|---|---|---|---|
+| Silo | SILO | Silo SA | 3/9 fonctionnalités | 23 | 1 | 1 | S42 |
+| Kibo | KIB | — | 19/24 tickets | 5 | 0 | 0 | — |
+| Atlas | ATL | — | 4/7 tickets | 3 | 0 | 0 | — |
+| Nimbus | NIM | — | aucun ticket (« Pour commencer › ») | 0 | 0 | 0 | — |
+
+Fin de parcours (§50.3) :
+- Livrée aujourd'hui : « F3 Réaffecter un box · 4/4 étapes · dernière fusion #18 à 14:36 », à droite « 3 livrées sur 9 » (l'heure
+  suit l'Activité de la Vue d'ensemble, « 14:36 PR #18 fusionnée · F3 livrée »).
+- Toast : « F3 Réaffecter un box · livrée », barre pleine « 4/4 étapes ».
+- Récapitulatif (au 18 oct., sur la Vue d'ensemble « En retard au 18 oct. ») : « Sprint S42 terminé · 12–16 oct. » ;
+  « 1 fonctionnalité livrée · F3 Réaffecter un box » ; « 8 étapes fusionnées · sur 14 prévues · capacité 5 » (F3 4/4, F4 3/5,
+  F5 1/5) ; « F5 passe en S43 · 4 étapes restantes » ; pied « Suivant : S43 · 19–23 oct. · 8 étapes prévues » et « Ouvrir le planning ».
+
+Lancer dans T3 (§50.11, §50.12) :
+- Confirmation : « Lancer SILO-45 dans T3 », commande `t3 thread start ~/Documents/silo "/full-delivery SILO-45"`, « Projet T3 ·
+  ~/Documents/silo », « Modèle · par défaut », « Annuler », « Lancer ».
+- Fil en cours : SILO-34 « T3 · en cours depuis 12 min » et « Ouvrir dans T3 » ; fil qui attend : SILO-45 « T3 · attend ta réponse ».
+- Clé copiée : SILO-45 « ✓ Copiée ».
+- Kanban, infobulle de SILO-33 : « Branche · feat/envoi-hors-ligne », « En attente · Serveur MinIO de recette indisponible ».
+- Kanban, survol de SILO-46 (démarrable) : « Lancer dans T3 » sous le titre ; SILO-34 « T3 · en cours depuis 12 min ».
+- Graphe, « Tout voir » : cadres repliés à 56 px ; F5 redéplié, SILO-34 porte « T3 » à la place de son icône.
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
