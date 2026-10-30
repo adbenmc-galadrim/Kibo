@@ -8,7 +8,7 @@ export { domainsOf };
 
 export type DomainUsageByProject = ReadonlyMap<string, ReadonlyMap<string, number>>;
 export type KeepReason = "unused" | "shared";
-export type ScopePlan = {
+type ScopePlan = {
   move: { domainId: string; projectId: string }[];
   keep: { domainId: string; reason: KeepReason }[];
 };

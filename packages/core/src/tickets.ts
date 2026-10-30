@@ -31,7 +31,7 @@ import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export { readExternalRefs } from "./ticket-fields";
 
-export type NewTicket = {
+type NewTicket = {
   title: string;
   description?: string;
   statusId?: StatusId;
@@ -42,7 +42,7 @@ export type NewTicket = {
   labels?: readonly string[];
   feature?: boolean;
 };
-export type TicketPatch = {
+type TicketPatch = {
   title?: string;
   description?: string;
   domainId?: string | null;
@@ -51,7 +51,7 @@ export type TicketPatch = {
   shortKey?: string | null;
 };
 
-export type TicketProgressUpdate = {
+type TicketProgressUpdate = {
   ticketId: string;
   runId: string;
   at: number;

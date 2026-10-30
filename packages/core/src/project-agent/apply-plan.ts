@@ -14,7 +14,7 @@ import { isNewRef, ticketRefsOf } from "./refs";
 
 export type RefTable = ReadonlyMap<string, { ticketId: string; key: string }>;
 export type TicketIds = Record<string, string>;
-export type ResolvedRefs = { ok: true; ids: TicketIds } | { ok: false; reason: string };
+type ResolvedRefs = { ok: true; ids: TicketIds } | { ok: false; reason: string };
 
 function resolveRef(ref: string, refs: RefTable, project: ProjectSnapshot): string | { reason: string } {
   if (isNewRef(ref)) return refs.get(ref)?.ticketId ?? { reason: `dépend de ${ref} (échouée)` };
@@ -101,7 +101,7 @@ type QuestionAction = Extract<
   { type: "createQuestion" | "updateQuestion" | "reopenQuestion" | "deleteQuestion" | "addRecipient" }
 >;
 
-export function questionCommands(
+function questionCommands(
   action: QuestionAction,
   ids: TicketIds,
   by: Actor,

@@ -42,9 +42,9 @@ export function listTickets(project: ProjectSnapshot, input: ListTicketsInput): 
   return pageOf(cards, input.cursor);
 }
 
-export type QuestionState = "open" | "answered" | "archived";
+type QuestionState = "open" | "answered" | "archived";
 
-export type QuestionLine = {
+type QuestionLine = {
   id: string;
   ticket: string;
   title: string;

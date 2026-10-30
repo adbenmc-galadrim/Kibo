@@ -16,7 +16,7 @@ const sortedRecord = <T>(entries: readonly (readonly [string, T])[]): Record<str
 
 const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-export function blockersOf(
+function blockersOf(
   ticketId: string,
   links: readonly Link[],
   tickets: readonly Pick<TicketView, "id" | "key">[],
@@ -28,7 +28,7 @@ export function blockersOf(
     .sort(byText);
 }
 
-export const ticketPrint = (t: TicketView, blockedBy: readonly string[] = []): TicketPrint => ({
+const ticketPrint = (t: TicketView, blockedBy: readonly string[] = []): TicketPrint => ({
   key: t.key,
   title: t.title,
   statusId: t.statusId,

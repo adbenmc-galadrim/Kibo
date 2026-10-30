@@ -28,8 +28,8 @@ export type OverviewInput = {
   memory: string;
 };
 
-export const ACTIVE_STATUSES: readonly string[] = ["in_progress", "in_review", "blocked"];
-export const OVERVIEW_TITLE_MAX = 80;
+const ACTIVE_STATUSES: readonly string[] = ["in_progress", "in_review", "blocked"];
+const OVERVIEW_TITLE_MAX = 80;
 const BUDGET = { tickets: 2_400, runs: 600, questions: 800, notes: 600 };
 
 const usable = (a: AgentSummary): boolean =>

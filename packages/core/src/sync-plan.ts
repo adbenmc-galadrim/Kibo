@@ -7,8 +7,8 @@ import {
 } from "@kibo/schema";
 
 export const SYNCED_FIELDS: readonly SyncedField[] = ["title", "description", "statusId", "closed"];
-export type ConflictField = Exclude<SyncedField, "closed">;
-export type SyncPlan = {
+type ConflictField = Exclude<SyncedField, "closed">;
+type SyncPlan = {
   push: Partial<SyncedFields>;
   apply: Partial<SyncedFields>;
   conflicts: ConflictField[];
@@ -16,7 +16,7 @@ export type SyncPlan = {
 };
 export type CanApply = (field: SyncedField, value: SyncedFields[SyncedField]) => boolean;
 
-export const canApplyRemote: CanApply = (field, value) => !(field === "statusId" && value === "blocked");
+const canApplyRemote: CanApply = (field, value) => !(field === "statusId" && value === "blocked");
 
 export function normalizeText(s: string): string {
   return s.replace(/\r\n?/g, "\n");

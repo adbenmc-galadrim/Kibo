@@ -5,7 +5,7 @@ import { projectIdOf } from "./config-store";
 export type StoredGuideline = { path: string; content: string };
 type StoredDomain = { name: string; color: string; guidelines: StoredGuideline[] };
 
-export const projectDomainsMap = (doc: LoroDoc) => doc.getMap("projectDomains");
+const projectDomainsMap = (doc: LoroDoc) => doc.getMap("projectDomains");
 
 function requireProjectId(doc: LoroDoc): string {
   const projectId = projectIdOf(doc);

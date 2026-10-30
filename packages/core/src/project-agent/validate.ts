@@ -17,11 +17,10 @@ import { sprintChecks } from "./validate-sprints";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
-export { assignableAgents, assignableEntry } from "./overview";
 
 export type ActionProblem = { actionId: number; type: ActionType; message: string };
-export type ValidBatch = { actions: ProposedAction[]; expected: ExpectedState[] };
-export type BatchValidation = { ok: true; batch: ValidBatch } | { ok: false; problems: ActionProblem[] };
+type ValidBatch = { actions: ProposedAction[]; expected: ExpectedState[] };
+type BatchValidation = { ok: true; batch: ValidBatch } | { ok: false; problems: ActionProblem[] };
 
 function refProblem(scan: Scan, ref: string, index: number): string | null {
   if (!isNewRef(ref)) return ticketByKey(scan.ctx.project)(ref) ? null : `ticket inconnu « ${ref} »`;

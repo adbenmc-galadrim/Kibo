@@ -18,7 +18,7 @@ export type BatchContext = {
   viewer: string;
 };
 
-export type TicketLookup = (ref: string) => TicketView | null;
+type TicketLookup = (ref: string) => TicketView | null;
 
 export const ticketByKey =
   (project: ProjectSnapshot): TicketLookup =>

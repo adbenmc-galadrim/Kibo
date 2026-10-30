@@ -1,6 +1,6 @@
 import type { Guideline, GuidelineScope } from "@kibo/schema";
 
-export type ChainTarget = { projectId: string; domainId: string | null };
+type ChainTarget = { projectId: string; domainId: string | null };
 export type ContextFile = { path: string; content: string };
 
 const ORDER: GuidelineScope[] = ["workspace", "project", "domain"];

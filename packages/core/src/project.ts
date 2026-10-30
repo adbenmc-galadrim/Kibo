@@ -1,6 +1,5 @@
 import { DEFAULT_WORKFLOW, formatTicketKey, ProjectMeta, ProjectPatch, type Status } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
-import { z } from "zod";
 import { stored, valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
@@ -41,7 +40,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
   };
 }
 
-export type DocProjectPatch = RegisteredProjectPatch & {
+type DocProjectPatch = RegisteredProjectPatch & {
   description?: string | null;
   client?: string | null;
 };
@@ -70,16 +69,12 @@ export function peekTicketKey(doc: LoroDoc): string {
   return formatTicketKey(getProjectMeta(doc).key, upcomingSeq(doc));
 }
 
-export const FeatureSeq = z.number().int().nonnegative().optional();
-
 export const featureSeqOf = (doc: LoroDoc): number =>
   (doc.getMap("meta").get("featureSeq") as number | undefined) ?? 0;
 
 export const setFeatureSeq = (doc: LoroDoc, seq: number): void => {
   doc.getMap("meta").set("featureSeq", seq);
 };
-
-export const QuestionSeq = z.number().int().nonnegative().optional();
 
 export function nextQuestionSeq(doc: LoroDoc): number {
   const meta = doc.getMap("meta");

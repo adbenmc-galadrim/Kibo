@@ -1,6 +1,6 @@
 import { formatRef, type Page, type ProjectCommand, type ProjectSnapshot, splitRef } from "@kibo/schema";
 
-export const OVERVIEW_COMPONENT = "overview";
+const OVERVIEW_COMPONENT = "overview";
 export const OVERVIEW_COMPONENT_REF = formatRef(OVERVIEW_COMPONENT, "1.0.0");
 export const OVERVIEW_PAGE_TITLE = "Vue d'ensemble";
 

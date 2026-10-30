@@ -12,7 +12,7 @@ import type { LoroDoc } from "loro-crdt";
 import { createTicket, getTicket, listTickets, readExternalRefs } from "./tickets";
 import { getNode } from "./tree";
 
-export type ImportedTicket = {
+type ImportedTicket = {
   title: string;
   description?: string;
   statusId?: StatusId;

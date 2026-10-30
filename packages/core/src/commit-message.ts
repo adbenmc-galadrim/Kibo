@@ -1,6 +1,6 @@
 import type { CommitDefaults, ProjectSnapshot } from "@kibo/schema";
 
-export type MessageTicket = { key: string | null; title: string };
+type MessageTicket = { key: string | null; title: string };
 
 const TRAILING_PAREN = /\s*\([^()]*\)\s*$/;
 

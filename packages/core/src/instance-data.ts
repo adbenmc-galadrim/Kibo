@@ -5,7 +5,7 @@ type Json = Record<string, unknown>;
 
 const root = (doc: LoroDoc) => doc.getMap("instanceData");
 
-export const dataSize = (data: Json): number => new TextEncoder().encode(JSON.stringify(data)).byteLength;
+const dataSize = (data: Json): number => new TextEncoder().encode(JSON.stringify(data)).byteLength;
 
 export function readInstanceData(doc: LoroDoc, instanceId: string): Json {
   const map = root(doc).get(instanceId);

@@ -23,5 +23,5 @@ export * from "./tickets";
 export * from "./tracking-migration";
 export * from "./transfer";
 export * from "./tree";
-export { depthViolation, MAX_CONTAINER_DEPTH, MAX_TREE_DEPTH, projectDepthViolation } from "./update-depth";
+export { MAX_CONTAINER_DEPTH, MAX_TREE_DEPTH, projectDepthViolation } from "./update-depth";
 export * from "./workspace";

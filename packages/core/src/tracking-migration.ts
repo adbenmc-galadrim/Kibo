@@ -10,9 +10,9 @@ import {
 } from "@kibo/schema";
 import { overviewMigrationCommands } from "./overview-migration";
 
-export const PLANNING_COMPONENT = "planning";
+const PLANNING_COMPONENT = "planning";
 export const PLANNING_COMPONENT_REF = formatRef(PLANNING_COMPONENT, "1.0.0");
-export const PLANNING_PAGE_TITLE = "Planning";
+const PLANNING_PAGE_TITLE = "Planning";
 
 const PLAN_SOURCE = "plan";
 const FEATURE_PREFIX = "F";
@@ -73,7 +73,7 @@ function planningPageCommands(snapshot: ProjectSnapshot): ProjectCommand[] {
   return [{ method: "addPage", title: PLANNING_PAGE_TITLE, kind: "view" }];
 }
 
-export type TrackingMigrationOptions = { planningPage: boolean; overviewPage?: boolean };
+type TrackingMigrationOptions = { planningPage: boolean; overviewPage?: boolean };
 
 export function trackingMigrationCommands(
   snapshot: ProjectSnapshot,

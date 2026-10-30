@@ -11,7 +11,7 @@ const tickets = (doc: LoroDoc) => doc.getTree("tickets");
 
 const FEATURE_KEY = /^F\d+$/;
 
-export const isFeatureKey = (key: unknown): key is string =>
+const isFeatureKey = (key: unknown): key is string =>
   typeof key === "string" && FEATURE_KEY.test(key) && Number(key.slice(1)) <= MAX_FEATURE_SEQ;
 
 export const isFeatureNode = (node: LoroTreeNode): boolean =>

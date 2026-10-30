@@ -10,13 +10,13 @@ import {
   sprintState,
   type TicketView,
 } from "@kibo/schema";
-import { isContainer, type LoroDoc, type LoroTreeNode } from "loro-crdt";
+import type { LoroDoc, LoroTreeNode } from "loro-crdt";
 import { stored, valid } from "./config-store";
 import { getNode, walkDepthFirst } from "./tree";
 
-export type NewSprint = Omit<Sprint, "id">;
+type NewSprint = Omit<Sprint, "id">;
 
-export const sprintsMap = (doc: LoroDoc) => doc.getMap("sprints");
+const sprintsMap = (doc: LoroDoc) => doc.getMap("sprints");
 
 const parseSprint = (id: string, value: unknown): Sprint => {
   const sprint = stored(Sprint.safeParse(value), `sprint ${id}`);
@@ -102,15 +102,4 @@ export function sprintViews(
       lingering: isLingering(sprint, sprints, today),
     };
   });
-}
-
-export function sprintsViolation(doc: LoroDoc): string | null {
-  const map = sprintsMap(doc);
-  for (const id of map.keys()) {
-    const value = map.get(id);
-    const parsed = isContainer(value) ? null : Sprint.safeParse(value);
-    if (parsed === null || !parsed.success || parsed.data.id !== id)
-      return `sprint ${id} is not a valid sprint`;
-  }
-  return null;
 }

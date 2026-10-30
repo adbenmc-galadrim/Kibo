@@ -1,6 +1,6 @@
 import { ASK_QUESTION_TOOL, ASK_TOOL, type Guideline, mcpToolName, PROJECT_AGENT_TOOLS } from "@kibo/schema";
 
-export type ProjectAgentPromptInput = {
+type ProjectAgentPromptInput = {
   projectName: string;
   chain: readonly Guideline[];
   memoryPath: string;

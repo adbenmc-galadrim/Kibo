@@ -5,8 +5,8 @@ import { addLink, listLinks } from "./links";
 import { createTicket, deleteTicket, getTicket, ticketTree } from "./tickets";
 import { getNode, subtreeIds } from "./tree";
 
-export type TransferredTicket = { from: string; to: string; key: string | null };
-export type TransferResult = {
+type TransferredTicket = { from: string; to: string; key: string | null };
+type TransferResult = {
   ticketId: string;
   key: string | null;
   created: TransferredTicket[];

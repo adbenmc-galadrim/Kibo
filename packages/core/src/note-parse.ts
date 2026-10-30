@@ -1,4 +1,4 @@
-export type RawLink = { kind: "wiki" | "relative"; target: string };
+type RawLink = { kind: "wiki" | "relative"; target: string };
 
 export function splitFrontmatter(markdown: string): { tickets: string[]; body: string } {
   const text = markdown.replace(/\r\n/g, "\n");
@@ -25,7 +25,7 @@ export function splitFrontmatter(markdown: string): { tickets: string[]; body: s
   };
 }
 
-export function stripCode(markdown: string): string {
+function stripCode(markdown: string): string {
   const blank = (s: string) => s.replace(/[^\n]/g, " ");
   return markdown.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, blank).replace(/`[^`\n]*`/g, blank);
 }

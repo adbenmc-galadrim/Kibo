@@ -41,7 +41,7 @@ export function runModel(frontmatter: Pick<AgentFrontmatter, "model"> | null): {
     : { model, inherited: false };
 }
 
-export type SubagentDefinition = { description: string; prompt: string; tools?: string[]; model?: string };
+type SubagentDefinition = { description: string; prompt: string; tools?: string[]; model?: string };
 
 function definition(file: AgentFile): SubagentDefinition {
   const { description, tools, model } = file.frontmatter;

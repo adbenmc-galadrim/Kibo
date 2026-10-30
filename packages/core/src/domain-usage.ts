@@ -4,7 +4,7 @@ import { projectIdOf } from "./config-store";
 import { listProjectDomains } from "./project-domains";
 import { listTickets } from "./tickets";
 
-export function usageProjectOf(doc: LoroDoc): UsageProject {
+function usageProjectOf(doc: LoroDoc): UsageProject {
   const id = projectIdOf(doc);
   if (id === undefined) throw new KiboError("INVALID_INPUT", "domain usage is read from a project");
   return {
