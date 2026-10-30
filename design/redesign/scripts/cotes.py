@@ -112,24 +112,52 @@ SCREENS30 = [(27, "P5b · Graphe, Fonctionnalités", "proposition-graphe-fonctio
 MARK30 = "\n## Phase 30\n"
 SCREENS31 = [(32, "P5b · Graphe · en attente", "proposition-attente-graphe"), (33, "P1 bis · Agent agrandi", "proposition-agent-agrandi")]
 MARK31 = "\n## Phase 31\n"
+SCREENS34 = [(34, "P34 · Aujourd'hui", "proposition-p34-aujourdhui"),
+    (35, "P34 · Vue d'ensemble, livrée aujourd'hui", "proposition-p34-vue-ensemble-livree"),
+    (36, "P34 · Planning", "proposition-p34-planning"),
+    (37, "P34 · Graphe, Tout voir", "proposition-p34-graphe-tout-voir"),
+    (38, "P34 · Graphe, F5 redépliée", "proposition-p34-graphe-redeplie"),
+    (39, "P34 · Kanban, colonne vide repliée", "proposition-p34-kanban-replie"),
+    (40, "P34 · Kanban, infobulle", "proposition-p34-kanban-infobulle"),
+    (41, "P34 · Kanban, Lancer dans T3", "proposition-p34-kanban-survol-t3"),
+    (42, "P34 · Questions", "proposition-p34-questions"),
+    (43, "P34 · Questions, Q14 dépliée", "proposition-p34-questions-depliee"),
+    (44, "P34 · Fiche ticket", "proposition-p34-fiche-ticket"),
+    (45, "P34 · Fiche ticket, confirmation", "proposition-p34-fiche-confirmation"),
+    (46, "P34 · Fiche ticket, T3 en cours", "proposition-p34-fiche-lancee"),
+    (47, "P34 · Fiche ticket, T3 attend", "proposition-p34-fiche-attend"),
+    (48, "P34 · Fiche ticket, clé copiée", "proposition-p34-fiche-copiee"),
+    (49, "P34 · Toast de livraison", "proposition-p34-toast-livree"),
+    (50, "P34 · Récapitulatif de sprint", "proposition-p34-recap-sprint"),
+    (51, "P34 · Code couleur", "proposition-p34-couleurs")]
+MARK34 = "\n## Phase 34\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
     cur = open(W + "/cotes.md").read()
-    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31:
+    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31 + SCREENS34:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31 + SCREENS34 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
     open(W + "/cotes.md", "w").write(cur)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
+if "--phase34" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK34)[0].rstrip("\n") + "\n"
+    intro = ["## Phase 34", "", "Aujourd'hui, fin de parcours et lancement dans T3 (spec §50), données de la section « Phase 34 · Aujourd'hui, fin de parcours et lancement dans T3 » de `design/donnees-fictives.md`, horloge au vendredi 16 octobre (S42). Les dix-huit boards sont sur la page « Phase 34 » du fichier « Kibo · Redesign » (`scripts/61-phase-34.js`) : chacun clone sa référence de la page « Proposition » (copie « src · … » rangée à x = −20 000) ou est dessiné de zéro (Aujourd'hui, code couleur), puis reçoit les patchs de la phase. Rangées de 1 600 px à partir de y = 0, sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-34` à `_dump-51`), puis `python3 scripts/cotes.py <dossier des JSON> --phase34`, qui remplace cette partie seulement. Les boards de la page « Proposition » redessinés en place (Vue d'ensemble, Planning, Fonctionnalité, Graphe, Kanban, Questions, fiche ticket, variantes en attente) sont relevés à leur place (`--sections 1,2,3,6,8,…,33`)."]
+    parts = [screen_md(i, name, png, "").replace("page « Proposition »", "page « Phase 34 »", 1) for i, name, png in SCREENS34]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--phase31" in sys.argv:
     cur = open(W + "/cotes.md").read()
-    cur = cur.split(MARK31)[0].rstrip("\n") + "\n"
+    tail34 = (MARK34 + cur.split(MARK34)[1]) if MARK34 in cur else ""
+    cur = cur.split(MARK34)[0].split(MARK31)[0].rstrip("\n") + "\n"
     intro = ["## Phase 31", "", "Étapes en attente visibles en cyan (spec §45), données de la sous-section « Phase 31 · Graphe en attente et couleur de l'attente » du projet Silo (`design/donnees-fictives.md`, scénario `silo-graphe`). Jeton `hold` (`#22D3EE` / `#0E7490`) et `holdSoft` (`#082F35` / `#ECFEFF`) dans `scripts/01-base.js`. Le board clone « P5b · Graphe, Fonctionnalités » (`scripts/59c-graphe-attente.js`) : F1 renommée « Connexion, environnements et hébergement » sur trois lignes (cadre de 96 px, F2 descendue de 15 px) ; F4 livrée ne garde que la ligne SILO-45 en attente (cadre de 212 × 96, « 3/4 ⏸ 1 ✓ ») ; F5 « 1/2 ⏸ 3 » sans pied « en retard » ; F7 « 0/4 ⏸ 1 » ; points, ⏸ et segments en `hold` ; flèches recalculées (ancre à 38 px du haut des cadres). Rangée à y = 51 500 (après P8g), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` (`_dump-32`), puis `python3 scripts/cotes.py <dossier des JSON> --phase31`, qui remplace cette partie seulement. Comparaison au pixel : « attente-graphe » (`silo-graphe`, masques de « graphe »). Agent de projet en conversation (spec §46), données de la sous-section « Phase 31 · Agent de projet en conversation » : « P1 bis · Agent agrandi » clone « P1 bis v3 · Vue d'ensemble », lui rend sa pleine largeur sans volet étroit (grille des échéances étirée) et pose par-dessus le volet de 720 px en calque à droite, ombre portée vers la gauche (décision d'Adam du 2026-10-21, `scripts/59d-agent-conversation.js`) : en-tête de 56 px (« Agent de projet · Silo », boutons `panelLeftClose`, `plus`, `minimize2`, `x`), liste des agents de 210 px (fond `bg`, bord droit `border`, « Nouvel agent » de 32 px, items de 56 px, agent en cours sur `panel` avec « en cours » en `brandText`), conversation dans la colonne de lecture (bulle d'Adam de 240 px à droite, réponse de l'agent, « Lu : … », lot n° 7) et saisie en pied ; la page n'est jamais compressée. Rangée à y = 53 000 (après P5b · en attente). Relevé `_dump-33`. Comparaison au pixel : « agent-agrandi » (`silo-maquettes`). « Agent de projet, volet » (340 × 1 000, liste ouverte par-dessus la conversation) et « Agent de projet, agrandi, liste rétractée » (720 × 1 000) sont des références visuelles sans cotes. Le volet étroit de P1 bis v3, « En retard », P6 et « Vue d'ensemble · en attente » est redessiné en conversation et relevé à sa place (`--sections 6,13,8,14`). P5b (légende « En attente ») et les quatre boards « … · en attente » de la phase 29 (Vue d'ensemble, Planning, Fonctionnalité, Kanban) sont redessinés par leurs scripts et relevés à leur place (`--sections 14,15,16,17,27`)."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS31]
-    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail34)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 if "--phase30" in sys.argv:
