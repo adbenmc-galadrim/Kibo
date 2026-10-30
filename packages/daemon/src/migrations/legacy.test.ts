@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openProjectAgentStore } from "../project-agent/store";
@@ -74,6 +74,58 @@ test("a 0.32 home is saved, then loses its ticket runs and keeps the project age
   for (const id of FIXTURE_032.ticketRuns) expect(existsSync(join(home, "runs", id))).toBe(false);
   for (const id of FIXTURE_032.projectRuns) expect(existsSync(join(home, "runs", id))).toBe(true);
   expect(lines).toHaveLength(3);
+});
+
+test("both WAL databases are compacted after a migration that removed rows", () => {
+  const home = homeFrom(FIXTURE_HOME_032);
+  for (const file of ["kibo.db", "runs.db"]) {
+    const db = new Database(join(home, file));
+    db.exec("PRAGMA journal_mode = WAL");
+    db.close();
+  }
+  const size = (file: string) => statSync(join(home, file)).size;
+  const before = { runs: size("runs.db"), kibo: size("kibo.db") };
+  runLegacyMigrations(
+    home,
+    () => NOW,
+    () => {},
+  );
+  expect(size("runs.db")).toBeLessThan(before.runs);
+  expect(size("kibo.db")).toBeLessThan(before.kibo);
+});
+
+test("a failing VACUUM is logged with its code and keeps the migration", () => {
+  const home = homeFrom(FIXTURE_HOME_032);
+  const lines: string[] = [];
+  const vacuum = () => {
+    throw new Error("disk full");
+  };
+  runLegacyMigrations(
+    home,
+    () => NOW,
+    (line) => lines.push(line),
+    vacuum,
+  );
+  expect(lines.filter((line) => line.includes("VACUUM_FAILED"))).toHaveLength(2);
+  expect(query(home, "runs.db", "SELECT id FROM runs ORDER BY seq")).toEqual([{ id: "p1" }, { id: "p2" }]);
+  expect(
+    query(home, "runs.db", "SELECT key FROM host_settings WHERE key = 'ticket_runs_removed_at'"),
+  ).toHaveLength(1);
+  expect(
+    query(home, "kibo.db", "SELECT key FROM local_state WHERE key = 'legacy_tables_dropped_at'"),
+  ).toHaveLength(1);
+});
+
+test("a new home is not compacted", () => {
+  const home = homeFrom(null);
+  const vacuumed: string[] = [];
+  runLegacyMigrations(
+    home,
+    () => NOW,
+    () => {},
+    (file) => vacuumed.push(file),
+  );
+  expect(vacuumed).toEqual([]);
 });
 
 test("a second start neither saves nor migrates again", () => {

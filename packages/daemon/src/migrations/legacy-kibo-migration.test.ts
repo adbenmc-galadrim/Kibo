@@ -28,7 +28,7 @@ const tableNames = (db: Database) =>
     (r) => r.name,
   );
 
-test("the dead tables and remote sessions go, docs, events and local sessions stay, the marker is set", () => {
+test("the dead tables and remote sessions go, docs, events, component events and local sessions stay, the marker is set", () => {
   const db = open(true);
   const docs = db.query("SELECT * FROM docs").all();
   const events = db.query("SELECT * FROM project_events").all();
@@ -36,7 +36,9 @@ test("the dead tables and remote sessions go, docs, events and local sessions st
     droppedTables: [...DROPPED_KIBO_TABLES],
     removedRemoteSessions: 1,
   });
+  expect(DROPPED_KIBO_TABLES).toEqual(["agent_settings", "file_versions", "component_drafts"]);
   for (const table of DROPPED_KIBO_TABLES) expect(tableNames(db)).not.toContain(table);
+  expect(db.query("SELECT count(*) AS n FROM component_events").get()).toEqual({ n: 1 });
   expect(db.query("SELECT * FROM docs").all()).toEqual(docs);
   expect(db.query("SELECT * FROM project_events").all()).toEqual(events);
   expect(db.query("SELECT idHash, remote FROM remote_sessions").all()).toEqual([

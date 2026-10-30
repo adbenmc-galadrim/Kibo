@@ -65,6 +65,7 @@ export const KIBO_ERROR_CODES = [
   "EMBED_REFUSED",
   "TICKET_HAS_CHILDREN",
   "BACKUP_FAILED",
+  "VACUUM_FAILED",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

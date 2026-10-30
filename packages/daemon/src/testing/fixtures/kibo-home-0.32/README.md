@@ -9,9 +9,9 @@ Contenu :
   2 runs `project` (`p1`, `p2`) avec événements et jetons, une session, un lot (dont une action
   retirée `assignAgent`), un réveil et une réponse en attente ; toutes les tables mortes de §49.3
   avec une ligne ; déclencheurs append-only posés.
-- `kibo.db` : le doc de l'espace de travail, `project_events`, `remote_sessions` (une locale,
-  une distante) et les tables mortes `agent_settings`, `file_versions`, `component_drafts`,
-  `component_events`.
+- `kibo.db` : le doc de l'espace de travail, `project_events`, `component_events` (gardée),
+  `remote_sessions` (une locale, une distante) et les tables mortes `agent_settings`,
+  `file_versions`, `component_drafts`.
 - `runs/<id>/` : un dossier par run.
 
 Régénérer depuis `packages/daemon` :
