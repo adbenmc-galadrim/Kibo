@@ -58,7 +58,6 @@ export * from "./layout-compaction";
 export * from "./link";
 export * from "./manifest";
 export * from "./market";
-export * from "./market-rpc";
 export * from "./mcp-rules";
 export * from "./mcp-spec";
 export * from "./migrations";

@@ -7,7 +7,6 @@ import type { Instance } from "./instance";
 import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
-import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { OnHold } from "./on-hold";
 import type { Page } from "./page";
 import { PLAN_RPC, type PlanRpcResult } from "./plan-rpc";
@@ -77,7 +76,6 @@ export type ChangeMessage =
 export const RpcRequest = z.discriminatedUnion("method", [
   ...CORE_RPC,
   ...INTEGRATION_RPC,
-  ...MARKET_RPC_REQUESTS,
   ...SYNC_RPC_REQUESTS,
   ...APP_RPC,
   ...PROJECT_AGENT_RPC,
@@ -88,7 +86,6 @@ export type RpcRequest = z.infer<typeof RpcRequest>;
 
 export type RpcResult = CoreRpcResult &
   IntegrationRpcResult &
-  MarketRpcResult &
   SyncRpcResult &
   AppRpcResult &
   ProjectAgentRpcResult &

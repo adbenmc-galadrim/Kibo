@@ -14,3 +14,15 @@ test("answering a run stays an rpc", () => {
     text: "oui",
   });
 });
+
+test("the marketplace RPCs no longer parse", () => {
+  const retired = [
+    { method: "listMarketSources" },
+    { method: "searchMarket", query: "burn" },
+    { method: "installFromMarket", sourceId: "team", id: "burndown", version: "0.3.0" },
+    { method: "publishToMarket", id: "burndown", version: "0.3.0", sourceId: "team" },
+    { method: "exportKpkg", id: "burndown", version: "0.3.0" },
+    { method: "getMarketPublisher" },
+  ];
+  for (const request of retired) expect(RpcRequest.safeParse(request).success).toBe(false);
+});

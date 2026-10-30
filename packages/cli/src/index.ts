@@ -4,16 +4,9 @@ import { KiboError, Template } from "@kibo/schema";
 import { type FlagValue, type Parsed, parseArgs } from "./args";
 import { startDevServer } from "./commands/dev";
 import { featuresCommand } from "./commands/features";
-import { type MarketCliDeps, runMarketCommand } from "./commands/market";
 import { type ComponentKind, newCommand } from "./commands/new";
 import { planCommand } from "./commands/plan";
 import { projectsCommand } from "./commands/projects";
-import {
-  connectOrExplain,
-  marketPublishCommand,
-  type PublishStrategy,
-  publishCommand,
-} from "./commands/publish";
 import { questionsCommand } from "./commands/questions";
 import { rpcCommand } from "./commands/rpc";
 import { sprintsCommand } from "./commands/sprints";
@@ -48,9 +41,6 @@ function templateOf(flag: FlagValue | undefined): Template {
   return parsed.data;
 }
 
-const strategyOf = (flags: Parsed["flags"]): PublishStrategy | null =>
-  flags["update-all"] === true ? "update-all" : flags["new-version"] === true ? "new-version" : null;
-
 function portOf(flags: Parsed["flags"]): number {
   if (flags.port === undefined) return 0;
   const port = typeof flags.port === "string" && /^\d+$/.test(flags.port) ? Number(flags.port) : Number.NaN;
@@ -75,31 +65,10 @@ async function dispatch(command: string, target: string, flags: Parsed["flags"],
       return testCommand(target, io);
     case "dev":
       return devCommand(target, flags, io);
-    case "publish":
-      return typeof flags.to === "string"
-        ? marketPublishCommand(
-            target,
-            flags.to,
-            typeof flags.publisher === "string" ? flags.publisher : null,
-            io,
-          )
-        : publishCommand(target, strategyOf(flags), io);
     default:
       io.err(fr.usage);
       return 2;
   }
-}
-
-function marketDeps(io: CliIo): MarketCliDeps {
-  return {
-    daemon: async () => {
-      const client = await connectOrExplain(io);
-      return client && { exportKpkg: (input) => client.rpc({ method: "exportKpkg", ...input }) };
-    },
-    out: io.out,
-    err: io.err,
-    now: () => new Date(),
-  };
 }
 
 function errorText(e: KiboError, command: string): string {
@@ -156,8 +125,6 @@ export async function runCli(argv: string[], given: CliIo): Promise<number> {
   const [scope, command, target] = positional;
   const label = [scope, command].filter((part) => part !== undefined).join(" ");
   if (flags.help === true) return help(scope, io);
-  if (scope === "market")
-    return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
   const scoped = SCOPES.get(scope);
   if (scoped !== undefined) return reportingErrors(io, () => scoped(positional, flags, io), label);
   if (scope !== "component" || !command || !target) {

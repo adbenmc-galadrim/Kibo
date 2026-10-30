@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startDaemon } from "@kibo/daemon/daemon";
 import { copyFixture, DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { decodeKpkg } from "@kibo/trust";
 import { startDevServer } from "./commands/dev";
 import { runCli } from "./index";
 
@@ -36,7 +34,8 @@ describe("kibo component", () => {
     expect(await runCli(["nope"], t.io)).toBe(2);
     expect(t.err.join("\n")).toContain("kibo component new <id>");
     expect(await runCli(["component", "explode", "x"], t.io)).toBe(2);
-    expect(t.err.join("\n")).toContain("kibo market pack <id>@<version>");
+    expect(t.err.join("\n")).not.toContain("kibo market");
+    expect(t.err.join("\n")).not.toContain("kibo component publish");
   });
 
   test("the tickets help lists session and step --update", async () => {
@@ -123,16 +122,6 @@ describe("kibo component", () => {
     expect(t.err.at(-1)).toBe("Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.");
   });
 
-  test("market prints its usage and explains a missing daemon", async () => {
-    const t = io();
-    expect(await runCli(["market"], t.io)).toBe(2);
-    expect(t.err.at(-1)).toContain("kibo market index --dir <dossier>");
-    expect(await runCli(["market", "pack", "hello@0.1.0"], t.io)).toBe(1);
-    expect(t.err.at(-1)).toBe("Le démon Kibo ne tourne pas : lance l'application Kibo, puis réessaie.");
-    expect(await runCli(["market", "keygen"], t.io)).toBe(1);
-    expect(t.err.at(-1)).toStartWith("Erreur INVALID_INPUT");
-  });
-
   test("new scaffolds into KIBO_HOME/components/src", async () => {
     const t = io();
     expect(await runCli(["component", "new", "burndown", "--kind", "widget", "--server"], t.io)).toBe(0);
@@ -170,54 +159,6 @@ describe("kibo component", () => {
     cleanups.push(bad.dispose);
     expect(await runCli(["component", "test", bad.dir], t.io)).toBe(1);
     expect(t.out).toContain("  permission utilisée mais non déclarée : read:link");
-  }, 240_000);
-
-  test("publish explains a corrupt daemon.json without touching it", async () => {
-    const t = io();
-    const file = join(t.home, "daemon.json");
-    writeFileSync(join(t.home, "token"), "secret");
-    for (const content of ["{", JSON.stringify({ port: "x", sandboxPort: 1, pid: 1 })]) {
-      writeFileSync(file, content);
-      t.err.length = 0;
-      expect(await runCli(["component", "publish", "hello"], t.io)).toBe(1);
-      expect(t.err).toEqual([
-        `Le fichier ${file} est corrompu : relance l'application Kibo, ou supprime ce fichier puis réessaie.`,
-      ]);
-      expect(readFileSync(file, "utf8")).toBe(content);
-    }
-  });
-
-  test("publish talks to the running daemon and asks for a strategy when needed", async () => {
-    const t = io();
-    expect(await runCli(["component", "publish", "hello"], t.io)).toBe(1);
-    expect(t.err).toContain("Le démon Kibo ne tourne pas : lance l'application Kibo, puis réessaie.");
-    const daemon = await startDaemon({
-      home: t.home,
-      port: 0,
-      sandboxPort: 0,
-      uiDir: null,
-      dev: false,
-      toolchain: DEV_TOOLCHAIN,
-      user: "adam",
-      integrations: { testOrigins: [], memorySecrets: true },
-    });
-    cleanups.push(() => daemon.stop());
-    const f = copyFixture("hello", { linkModules: false });
-    cleanups.push(f.dispose);
-    cpSync(f.dir, join(t.home, "components", "src", "hello"), { recursive: true });
-    expect(await runCli(["component", "publish", "hello"], t.io)).toBe(0);
-    expect(t.out).toContain("Version 0.1.0 publiée.");
-    expect(t.out).toContain("Autorisation requise : ouvre Kibo (écran « Composants ») pour l'accorder.");
-    expect(await runCli(["component", "publish", "hello"], t.io)).toBe(0);
-    expect(t.out.at(-1)).toBe("Rien à publier : cette version est déjà publiée avec le même code.");
-    const kpkg = join(t.home, "hello.kpkg");
-    expect(await runCli(["market", "pack", "hello@0.1.0", "--out", kpkg, "--publisher", "Adam"], t.io)).toBe(
-      0,
-    );
-    expect(t.out.at(-1)).toBe(`Paquet écrit dans ${kpkg}`);
-    expect(decodeKpkg(new Uint8Array(readFileSync(kpkg))).publisher.name).toBe("Adam");
-    expect(await runCli(["component", "publish", "hello", "--to", "equipe"], t.io)).toBe(1);
-    expect(t.err.at(-1)).toStartWith("Erreur SYNC_OFFLINE");
   }, 240_000);
 
   test("dev refuses a missing folder", async () => {

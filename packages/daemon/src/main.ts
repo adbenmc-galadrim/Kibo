@@ -92,7 +92,6 @@ const daemon = await Promise.resolve()
       integrations: parseIntegrationFlags(values),
       redactor,
       logBuffer,
-      marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1",
       answerWakeGraceMs: answerWakeGraceFromArg(values["answer-wake-grace-ms"]),
     }),
   )

@@ -15,7 +15,6 @@ import { createLocalServices, openDaemonStores } from "./daemon-stores";
 import { lateActivity, startDaemonTracking } from "./daemon-tracking";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
-import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { projectAgentSource } from "./project-agent/definition";
@@ -106,18 +105,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => projectAgent.stop());
   wakeup.start();
-  const market = await startMarket({
-    home: opts.home,
-    toolchain: opts.toolchain,
-    ...(opts.validate && { validate: opts.validate }),
-    db: store.db,
-    docs: service.docs,
-    components,
-    secrets: integrations.secrets,
-    notify: opts.notify ?? (() => {}),
-    allowLoopbackHttp: opts.marketAllowLoopback ?? false,
-  });
-  closers.push(() => market.stop());
   const admin = startProjectAdmin(store, service, { collab, agents: () => agents });
   const code = startCodeTracking(
     service,
@@ -179,7 +166,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [componentTrustGuard, market.handler, collab.handler, admin.handler],
+    handlers: [componentTrustGuard, collab.handler, admin.handler],
   });
   front.push(() => server.stop());
   uiPort = server.port;

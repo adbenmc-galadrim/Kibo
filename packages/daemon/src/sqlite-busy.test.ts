@@ -72,7 +72,6 @@ const SOURCES = [
   "integrations/db.ts",
   "components/events.ts",
   "collab/sync-db.ts",
-  "market/market-db.ts",
   "notes/index.ts",
 ];
 

@@ -29,7 +29,6 @@ export type DaemonOptions = {
   agentEnv?: Record<string, string | undefined>;
   transcriptRoot?: string;
   assistantTimeoutMs?: number;
-  marketAllowLoopback?: boolean;
   probe?: Probe;
   agentSource?: AgentSource;
   clock?: Clock;
