@@ -503,8 +503,8 @@ x 6 à 323, y 75 à 453), comme en phase 33. Cotes : entrées retirées, « Accu
 - Graphe (P5b, en attente) : cadres à bord plein `border` (maquette 04, à la place des pointillés de §47), lignes de 28 px, points de
   10 px, icônes de 15 px, bouton « Tout voir » ; **aucune flèche entre cadres** (§47, `S.noEdges34`) ; légende repliée (bouton `Info`
   dans un cadre de 32 × 30 px en bas à gauche, `S.graphLegend34`). Un cadre replié en retard garde sa bordure rouge et l'icône
-  `clockAlert` ; une étape en session (pastille « T3 ») prend la bordure `brandLine` ; l'étape démarrable SILO-46 « Démo client » de
-  F4 prend la bordure pleine `green` (`S.startable34`). P5 · Graphe (ancienne référence) n'est pas repris.
+  `clockAlert` ; une étape en session (pastille « T3 ») prend la bordure `brandLine`. P5b reste au jeu `silo-maquettes`, où SILO-46
+  attend SILO-45 : pas de bordure verte (`S.waiting34`). P5 · Graphe (ancienne référence) n'est pas repris.
 - Kanban (P7, en attente, barre repliée, P8c) : un seul signal par carte (bloqué > changements > attente > attend), PR et « Étape n/12 »
   seulement en En cours et En review, colonne vide repliée en bande de 40 px, compteur « 41 tickets ».
 - Fiche ticket (P8, P8b, P8f, en attente, P8d, P8e) : « Lancer dans T3 » remplace « Copier /full-delivery » (passé au menu « ⋯ »),
@@ -518,7 +518,9 @@ export complet si la taille du board change.
 Page « Phase 34 » : dix-neuf boards `P34 · …` (clés `S.ROWS34`), sombre à x = 0, clair à x = 1 540, rangées de **1 600 px**
 (`S.STEP34`). Chaque board clone sa référence (copies « src · <board> » rangées à x = −20 000, collées depuis « Proposition » par
 copier-coller, car le plugin ne déplace pas un board entre pages) ou est dessiné de zéro (Aujourd'hui, code couleur), puis reçoit ses
-patchs (`S.draw34k`). « Graphe, Lancer dans T3 » montre le survol de l'étape démarrable (`S.graphHover34`, maquette 12) ;
+patchs (`S.draw34k`). « Graphe, Lancer dans T3 » s'appuie sur l'état `silo-attente`, où SILO-46 « Démo client » est démarrable : bordure pleine
+`green` (`S.startable34`, appliquée à ce seul board) et survol « Lancer dans T3 » (`S.graphHover34`, maquette 12) ; le scénario E2E
+`silo-t3` de T13 part de cet état ;
 le Planning est au repos (`S.planningAtRest34` : ni zone de dépôt ni fantôme de F9, alerte unique de S42) ; les trois Kanban partent
 du Kanban en attente, avec « Questions 4 » (Q18 sur SILO-33) et l'infobulle `S.TIP34`. Dessin : `await storage.draw34(clé, "dark" | "light")` ; export : `await storage.exportP34([clés])` ⇒
 `exports/proposition-p34-<clé sans p34->-<dark|light>.png`. Cotes : `95-cotes.js` par board (`_dump-34` à `_dump-52`), puis
@@ -540,3 +542,6 @@ Pièges relevés :
   toute retouche de texte, réécrire chaque texte (`t.characters = c + "."; t.characters = c; S.refont(t)`), puis relire les exports
   par OCR (inverser et agrandir ×3 les images sombres avant `tesseract`) contre `~/.config/kibo/termes-interdits.txt`.
 - L'onglet plante sur la page « Phase 34 » après de longs lots : dessiner par deux ou trois clés, exporter chaque clé dans un onglet neuf.
+
+Pages d'archive « A · Tableau de bord sobre », « B · Éditorial », « C · Chronologie » et « Styles » du fichier « Kibo · Redesign » :
+elles contiennent des textes réels hérités des premières pistes. Elles restent en l'état et **ne doivent jamais être exportées**.

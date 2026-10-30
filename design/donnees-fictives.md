@@ -758,8 +758,10 @@ Lancer dans T3 (§50.11, §50.12) :
   sur le Kanban `silo-maquettes`, et les autres écrans gardent Q14, Q16, Q17. Étiquette de SILO-33 : `area:mobile`.
 - Kanban de ce scénario (colonne vide repliée, infobulle, survol) : même état, puce « En attente 5 » dans la barre de filtres et
   pastille « Serveur MinIO de r… » sur SILO-33.
-- Graphe, étape démarrable (§47) : dans `silo-attente`, SILO-46 « Démo client » de F4 n'attend plus SILO-45 et n'a ni bloqueur ni
-  question : bordure pleine verte dans F4 dépliée ; au survol, « Lancer dans T3 » à droite de la ligne (maquette 12).
+- Graphe, étape démarrable (§47) : le board « P34 · Graphe, Lancer dans T3 » s'appuie sur l'état `silo-attente`, où SILO-46
+  « Démo client » de F4 n'attend plus SILO-45 et n'a ni bloqueur ni question : bordure pleine verte dans F4 dépliée ; au survol,
+  « Lancer dans T3 » à droite de la ligne (maquette 12). Le scénario E2E `silo-t3` part de cet état. Dans `silo-maquettes`
+  (référence P5b, `proposition-graphe-fonctionnalites`), SILO-46 attend SILO-45 : pas de bordure verte.
 - Kanban, survol de SILO-46 (démarrable) : « Lancer dans T3 » sous le titre ; SILO-34 « T3 · en cours depuis 12 min ».
 - Graphe, « Tout voir » : cadres repliés à 56 px ; F5 redéplié, SILO-34 porte « T3 » à la place de son icône.
 

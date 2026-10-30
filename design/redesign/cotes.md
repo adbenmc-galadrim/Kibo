@@ -13681,7 +13681,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - « Conflits de saisie » — Geist 11,5 / 400, interligne 1,2, couleur `fg` — x 439, y 433, 90 × 14
             - **dot** (pastille) · x 622, y 437, 6 × 6 · fond `brand` · dimension fixe/fixe
             - icône `pr` 15 px, `amber` — x 634, y 432,5, 15 × 15
-          - **box** (bloc) · x 415, y 460, 242 × 28 · flex ligne, espacement 6, marges internes 7 8 7 8, alignement center/start · fond `card` · bordure 1 `green` · rayon 6 · dimension fixe/fixe
+          - **box** (bloc) · x 415, y 460, 242 × 28 · flex ligne, espacement 6, marges internes 7 8 7 8, alignement center/start · fond `card` · bordure 1 `border` · rayon 6 · dimension fixe/fixe
             - **ring** (pastille) · x 423, y 469, 10 × 10 · bordure 1,5 `dim` · dimension fixe/fixe
             - « Démo client » — Geist 11,5 / 400, interligne 1,2, couleur `fg` — x 439, y 467, 63 × 14
         - **frame F2** (bloc) · x 253, y 277, 126 × 81 · flex colonne, espacement 6, marges internes 10, alignement start/start · fond `bg` · bordure 1 `border` · rayon 10

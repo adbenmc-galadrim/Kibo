@@ -228,6 +228,7 @@ S.restack34 = (b, gap = 30) => { const cv = S.find34(b, z => z.name === "canvas"
   for (const list of Object.values(lanes)) { list.sort((a, c) => a.y - c.y); for (let i = 1; i < list.length; i++) list[i].y = list[i - 1].y + list[i - 1].height + gap; }
   return Object.keys(lanes).length; };
 S.startableRow34 = (b) => { const f4 = S.find34(b, z => z.name === "frame F4"); const t = f4 && S.find34(f4, z => z.type === "text" && z.characters === "Démo client"); return t ? S.parentOf(f4, t) : null; };
+S.waiting34 = (b) => { const r = S.startableRow34(b); if (!r) return null; r.strokes = [{ strokeColor: S.C.border, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "solid" }]; return r.name; };
 S.startable34 = (b) => { const r = S.startableRow34(b); if (!r) return null; r.strokes = [{ strokeColor: S.C.green, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1, strokeStyle: "solid" }]; return r; };
 S.graphHover34 = (b) => { const r = S.startableRow34(b); if (!r) return null; const ic = r.children.find(c => c.type === "group" && /^icon/.test(c.name.replace(/\s/g, "")));
   const btn = S.btn(null, "Lancer dans T3", "default", { sm: true, icon: "play", pad: [2, 8], size: 11.5 }); btn.name = "launch-t3"; if (ic) { S.showBefore(r, ic, btn); ic.remove(); } else S.showLast(r, btn);
@@ -251,7 +252,7 @@ S.graphToolbar34 = (b, collapsed) => { const main = S.find34(b, z => z.name === 
   const btn = S.btn(bar, collapsed ? "Déplier tout" : "Tout voir", "outline", { sm: true, icon: collapsed ? "expand" : "shrink" }); btn.name = "toggle-all"; return true; };
 S.p34Graph = async (b) => { S.setMode(S.modeOf(b)); const out = { frames: 0 };
   for (const fr of S.frames34(b)) { S.p34Frame(fr); out.frames++; }
-  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.noEdges34(b); out.legend = S.graphLegend34(b); out.startable = !!S.startable34(b); return out; };
+  out.toolbar = S.graphToolbar34(b, false); await S.wait(800); out.lanes = S.restack34(b); await S.wait(300); out.edges = S.noEdges34(b); out.legend = S.graphLegend34(b); return out; };
 S.collapse34 = (fr) => { const C = S.C, kids = [...fr.children].reverse(), head = kids[0], title = kids.find(c => c.type === "text"), segs = kids.find(c => c.name === "segs");
   const key = S.find34(head, z => z.type === "text" && /^F\d+$/.test(z.characters)).characters;
   for (const c of kids) if (c !== title && c !== segs) c.remove();
@@ -492,7 +493,7 @@ S.draw34k = {
   "p34-kanban-replie": async (f) => { await S.p34Kanban(f); S.questionCount34(f, "4"); },
   "p34-kanban-infobulle": async (f) => { await S.p34Kanban(f); await S.wait(600); const card = S.find34(f, z => z.name === "card SILO-33");
     S.tooltip34(f, card, S.TIP34); S.questionCount34(f, "4"); },
-  "p34-graphe-survol-t3": async (f) => { await S.p34Graph(f); S.t3Pill34(S.parentOf(f, S.byText(f, "Tests E2E de l'envoi"))); return S.graphHover34(f); },
+  "p34-graphe-survol-t3": async (f) => { await S.p34Graph(f); S.t3Pill34(S.parentOf(f, S.byText(f, "Tests E2E de l'envoi"))); S.startable34(f); return S.graphHover34(f); },
   "p34-kanban-survol-t3": async (f) => { await S.p34Kanban(f, { "SILO-34": "running" }); S.hoverLaunch34(S.find34(f, z => z.name === "card SILO-46")); S.questionCount34(f, "4"); },
   "p34-questions": async (f) => { for (const c of f.children.filter(c => c.name !== "root")) c.remove(); return S.p34Questions(f); },
   "p34-questions-depliee": async (f) => { for (const c of f.children.filter(c => c.name !== "root")) c.remove(); return S.p34Questions(f, { open: "Q14" }); },
@@ -568,7 +569,7 @@ S.INPLACE34 = {
   "P9c · Supprimer la question": async (b) => { const r = await S.p34Questions(b); for (const n of ["veil", "dialog"]) { const d = b.children.find(c => c.name === n); if (d) d.bringToFront(); } return r; },
   "P9d · Questions, répondues": (b) => S.p34Questions(b, { qs: [S.Q34[1]], state: "répondue", openCount: 2, summary: "1 répondue" }),
 };
-S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b), startable: !!S.startable34(b) }) };
+S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b) }), waiting: (b) => S.waiting34(b) };
 S.fix34 = async (name, kind) => { await S.page("Proposition"); const b = penpot.currentPage.root.children.find(c => c.name === name); if (!b) throw new Error("missing board: " + name);
   S.setMode(S.modeOf(b)); S.placed = []; const r = S.FIX34[kind](b); await S.wait(600); const relaid = await S.relayout34(b); return { r, relaid, bottom: S.bottom34(b) }; };
 S.bottom34 = (b) => Math.round(Math.max(...penpotUtils.findShapes(z => z.type === "text", b).map(t => t.y + t.height - b.y)));
