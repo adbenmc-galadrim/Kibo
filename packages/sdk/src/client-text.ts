@@ -9,13 +9,13 @@ import {
 } from "@kibo/schema";
 import { fr } from "./fr";
 
-export type ClientImpact = { feature: string; week: IsoDate | null };
+type ClientImpact = { feature: string; week: IsoDate | null };
 export type ClientTicket = Pick<TicketView, "id" | "title" | "parentId" | "shortKey" | "effectiveSprintId">;
 
 const t = fr.clientText;
 const WEEK_DAY: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", timeZone: "UTC" };
 
-export const clientWeek = (date: IsoDate): string =>
+const clientWeek = (date: IsoDate): string =>
   new Intl.DateTimeFormat("fr-FR", WEEK_DAY).format(dayNumber(date) * DAY_MS);
 
 export const impactLine = (q: { blocking: boolean }, impact: ClientImpact): string =>

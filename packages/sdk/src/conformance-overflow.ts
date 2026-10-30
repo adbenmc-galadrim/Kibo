@@ -1,6 +1,6 @@
 export type Rect = { left: number; top: number; right: number; bottom: number };
 export type BoxNode = { path: string; rect: Rect; clips: boolean; painted: boolean; children: BoxNode[] };
-export type OverflowViolation = { container: string; child: string; by: number };
+type OverflowViolation = { container: string; child: string; by: number };
 
 export function collectBoxes(root: Element): BoxNode {
   const walk = (el: Element, path: string): BoxNode => {

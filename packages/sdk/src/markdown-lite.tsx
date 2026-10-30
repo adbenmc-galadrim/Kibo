@@ -1,6 +1,6 @@
 import { createElement, type ReactNode } from "react";
 
-export type MarkdownLiteOptions = { onTicket?: (key: string) => void };
+type MarkdownLiteOptions = { onTicket?: (key: string) => void };
 
 type Block = { kind: "p"; text: string; strong: boolean } | { kind: "ul" | "ol"; items: string[] };
 

@@ -5,7 +5,7 @@ import { cn } from "./lib/utils";
 export type GroupRef = Pick<TicketView, "id" | "keyLabel" | "title">;
 type Props = { group: GroupRef; onOpen(id: string): void; className?: string };
 
-export const GROUP_CHIP =
+const GROUP_CHIP =
   "inline-flex max-w-24 shrink-0 items-center rounded-sm border border-dashed border-zinc-300 px-1 font-mono text-3xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800";
 
 export function groupOfTicket<T extends GroupRef & Pick<TicketView, "parentId">>(

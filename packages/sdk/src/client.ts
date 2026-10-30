@@ -31,7 +31,7 @@ export type KiboClient = {
   onConnection(listener: () => void): () => void;
 };
 
-export type ClientOptions = {
+type ClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
   onUnauthorized?: () => void;

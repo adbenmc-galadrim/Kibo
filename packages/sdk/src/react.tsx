@@ -22,7 +22,7 @@ export function useSdk(): KiboSdk {
   return sdk;
 }
 
-export type EntitiesState<T extends EntityType> = {
+type EntitiesState<T extends EntityType> = {
   data: EntityMap[T][];
   error: KiboError | null;
   loading: boolean;
@@ -56,7 +56,7 @@ export function useVisible(): boolean {
   return useSyncExternalStore(visibility.subscribe, visibility.visible, visibility.visible);
 }
 
-export type FocusMode = { active: boolean; available: boolean; request(): void; exit(): void };
+type FocusMode = { active: boolean; available: boolean; request(): void; exit(): void };
 
 export function useFocusMode(): FocusMode {
   const sdk = useSdk();

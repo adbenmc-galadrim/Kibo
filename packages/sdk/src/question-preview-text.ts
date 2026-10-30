@@ -1,6 +1,6 @@
 import { isArchived, isOpen, type Question } from "@kibo/schema";
 
-export const PREVIEW_ROWS_MAX = 5;
+const PREVIEW_ROWS_MAX = 5;
 export const PREVIEW_EXCERPT_MAX = 200;
 
 export const previewFr = {

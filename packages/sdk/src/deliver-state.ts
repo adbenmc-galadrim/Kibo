@@ -5,7 +5,7 @@ import { deliveryTexts } from "./fr-delivery";
 import type { KiboSdk } from "./types";
 import type { MenuAction } from "./ui/menu-entries";
 
-export type DeliveryMenu = {
+type DeliveryMenu = {
   sdk: Pick<KiboSdk, "toast">;
   ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
 };

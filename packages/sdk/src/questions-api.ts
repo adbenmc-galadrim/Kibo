@@ -4,7 +4,7 @@ import type { ProjectBackend, QuestionsApi, SdkMode } from "./types";
 type Call = <T>(c: ComponentCall) => Promise<T>;
 type Needs = { read(entity: EntityType): void; write(entity: EntityType): void };
 
-export const questionImageUrl = (questionId: string, imageId: string): string =>
+const questionImageUrl = (questionId: string, imageId: string): string =>
   `/api/questions/${encodeURIComponent(questionId)}/images/${encodeURIComponent(imageId)}`;
 
 export function questionsApi(needs: Needs, call: Call, backend: ProjectBackend, mode: SdkMode): QuestionsApi {

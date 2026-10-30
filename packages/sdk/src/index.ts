@@ -1,4 +1,3 @@
-export { type CiTone, ciTone, latestCiRunPerWorkflow, worstCiTone } from "@kibo/schema";
 export * from "./agent-badge";
 export * from "./client";
 export * from "./client-text";

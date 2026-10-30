@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export type DelayedOpen = {
+type DelayedOpen = {
   open: boolean;
   show(): void;
   cancel(): void;

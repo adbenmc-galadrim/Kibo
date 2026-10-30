@@ -21,7 +21,7 @@ import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { EntityMap } from "./types";
 
 export type MockFetch = (url: string, init: FetchInit) => FetchResponse | Promise<FetchResponse>;
-export type MockCallDeps = {
+type MockCallDeps = {
   doc: Parameters<typeof readProject>[0];
   run(cmd: ProjectCommand): unknown;
   data: Map<string, unknown>;

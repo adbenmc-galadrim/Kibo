@@ -3,7 +3,7 @@ import { type ComponentType, lazy, type PointerEvent, type ReactElement, Suspens
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { useDelayedOpen } from "./use-delayed-open";
 
-export const QUESTION_PREVIEW_DELAY = 300;
+const QUESTION_PREVIEW_DELAY = 300;
 
 export type QuestionPreviewProps = {
   mode: "ticket" | "question";

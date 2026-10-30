@@ -2,7 +2,7 @@ import { getProjectMeta, setProjectMeta } from "@kibo/core";
 import type { ComponentSettings, TrackingSettings } from "@kibo/schema";
 import { createNotifier } from "./mock-notifier";
 
-export type MockSettings = {
+type MockSettings = {
   read(): ComponentSettings;
   subscribe(listener: () => void): () => void;
   setTracking(tracking: TrackingSettings | null): void;

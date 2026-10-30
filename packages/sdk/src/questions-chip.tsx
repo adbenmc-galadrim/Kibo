@@ -5,7 +5,7 @@ import { QuestionPreview, type QuestionPreviewProps } from "./question-preview";
 import { firstOpenQuestion } from "./question-preview-text";
 import { useEntities, useQuestionRecipients, useSdk } from "./react";
 
-export const QUESTIONS_CHIP =
+const QUESTIONS_CHIP =
   "inline-flex shrink-0 items-center gap-1 rounded-md border border-orange-500/40 px-1.5 py-0.5 text-3xs font-medium text-orange-600 outline-none hover:bg-orange-500/10 focus-visible:ring-2 focus-visible:ring-ring dark:text-orange-400";
 
 export type QuestionsChipProps = Omit<QuestionPreviewProps, "mode" | "onOpen" | "children"> & {

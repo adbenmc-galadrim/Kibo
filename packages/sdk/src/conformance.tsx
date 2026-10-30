@@ -17,9 +17,9 @@ import { LAZY_FALLBACK_SELECTOR } from "./lazy";
 import { createMockSdk, type MockSdkOptions } from "./mock";
 import { SdkProvider } from "./react";
 
-export type ConformanceModule = { manifest: unknown; Component: ComponentType };
-export type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
-export type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "config" | "ciRuns">;
+type ConformanceModule = { manifest: unknown; Component: ComponentType };
+type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
+type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "config" | "ciRuns">;
 
 const THEMES: Theme[] = ["dark", "light"];
 const LAZY_LOAD_TIMEOUT_MS = 25_000;

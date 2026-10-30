@@ -26,7 +26,6 @@ import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import { createSpotlightStore } from "./spotlight";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
-export type { MockFetch } from "./mock-calls";
 export type { MockFrame } from "./mock-design";
 export type { MockSdk, MockSdkOptions } from "./mock-types";
 
