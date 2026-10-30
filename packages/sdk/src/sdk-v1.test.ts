@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createProjectDoc, readProject } from "@kibo/core";
-import { type ComponentCall, ComponentManifest, type DesignFrame, type TicketRun } from "@kibo/schema";
+import { type ComponentCall, ComponentManifest, type DesignFrame } from "@kibo/schema";
 import { createSdk } from "./sdk";
 import type { ProjectBackend, SdkContext, SdkMode } from "./types";
 
@@ -14,14 +14,6 @@ const ctx: SdkContext = {
   openNewTicket: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
-};
-
-const run: TicketRun = {
-  ticketId: "1@1",
-  runId: "r1",
-  label: "opus-dev-1",
-  state: "running",
-  position: null,
 };
 
 function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
@@ -53,8 +45,6 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
       return c.kind === "data.keys" ? ["a"] : [];
     },
     subscribe: () => () => undefined,
-    runs: async () => [run],
-    subscribeRuns: () => () => undefined,
   };
   const manifest = ComponentManifest.parse({
     id: "probe",
@@ -70,9 +60,8 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
 
 describe("builtin mode", () => {
   test("entities come from the snapshot", async () => {
-    const { sdk, calls } = setup({ reads: ["status", "run"] });
+    const { sdk, calls } = setup({ reads: ["status"] });
     expect((await sdk.list("status")).length).toBe(6);
-    expect(await sdk.list("run")).toEqual([run]);
     expect(calls).toEqual([]);
     expect(sdk.surface).toBe("widget");
   });
@@ -86,11 +75,10 @@ describe("builtin mode", () => {
 
 describe("gated mode", () => {
   test("list and run go through componentCall", async () => {
-    const { sdk, calls, runs } = setup({ reads: ["ticket", "run"], writes: ["ticket"] }, "gated");
+    const { sdk, calls, runs } = setup({ reads: ["ticket"], writes: ["ticket"] }, "gated");
     await sdk.list("ticket");
-    await sdk.list("run");
     await sdk.run({ method: "createTicket", title: "A" });
-    expect(calls.map((c) => c.kind)).toEqual(["list", "list", "run"]);
+    expect(calls.map((c) => c.kind)).toEqual(["list", "run"]);
     expect(runs).toEqual([]);
   });
 });
@@ -175,8 +163,6 @@ describe("design", () => {
       return FRAME;
     },
     subscribe: () => () => undefined,
-    runs: async () => [],
-    subscribeRuns: () => () => undefined,
   });
   const manifestWith = (capabilities: string[]) =>
     ComponentManifest.parse({

@@ -4,11 +4,9 @@ import {
   isAnswered,
   isArchived,
   isOpen,
-  isTerminal,
   openCountByRecipient,
   type Question,
   type QuestionRecipient,
-  type TicketRun,
   type TicketView,
 } from "@kibo/schema";
 import { humanName } from "@kibo/sdk";
@@ -30,12 +28,10 @@ const inScope = (q: Question, scope: Scope): boolean => SCOPE_TEST[scope](q);
 
 export const scopeFor = (q: Question): Scope => (isArchived(q) ? "archived" : "all");
 
-const activeRun = (run: TicketRun | null): boolean => run !== null && !isTerminal(run.state);
-
-export function canArchive(q: Question, viewer: string, run: TicketRun | null): boolean {
+export function canArchive(q: Question, viewer: string): boolean {
   if (isArchived(q)) return false;
   if (!isOpen(q)) return true;
-  return q.createdBy.kind === "human" && q.createdBy.ref === viewer && !activeRun(run);
+  return q.createdBy.kind === "human" && q.createdBy.ref === viewer;
 }
 
 export type RecipientCounts = { total: number; byRecipient: Map<string, number> };

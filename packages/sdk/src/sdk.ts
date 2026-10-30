@@ -10,22 +10,18 @@ import {
   type FetchInitInput,
   type FetchResponse,
   KiboError,
-  type McpCallResult,
-  mcpCovered,
   type ProjectCommand,
   type ProjectEvent,
   type ProjectInfo,
   ruleCovers,
-  type Ticket,
 } from "@kibo/schema";
-import { assetsApi, designApi, embedApi } from "./capability-apis";
+import { assetsApi, designApi } from "./capability-apis";
 import { questionsApi } from "./questions-api";
-import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import { NO_SPOTLIGHT } from "./spotlight";
 import { openSprintOf, sprintsApi } from "./sprints-api";
 import { emitToast } from "./toast-bus";
-import type { EntityMap, InstanceData, KiboSdk, McpApi, ProjectBackend, SdkContext, SdkMode } from "./types";
+import type { EntityMap, InstanceData, KiboSdk, ProjectBackend, SdkContext, SdkMode } from "./types";
 
 type Guard = {
   deny(what: string): never;
@@ -73,33 +69,6 @@ function instanceData(manifest: ComponentManifest, guard: Guard, call: Call): In
   };
 }
 
-function mcpApi(
-  manifest: ComponentManifest,
-  guard: Guard,
-  call: Call,
-  config: Record<string, unknown>,
-): McpApi {
-  const need = (server: string, tool: string | null) => {
-    if (!mcpCovered(manifest.mcp, server, tool, config))
-      guard.deny(`mcp ${tool === null ? server : `${server}/${tool}`}`);
-  };
-  return {
-    async call(server, tool, args = {}) {
-      need(server, tool);
-      return call<McpCallResult>({ kind: "mcp.call", server, tool, args });
-    },
-    async read(server, uri) {
-      need(server, null);
-      return call<McpCallResult>({ kind: "mcp.read", server, uri });
-    },
-    async importItem(server, item) {
-      guard.needWrite("ticket");
-      need(server, null);
-      return call<Ticket>({ kind: "mcp.import", server, item });
-    },
-  };
-}
-
 export function createSdk(
   backend: ProjectBackend,
   manifest: ComponentManifest,
@@ -114,7 +83,6 @@ export function createSdk(
       status: async () => (await backend.snapshot()).workflow,
       link: async () => (await backend.snapshot()).links,
       page: async () => (await backend.snapshot()).pages,
-      run: () => backend.runs(),
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
       sprint: async () => (await backend.snapshot()).sprints,
@@ -139,8 +107,7 @@ export function createSdk(
         mode === "gated" ? await backend.call({ kind: "run", command: cmd }) : await backend.run(cmd);
       return result as CommandResult[C["method"]];
     },
-    subscribe: (listener, type) =>
-      type === "run" ? backend.subscribeRuns(listener) : backend.subscribe(listener),
+    subscribe: (listener) => backend.subscribe(listener),
     data: instanceData(manifest, guard, call),
     async fetch(url: string, init: FetchInitInput = {}): Promise<FetchResponse> {
       if (!manifest.net.some((rule) => ruleCovers(rule, url))) guard.deny(`net ${url}`);
@@ -160,7 +127,6 @@ export function createSdk(
     async setConfig(patch) {
       await call({ kind: "config.set", patch });
     },
-    mcp: mcpApi(manifest, guard, call, ctx.config),
     settings: {
       async get() {
         guard.needRead("ticket");
@@ -181,9 +147,7 @@ export function createSdk(
     },
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
-    embed: embedApi(manifest, guard, call),
     questions: questionsApi({ read: guard.needRead, write: guard.needWrite }, call, backend, mode),
-    runs: runsApi({ read: guard.needRead, write: guard.needWrite }, call),
     sprints: sprintsApi({
       list: (type) => sdk.list(type),
       run: (cmd) => sdk.run(cmd),
@@ -200,7 +164,6 @@ export function createSdk(
         else console.warn(`[kibo-sdk] ${ctx.instanceId}: no host to edit the project`);
       },
     },
-    openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

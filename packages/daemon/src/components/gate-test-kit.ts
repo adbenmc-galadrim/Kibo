@@ -65,7 +65,6 @@ export const stubFiles: FilesService = {
 export const stubHandlerDeps: GateHandlersDeps = {
   docs: stubDocs,
   files: stubFiles,
-  runs: unused,
   manifestOf: unused,
 };
 
@@ -74,10 +73,8 @@ export const idleHandlers: GateHandlers = {
   run: async () => null,
   data: async () => null,
   fetch: async () => ({ status: 200, headers: {}, body: "" }),
-  mcp: async () => null,
   assets: async () => null,
   design: async () => null,
-  embed: async () => null,
   config: async () => null,
   settings: async () => DEFAULT_COMPONENT_SETTINGS,
   project: async () => {
@@ -116,17 +113,12 @@ export function testGate(quotas: Quotas = createQuotas()) {
         handled.push(`fetch:${url}`);
         return { status: 200, headers: {}, body: "" };
       },
-      mcp: handler("mcp"),
       assets: async (_projectId, instanceId, call) => {
         handled.push(`assets:${instanceId}:${call.kind}`);
         return null;
       },
       design: async (_projectId, instanceId, call) => {
         handled.push(`design:${instanceId}:${call.kind}`);
-        return null;
-      },
-      embed: async (_projectId, instance, url) => {
-        handled.push(`embed:${instance.id}:${url}`);
         return null;
       },
       config: async (_projectId, instance, patch) => {

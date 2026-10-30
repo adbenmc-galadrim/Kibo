@@ -80,33 +80,6 @@ test("an html mock frame is a storybook page, not an image", () => {
   });
 });
 
-test("the mock opens embeds under cap:embed and records each call", async () => {
-  const m = createMockSdk({ ...base, capabilities: ["embed"], embeds: ["itch.io"] });
-  const view = await m.sdk.embed.open("https://itch.io/embed-upload/1");
-  expect(view).toMatchObject({
-    url: "about:blank#embed-1",
-    kind: "game",
-    target: "https://itch.io/embed-upload/1",
-  });
-  expect(view.sandbox).toBe("allow-scripts allow-same-origin allow-pointer-lock");
-  expect(view.expiresAt).toBeGreaterThan(Date.now());
-  expect((await m.sdk.embed.open("https://itch.io/embed-upload/2")).url).toBe("about:blank#embed-2");
-  expect(m.embedCalls).toEqual(["https://itch.io/embed-upload/1", "https://itch.io/embed-upload/2"]);
-  expect(m.used).toEqual(["cap:embed"]);
-  expect(m.violations).toEqual([]);
-});
-
-test("the mock refuses embeds with a chosen code or without the capability", async () => {
-  const refused = createMockSdk(
-    { ...base, capabilities: ["embed"], embeds: ["itch.io"] },
-    { embed: { error: "EMBED_REFUSED" } },
-  );
-  await expect(refused.sdk.embed.open("https://itch.io/embed-upload/2")).rejects.toThrow("EMBED_REFUSED");
-  const without = createMockSdk(base);
-  await expect(without.sdk.embed.open("https://itch.io/embed-upload/1")).rejects.toThrow("PERMISSION_DENIED");
-  expect(without.violations).toEqual(["cap:embed"]);
-});
-
 test("the mock lists the storybook origins it is given", async () => {
   const origins: StorybookOrigin[] = [
     { origin: "http://localhost:6006", label: "Projet", branch: null, path: null, reachable: true },

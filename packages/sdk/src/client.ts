@@ -12,10 +12,8 @@ import {
   type RpcResponse,
   type RpcResult,
   type RunChanged,
-  type RunMomentsEvent,
   type RunState,
   SESSION_REVOKED_CLOSE,
-  type TicketRun,
   type Topic,
 } from "@kibo/schema";
 import type { ProjectBackend } from "./types";
@@ -31,20 +29,9 @@ export type KiboClient = {
   subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
   subscribeAi(listener: (event: AiEvent) => void): () => void;
   subscribeEvents(listener: (event: Phase7Event) => void): () => void;
-  subscribeMoments(listener: (event: RunMomentsEvent) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
 };
-
-const isMomentsEvent = (data: unknown): data is RunMomentsEvent =>
-  typeof data === "object" &&
-  data !== null &&
-  "type" in data &&
-  data.type === "run.moments" &&
-  "runId" in data &&
-  typeof data.runId === "string" &&
-  "moments" in data &&
-  Array.isArray(data.moments);
 
 export type ClientOptions = {
   baseUrl: string;
@@ -79,7 +66,6 @@ export function createClient(opts: ClientOptions): KiboClient {
   const integrationListeners = new Set<(event: IntegrationEvent) => void>();
   const aiListeners = new Set<(event: AiEvent) => void>();
   const eventListeners = new Set<(event: Phase7Event) => void>();
-  const momentListeners = new Set<(event: RunMomentsEvent) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let open = false;
@@ -95,7 +81,6 @@ export function createClient(opts: ClientOptions): KiboClient {
     integrationListeners.size +
     aiListeners.size +
     eventListeners.size +
-    momentListeners.size +
     [...topics.values()].reduce((n, set) => n + set.size, 0);
 
   const connect = () => {
@@ -132,10 +117,6 @@ export function createClient(opts: ClientOptions): KiboClient {
         runId?: string;
         state?: RunState;
       };
-      if (isMomentsEvent(data)) {
-        for (const l of momentListeners) l(data);
-        return;
-      }
       if (msg.type === "run.changed" && msg.runId && msg.state) {
         for (const l of runListeners) l({ type: "run.changed", runId: msg.runId, state: msg.state });
         return;
@@ -229,14 +210,6 @@ export function createClient(opts: ClientOptions): KiboClient {
         release();
       };
     },
-    subscribeMoments(listener) {
-      momentListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        momentListeners.delete(listener);
-        release();
-      };
-    },
     online: () => open,
     onConnection(listener) {
       statusListeners.add(listener);
@@ -256,8 +229,6 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
       client.subscribe((id) => {
         if (id === projectId) listener();
       }),
-    runs: async (): Promise<TicketRun[]> => [],
-    subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
     subscribeConfig: (listener) => client.subscribeTopic("config", listener),
   };
 }

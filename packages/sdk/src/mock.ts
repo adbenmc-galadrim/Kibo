@@ -6,6 +6,7 @@ import {
   defaultFormatOf,
   type EntityType,
   KiboError,
+  NO_ACTIVITY,
   type ProjectCommand,
   type ProjectEditRequest,
   permissionOfCall,
@@ -13,13 +14,11 @@ import {
 } from "@kibo/schema";
 import { actAs } from "./mock-actor";
 import { createMockCalls } from "./mock-calls";
-import { createMockRunDelivery, MOCK_DELIVERY_AGENT_INFO } from "./mock-delivery";
-import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
+import { recordedFrameApis } from "./mock-embed";
 import { applyMockHolds } from "./mock-holds";
 import { createNotifier } from "./mock-notifier";
 import { recordedTrackingApis } from "./mock-project";
 import { recordedAgentApis } from "./mock-recorded";
-import { activityOf, createMockRuns } from "./mock-runs";
 import { createMockSettings } from "./mock-settings";
 import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
@@ -29,7 +28,6 @@ import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend 
 
 export type { MockFetch } from "./mock-calls";
 export type { MockFrame } from "./mock-design";
-export type { MockEmbedOptions } from "./mock-embed";
 export type { MockSdk, MockSdkOptions } from "./mock-types";
 
 const PROJECT_KEY = "KIB";
@@ -54,7 +52,6 @@ export function createMockSdk(
     client: opts.client ?? null,
   });
   const changes = createNotifier();
-  const runChanges = createNotifier();
   const run = (cmd: ProjectCommand) => {
     const result = executeProjectCommand(doc, cmd);
     changes.emit();
@@ -64,7 +61,6 @@ export function createMockSdk(
   const componentRun = (cmd: ProjectCommand) => run(actAs(cmd, viewer));
   opts.seed?.(run);
   applyMockHolds(doc, run, opts.holds ?? []);
-  let runs = opts.runs ?? [];
   const data = new Map<string, unknown>();
   const configPatches: Record<string, unknown>[] = [];
   const violations: string[] = [];
@@ -77,26 +73,17 @@ export function createMockSdk(
   const openedSprints: string[] = [];
   const projectEdits: ProjectEditRequest[] = [];
   const toasts: string[] = [];
-  const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
   const focus = createSignal(opts.focus ?? false);
   const visible = createSignal(opts.visible ?? true);
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
-  const settings = createMockSettings(doc, opts.agentExecution ?? "hidden", changes.emit);
-  const mockRuns = createMockRuns(opts.peeks ?? {});
+  const settings = createMockSettings(doc, changes.emit);
   const today = opts.today ?? UNDATED;
-  const runDelivery = createMockRunDelivery({
-    doc,
-    today,
-    runs: () => runs,
-    denials: opts.denials ?? {},
-    agent: opts.deliveryAgent === undefined ? MOCK_DELIVERY_AGENT_INFO : opts.deliveryAgent,
-  });
 
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc, today, activityOf(runs)),
+    snapshot: async () => readProject(doc, today, NO_ACTIVITY),
     run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
@@ -106,15 +93,9 @@ export function createMockSdk(
       data,
       manifest,
       configPatches,
-      runs: () => runs,
-      embeds,
-      peek: mockRuns.peek,
       settings: () => settings.read(),
-      delivery: runDelivery,
     }),
     subscribe: changes.subscribe,
-    runs: async () => runs,
-    subscribeRuns: runChanges.subscribe,
     subscribeConfig: (listener) => settings.subscribe(listener),
   };
 
@@ -132,7 +113,6 @@ export function createMockSdk(
       const intent = viewOpts?.intent;
       viewRequests.push({ componentId, question: viewOpts?.question ?? null, ...(intent && { intent }) });
     },
-    openRun: mockRuns.open,
     openSprint: (sprintId) => openedSprints.push(sprintId),
     editProject: (request) => projectEdits.push(request),
     focus: focusApi(focus, (on) => focusRequests.push(on)),
@@ -172,15 +152,6 @@ export function createMockSdk(
     fetch: (url, init) => record(`net:${url}`, `net ${url}`, () => inner.fetch(url, init)),
     action: <T>(name: string, input?: unknown) =>
       record(null, `action ${name}`, () => inner.action<T>(name, input)),
-    mcp: {
-      call: (server, tool, args) =>
-        record(`mcp:${server}/${tool}`, `mcp ${server}/${tool}`, () => inner.mcp.call(server, tool, args)),
-      read: (server, uri) => record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.read(server, uri)),
-      importItem: (server, item) => {
-        markUsed("write:ticket");
-        return record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item));
-      },
-    },
     capability: (name) => {
       const permission = capPermission(name);
       markUsed(permission);
@@ -210,24 +181,14 @@ export function createMockSdk(
     openedFiles,
     openedViews,
     viewRequests,
-    openedRuns: mockRuns.opened,
     openedSprints,
     projectEdits,
     toasts,
-    runDeliveries: runDelivery.delivered,
-    allowed: runDelivery.allowed,
-    embedCalls: embeds.calls,
     data,
     configPatches,
     run,
-    snapshot: () => readProject(doc, today, activityOf(runs)),
-    setRuns: (next) => {
-      runs = next;
-      runChanges.emit();
-      changes.emit();
-    },
+    snapshot: () => readProject(doc, today, NO_ACTIVITY),
     setTracking: settings.setTracking,
-    setAgentExecution: settings.setAgentExecution,
     focusRequests,
     selections,
     setVisible: visible.set,

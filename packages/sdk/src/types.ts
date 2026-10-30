@@ -7,17 +7,11 @@ import type {
   ComponentFormat,
   ComponentManifest,
   ComponentSettings,
-  DeliverResult,
-  DeliveryAgent,
-  DeliveryKind,
   DesignFrame,
-  EmbedView,
   EntityType,
   FetchInitInput,
   FetchResponse,
   Link,
-  McpCallResult,
-  McpImportItem,
   Page,
   ProjectAsset,
   ProjectCommand,
@@ -27,8 +21,6 @@ import type {
   ProjectSnapshot,
   Question,
   QuestionRecipient,
-  RunDenials,
-  RunPeek,
   Selection,
   Spotlight,
   Sprint,
@@ -38,7 +30,6 @@ import type {
   StatusId,
   StorybookOrigin,
   Surface,
-  Ticket,
   TicketRun,
   TicketView,
 } from "@kibo/schema";
@@ -66,29 +57,14 @@ export type InstanceData = {
   keys(): Promise<string[]>;
 };
 
-export type McpApi = {
-  call(server: string, tool: string, args?: Record<string, unknown>): Promise<McpCallResult>;
-  read(server: string, uri: string): Promise<McpCallResult>;
-  importItem(server: string, item: McpImportItem): Promise<Ticket>;
-};
-
 export type QuestionsApi = {
   recipients(): Promise<QuestionRecipient[]>;
   imageUrl(questionId: string, imageId: string): string;
-};
-export type AllowAndResumeInput = { runId: string; questionId: string; rules: string[]; addDirs: string[] };
-export type RunsApi = {
-  peek(runId: string): Promise<RunPeek>;
-  deliver(ticketId: string, mode?: DeliveryKind): Promise<DeliverResult>;
-  denials(runId: string): Promise<RunDenials | null>;
-  deliveryAgent(): Promise<DeliveryAgent | null>;
-  allowAndResume(input: AllowAndResumeInput): Promise<void>;
 };
 export type DesignApi = {
   frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame>;
   storybooks(): Promise<StorybookOrigin[]>;
 };
-export type EmbedApi = { open(url: string): Promise<EmbedView> };
 export type AssetsApi = { list(): Promise<ProjectAsset[]>; url(name: string): Promise<AssetUrl> };
 export type FocusApi = {
   active(): boolean;
@@ -136,7 +112,7 @@ export type KiboSdk = {
   format: ComponentFormat;
   list<T extends EntityType>(type: T): Promise<EntityMap[T][]>;
   run<C extends ProjectCommand>(cmd: C): Promise<CommandResult[C["method"]]>;
-  subscribe(listener: () => void, type?: EntityType): () => void;
+  subscribe(listener: () => void): () => void;
   openTicket(ticketId: string): void;
   openNewTicket(defaults: NewTicketDefaults): void;
   openFile(request: FileOpenRequest): void;
@@ -146,18 +122,14 @@ export type KiboSdk = {
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   setConfig(patch: Record<string, unknown>): Promise<void>;
-  mcp: McpApi;
   capabilities: readonly Capability[];
   capability(name: Capability): void;
   assets: AssetsApi;
   design: DesignApi;
-  embed: EmbedApi;
   questions: QuestionsApi;
-  runs: RunsApi;
   sprints: SprintsApi;
   settings: SettingsApi;
   project: ProjectApi;
-  openRun(runId: string): void;
   focus: FocusApi;
   visibility: VisibilityApi;
   selection: SelectionApi;
@@ -169,8 +141,6 @@ export type ProjectBackend = {
   run(cmd: ProjectCommand): Promise<unknown>;
   call(call: ComponentCall): Promise<unknown>;
   subscribe(listener: () => void): () => void;
-  runs(): Promise<TicketRun[]>;
-  subscribeRuns(listener: () => void): () => void;
   subscribeConfig?(listener: () => void): () => void;
 };
 
@@ -186,7 +156,7 @@ export type SdkContext = Pick<
   | "openFile"
   | "openView"
 > &
-  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">> & {
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight">> & {
     openSprint?(sprintId: string): void;
     editProject?(request: ProjectEditRequest): void;
   };

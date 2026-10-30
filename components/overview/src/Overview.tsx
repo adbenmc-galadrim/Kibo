@@ -17,22 +17,13 @@ function useNow(): number {
   return now;
 }
 
-function handlersOf(
-  sdk: KiboSdk,
-  execution: OverviewHandlers["execution"],
-  tickets: readonly TicketView[],
-  onCopied: () => void,
-): OverviewHandlers {
+function handlersOf(sdk: KiboSdk, tickets: readonly TicketView[], onCopied: () => void): OverviewHandlers {
   return {
-    execution,
     copy: async (ticketId) => {
       const ticket = tickets.find((t) => t.id === ticketId);
       if (ticket === undefined) return;
       await copyDeliveryCommand(sdk, ticket);
       onCopied();
-    },
-    deliver: async (ticketId) => {
-      await sdk.runs.deliver(ticketId);
     },
     onOpenTicket: (id) => sdk.openTicket(id),
     onOpenSprint: (id) => sdk.sprints.open(id),
@@ -49,7 +40,7 @@ export function Overview() {
   const now = useNow();
   const project = useProject();
   const [copied, setCopied] = useState(false);
-  const { tracking, agentExecution } = useComponentSettings();
+  const { tracking } = useComponentSettings();
   const recipients = useQuestionRecipients();
   const { data: tickets } = useEntities("ticket");
   const { data: links } = useEntities("link");
@@ -78,7 +69,7 @@ export function Overview() {
       model={overviewModel(input)}
       activity={input}
       start={gettingStarted(project, tickets, copied)}
-      handlers={handlersOf(sdk, agentExecution, tickets, () => setCopied(true))}
+      handlers={handlersOf(sdk, tickets, () => setCopied(true))}
     />
   );
 }

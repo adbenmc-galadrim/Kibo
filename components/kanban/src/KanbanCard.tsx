@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
-import type { AgentExecution, DeliveryKind, Status, StatusId } from "@kibo/schema";
-import { type DeliverEntry, stepTitle, useSdk } from "@kibo/sdk";
+import type { Status, StatusId } from "@kibo/schema";
+import { stepTitle, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
@@ -17,16 +17,13 @@ const stopDrag = (e: PointerEvent) => e.stopPropagation();
 type Props = CardFacts & {
   selected: boolean | null;
   statuses: Status[];
-  deliver: DeliverEntry | null;
-  execution: AgentExecution;
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
-  onDeliver: (mode: DeliveryKind) => void;
 };
 
 export function KanbanCard(props: Props) {
-  const { ticket: t, selected, statuses, deliver, execution, onOpen, onMove, onRemove, onDeliver } = props;
+  const { ticket: t, selected, statuses, onOpen, onMove, onRemove } = props;
   const sdk = useSdk();
   const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
@@ -43,11 +40,9 @@ export function KanbanCard(props: Props) {
   const entries = cardMenuEntries({
     ticket: t,
     statuses,
-    deliver,
-    execution,
     texts: fr,
     sdk,
-    actions: { open: onOpen, move: onMove, remove: onRemove, deliver: onDeliver },
+    actions: { open: onOpen, move: onMove, remove: onRemove },
   });
   const menu = (
     <DropdownMenu>

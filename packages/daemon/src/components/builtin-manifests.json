@@ -12,9 +12,9 @@
     },
     "title": "Kanban",
     "description": "Tickets par statut, glisser-déposer",
-    "reads": ["ticket", "status", "run", "ci_run", "question", "sprint"],
+    "reads": ["ticket", "status", "ci_run", "question", "sprint"],
     "selection": true,
-    "writes": ["ticket", "run"],
+    "writes": ["ticket"],
     "data": true,
     "configSchema": {
       "filter": {
@@ -36,7 +36,7 @@
     },
     "title": "Graphe de dépendances",
     "description": "Généré depuis les liens bloque / bloqué par",
-    "reads": ["ticket", "status", "link", "run", "sprint", "question"],
+    "reads": ["ticket", "status", "link", "sprint", "question"],
     "writes": [],
     "configSchema": {
       "filter": {
@@ -90,8 +90,8 @@
     },
     "title": "Questions",
     "description": "Questions des agents, à valider ou à répondre",
-    "reads": ["question", "ticket", "status", "run", "sprint"],
-    "writes": ["question", "run"],
+    "reads": ["question", "ticket", "status", "sprint"],
+    "writes": ["question"],
     "selection": false,
     "configSchema": {
       "scope": {
@@ -138,6 +138,6 @@
     "title": "Vue d'ensemble",
     "description": "Indicateurs, échéances, sprint en cours, PR en review, questions et activité du projet",
     "reads": ["ticket", "link", "status", "sprint", "question", "project_event", "ci_run"],
-    "writes": ["run"]
+    "writes": []
   }
 ]

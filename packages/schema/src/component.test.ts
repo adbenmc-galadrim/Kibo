@@ -46,8 +46,8 @@ describe("manifest v1", () => {
     expect(m.changes).toEqual([]);
     expect(m.sdk).toBe(1);
   });
-  test("run is a builtin entity, notes are no longer readable by a component", () => {
-    expect(ComponentManifest.safeParse({ ...v0, reads: ["run"] }).success).toBe(true);
+  test("runs and notes are no longer readable by a component", () => {
+    expect(ComponentManifest.safeParse({ ...v0, reads: ["run"] }).success).toBe(false);
     expect(ComponentManifest.safeParse({ ...v0, reads: ["note"] }).success).toBe(false);
   });
   test("net rules are https host + path prefix only", () => {
@@ -111,7 +111,6 @@ describe("permissions", () => {
   });
   test("each call maps to one permission", () => {
     expect(permissionOfCall({ kind: "list", entity: "status" })).toBe("read:status");
-    expect(permissionOfCall({ kind: "list", entity: "run" })).toBe("read:run");
     expect(permissionOfCall({ kind: "run", command: { method: "deleteTicket", ticketId: "1@1" } })).toBe(
       "write:ticket",
     );

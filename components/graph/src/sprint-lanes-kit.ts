@@ -291,7 +291,6 @@ export const kitInput = (over: Partial<SprintLanesInput> = {}): SprintLanesInput
   links: KIT_LINKS,
   sprints: KIT_SPRINTS,
   questions: KIT_QUESTIONS,
-  live: new Set(),
   today: KIT_TODAY,
   ...over,
 });

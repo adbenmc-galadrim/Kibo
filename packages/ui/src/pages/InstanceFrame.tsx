@@ -54,7 +54,6 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, apis }: Mo
             }),
           openView: (componentId, opts) =>
             host.openView(componentId, undefined, viewSpotlight(opts?.intent, opts?.question)),
-          openRun: host.openRun,
           focus,
           visibility,
           selection,

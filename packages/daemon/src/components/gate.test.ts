@@ -98,18 +98,15 @@ describe("project files, design and embedded frames", () => {
     url: "https://www.figma.com/design/AbC123xyz/K?node-id=1-2",
     refresh: false,
   };
-  test("a built-in reaches the files, design and embed handlers with its instance", async () => {
+  test("a built-in reaches the files and design handlers with its instance", async () => {
     const { gate: g, handled } = testGate();
-    const url = "https://www.youtube.com/embed/1";
     await g.call("p1", "builtin", { kind: "assets.url", name: "robot.glb" });
     await g.call("p1", "builtin", frameCall);
     await g.call("p1", "builtin", { kind: "design.storybooks" });
-    await g.call("p1", "builtin", { kind: "embed.open", url });
     expect(handled).toEqual([
       "assets:builtin:assets.url",
       "design:builtin:design.frame",
       "design:builtin:design.storybooks",
-      `embed:builtin:${url}`,
     ]);
   });
   test("design.frame is rate limited per instance", async () => {
@@ -118,27 +115,5 @@ describe("project files, design and embedded frames", () => {
     await refused(g.call("p1", "builtin", frameCall), "RATE_LIMITED");
     expect(handled).toHaveLength(30);
     expect(events.list().map((e) => [e.kind, e.code])).toEqual([["design.frame", "RATE_LIMITED"]]);
-  });
-  test("embed.open is limited to ten per minute and per instance", async () => {
-    const openCall: ComponentCall = { kind: "embed.open", url: "https://www.youtube.com/embed/1" };
-    const { gate: g, events, handled } = testGate(createQuotas({ now: () => 0 }));
-    for (let i = 0; i < 10; i++) await g.call("p1", "builtin", openCall);
-    await refused(g.call("p1", "builtin", openCall), "RATE_LIMITED");
-    expect(handled).toHaveLength(10);
-    expect(events.list().map((e) => [e.kind, e.code])).toEqual([["embed.open", "RATE_LIMITED"]]);
-  });
-});
-
-describe("delivery calls", () => {
-  test("the delivery calls of the runs api are no longer connected", async () => {
-    const calls: ComponentCall[] = [
-      { kind: "run.deliver", ticketId: "t1" },
-      { kind: "run.denials", runId: "r1" },
-      { kind: "run.allowAndResume", runId: "r1", questionId: "q1", rules: [], addDirs: [] },
-      { kind: "run.deliveryAgent" },
-    ];
-    const { gate: g, handled } = testGate();
-    for (const call of calls) await refused(g.call("p1", "builtin", call), "NOT_CONNECTED");
-    expect(handled).toEqual([]);
   });
 });

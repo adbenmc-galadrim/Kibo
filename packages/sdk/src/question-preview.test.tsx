@@ -60,7 +60,6 @@ function mount(over: Partial<QuestionPreviewProps> = {}) {
         questions={[question(1), question(2)]}
         recipients={DEFAULT_RECIPIENTS}
         ticket={TICKET}
-        runLabel={(id) => id}
         onOpen={onOpen}
         {...over}
       >

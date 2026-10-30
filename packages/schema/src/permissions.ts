@@ -73,11 +73,6 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "action":
     case "config.set":
       return null;
-    case "mcp.call":
-      return `mcp:${call.server}/${call.tool}`;
-    case "mcp.read":
-    case "mcp.import":
-      return `mcp:${call.server}`;
     case "settings.get":
     case "project.get":
       return "read:ticket";
@@ -87,17 +82,8 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "design.frame":
     case "design.storybooks":
       return capPermission("design");
-    case "embed.open":
-      return capPermission("embed");
     case "questions.recipients":
       return "read:question";
-    case "run.peek":
-    case "run.denials":
-    case "run.deliveryAgent":
-      return "read:run";
-    case "run.deliver":
-    case "run.allowAndResume":
-      return "write:run";
   }
 }
 

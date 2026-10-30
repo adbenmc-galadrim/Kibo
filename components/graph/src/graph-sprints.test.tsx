@@ -1,7 +1,7 @@
 import { afterEach, expect, setSystemTime, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { SeedRun } from "./graph-seed";
 import { SEED_TODAY, seedSprintGraph } from "./graph-sprints-seed";
@@ -40,7 +40,7 @@ const kitModel = (today?: string) =>
   sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
 
 test("the manifest reads the tracking entities, emits no selection and keeps the widget filter only", () => {
-  expect(manifest.reads).toEqual(["ticket", "status", "link", "run", "sprint", "question"]);
+  expect(manifest.reads).toEqual(["ticket", "status", "link", "sprint", "question"]);
   expect(manifest.selection).toBe(false);
   expect(Object.keys(manifest.configSchema ?? {})).toEqual(["filter"]);
 });
@@ -207,30 +207,6 @@ test("a long title is clamped to its reserved lines inside the button", () => {
   const button = within(f1).getByRole("button", { name: title });
   expect(button.getAttribute("title")).toBe(title);
   expect(within(button).getByText(title).className).toContain("line-clamp-3");
-});
-
-const TESTS_STEP = "Envoyer les photos d'un constat · étape 4";
-
-async function withLiveRun(agentExecution: Execution) {
-  const m = setup(seedSprintGraph, { agentExecution });
-  await lanes();
-  const step = m.snapshot().tickets.find((t) => t.title === TESTS_STEP);
-  if (step === undefined) throw new Error("missing step");
-  act(() => m.setRuns([{ ticketId: step.id, runId: "r1", label: "Opus", state: "running", position: null }]));
-  const row = await screen.findByRole("button", { name: TESTS_STEP });
-  return row.closest("li");
-}
-
-test("a live run lights the step only when the execution is shown", async () => {
-  const row = await withLiveRun("shown");
-  expect(row?.getAttribute("data-session")).toBe("true");
-  expect(row?.className).toContain("border-(--tracking-brand-line)");
-});
-
-test("a live run stays dark when the execution is hidden", async () => {
-  const row = await withLiveRun("hidden");
-  expect(row?.getAttribute("data-session")).toBeNull();
-  expect(row?.className).not.toContain("border-(--tracking-brand-line)");
 });
 
 test("a T3 Code session always lights the step, without any run", () => {

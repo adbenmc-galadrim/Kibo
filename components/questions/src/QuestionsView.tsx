@@ -80,7 +80,6 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           recipients={data.recipients}
           now={now}
           viewer={data.viewer}
-          runOf={data.runOf}
           ticketLabel={keyOf(data)}
         />
       ))}

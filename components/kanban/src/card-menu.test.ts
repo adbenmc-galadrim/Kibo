@@ -38,7 +38,6 @@ const actions = (): CardMenuActions => ({
   open: mock(() => {}),
   move: mock((_s: string) => {}),
   remove: mock(() => {}),
-  deliver: mock(() => {}),
 });
 const toasts: string[] = [];
 const sdk = { toast: (message: string) => void toasts.push(message) };
@@ -56,59 +55,6 @@ test("an editable card offers open, move to the other statuses, delete", () => {
   const entries = cardMenuEntries({
     ticket,
     statuses: DEFAULT_WORKFLOW,
-    deliver: null,
-    execution: "shown",
-    texts: fr,
-    sdk,
-    actions: a,
-  });
-  expect(labels(entries)).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
-  const move = entries.find(isSubmenu);
-  expect(move?.items.map((i) => i.label)).toEqual(["Backlog", "En cours", "En review", "Bloqué…", "Terminé"]);
-  move?.items[3]?.onSelect();
-  expect(a.move).toHaveBeenCalledWith("blocked");
-});
-
-const entriesWith = (deliver: { disabledReason: string | null } | null, a = actions()) =>
-  cardMenuEntries({
-    ticket,
-    statuses: DEFAULT_WORKFLOW,
-    deliver,
-    execution: "shown",
-    texts: fr,
-    sdk,
-    actions: a,
-  });
-
-test("Livrer comes right after Ouvrir when the ticket can be delivered", () => {
-  const a = actions();
-  const entries = entriesWith({ disabledReason: null }, a);
-  expect(labels(entries)).toEqual(["Ouvrir", "Livrer", "Déplacer vers ▸", "—", "Supprimer…"]);
-  const deliver = entries[1];
-  if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
-  expect(deliver.disabled).toBe(false);
-  deliver.onSelect();
-  expect(a.deliver).toHaveBeenCalled();
-});
-
-test("Livrer is disabled and says which run is already there", () => {
-  const deliver = entriesWith({ disabledReason: "déjà un run : silo · full-delivery · SILO-15" })[1];
-  if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
-  expect(deliver.disabled).toBe(true);
-  expect(deliver.hint).toBe("déjà un run : silo · full-delivery · SILO-15");
-});
-
-test("no Livrer without a deliverable ticket", () => {
-  expect(labels(entriesWith(null))).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
-});
-
-test("hidden agent execution replaces Livrer with copying the full-delivery command, with feedback", async () => {
-  const a = actions();
-  const entries = cardMenuEntries({
-    ticket,
-    statuses: DEFAULT_WORKFLOW,
-    deliver: { disabledReason: null },
-    execution: "hidden",
     texts: fr,
     sdk,
     actions: a,
@@ -120,7 +66,28 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
     "—",
     "Supprimer…",
   ]);
-  expect(labels(entries)).not.toContain("Livrer");
+  const move = entries.find(isSubmenu);
+  expect(move?.items.map((i) => i.label)).toEqual(["Backlog", "En cours", "En review", "Bloqué…", "Terminé"]);
+  move?.items[3]?.onSelect();
+  expect(a.move).toHaveBeenCalledWith("blocked");
+});
+
+test("hidden agent execution replaces Livrer with copying the full-delivery command, with feedback", async () => {
+  const a = actions();
+  const entries = cardMenuEntries({
+    ticket,
+    statuses: DEFAULT_WORKFLOW,
+    texts: fr,
+    sdk,
+    actions: a,
+  });
+  expect(labels(entries)).toEqual([
+    "Ouvrir",
+    "Copier /full-delivery KIB-1",
+    "Déplacer vers ▸",
+    "—",
+    "Supprimer…",
+  ]);
   const copy = entries[1];
   if (!copy || isSeparator(copy) || isSubmenu(copy)) throw new Error("no copy entry");
   const written: string[] = [];
@@ -133,19 +100,4 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   await Promise.resolve();
   expect(written).toEqual(["/full-delivery KIB-1"]);
   expect(toasts).toEqual(["Copié"]);
-  expect(a.deliver).not.toHaveBeenCalled();
-});
-
-test("a done card offers Livrer la retouche when the execution is shown", () => {
-  const a = actions();
-  const entries = cardMenuEntries({
-    ticket: { ...ticket, statusId: "done" },
-    statuses: DEFAULT_WORKFLOW,
-    deliver: { disabledReason: null },
-    execution: "shown",
-    texts: fr,
-    sdk,
-    actions: a,
-  });
-  expect(labels(entries).slice(0, 2)).toEqual(["Ouvrir", "Livrer la retouche"]);
 });

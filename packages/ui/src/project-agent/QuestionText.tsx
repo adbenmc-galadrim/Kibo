@@ -1,13 +1,11 @@
-import type { ProjectSnapshot, Question, QuestionRecipient, RunView, TicketView } from "@kibo/schema";
+import type { ProjectSnapshot, Question, QuestionRecipient, TicketView } from "@kibo/schema";
 import { QuestionPreview } from "@kibo/sdk";
 import { createContext, useContext } from "react";
-import { runLabelIn } from "../state/run-label";
 
 export type QuestionLinks = {
   questions: readonly Question[];
   recipients: readonly QuestionRecipient[];
   ticketOf(question: Question): Pick<TicketView, "id" | "keyLabel" | "title">;
-  runLabel(runId: string): string;
   open(questionId: string): void;
 };
 
@@ -15,14 +13,12 @@ export const QuestionLinksContext = createContext<QuestionLinks | null>(null);
 
 export const projectQuestionLinks = (
   project: ProjectSnapshot,
-  runs: readonly RunView[],
   open: (questionId: string) => void,
 ): QuestionLinks => ({
   questions: project.questions,
   recipients: project.questionRecipients,
   ticketOf: (q) =>
     project.tickets.find((t) => t.id === q.ticketId) ?? { id: q.ticketId, keyLabel: "", title: "" },
-  runLabel: runLabelIn(runs),
   open,
 });
 
@@ -36,7 +32,6 @@ export function QuestionText({ questionId, text }: { questionId: string; text: s
       questions={[question]}
       recipients={links.recipients}
       ticket={links.ticketOf(question)}
-      runLabel={links.runLabel}
       onOpen={links.open}
     >
       <button

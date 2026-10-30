@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import {
   addedPermissions,
   Base64,
-  ComponentCall,
   ComponentManifest,
   ConfigField,
   ConfigSchema,
@@ -15,7 +14,6 @@ import {
   isKiboErrorCode,
   KeyCombo,
   KiboError,
-  NO_PERMISSIONS,
   NotesCall,
   Phase7Event,
   ProjectKey,
@@ -129,33 +127,6 @@ test("KiboError carries a stable code", () => {
 describe("mcp and ci_run permissions", () => {
   const base = { id: "probe", version: "1.0.0", kind: "widget", title: "P", reads: [], writes: [] };
 
-  test("mcp calls map to a server or a tool permission", () => {
-    expect(permissionOfCall({ kind: "mcp.call", server: "ctx", tool: "echo", args: {} })).toBe(
-      "mcp:ctx/echo",
-    );
-    expect(permissionOfCall({ kind: "mcp.read", server: "ctx", uri: "x" })).toBe("mcp:ctx");
-    const item = { itemId: "a1", title: "A", url: null };
-    expect(permissionOfCall({ kind: "mcp.import", server: "ctx", item })).toBe("mcp:ctx");
-    expect(permissionOfCall({ kind: "list", entity: "ci_run" })).toBe("read:ci_run");
-  });
-
-  test("mcp calls are validated", () => {
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "ctx", tool: "echo", args: {} }).success).toBe(
-      true,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "CTX", tool: "echo", args: {} }).success).toBe(
-      false,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "ctx", tool: "", args: {} }).success).toBe(
-      false,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.read", server: "../x", uri: "x" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "mcp.read", server: "ctx", uri: "" }).success).toBe(false);
-    const item = { itemId: "a1", title: "A", url: "javascript:alert(1)" };
-    expect(ComponentCall.safeParse({ kind: "mcp.import", server: "ctx", item }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "list", entity: "ci_run" }).success).toBe(true);
-  });
-
   test("notes.attach and notes.asset are calls with strict names", () => {
     const attach = { kind: "notes.attach", notePath: "a.md", mime: "image/png", bytes: "AA==" };
     expect(NotesCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
@@ -184,26 +155,6 @@ describe("mcp and ci_run permissions", () => {
     expect(sniffImage(new Uint8Array())).toBeNull();
   });
 
-  test("covers resolves mcp rules, the config rule only with a config", () => {
-    expect(covers(["mcp:ctx"], "mcp:ctx/echo")).toBe(true);
-    expect(covers(["mcp:ctx"], "mcp:ctx")).toBe(true);
-    expect(covers(["mcp:ctx/resolve"], "mcp:ctx/echo")).toBe(false);
-    expect(covers(["mcp:ctx/echo"], "mcp:ctx")).toBe(false);
-    expect(covers(["mcp:ctx"], "mcp:ctx2/echo")).toBe(false);
-    expect(covers(["net:ctx", "read:ctx"], "mcp:ctx")).toBe(false);
-    expect(covers(["mcp:{config.server}"], "mcp:fs/read")).toBe(false);
-    expect(covers(["mcp:{config.server}"], "mcp:fs/read", { server: "fs" })).toBe(true);
-    expect(covers(["mcp:{config.server}"], "mcp:ctx/read", { server: "fs" })).toBe(false);
-    expect(covers(["mcp:ctx"], "net:https://ctx.com")).toBe(false);
-    expect(covers(["mcp:ctx/a"], "mcp:ctx/a/b")).toBe(false);
-    expect(
-      covers(
-        ["mcp:ctx/a"],
-        permissionOfCall({ kind: "mcp.call", server: "ctx", tool: "a/b", args: {} }) ?? "",
-      ),
-    ).toBe(false);
-  });
-
   test("diffPermissions passes the config to mcp rules", () => {
     const declared = ["mcp:{config.server}", "read:ci_run"];
     expect(diffPermissions(declared, ["mcp:fs/read"]).missing).toEqual(["mcp:fs/read"]);
@@ -211,15 +162,6 @@ describe("mcp and ci_run permissions", () => {
       missing: [],
       unused: ["read:ci_run"],
     });
-  });
-
-  test("granted mcp rules are listed, older grants read back without any", () => {
-    const old = GrantedPermissions.parse({ reads: ["ticket"], writes: [], data: false, net: [] });
-    expect(old.mcp).toEqual([]);
-    expect(NO_PERMISSIONS.mcp).toEqual([]);
-    const m = ComponentManifest.parse({ ...base, reads: ["ci_run"], mcp: ["ctx", "ctx", "fs/read"] });
-    expect(grantedOf(m).mcp).toEqual(["ctx", "fs/read"]);
-    expect(permissionList(grantedOf(m))).toEqual(["read:ci_run", "mcp:ctx", "mcp:fs/read"]);
   });
 
   test("a version that gains a secret and a server announces both (N41)", () => {

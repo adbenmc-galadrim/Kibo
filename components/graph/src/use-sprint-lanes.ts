@@ -1,5 +1,4 @@
-import { liveRun, useEntities } from "@kibo/sdk";
-import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useEntities } from "@kibo/sdk";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useMemo } from "react";
 import { type SprintLanesModel, sprintLanes } from "./sprint-lanes";
@@ -9,14 +8,7 @@ export function useSprintLanes(): SprintLanesModel {
   const links = useEntities("link");
   const sprints = useEntities("sprint");
   const questions = useEntities("question");
-  const runs = useEntities("run");
-  const { agentExecution } = useComponentSettings();
-  const shown = agentExecution === "shown";
   const today = useProject()?.today ?? null;
-  const live = useMemo(
-    () => new Set(shown ? runs.data.filter((r) => liveRun(r) !== null).map((r) => r.ticketId) : []),
-    [runs.data, shown],
-  );
   return useMemo(
     () =>
       sprintLanes({
@@ -24,9 +16,8 @@ export function useSprintLanes(): SprintLanesModel {
         links: links.data,
         sprints: sprints.data,
         questions: questions.data,
-        live,
         today,
       }),
-    [tickets.data, links.data, sprints.data, questions.data, live, today],
+    [tickets.data, links.data, sprints.data, questions.data, today],
   );
 }

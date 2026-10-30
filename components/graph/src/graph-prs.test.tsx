@@ -2,9 +2,9 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import type { ProjectCommand, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { PRS_SEED_COUNTER, seedPrGraph, seedPrUrl, sessionRuns } from "./graph-prs-seed";
+import { PRS_SEED_COUNTER, seedPrGraph, seedPrUrl } from "./graph-prs-seed";
 import { Component, manifest } from "./index";
 
 beforeEach(() => localStorage.setItem("kibo.graph.view.mock-instance", "prs"));
@@ -15,8 +15,8 @@ afterEach(() => {
 
 type Seed = (run: (cmd: ProjectCommand) => unknown) => void;
 
-const setup = (seed: Seed = seedPrGraph, agentExecution: "hidden" | "shown" = "shown") => {
-  const m = createMockSdk(manifest, { seed, surface: "view", viewer: "adam", agentExecution });
+const setup = (seed: Seed = seedPrGraph) => {
+  const m = createMockSdk(manifest, { seed, surface: "view", viewer: "adam" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -39,7 +39,6 @@ const ticket = (m: ReturnType<typeof setup>, title: string): Ticket => {
 
 test("three stacks, five cards from each root up, labels, rail and counter", async () => {
   const m = setup();
-  act(() => m.setRuns(sessionRuns(m.snapshot().tickets)));
   const canvas = await region();
   expect(
     within(canvas)
@@ -64,13 +63,11 @@ test("three stacks, five cards from each root up, labels, rail and counter", asy
     "Brouillon",
     "CI en cours",
     "feat/envoi-hors-ligne",
-    "session",
   ])
     expect(card(24).textContent).toContain(text);
   expect(card(24).getAttribute("aria-label")).toBe(`PR #24 · Écran d'envoi hors ligne · ${key33}`);
   expect(card(20).textContent).toContain("Changements demandés");
   expect(card(20).textContent).toContain("CI rouge");
-  expect(card(20).textContent).toContain("session");
   expect(card(20).getAttribute("data-review")).toBe("changes");
   expect(card(22).textContent).toContain("En attente de review");
   expect(card(22).textContent).toContain("CI verte");
@@ -183,14 +180,6 @@ test("arrows walk up, down and across the stacks, Enter opens the ticket", async
   await userEvent.keyboard("{Enter}");
   expect(m.opened).toEqual([ticket(m, "Route d'envoi des photos").id]);
   expect(screen.getByText("Flèches : PR du dessus, du dessous, pile voisine · Entrée : ouvrir")).toBeTruthy();
-});
-
-test("a live run lights « session » only when the execution is shown", async () => {
-  const m = setup(seedPrGraph, "hidden");
-  act(() => m.setRuns(sessionRuns(m.snapshot().tickets)));
-  await region();
-  expect(card(24).getAttribute("data-session")).toBeNull();
-  expect(card(24).textContent).not.toContain("session");
 });
 
 test("the view opens at the bottom, rail in sight", async () => {

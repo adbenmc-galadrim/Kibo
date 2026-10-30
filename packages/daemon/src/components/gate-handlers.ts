@@ -6,7 +6,6 @@ import {
   PROJECT_EVENTS_PAGE_MAX,
   type ProjectEventPage,
   projectInfo,
-  type TicketRun,
   validateConfig,
 } from "@kibo/schema";
 import type { Docs } from "../docs";
@@ -18,7 +17,6 @@ import { type NetProxyOptions, proxyFetch } from "./net-proxy";
 export type GateHandlersDeps = {
   docs: Docs;
   files: FilesService;
-  runs(projectId: string): TicketRun[];
   manifestOf(ref: string): Promise<ComponentManifest>;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
@@ -45,7 +43,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
   };
   return {
     async list(projectId, entity, config) {
-      if (entity === "run") return deps.runs(projectId);
       if (entity === "project_event") return listEvents(deps, projectId, config);
       if (entity === "ci_run") {
         const ciRuns = deps.integrations?.()?.ciRuns ?? null;
@@ -77,14 +74,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       const hooks = deps.integrations?.() ?? null;
       return proxyFetch(null, url, init, { ...deps.net, ...(hooks && { hooks }) });
     },
-    async mcp(projectId, instanceId, call) {
-      const gate = deps.integrations?.()?.mcp ?? null;
-      if (!gate) throw new KiboError("MCP_UNAVAILABLE", "mcp hub not started");
-      const ctx = { projectId, instanceId };
-      if (call.kind === "mcp.call") return gate.call(ctx, call.server, call.tool, call.args);
-      if (call.kind === "mcp.read") return gate.read(ctx, call.server, call.uri);
-      return gate.importItem(ctx, call.server, call.item);
-    },
     async design(projectId, instanceId, call) {
       const gate = deps.integrations?.()?.design ?? null;
       if (!gate) throw new KiboError("NOT_CONNECTED", "design integrations not started");
@@ -92,12 +81,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       return call.kind === "design.storybooks"
         ? gate.storybooks(ctx)
         : gate.frame(ctx, call.url, call.refresh);
-    },
-    async embed(projectId, instance, url) {
-      const gate = deps.integrations?.()?.embed ?? null;
-      if (!gate) throw new KiboError("NOT_CONNECTED", "embed gate not started");
-      const manifest = await deps.manifestOf(instance.component);
-      return gate.open({ projectId, instanceId: instance.id, manifest }, url);
     },
     assets: (projectId, instanceId, call) =>
       call.kind === "assets.list"
@@ -121,10 +104,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       const info = projectInfo(readProject(docs.project(projectId), today, docs.activity(projectId)), today);
       return deps.hasFolder ? { ...info, hasFolder: deps.hasFolder(projectId) } : info;
     },
-    settings: async (projectId) => ({
-      tracking: docs.projectMeta(projectId).tracking,
-      agentExecution: "hidden",
-    }),
+    settings: async (projectId) => ({ tracking: docs.projectMeta(projectId).tracking }),
     recipients: async (projectId) => listQuestionRecipients(docs.project(projectId)),
   };
 }

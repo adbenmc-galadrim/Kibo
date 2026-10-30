@@ -34,19 +34,6 @@ test("capabilityIssue refuses duplicates and adapters", () => {
   );
 });
 
-test("capabilityIssue ties the embed capability to declared embeds", () => {
-  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"] })).toBe(
-    "INVALID_MANIFEST: embed needs embeds",
-  );
-  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"], embeds: [] })).toBe(
-    "INVALID_MANIFEST: embed needs embeds",
-  );
-  expect(capabilityIssue({ kind: "widget", embeds: ["itch.io"] })).toBe(
-    "INVALID_MANIFEST: embeds need the embed capability",
-  );
-  expect(capabilityIssue({ kind: "widget", capabilities: ["embed"], embeds: ["itch.io"] })).toBeNull();
-});
-
 test("a selection holds 1 to 200 unique ticket ids", () => {
   expect(Selection.safeParse({ kind: "ticket", ids: ["t1", "t2"] }).success).toBe(true);
   expect(Selection.safeParse({ kind: "ticket", ids: [] }).success).toBe(false);

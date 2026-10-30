@@ -42,7 +42,6 @@ type McpHttp = Awaited<ReturnType<typeof startFakeMcpHttp>>;
 type Command = Extract<RpcRequest, { method: "command" }>["command"];
 const Envelope = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 const Created = z.object({ id: z.string() });
-const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), text: z.string() })) });
 
 let gh: FakeGithub;
 let mcpHttp: McpHttp;
@@ -197,33 +196,10 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   return { projectId: project.id, ticketId: created.id };
 }
 
-async function mcpScenario(projectId: string): Promise<void> {
-  const page = Created.parse(await run(projectId, { method: "addPage", title: "M", kind: "view" }));
-  const instance = Created.parse(
-    await run(projectId, {
-      method: "addInstance",
-      pageId: page.id,
-      component: "kanban@1.0.0",
-    }),
-  );
-  const mcpCall = (tool: string) =>
-    ok({
-      method: "componentCall",
-      projectId,
-      instanceId: instance.id,
-      call: { kind: "mcp.call", server: "fake", tool, args: {} },
-    });
-  expect(McpText.parse(await mcpCall("env")).content[0]?.text).toContain('"hasToken":true');
-  expect(McpText.parse(await mcpCall("echo_env")).content[0]?.text).toBe("invalid token ***");
-  await mcpCall("log_env");
-  await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
-}
-
 function journalsWereWritten(tables: Place[]): void {
   const live = (where: string) => !where.includes(`${sep}backups${sep}`);
   const table = (name: string) =>
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
-  expect(table("mcp_calls")).toContain('"tool":"echo_env"');
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
   expect(table("integration_events")).toContain("connected as adam (token)");
   expect(table("component_events")).not.toBe("");
@@ -233,7 +209,6 @@ function journalsWereWritten(tables: Place[]): void {
 test("after a full scenario, no secret appears anywhere", async () => {
   await addMcpServers();
   const { projectId, ticketId } = await githubScenario();
-  await mcpScenario(projectId);
   await designScenario(design, { ok, call }, projectId, ticketId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });

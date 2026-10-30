@@ -54,8 +54,6 @@ const backendOf = (runs: ProjectCommand[], calls: ComponentCall[] = []): Project
     return [S44];
   },
   subscribe: () => () => undefined,
-  runs: async () => [],
-  subscribeRuns: () => () => undefined,
 });
 
 test("a built-in component lists the sprints of the snapshot", async () => {

@@ -10,21 +10,16 @@ import {
 } from "@dnd-kit/core";
 import { blockingQuestion, isBlocked, questionLabel, type StatusId, type TicketView } from "@kibo/schema";
 import {
-  agentTracesShown,
   filterBySource,
   groupOfTicket,
-  menuDeliverEntry,
   readSource,
   SelectionChip,
-  useDeliverFlow,
-  useDeliveryAgentKnown,
   useEntities,
   useQuestionsChipData,
   useSdk,
   useSelection,
   withoutAgentAssignee,
 } from "@kibo/sdk";
-import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
@@ -56,16 +51,11 @@ export function Kanban() {
   const sdk = useSdk();
   const { data: tickets, loading } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
-  const { data: runs } = useEntities("run");
-  const runOf = new Map(runs.map((r) => [r.ticketId, r]));
-  const questions = useQuestionsChipData(runs);
+  const questions = useQuestionsChipData();
   const { data: questionList } = useEntities("question");
   const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
-  const delivery = useDeliverFlow();
-  const agentKnown = useDeliveryAgentKnown();
-  const { agentExecution } = useComponentSettings();
   const columnOrder = useColumnOrder(sdk);
   const labelFilter = useLabelFilter(sdk);
   const [selection, setSelection] = useSelection();
@@ -92,24 +82,14 @@ export function Kanban() {
   });
   const shown = board.shown;
   const groupOf = groupOfTicket(tickets);
-  const agentTraces = agentTracesShown(agentExecution);
   const factsOf = (t: TicketView): CardFacts => ({
-    ticket: agentTraces ? t : withoutAgentAssignee(t),
+    ticket: withoutAgentAssignee(t),
     group: groupOf(t),
-    run: agentTraces ? (runOf.get(t.id) ?? null) : null,
     ciRuns: ticketCiRuns(t, ciRuns),
     blocked: isBlocked(t, questionList),
     blocking: blockingQuestion(t, questionList),
     questions,
   });
-  const deliverOf = (t: TicketView) =>
-    menuDeliverEntry({
-      ticket: t,
-      editable: true,
-      agentKnown,
-      parent: tickets.some((x) => x.parentId === t.id),
-      run: runOf.get(t.id) ?? null,
-    });
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
@@ -170,7 +150,7 @@ export function Kanban() {
   return (
     <div className="flex h-full flex-col">
       <KanbanToolbar
-        mine={scope === "all" ? null : agentTraces ? fr.filter.mineAndAgents : fr.filter.mine}
+        mine={scope === "all" ? null : fr.filter.mine}
         filters={board.filters}
         onFilters={board.choose}
         onClear={board.clear}
@@ -191,7 +171,6 @@ export function Kanban() {
         <ToolbarAlerts
           messages={[
             !blocking && error,
-            delivery.error,
             columnOrder.failed && fr.orderUnavailable,
             labelFilter.failed && fr.labelFilter.failed,
             ciProblem && fr.ciUnavailable(ciProblem),
@@ -226,9 +205,6 @@ export function Kanban() {
                   {...factsOf(t)}
                   selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
-                  deliver={deliverOf(t)}
-                  execution={agentExecution}
-                  onDeliver={(mode) => delivery.deliver(t, mode)}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}
@@ -261,7 +237,6 @@ export function Kanban() {
         />
       )}
       {held.toast}
-      {delivery.dialog}
       {removing && (
         <RemoveDialog
           ticket={removing}

@@ -1,4 +1,4 @@
-import type { CiRun, Question, TicketRun, TicketView } from "@kibo/schema";
+import type { CiRun, Question, TicketView } from "@kibo/schema";
 import { DELIVERY_STEP_LABELS, FINAL_STATUSES } from "@kibo/schema";
 import {
   DELIVERY_STEP_CHIP,
@@ -12,7 +12,6 @@ import {
 } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import type { ReactNode } from "react";
-import { AgentChip } from "./AgentChip";
 import { BlockedBadge, CardBadges, HeldBadge, OptionalBadge } from "./CardBadges";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
@@ -36,7 +35,6 @@ const featureChipRef = (group: CardGroup): GroupRef => ({
 export type CardFacts = {
   ticket: TicketView;
   group: CardGroup | null;
-  run: TicketRun | null;
   ciRuns: CiRun[];
   blocked: boolean;
   blocking: Question | null;
@@ -59,7 +57,7 @@ function StepChip({ ticket }: { ticket: TicketView }) {
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, run, ciRuns, blocked, blocking, questions, menu, title } = props;
+  const { ticket: t, group, ciRuns, blocked, blocking, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
   const reason = startReasonText(t.startReason, t.waitingOn);
@@ -106,11 +104,6 @@ export function KanbanCardContent(props: Props) {
             <span className="truncate">{reason}</span>
           </Badge>
         )}
-        <AgentChip
-          agent={t.assignee?.kind === "agent" ? t.assignee.ref : null}
-          run={run}
-          className="max-w-full"
-        />
         <StepChip ticket={t} />
         {otherQuestions > 0 && (
           <QuestionsChip

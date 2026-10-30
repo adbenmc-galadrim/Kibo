@@ -21,7 +21,6 @@ export type DataCall = Extract<
   ComponentCall,
   { kind: "data.get" | "data.set" | "data.delete" | "data.keys" }
 >;
-export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
 export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
 export type DesignCall = Extract<ComponentCall, { kind: "design.frame" | "design.storybooks" }>;
 
@@ -30,10 +29,8 @@ export type GateHandlers = {
   run(projectId: string, instanceId: string, command: ProjectCommand): Promise<unknown>;
   data(projectId: string, instanceId: string, call: DataCall): Promise<unknown>;
   fetch(url: string, init: FetchInit): Promise<FetchResponse>;
-  mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
   assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
-  embed(projectId: string, instance: Instance, url: string): Promise<unknown>;
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
@@ -70,10 +67,6 @@ function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: Comp
       return h.fetch(call.url, call.init);
     case "action":
       throw new KiboError("NOT_FOUND", `${inst.component} has no backend`);
-    case "mcp.call":
-    case "mcp.read":
-    case "mcp.import":
-      return h.mcp(projectId, inst.id, call);
     case "settings.get":
       return h.settings(projectId);
     case "project.get":
@@ -84,18 +77,10 @@ function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: Comp
     case "design.frame":
     case "design.storybooks":
       return h.design(projectId, inst.id, call);
-    case "embed.open":
-      return h.embed(projectId, inst, call.url);
     case "config.set":
       return h.config(projectId, inst, call.patch);
     case "questions.recipients":
       return h.recipients(projectId);
-    case "run.peek":
-    case "run.deliver":
-    case "run.denials":
-    case "run.allowAndResume":
-    case "run.deliveryAgent":
-      throw new KiboError("NOT_CONNECTED", `${call.kind}: Kibo no longer runs ticket agents`);
   }
 }
 
@@ -108,14 +93,8 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
   if (call.kind === "fetch" && !quotas.take(instanceId, "fetch")) {
     throw new KiboError("RATE_LIMITED", `${ref} fetches too often`);
   }
-  if (call.kind.startsWith("mcp.") && !quotas.take(instanceId, "mcp")) {
-    throw new KiboError("RATE_LIMITED", `${ref} calls mcp servers too often`);
-  }
   if (call.kind === "design.frame" && !quotas.take(instanceId, "design")) {
     throw new KiboError("RATE_LIMITED", `${ref} renders design frames too often`);
-  }
-  if (call.kind === "embed.open" && !quotas.take(instanceId, "embed")) {
-    throw new KiboError("RATE_LIMITED", `${ref} opens embedded frames too often`);
   }
 }
 

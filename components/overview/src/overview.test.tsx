@@ -58,7 +58,7 @@ test("the overview is loaded on demand behind a neutral loading line", async () 
   expect(await card("Échéances")).toBeTruthy();
 });
 
-test("the manifest reads the tracking entities and writes only runs", () => {
+test("the manifest reads the tracking entities and writes nothing", () => {
   expect(manifest.reads).toEqual([
     "ticket",
     "link",
@@ -68,7 +68,7 @@ test("the manifest reads the tracking entities and writes only runs", () => {
     "project_event",
     "ci_run",
   ]);
-  expect(manifest.writes).toEqual(["run"]);
+  expect(manifest.writes).toEqual([]);
   expect(manifest.formats).toEqual(["full"]);
   expect(manifest.size?.min).toEqual({ w: 6, h: 6 });
 });
@@ -120,15 +120,6 @@ test("copy puts the command of the next step in the clipboard and says so", asyn
   await userEvent.click(within(next).getByRole("button", { name: "Copier" }));
   await waitFor(() => expect(copied).toEqual([`/full-delivery ${key}`]));
   expect(m.toasts).toEqual(["Copié"]);
-  expect(m.runDeliveries).toEqual([]);
-});
-
-test("deliver starts the run of the next step when execution is shown", async () => {
-  const m = setup({ agentExecution: "shown" });
-  const next = await card("Prochaine à finir");
-  await userEvent.click(await within(next).findByRole("button", { name: "Livrer" }));
-  const step = m.snapshot().tickets.find((t) => t.title === "Conflits de saisie");
-  await waitFor(() => expect(m.runDeliveries).toEqual([step?.id ?? ""]));
 });
 
 test("features, sprint and questions open in the shell", async () => {

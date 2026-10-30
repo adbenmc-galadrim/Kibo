@@ -47,7 +47,7 @@ test("screen 3: built-ins only, search, preview and display", async () => {
   expect(screen.queryByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeNull();
   expect(
     screen.getByText(
-      "Intégré · confiance totale · lit : ticket, status, run, runs CI, question, sprint · écrit : ticket, run",
+      "Intégré · confiance totale · lit : ticket, status, runs CI, question, sprint · écrit : ticket",
     ),
   ).toBeTruthy();
   await user.type(search(), "graphe");

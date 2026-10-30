@@ -1,14 +1,9 @@
 import { z } from "zod";
-import { AddDirs } from "./add-dir";
-import { AllowRules } from "./allow-rule";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
-import { DeliveryKind } from "./delivery";
 import { DESIGN_URL_MAX } from "./design";
-import { EMBED_URL_MAX } from "./embed";
-import { Base64, NodeId } from "./ids";
+import { Base64 } from "./ids";
 import { DataKey } from "./instance";
-import { McpImportItem, McpServerId } from "./integrations";
 import { BuiltinEntityType } from "./manifest";
 import { AssetMime, AssetName, AssetPath, MAX_ASSET_BASE64, NotePath } from "./note";
 
@@ -55,14 +50,6 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("data.keys") }),
   z.object({ kind: z.literal("fetch"), url: z.string().max(4096), init: FetchInit }),
   z.object({ kind: z.literal("action"), name: z.string().min(1).max(128), input: z.unknown() }),
-  z.object({
-    kind: z.literal("mcp.call"),
-    server: McpServerId,
-    tool: z.string().min(1).max(128),
-    args: z.record(z.string(), z.unknown()),
-  }),
-  z.object({ kind: z.literal("mcp.read"), server: McpServerId, uri: z.string().min(1).max(2048) }),
-  z.object({ kind: z.literal("mcp.import"), server: McpServerId, item: McpImportItem }),
   z.object({ kind: z.literal("settings.get") }),
   z.object({ kind: z.literal("project.get") }),
   z.object({ kind: z.literal("assets.list") }),
@@ -73,19 +60,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     refresh: z.boolean().default(false),
   }),
   z.object({ kind: z.literal("design.storybooks") }),
-  z.object({ kind: z.literal("embed.open"), url: z.string().min(1).max(EMBED_URL_MAX) }),
   z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
   z.object({ kind: z.literal("questions.recipients") }),
-  z.object({ kind: z.literal("run.peek"), runId: z.string().min(1) }),
-  z.object({ kind: z.literal("run.deliver"), ticketId: NodeId, mode: DeliveryKind.optional() }),
-  z.object({ kind: z.literal("run.denials"), runId: z.string().min(1) }),
-  z.object({ kind: z.literal("run.deliveryAgent") }),
-  z.object({
-    kind: z.literal("run.allowAndResume"),
-    runId: z.string().min(1),
-    questionId: NodeId,
-    rules: AllowRules,
-    addDirs: AddDirs,
-  }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

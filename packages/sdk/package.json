@@ -15,7 +15,6 @@
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./markdown": "./src/markdown/index.ts",
-    "./deliver-children": "./src/deliver-children.tsx",
     "./tracking": "./src/tracking/index.ts"
   },
   "dependencies": {

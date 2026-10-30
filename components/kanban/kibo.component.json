@@ -6,9 +6,9 @@
   "size": { "min": { "w": 6, "h": 4 } },
   "title": "Kanban",
   "description": "Tickets par statut, glisser-déposer",
-  "reads": ["ticket", "status", "run", "ci_run", "question", "sprint"],
+  "reads": ["ticket", "status", "ci_run", "question", "sprint"],
   "selection": true,
-  "writes": ["ticket", "run"],
+  "writes": ["ticket"],
   "data": true,
   "configSchema": { "filter": { "enum": ["mine-and-agents", "all"], "default": "all" } }
 }

@@ -1,4 +1,3 @@
-import type { TicketRun } from "@kibo/schema";
 import { MessageCircleQuestion } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, type PointerEvent, useCallback } from "react";
 import { cn } from "./lib/utils";
@@ -45,20 +44,16 @@ export function QuestionsChip({ text, label, title, className, onOpen, ...previe
   );
 }
 
-export type QuestionsChipData = Pick<QuestionsChipProps, "questions" | "recipients" | "runLabel" | "onOpen">;
+export type QuestionsChipData = Pick<QuestionsChipProps, "questions" | "recipients" | "onOpen">;
 
-export function useQuestionsChipData(runs: readonly TicketRun[]): QuestionsChipData {
+export function useQuestionsChipData(): QuestionsChipData {
   const sdk = useSdk();
   const questions = useEntities("question").data;
   const recipients = useQuestionRecipients();
-  const runLabel = useCallback(
-    (runId: string) => runs.find((r) => r.runId === runId)?.label ?? runId,
-    [runs],
-  );
   const onOpen = useCallback(
     (questionId: string | null) =>
       sdk.openView("questions", questionId === null ? undefined : { question: questionId }),
     [sdk],
   );
-  return { questions, recipients, runLabel, onOpen };
+  return { questions, recipients, onOpen };
 }

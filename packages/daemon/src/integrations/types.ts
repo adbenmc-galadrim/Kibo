@@ -9,20 +9,16 @@ import type {
   IntegrationRpcResult,
   IntegrationStatus,
   MappedRemote,
-  McpCallResult,
-  McpImportItem,
   ProjectCommand,
   ProjectMeta,
   ProjectSnapshot,
   PullPage,
   PushOp,
   SecretName,
-  Ticket,
   Worktree,
 } from "@kibo/schema";
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
-import type { EmbedGate } from "../embed/types";
 import type { OrphanSecretName } from "../migrations/legacy-secrets";
 import type { ProjectSettings } from "../notes/settings";
 import type { Notice } from "../runs/notifier";
@@ -113,23 +109,10 @@ export type IntegrationProbe = {
   disconnect?(): Promise<void>;
 };
 
-export type McpCallContext = { projectId: string; instanceId: string };
-export type McpComponentGate = {
-  call(
-    ctx: McpCallContext,
-    server: string,
-    tool: string,
-    args: Record<string, unknown>,
-  ): Promise<McpCallResult>;
-  read(ctx: McpCallContext, server: string, uri: string): Promise<McpCallResult>;
-  importItem(ctx: McpCallContext, server: string, item: McpImportItem): Promise<Ticket>;
-};
 export type ComponentIntegrationHooks = {
   aliases: Map<string, URL>;
   observe(host: string, headers: Headers): void;
   secret: SecretResolver;
-  mcp: McpComponentGate | null;
   design: DesignGate | null;
-  embed: EmbedGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

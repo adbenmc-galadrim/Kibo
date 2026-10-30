@@ -29,17 +29,6 @@ test("data and programmed fetch work in memory, actions are refused", async () =
   await expect(m.sdk.action("nope")).rejects.toThrow("PERMISSION_DENIED");
 });
 
-test("runs are served by list in both modes and notify run subscribers", async () => {
-  const m = createMockSdk({ ...base, reads: ["ticket", "run"], writes: [] });
-  const heard: string[] = [];
-  const off = m.sdk.subscribe(() => heard.push("run"), "run");
-  m.setRuns([{ ticketId: "1@1", runId: "r1", label: "opus-dev-1", state: "running", position: null }]);
-  off();
-  expect((await m.sdk.list("run")).map((r) => r.runId)).toEqual(["r1"]);
-  expect(heard).toEqual(["run"]);
-  expect(m.used).toEqual(["read:run"]);
-});
-
 test("the mock exposes the format, defaulting to the manifest's default format", async () => {
   const m = createMockSdk(
     { ...base, kind: "both", formats: ["small", "full"], reads: ["ticket"], writes: [] },
@@ -202,32 +191,4 @@ test("questions offer recipients and image urls, no delivery, and marking stays 
       at: 1,
     }),
   ).rejects.toThrow("PERMISSION_DENIED");
-});
-
-test("a ticket with a live run is not startable in snapshot() nor in list('ticket')", async () => {
-  const m = createMockSdk(
-    { ...base, reads: ["ticket"], writes: [] },
-    {
-      seed: (run) => {
-        run({ method: "createTicket", title: "A" });
-        run({ method: "createTicket", title: "B" });
-      },
-    },
-  );
-  const [a, b] = m.snapshot().tickets;
-  if (!a || !b) throw new Error("seed failed");
-  expect(a.startable).toBe(true);
-  let changes = 0;
-  m.sdk.subscribe(() => changes++, "ticket");
-  m.setRuns([
-    { ticketId: a.id, runId: "r1", label: "opus-dev-1", state: "waiting_input", position: null },
-    { ticketId: b.id, runId: "r2", label: "opus-dev-2", state: "done", position: null },
-  ]);
-  expect(changes).toBeGreaterThan(0);
-  const startable = (tickets: { id: string; startable: boolean }[]) =>
-    Object.fromEntries(tickets.map((t) => [t.id, t.startable]));
-  expect(startable(m.snapshot().tickets)).toEqual({ [a.id]: false, [b.id]: true });
-  expect(startable(await m.sdk.list("ticket"))).toEqual({ [a.id]: false, [b.id]: true });
-  m.setRuns([]);
-  expect(m.snapshot().tickets.find((t) => t.id === a.id)?.startable).toBe(true);
 });

@@ -40,8 +40,6 @@ const backendOf = (calls: ComponentCall[]): ProjectBackend => ({
     return DESIGN;
   },
   subscribe: () => () => undefined,
-  runs: async () => [],
-  subscribeRuns: () => () => undefined,
 });
 
 test("the recipients need read:question, from the snapshot for a built-in component", async () => {

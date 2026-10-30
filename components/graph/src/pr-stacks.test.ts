@@ -37,7 +37,7 @@ const F5 = prTicket(30, {
 const step = (n: number, prs: PrSpec[], over: Partial<TicketView> = {}) =>
   withPrs(n, prs, { parentId: F5.id, ...over });
 
-const model = (tickets: TicketView[], live: string[] = []) => prStacks({ tickets, live: new Set(live) });
+const model = (tickets: TicketView[]) => prStacks({ tickets });
 const numbersOf = (node: PrNode): number[] => [node.number, ...node.children.flatMap(numbersOf)];
 const shape = (s: PrStack): number[] => numbersOf(s.root);
 
@@ -161,21 +161,18 @@ test("counts: drafts are open but not waiting, review_required waits", () => {
   expect(m.counts).toEqual({ open: 5, stacks: 5, waiting: 2, changes: 1 });
 });
 
-test("late comes from the root feature, session from the ticket or a live run", () => {
+test("late comes from the root feature, session from the ticket", () => {
   const late = prTicket(40, { shortKey: "F4", progress: { done: 1, total: 3 }, feature: FEATURE_LATE });
-  const m = model(
-    [
-      late,
-      withPrs(45, [{ number: 20 }], { parentId: late.id }),
-      withPrs(46, [{ number: 21 }], { session: { tool: "T3 Code", startedAt: 0 } }),
-      withPrs(47, [{ number: 23 }]),
-    ],
-    ["t47"],
-  );
+  const m = model([
+    late,
+    withPrs(45, [{ number: 20 }], { parentId: late.id }),
+    withPrs(46, [{ number: 21 }], { session: { tool: "T3 Code", startedAt: 0 } }),
+    withPrs(47, [{ number: 23 }]),
+  ]);
   expect(m.stacks.map((s) => [s.root.number, s.root.late, s.root.session])).toEqual([
     [20, true, false],
     [21, false, true],
-    [23, false, true],
+    [23, false, false],
   ]);
 });
 

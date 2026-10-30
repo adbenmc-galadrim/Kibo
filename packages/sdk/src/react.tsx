@@ -3,7 +3,6 @@ import {
   type EntityType,
   KiboError,
   type QuestionRecipient,
-  type RunPeek,
   type Selection,
   type Spotlight,
 } from "@kibo/schema";
@@ -43,7 +42,7 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
         },
       );
     void load();
-    const off = sdk.subscribe(() => void load(), type);
+    const off = sdk.subscribe(() => void load());
     return () => {
       alive = false;
       off();
@@ -78,13 +77,6 @@ export function useSpotlight(): Spotlight | null {
 export function useSelection(): [Selection | null, (selection: Selection | null) => void] {
   const { selection } = useSdk();
   return [useSyncExternalStore(selection.subscribe, selection.get, selection.get), selection.set];
-}
-
-export type AgentMentionHandlers = { peek(runId: string): Promise<RunPeek>; onOpen(runId: string): void };
-
-export function useAgentMention(): AgentMentionHandlers {
-  const sdk = useSdk();
-  return { peek: sdk.runs.peek, onOpen: sdk.openRun };
 }
 
 const watchProject: Watch = (sdk, l) => sdk.subscribe(l);

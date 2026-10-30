@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type ComponentCall, INBOX_ID, type Instance, type TicketRun } from "@kibo/schema";
+import { type ComponentCall, INBOX_ID, type Instance } from "@kibo/schema";
 import { addInstance, boot, createProject, type Harness, type HarnessOptions } from "./service.test-helper";
 
 let home: string;
@@ -68,28 +68,6 @@ describe("components over RPC", () => {
     await expect(
       call({ kind: "fetch", url: "https://127.0.0.1/x", init: { method: "GET", headers: {} } }),
     ).rejects.toThrow("PERMISSION_DENIED");
-  });
-
-  test("runs are listed through the gate with the run entity", async () => {
-    await h.stop();
-    const run: TicketRun = {
-      ticketId: "t1",
-      runId: "r1",
-      label: "opus-dev",
-      state: "running",
-      position: null,
-    };
-    const asked: string[] = [];
-    await start({
-      runs: (projectId) => {
-        asked.push(projectId);
-        return [run];
-      },
-    });
-    const { projectId, pageId } = await createProject(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "kanban@1.0.0"));
-    expect(await call({ kind: "list", entity: "run" })).toEqual([run]);
-    expect(asked).toEqual([projectId]);
   });
 
   test("a call for a non-builtin ref is refused with NOT_FOUND and journaled", async () => {

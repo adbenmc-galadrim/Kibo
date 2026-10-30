@@ -2,7 +2,6 @@ import type { ProjectSnapshot, RunLogEntry } from "@kibo/schema";
 import { useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { useHost } from "../shell/Host";
-import { useAgentsState } from "../state/agents-context";
 import { useRunLog } from "../state/use-run-log";
 import { agentListItems } from "./agent-list";
 import type { Decision } from "./BatchCard";
@@ -42,13 +41,10 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     return readOnly ? logged : mergeOutbox(logged, outbox.outbox);
   }, [log, view, readOnly, outbox.outbox]);
   const labels = useMemo(() => projectLabels(project), [project]);
-  const runs = useAgentsState()?.runs;
   const links = useMemo(
     () =>
-      projectQuestionLinks(project, runs ?? [], (id) =>
-        host.openView("questions", projectId, { kind: "question", id }),
-      ),
-    [project, runs, host, projectId],
+      projectQuestionLinks(project, (id) => host.openView("questions", projectId, { kind: "question", id })),
+    [project, host, projectId],
   );
   const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null);
   const agents = useMemo(() => (current.view ? agentListItems(current.view) : []), [current.view]);

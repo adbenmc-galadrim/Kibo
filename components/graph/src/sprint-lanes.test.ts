@@ -91,9 +91,6 @@ test("steps carry their tone, their git mark and the session", () => {
   expect(f5[1]?.git).toEqual({ kind: "pr", tone: "purple" });
   expect(f5[2]).toMatchObject({ tone: "progress", git: { kind: "branch", tone: "blue" }, session: true });
   expect(frame("F6").steps[0]?.tone).toBe("blocked");
-  const live = sprintLanes(kitInput({ live: new Set(["SILO-34"]) }));
-  const tests = live.lanes[1]?.frames[2]?.steps[3];
-  expect(tests?.session).toBe(true);
 });
 
 test("frame width follows the content within 126 to 262, the column adds its margins", () => {

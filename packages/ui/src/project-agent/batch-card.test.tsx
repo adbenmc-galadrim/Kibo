@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import type { Batch, StoredProposedAction } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { runFixture } from "../lib/fixtures";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
 import { partialBatch, pendingBatch, questionsProject, siloProject } from "./fixtures";
@@ -149,7 +148,7 @@ test("a question line names its question, previews it and opens it", async () =>
     expected: [{ actionId: 3, fields: { title: "Client - Logo ?", recipient: "client", delivered: false } }],
   });
   render(
-    <QuestionLinksContext.Provider value={projectQuestionLinks(project, [], (id) => opened.push(id))}>
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, (id) => opened.push(id))}>
       <BatchCard
         batch={batch}
         labels={projectLabels(project)}
@@ -192,9 +191,8 @@ test("a question line says an old delivered answer is answered, without naming a
         : q,
     ),
   };
-  const runs = [runFixture({ id: "e1", ticketKey: "SILO-12", label: "opus-dev-4", state: "done" })];
   render(
-    <QuestionLinksContext.Provider value={projectQuestionLinks(project, runs, () => {})}>
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, () => {})}>
       <BatchCard
         batch={pendingBatch({ actions: [{ id: 1, type: "reopenQuestion", questionId: "q-port", why: "" }] })}
         labels={projectLabels(project)}

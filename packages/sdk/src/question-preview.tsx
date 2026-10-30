@@ -1,7 +1,7 @@
 import type { Question, QuestionRecipient, TicketView } from "@kibo/schema";
 import { type ComponentType, lazy, type PointerEvent, type ReactElement, Suspense, useState } from "react";
-import { useDelayedOpen } from "./agent-mention";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { useDelayedOpen } from "./use-delayed-open";
 
 export const QUESTION_PREVIEW_DELAY = 300;
 
@@ -10,7 +10,6 @@ export type QuestionPreviewProps = {
   questions: readonly Question[];
   recipients: readonly QuestionRecipient[];
   ticket: Pick<TicketView, "id" | "keyLabel" | "title">;
-  runLabel(runId: string): string;
   onOpen(questionId: string): void;
   children: ReactElement;
 };

@@ -1,4 +1,4 @@
-import type { GithubPrRef, StatusId, Ticket, TicketRun } from "@kibo/schema";
+import type { GithubPrRef, StatusId, Ticket } from "@kibo/schema";
 import { createSeedTicket, type SeedRun } from "./graph-seed";
 
 type Pr = Pick<GithubPrRef, "number" | "state" | "review" | "checks" | "base" | "head">;
@@ -90,14 +90,3 @@ export function seedPrGraph(run: SeedRun): void {
   }
   createStep(run, FREE, null);
 }
-
-export const sessionRuns = (tickets: readonly Ticket[]): TicketRun[] =>
-  tickets
-    .filter((t) => PRS_SEED_SESSIONS.some((title) => title === t.title))
-    .map((t, i) => ({
-      ticketId: t.id,
-      runId: `session-${i}`,
-      label: "Opus",
-      state: "running",
-      position: null,
-    }));

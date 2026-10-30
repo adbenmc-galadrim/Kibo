@@ -52,7 +52,6 @@ function mount(questions: Question[]) {
         questions={questions}
         recipients={DEFAULT_RECIPIENTS}
         ticket={TICKET}
-        runLabel={(id) => id}
         onOpen={onOpen}
       />,
     ),

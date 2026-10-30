@@ -62,8 +62,6 @@ test("setConfig sends a config.set call in builtin and gated modes", async () =>
         return null;
       },
       subscribe: () => () => undefined,
-      runs: unused,
-      subscribeRuns: () => () => undefined,
     };
     const sdk = createSdk(backend, manifest, ctx, mode);
     await sdk.setConfig({ lightIntensity: 0.5 });

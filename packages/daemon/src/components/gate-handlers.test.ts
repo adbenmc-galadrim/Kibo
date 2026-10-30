@@ -1,18 +1,10 @@
 import { expect, test } from "bun:test";
 import { createProjectDoc, createSprint, createTicket, upsertExternalRef } from "@kibo/core";
-import {
-  type CiRun,
-  ComponentManifest,
-  DEFAULT_RECIPIENTS,
-  type EmbedView,
-  type Instance,
-  NO_ACTIVITY,
-  type ProjectMeta,
-} from "@kibo/schema";
+import { type CiRun, DEFAULT_RECIPIENTS, NO_ACTIVITY, type ProjectMeta } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
 import type { FilesService } from "../files/service";
-import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
+import type { ComponentIntegrationHooks } from "../integrations/types";
 import { createGateHandlers } from "./gate-handlers";
 import { stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
 
@@ -28,7 +20,6 @@ const files: FilesService = {
     return { url: "http://127.0.0.1:1/f/x/a.png", expiresAt: 1 };
   },
 };
-const ok = { content: [], isError: false, truncated: false };
 const ciRun: CiRun = {
   repo: "adam/kibo",
   runId: 1,
@@ -45,31 +36,14 @@ const ciRun: CiRun = {
 };
 
 function hooks(seen: unknown[]): ComponentIntegrationHooks {
-  const log = (ctx: McpCallContext, ...rest: unknown[]) =>
-    seen.push([ctx.projectId, ctx.instanceId, ...rest]);
   return {
     aliases: new Map(),
     observe: () => {},
     secret: async () => null,
     design: null,
-    embed: null,
     ciRuns: async (projectId) => {
       seen.push(["ci", projectId]);
       return [ciRun];
-    },
-    mcp: {
-      call: async (ctx, server, tool, args) => {
-        log(ctx, server, tool, args);
-        return ok;
-      },
-      read: async (ctx, server, uri) => {
-        log(ctx, server, uri);
-        return ok;
-      },
-      importItem: async (ctx, server, item) => {
-        log(ctx, server, item);
-        return unused();
-      },
     },
   };
 }
@@ -81,29 +55,9 @@ const handlersWith = (integrations: ComponentIntegrationHooks | null | undefined
     ...(integrations !== undefined && { integrations: () => integrations }),
   });
 
-test("mcp calls reach the hub gate with the calling instance", async () => {
-  const seen: unknown[] = [];
-  const h = handlersWith(hooks(seen));
-  expect(await h.mcp("p", "i1", { kind: "mcp.call", server: "ctx", tool: "echo", args: { a: 1 } })).toEqual(
-    ok,
-  );
-  expect(await h.mcp("p", "i1", { kind: "mcp.read", server: "ctx", uri: "fake://x" })).toEqual(ok);
-  await expect(
-    h.mcp("p", "i1", { kind: "mcp.import", server: "ctx", item: { itemId: "a", title: "A", url: null } }),
-  ).rejects.toThrow("unused");
-  expect(seen).toEqual([
-    ["p", "i1", "ctx", "echo", { a: 1 }],
-    ["p", "i1", "ctx", "fake://x"],
-    ["p", "i1", "ctx", { itemId: "a", title: "A", url: null }],
-  ]);
-});
-
-test("without a hub or a ci poller the calls fail with stable codes", async () => {
-  for (const integrations of [undefined, null, { ...hooks([]), mcp: null, ciRuns: null }]) {
+test("without a ci poller the call fails with a stable code", async () => {
+  for (const integrations of [undefined, null, { ...hooks([]), ciRuns: null }]) {
     const h = handlersWith(integrations);
-    await expect(h.mcp("p", "i1", { kind: "mcp.read", server: "ctx", uri: "x" })).rejects.toThrow(
-      "MCP_UNAVAILABLE",
-    );
     await expect(h.list("p", "ci_run")).rejects.toThrow("NOT_CONNECTED");
   }
 });
@@ -200,61 +154,6 @@ test("the gate has no handler to deliver answers to an agent", () => {
   expect("questions" in createGateHandlers(stubHandlerDeps)).toBe(false);
 });
 
-test("embedded frames reach the embed gate with the manifest of the calling instance", async () => {
-  const manifest = ComponentManifest.parse({
-    id: "frame",
-    version: "1.0.0",
-    kind: "both",
-    title: "Cadre intégré",
-    reads: [],
-    writes: [],
-    capabilities: ["embed"],
-    embeds: ["itch.io"],
-  });
-  const instance: Instance = {
-    id: "i1",
-    pageId: "pg",
-    component: "frame@1.0.0",
-    layout: { x: 0, y: 0, w: 6, h: 4 },
-    config: {},
-    componentHash: null,
-  };
-  const view: EmbedView = {
-    url: "http://127.0.0.1:1/e/x",
-    kind: "game",
-    sandbox: "",
-    allow: "",
-    expiresAt: 1,
-    target: "https://itch.io/embed-upload/1",
-  };
-  const seen: unknown[] = [];
-  const h = createGateHandlers({
-    ...stubHandlerDeps,
-    manifestOf: async (ref) => {
-      seen.push(["manifest", ref]);
-      return manifest;
-    },
-    integrations: () => ({
-      ...hooks([]),
-      embed: {
-        open: async (ctx, url) => {
-          seen.push([ctx.projectId, ctx.instanceId, ctx.manifest.embeds, url]);
-          return view;
-        },
-      },
-    }),
-  });
-  expect(await h.embed("p", instance, view.target)).toEqual(view);
-  expect(seen).toEqual([
-    ["manifest", "frame@1.0.0"],
-    ["p", "i1", ["itch.io"], view.target],
-  ]);
-  for (const integrations of [undefined, null, hooks([])])
-    await expect(handlersWith(integrations).embed("p", instance, view.target)).rejects.toThrow(
-      "NOT_CONNECTED",
-    );
-});
-
 const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   id: "p1",
   key: "SILO",
@@ -270,17 +169,17 @@ const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   client: null,
 });
 
-test("settings.get reads the project tracking, agent execution stays hidden", async () => {
+test("settings.get reads the project tracking", async () => {
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
     docs: { ...stubDocs, projectMeta: () => metaWith({ openLimit: 3 }) },
   });
-  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 }, agentExecution: "hidden" });
+  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 } });
   const defaults = createGateHandlers({
     ...stubHandlerDeps,
     docs: { ...stubDocs, projectMeta: () => metaWith(null) },
   });
-  expect(await defaults.settings("p1")).toEqual({ tracking: null, agentExecution: "hidden" });
+  expect(await defaults.settings("p1")).toEqual({ tracking: null });
 });
 
 test("project.get names the project and the repository of its first pull request", async () => {

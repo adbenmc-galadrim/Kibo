@@ -34,13 +34,6 @@ test("questions.recipients reaches the recipients handler", async () => {
   expect(handled).toEqual(["recipients:p1"]);
 });
 
-test("run.peek is no longer connected", async () => {
-  const peek: ComponentCall = { kind: "run.peek", runId: "r1" };
-  const { gate: g, handled } = testGate();
-  await refused(g.call("p1", "builtin", peek), "NOT_CONNECTED");
-  expect(handled).toEqual([]);
-});
-
 test("a component never marks answers delivered", async () => {
   const mark: ComponentCall = {
     kind: "run",

@@ -8,9 +8,7 @@ afterEach(cleanup);
 
 const noop = () => undefined;
 const handlers: OverviewHandlers = {
-  execution: "hidden",
   copy: async () => undefined,
-  deliver: async () => undefined,
   onOpenTicket: noop,
   onOpenSprint: noop,
   onOpenQuestion: noop,

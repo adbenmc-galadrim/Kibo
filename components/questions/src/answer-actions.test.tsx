@@ -20,7 +20,6 @@ const mount = (opts: MockSdkOptions = {}) => {
     seed,
     surface: "view",
     config: { scope: "all" },
-    agentExecution: "shown",
     ...opts,
   });
   render(

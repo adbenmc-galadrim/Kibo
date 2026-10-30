@@ -18,7 +18,6 @@ export const BuiltinEntityType = z.enum([
   "status",
   "link",
   "page",
-  "run",
   "ci_run",
   "question",
   "sprint",

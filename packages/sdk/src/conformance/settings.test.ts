@@ -10,15 +10,12 @@ const manifest = (reads: ("ticket" | "status")[]) => ({
   writes: [],
 });
 
-test("a component reads the project tracking and the agent execution, hidden by default", async () => {
+test("a component reads the project tracking", async () => {
   const mock = createMockSdk(manifest(["ticket"]));
-  expect(await mock.sdk.settings.get()).toEqual({ tracking: null, agentExecution: "hidden" });
+  expect(await mock.sdk.settings.get()).toEqual({ tracking: null });
   expect(mock.used).toContain("read:ticket");
-  const planned = createMockSdk(manifest(["ticket"]), {
-    tracking: { openLimit: 3 },
-    agentExecution: "shown",
-  });
-  expect(await planned.sdk.settings.get()).toEqual({ tracking: { openLimit: 3 }, agentExecution: "shown" });
+  const planned = createMockSdk(manifest(["ticket"]), { tracking: { openLimit: 3 } });
+  expect(await planned.sdk.settings.get()).toEqual({ tracking: { openLimit: 3 } });
 });
 
 test("reading the settings needs read:ticket, and the violation is recorded", async () => {
@@ -27,17 +24,16 @@ test("reading the settings needs read:ticket, and the violation is recorded", as
   expect(mock.violations).toEqual(["read settings"]);
 });
 
-test("the host notifies a change of the project tracking or of the machine setting", async () => {
+test("the host notifies a change of the project tracking", async () => {
   const mock = createMockSdk(manifest(["ticket"]));
   let calls = 0;
   const off = mock.sdk.settings.subscribe(() => {
     calls += 1;
   });
   mock.setTracking({ openLimit: 4 });
-  mock.setAgentExecution("shown");
-  expect(calls).toBe(2);
-  expect(await mock.sdk.settings.get()).toEqual({ tracking: { openLimit: 4 }, agentExecution: "shown" });
+  expect(calls).toBe(1);
+  expect(await mock.sdk.settings.get()).toEqual({ tracking: { openLimit: 4 } });
   off();
-  mock.setAgentExecution("hidden");
-  expect(calls).toBe(2);
+  mock.setTracking({ openLimit: 5 });
+  expect(calls).toBe(1);
 });
