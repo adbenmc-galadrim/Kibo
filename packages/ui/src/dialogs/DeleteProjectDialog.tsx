@@ -87,31 +87,6 @@ function ErrorLine({ error }: { error: string | null }) {
   );
 }
 
-function ConfirmDemo({
-  project,
-  onClose,
-  onDeleted,
-}: Pick<ConfirmProps, "project" | "onClose" | "onDeleted">) {
-  const { busy, error, remove } = useDeletion(project.id, onDeleted);
-  return (
-    <div className="grid gap-4">
-      <DialogHeader>
-        <DialogTitle>{t.demoTitle}</DialogTitle>
-        <DialogDescription>{t.demoHelp}</DialogDescription>
-      </DialogHeader>
-      <ErrorLine error={error} />
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
-          {t.cancel}
-        </Button>
-        <Button type="button" variant="destructive" disabled={busy} onClick={() => void remove()}>
-          {t.demoConfirm}
-        </Button>
-      </DialogFooter>
-    </div>
-  );
-}
-
 function ConfirmByName({ project, snapshot, onClose, onDeleted }: ConfirmProps) {
   const id = useId();
   const [typed, setTyped] = useState("");
@@ -173,10 +148,7 @@ export function DeleteProjectDialog({ project, snapshot, activeRuns, onClose, on
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         {variant === "busy" && <Blocked title={t.busyTitle} text={t.busy(activeRuns)} onClose={onClose} />}
-        {variant === "delete" && project.demo && (
-          <ConfirmDemo project={project} onClose={onClose} onDeleted={onDeleted} />
-        )}
-        {variant === "delete" && !project.demo && (
+        {variant === "delete" && (
           <ConfirmByName project={project} snapshot={snapshot} onClose={onClose} onDeleted={onDeleted} />
         )}
       </DialogContent>

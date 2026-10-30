@@ -207,12 +207,8 @@ export function commandsFor(
     case "deleteQuestion":
     case "addRecipient":
       return questionCommands(action, ids, by, project);
-    case "assignAgent":
-    case "deliverAnswers":
-    case "cancelRun":
     case "createNote":
     case "updateNote":
-    case "dismissSignal":
       return [];
   }
 }

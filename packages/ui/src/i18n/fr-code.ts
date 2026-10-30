@@ -96,7 +96,6 @@ export const frCode = {
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
     FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
-    AGENT_EXECUTION_REMOVED:
-      "Kibo ne lance plus d'agent de ticket : le développement se fait dans T3 Code avec /full-delivery.",
+    BACKUP_FAILED: "La sauvegarde n'a pas pu être écrite.",
   },
 } as const;

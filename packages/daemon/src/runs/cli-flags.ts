@@ -1,5 +1,24 @@
 import { KiboError } from "@kibo/schema";
-import { CLAUDE_BUILTIN_TOOLS } from "./claude-cli";
+
+const CLAUDE_BUILTIN_TOOLS = [
+  "Agent",
+  "Bash",
+  "BashOutput",
+  "Edit",
+  "ExitPlanMode",
+  "Glob",
+  "Grep",
+  "KillShell",
+  "MultiEdit",
+  "NotebookEdit",
+  "Read",
+  "SlashCommand",
+  "Task",
+  "TodoWrite",
+  "WebFetch",
+  "WebSearch",
+  "Write",
+] as const;
 
 export type CliFallbacks = {
   agentsInline: boolean;

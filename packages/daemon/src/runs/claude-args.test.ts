@@ -5,12 +5,9 @@ import {
   ASK_TOOL,
   HookEventName,
   KiboError,
-  PROGRESS_TOOL,
   PROJECT_AGENT_DENY,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_READ_TOOLS,
-  SIGNAL_TOOL,
-  TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { claudeArgs, claudeSettings, parseHelp, permissionFlag, readCliCaps } from "./claude-args";
 import { FAKE_CLAUDE } from "./fake-claude-scenario";
@@ -97,32 +94,13 @@ test("a project run passes its private MCP config file and its deny rules", () =
   expect(args.join(" ")).not.toContain("KIBO_RUN_TOKEN");
 });
 
-test("a ticket run allows ticket_progress right after the ask tools; no profile can grant it elsewhere", () => {
-  const args = claudeArgs({
-    ...base,
-    allow: ["Edit", PROGRESS_TOOL],
-    mcpTools: "ticket",
-    mcpConfigFile: "/r/mcp.json",
-    sessionId: "s1",
-    resume: false,
-  });
-  const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
-  expect(settings.permissions.allow).toEqual([...TICKET_MCP_TOOLS, "Edit"]);
-  expect(settings.permissions.allow).toContain("mcp__kibo__signal_project");
-  expect(JSON.parse(claudeSettings(kiboHook, [SIGNAL_TOOL, "Edit"])).permissions.allow).toEqual([
-    ASK_TOOL,
-    ASK_QUESTION_TOOL,
-    "Edit",
-  ]);
-  expect(JSON.parse(claudeSettings(kiboHook, [PROGRESS_TOOL, "Edit"])).permissions.allow).toEqual([
-    ASK_TOOL,
-    ASK_QUESTION_TOOL,
-    "Edit",
-  ]);
-  expect(JSON.parse(claudeSettings(kiboHook, [PROGRESS_TOOL], [], "project")).permissions.allow).toEqual([
-    ASK_TOOL,
-    ASK_QUESTION_TOOL,
-  ]);
+test("a profile rule naming a tool of the retired ticket agents is refused as unsafe", () => {
+  for (const retired of [
+    "mcp__kibo__ticket_progress",
+    "mcp__kibo__signal_project",
+    "mcp__kibo__skill_review",
+  ])
+    expect(() => claudeSettings(kiboHook, [retired, "Edit"])).toThrow("INVALID_INPUT");
 });
 
 test("settings carry deny rules only when there are some", () => {

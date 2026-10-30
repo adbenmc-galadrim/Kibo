@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ProposedAction } from "@kibo/schema";
+import type { ProposedAction, RetiredAction, StoredProposedAction } from "@kibo/schema";
 import {
   actionDiff,
   actionDiffs,
@@ -8,22 +8,31 @@ import {
   groupActions,
   projectLabels,
   replacesContent,
-  signalProvenance,
+  retiredActions,
 } from "./batch-groups";
 import { pendingBatch, questionsProject, siloProject } from "./fixtures";
-import { OPEN_SIGNALS } from "./signal-fixtures";
 
-test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
+test("groupActions keeps Tickets, Questions, Notes and the id order inside each group", () => {
   const shuffled = [...pendingBatch().actions].reverse();
   expect(groupActions(shuffled).map((g) => [g.group, g.actions.map((a) => a.id)])).toEqual([
-    ["tickets", [1, 2, 3]],
-    ["agents", [4]],
+    ["tickets", [1, 2, 3, 4]],
     ["questions", [5, 6]],
     ["notes", [7]],
   ]);
   expect(
     groupActions([{ id: 1, type: "createNote", path: "a.md", content: "", why: "" }]).map((g) => g.group),
   ).toEqual(["notes"]);
+});
+
+test("groupActions leaves out the retired actions, and retiredActions returns them in order", () => {
+  const retired: RetiredAction[] = [
+    { id: 8, type: "assignAgent", ticket: "SILO-12", profileId: "opus", why: "" },
+    { id: 9, type: "cancelRun", runId: "r9", why: "" },
+  ];
+  const stored: StoredProposedAction[] = [...pendingBatch().actions, ...retired];
+  expect(groupActions(stored).flatMap((g) => g.actions.map((a) => a.id))).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  expect(retiredActions(stored)).toEqual(retired);
+  expect(retiredActions(pendingBatch().actions)).toEqual([]);
 });
 
 const titles: [ProposedAction, string][] = [
@@ -38,9 +47,6 @@ const titles: [ProposedAction, string][] = [
     { id: 1, type: "unlink", from: "SILO-1", to: "SILO-2", kind: "relates", why: "" },
     "Retirer le lien entre SILO-1 et SILO-2",
   ],
-  [{ id: 1, type: "assignAgent", ticket: "SILO-1", profileId: "opus", why: "" }, "Assigner SILO-1 à opus"],
-  [{ id: 1, type: "deliverAnswers", ticket: "SILO-1", why: "" }, "Transmettre les réponses de SILO-1"],
-  [{ id: 1, type: "cancelRun", runId: "r9", why: "" }, "Annuler le run r9"],
   [
     { id: 1, type: "answerQuestion", questionId: "q", answer: { kind: "confirm" }, why: "" },
     "Répondre « Confirmer »",
@@ -119,7 +125,9 @@ test("actionDiff shows before → after from the captured state", () => {
   expect(actionDiff(note, { actionId: 7, fields: { hash: "abc" } })).toBeNull();
   expect(replacesContent(note)).toBe(true);
   expect(actionDiff(status, undefined)).toEqual({ before: "—", after: "En review" });
-  expect(actionDiff({ id: 1, type: "cancelRun", runId: "r", why: "" }, undefined)).toBeNull();
+  expect(
+    actionDiff({ id: 1, type: "link", from: "SILO-1", to: "SILO-2", kind: "blocks", why: "" }, undefined),
+  ).toBeNull();
 });
 
 test("custom workflow labels are used when given", () => {
@@ -156,36 +164,6 @@ test("a parent change shows the captured parentId as a key from the project, nev
     ),
   ).toEqual({ before: "ticket introuvable", after: "new:1" });
   expect(actionDiff(move("SILO-11"), undefined, labels)).toEqual({ before: "—", after: "SILO-11" });
-});
-
-test("an assignment names the agent, never its ref", () => {
-  const assign: ProposedAction = { id: 1, type: "assignAgent", ticket: "SILO-1", profileId: "p-42", why: "" };
-  const labels = projectLabels(siloProject(), [{ ref: "p-42", name: "opus-dev" }]);
-  expect(actionTitle(assign, labels)).toBe("Assigner SILO-1 à opus-dev");
-  expect(actionTitle({ ...assign, profileId: "global:gone" }, labels)).toBe("Assigner SILO-1 à gone");
-});
-
-test("dismissSignal goes to the Signaux group, after Notes, with its own title", () => {
-  const dismiss: ProposedAction = { id: 9, type: "dismissSignal", signal: "sig:3", why: "Déjà connu" };
-  const groups = groupActions([...pendingBatch().actions, dismiss]);
-  expect(groups.at(-1)).toEqual({ group: "signals", actions: [dismiss] });
-  expect(actionTitle(dismiss)).toBe("Signal sig:3 : sans suite");
-});
-
-test("signalProvenance names the kind and the run of each cited signal", () => {
-  const cited: ProposedAction = {
-    id: 1,
-    type: "createTicket",
-    ref: "new:1",
-    title: "Tests",
-    why: "",
-    signals: ["sig:1", "sig:2", "sig:9"],
-  };
-  expect(signalProvenance(cited, OPEN_SIGNALS)).toEqual([
-    "signal Ticket à créer de opus-dev-2",
-    "signal Blocage de opus-dev-3",
-  ]);
-  expect(signalProvenance({ ...cited, signals: undefined }, OPEN_SIGNALS)).toEqual([]);
 });
 
 test("question actions read the title and the recipient from the project", () => {

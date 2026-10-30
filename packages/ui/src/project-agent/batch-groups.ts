@@ -1,24 +1,23 @@
 import {
   ACTION_GROUPS,
   type ActionGroup,
-  type AgentSummary,
   type AnswerInput,
   DEFAULT_WORKFLOW,
   type ExpectedState,
   findRecipient,
+  isRetiredAction,
   type ProjectSnapshot,
   type ProposedAction,
-  type Signal,
+  type RetiredAction,
+  type StoredProposedAction,
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { frSignals } from "../i18n/fr-signals";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { field?: string; before: string; after: string };
 export type DiffLabels = {
   status(statusId: string): string;
   ticket(ticketId: string): string | null;
-  profile(profileId: string): string;
   question(questionId: string): string | null;
   recipient(recipient: string): string;
   feature?(ticket: string): FeatureLabel;
@@ -27,7 +26,7 @@ export type DiffLabels = {
 export type FeatureLabel = { label: string; sprint: string | null };
 export type Reminder = { recipient: string; ref: string };
 
-const ORDER: readonly ActionGroup[] = ["tickets", "sprints", "agents", "questions", "notes", "signals"];
+const ORDER: readonly ActionGroup[] = ["tickets", "sprints", "questions", "notes"];
 const t = frProjectAgent.action;
 const field = frProjectAgent.field;
 const NOTHING = "—";
@@ -36,19 +35,14 @@ const CLIENT_RECIPIENT = "client";
 export const defaultLabels: DiffLabels = {
   status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
   ticket: () => null,
-  profile: (id) => id,
   question: () => null,
   recipient: (id) => id,
 };
 
-export function projectLabels(
-  project: ProjectSnapshot,
-  agents: readonly Pick<AgentSummary, "ref" | "name">[] = [],
-): DiffLabels {
+export function projectLabels(project: ProjectSnapshot): DiffLabels {
   return {
     status: (id) => project.workflow.find((s) => s.id === id)?.label ?? id,
     ticket: (id) => project.tickets.find((t) => t.id === id)?.keyLabel ?? null,
-    profile: (id) => agents.find((a) => a.ref === id)?.name ?? id.slice(id.lastIndexOf(":") + 1),
     question: (id) => project.questions.find((q) => q.id === id)?.title ?? null,
     recipient: (raw) => findRecipient(project.questionRecipients, raw)?.name ?? raw,
     feature: (key) => featureLabel(project, key),
@@ -73,8 +67,13 @@ function reminderOf(project: ProjectSnapshot, id: string): Reminder | null {
   return { recipient, ref: question.importRef?.id ?? t.quoted(question.title) };
 }
 
-export function groupActions(actions: readonly ProposedAction[]): BatchGroup[] {
-  const sorted = [...actions].sort((a, b) => a.id - b.id);
+const isLive = (action: StoredProposedAction): action is ProposedAction => !isRetiredAction(action);
+
+export const retiredActions = (actions: readonly StoredProposedAction[]): RetiredAction[] =>
+  actions.filter(isRetiredAction);
+
+export function groupActions(actions: readonly StoredProposedAction[]): BatchGroup[] {
+  const sorted = actions.filter(isLive).sort((a, b) => a.id - b.id);
   return ORDER.flatMap((group) => {
     const inGroup = sorted.filter((a) => ACTION_GROUPS[a.type] === group);
     return inGroup.length === 0 ? [] : [{ group, actions: inGroup }];
@@ -98,12 +97,6 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.link(action.from, action.to);
     case "unlink":
       return t.unlink(action.from, action.to);
-    case "assignAgent":
-      return t.assignAgent(action.ticket, labels.profile(action.profileId));
-    case "deliverAnswers":
-      return t.deliverAnswers(action.ticket);
-    case "cancelRun":
-      return t.cancelRun(action.runId);
     case "answerQuestion":
       return t.answerQuestion(answerText(action.answer));
     case "createQuestion":
@@ -122,8 +115,6 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.createNote(action.path);
     case "updateNote":
       return t.updateNote(action.path);
-    case "dismissSignal":
-      return t.dismissSignal(action.signal);
     case "setSprint":
       return sprintTitle(action, labels);
     case "createSprint":
@@ -236,11 +227,3 @@ export const replacesContent = (action: ProposedAction): boolean =>
   action.type === "updateNote" ||
   (action.type === "updateTicket" && action.description !== undefined) ||
   (action.type === "updateQuestion" && action.context !== undefined);
-
-export function citedSignals(action: ProposedAction, signals: readonly Signal[]): Signal[] {
-  const refs = action.type === "dismissSignal" ? [action.signal] : (action.signals ?? []);
-  return refs.flatMap((ref) => signals.find((s) => s.ref === ref) ?? []);
-}
-
-export const signalProvenance = (action: ProposedAction, signals: readonly Signal[]): string[] =>
-  citedSignals(action, signals).map((s) => frSignals.provenance(frSignals.kinds[s.kind], s.runLabel));

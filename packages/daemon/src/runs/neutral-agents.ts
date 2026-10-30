@@ -45,7 +45,7 @@ export const NEUTRAL_SYSTEM_AGENTS: readonly Agent[] = SYSTEM_AGENT_IDS.map((id)
     ref: systemAgentRef(id),
     scope: "system",
     name: systemAgentName(id),
-    settings: systemAgentSettings(id, {}),
+    settings: systemAgentSettings({}),
   }),
 );
 

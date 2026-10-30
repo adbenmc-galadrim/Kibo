@@ -69,8 +69,8 @@ const state: TabsState = {
     { id: "pinned", target: { kind: "project", projectId: "p1" }, pinned: true, preview: false },
     { id: "board", target: { kind: "page", projectId: "p1", pageId: "1@1" }, pinned: false, preview: false },
     {
-      id: "changes",
-      target: { kind: "changes", projectId: "p1", worktree: null },
+      id: "file",
+      target: { kind: "file", projectId: "p1", worktree: null, path: "src/a.ts", line: null },
       pinned: false,
       preview: false,
     },
@@ -90,7 +90,6 @@ function renderBar(onOpenWindow: ((t: TabTarget) => void) | null = null) {
     <TabBar
       state={state}
       describe={(t) => describeTarget(t, ctx)}
-      isDirty={(t) => t.kind === "changes"}
       dispatch={(a) => actions.push(a)}
       onNewTab={() => actions.push({ type: "activate", id: "new" })}
       onOpenWindow={onOpenWindow}
@@ -107,7 +106,6 @@ test("titles follow « Projet · Page », pinned tabs are compact, missing targe
   expect(within(bar).getByRole("tab", { name: "Kibo · Kanban" }).getAttribute("aria-selected")).toBe("true");
   expect(within(bar).getByRole("tab", { name: "Kibo" }).textContent).toBe("");
   expect(within(bar).getByRole("tab", { name: "Page introuvable" })).toBeTruthy();
-  expect(within(bar).getByRole("img", { name: "Changements non commités" })).toBeTruthy();
   expect(within(bar).queryByRole("button", { name: "Fermer Kibo" })).toBeNull();
 });
 
@@ -124,7 +122,6 @@ test("a preview tab is italic, labelled, kept by double click, shift+enter or th
     <TabBar
       state={preview}
       describe={(t) => describeTarget(t, ctx)}
-      isDirty={() => false}
       dispatch={(a) => dispatched.push(a)}
       onNewTab={() => {}}
       onOpenWindow={null}
@@ -158,8 +155,8 @@ test("a permanent tab has a straight title and no « Garder ouvert »", async ()
 });
 
 test("a screen tab is named after the screen, outside any project", () => {
-  expect(describeTarget({ kind: "screen", screen: "queue" }, ctx)).toMatchObject({
-    title: "Files d'attente",
+  expect(describeTarget({ kind: "screen", screen: "inbox" }, ctx)).toMatchObject({
+    title: "Boîte de réception",
     color: null,
     missing: false,
   });
@@ -168,7 +165,7 @@ test("a screen tab is named after the screen, outside any project", () => {
 
 test("click activates, the cross and the middle button close, + opens a new tab", async () => {
   const actions = renderBar();
-  await userEvent.click(screen.getByRole("tab", { name: "Kibo · Changements" }));
+  await userEvent.click(screen.getByRole("tab", { name: "a.ts" }));
   await userEvent.click(screen.getByRole("button", { name: "Fermer Kibo · Kanban" }));
   fireEvent(
     screen.getByRole("tab", { name: "Page introuvable" }),
@@ -176,7 +173,7 @@ test("click activates, the cross and the middle button close, + opens a new tab"
   );
   await userEvent.click(screen.getByRole("button", { name: "Nouvel onglet" }));
   expect(actions).toEqual([
-    { type: "activate", id: "changes" },
+    { type: "activate", id: "file" },
     { type: "close", id: "board" },
     { type: "close", id: "gone" },
     { type: "activate", id: "new" },
@@ -218,9 +215,9 @@ test("useTabs loads the stored state and saves changes after a debounce", async 
   const { result } = renderHook(() => useTabs());
   await waitFor(() => expect(result.current?.state).toEqual(state));
   expect(saved).toHaveLength(0);
-  act(() => result.current?.dispatch({ type: "activate", id: "changes" }));
+  act(() => result.current?.dispatch({ type: "activate", id: "file" }));
   await waitFor(() => expect(saved).toHaveLength(1), { timeout: 1000 });
-  expect(saved[0]).toEqual({ method: "saveTabs", state: { ...state, activeId: "changes" } });
+  expect(saved[0]).toEqual({ method: "saveTabs", state: { ...state, activeId: "file" } });
 });
 
 const pageTarget = (pageId: string): TabTarget => ({ kind: "page", projectId: "p1", pageId });
@@ -322,9 +319,9 @@ test("reopen activates the tab that already holds the closed target and pops it"
 test("closing a project drops its targets from the closed pile", async () => {
   const api = await mountTabs();
   act(() => api().open(pageTarget("1"), { newTab: true }));
-  act(() => api().open({ kind: "screen", screen: "agents" }, { newTab: true }));
+  act(() => api().open({ kind: "screen", screen: "inbox" }, { newTab: true }));
   act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
   act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
   act(() => api().dispatch({ type: "closeProject", projectId: "p1" }));
-  expect(api().closed).toEqual([{ kind: "screen", screen: "agents" }]);
+  expect(api().closed).toEqual([{ kind: "screen", screen: "inbox" }]);
 });

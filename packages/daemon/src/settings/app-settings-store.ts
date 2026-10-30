@@ -5,8 +5,6 @@ export type AppSettingsStore = { get(): AppSettings; set(patch: AppSettingsPatch
 
 type Row = { key: string; json: string };
 
-const IGNORED_KEYS: ReadonlySet<string> = new Set(["agentExecution"]);
-
 function parseJson(row: Row): unknown {
   try {
     return JSON.parse(row.json);
@@ -28,7 +26,7 @@ export function createAppSettingsStore(db: Database, now: () => number): AppSett
       "ON CONFLICT(key) DO UPDATE SET json = excluded.json, updated_at = excluded.updated_at",
   );
   const get = (): AppSettings => {
-    const rows = select.all().filter((row) => !IGNORED_KEYS.has(row.key));
+    const rows = select.all();
     const stored = Object.fromEntries(rows.map((row) => [row.key, parseJson(row)]));
     const parsed = AppSettings.safeParse(stored);
     if (!parsed.success) throw new KiboError("STORE_CORRUPT", `app settings: ${parsed.error.message}`);

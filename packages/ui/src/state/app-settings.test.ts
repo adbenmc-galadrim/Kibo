@@ -41,14 +41,14 @@ function fakeSource(stored: AppSettings): FakeSource {
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
-test("before the first read, agent execution is hidden", () => {
-  const store = createAppSettingsStore(fakeSource({ agentExecution: "shown" }));
+test("before the first read, the store holds the empty defaults", () => {
+  const store = createAppSettingsStore(fakeSource({}));
   expect(store.get()).toEqual(DEFAULT_APP_SETTINGS);
-  expect(DEFAULT_APP_SETTINGS.agentExecution).toBe("hidden");
+  expect(DEFAULT_APP_SETTINGS).toEqual({});
 });
 
 test("the first subscriber reads the settings from the daemon", async () => {
-  const source = fakeSource({ agentExecution: "shown" });
+  const source = fakeSource({});
   const store = createAppSettingsStore(source);
   let seen = 0;
   const off = store.subscribe(() => {
@@ -56,44 +56,44 @@ test("the first subscriber reads the settings from the daemon", async () => {
   });
   await flush();
   expect(source.reads).toBe(1);
-  expect(store.get().agentExecution).toBe("shown");
+  expect(store.get()).toBe(source.stored);
   expect(seen).toBe(1);
   off();
 });
 
 test("a config message reloads the settings", async () => {
-  const source = fakeSource({ agentExecution: "hidden" });
+  const source = fakeSource({});
   const store = createAppSettingsStore(source);
   const off = store.subscribe(() => undefined);
   await flush();
-  source.stored = { agentExecution: "shown" };
+  source.stored = {};
   source.emitConfig();
   await flush();
   expect(source.reads).toBe(2);
-  expect(store.get().agentExecution).toBe("shown");
+  expect(store.get()).toBe(source.stored);
   off();
   expect(source.listeners.size).toBe(0);
 });
 
 test("an update sends the patch and keeps the daemon's answer", async () => {
-  const source = fakeSource({ agentExecution: "hidden" });
+  const source = fakeSource({});
   const store = createAppSettingsStore(source);
-  const next = await store.update({ agentExecution: "shown" });
-  expect(source.writes).toEqual([{ agentExecution: "shown" }]);
-  expect(next.agentExecution).toBe("shown");
-  expect(store.get().agentExecution).toBe("shown");
+  const next = await store.update({});
+  expect(source.writes).toEqual([{}]);
+  expect(next).toBe(source.stored);
+  expect(store.get()).toBe(source.stored);
 });
 
 test("a failed read keeps the current settings", async () => {
-  const source = fakeSource({ agentExecution: "shown" });
+  const source = fakeSource({});
   source.getAppSettings = () => Promise.reject(new Error("offline"));
   const store = createAppSettingsStore(source, () => undefined);
   const off = store.subscribe(() => undefined);
   await flush();
-  expect(store.get()).toEqual(DEFAULT_APP_SETTINGS);
+  expect(store.get()).toBe(DEFAULT_APP_SETTINGS);
   off();
 });
 
-test("without a provider, agent execution is hidden", () => {
-  expect(renderHook(() => useAppSettings()).result.current).toEqual({ agentExecution: "hidden" });
+test("without a provider, the settings are empty", () => {
+  expect(renderHook(() => useAppSettings()).result.current).toEqual({});
 });

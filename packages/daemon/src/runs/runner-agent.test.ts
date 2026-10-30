@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { TICKET_MCP_TOOLS } from "@kibo/schema";
 import { type AgentFlags, BUILTIN_TOOLS, NO_AGENT_FLAGS, NO_CLI_FALLBACKS } from "./cli-flags";
 import { claudeArgs } from "./runner";
 
@@ -12,7 +11,7 @@ const base: Parameters<typeof claudeArgs>[0] = {
   allow: ["Bash(git *)"],
   deny: [],
   mcpConfigFile: "/r/mcp.json",
-  mcpTools: "ticket",
+  mcpTools: "project",
   addDirs: [],
   sessionId: "s1",
   resume: false,
@@ -55,7 +54,6 @@ test("a fresh session passes the agent's model, settings, subagents, tools, snap
   expect(allow).toContain("Skill(brainstorming)");
   expect(allow).toContain("Skill(superpowers:brainstorming)");
   expect(allow).toContain("Bash(git *)");
-  for (const tool of TICKET_MCP_TOOLS) expect(allow).toContain(tool);
 });
 
 test("a resumed session keeps the flags but not the name", () => {

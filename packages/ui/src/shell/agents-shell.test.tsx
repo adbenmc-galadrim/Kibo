@@ -10,9 +10,8 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import { act, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
 import {
   agentsFixture,
@@ -23,13 +22,6 @@ import {
   projectsFixture,
 } from "../lib/fixtures";
 import type { Route } from "../route";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
   id,
@@ -120,21 +112,16 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-        if (req.method === "getAppSettings") return Promise.resolve({ agentExecution: "shown" });
+        if (req.method === "getAppSettings") return Promise.resolve({});
         if (req.method === "getRunLog") return Promise.resolve([]);
-        if (req.method === "autoLinks.list") return Promise.resolve([]);
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
         if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
-        if (req.method === "agents.list")
-          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
         if (req.method === "listIntegrations")
           return Promise.resolve([
             { id: "git", state: "active", account: null, servers: [], error: null, resumeAt: null },
           ]);
-        return Promise.resolve(
-          req.method === "previewAssign" ? { position: null, reason: null, guidelines: 0 } : null,
-        );
+        return Promise.resolve(null);
       },
       code: () => Promise.resolve([]),
       subscribe: () => () => {},
@@ -194,14 +181,14 @@ const go = (hash: string) =>
     await new Promise((r) => setTimeout(r, 20));
   });
 
-test("routes name the agent screens", () => {
+test("routes name the settings screens, and no longer the agent ones", () => {
   const screenRoute = (screen: Screen): Route => ({
     projectId: null,
     pageId: null,
     target: { kind: "screen", screen },
   });
-  expect(parseRoute("#/agents")).toEqual(screenRoute("agents"));
-  expect(parseRoute("#/agents/queue")).toEqual(screenRoute("queue"));
+  expect(parseRoute("#/agents").target).toBeNull();
+  expect(parseRoute("#/agents/queue").target).toBeNull();
   expect(parseRoute("#/settings/domains")).toEqual(screenRoute("domains"));
   expect(parseRoute("#/settings/general")).toEqual(screenRoute("general"));
   expect(parseRoute("#/settings/integrations")).toEqual(screenRoute("integrations"));

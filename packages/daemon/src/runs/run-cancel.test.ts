@@ -7,7 +7,7 @@ const view = (state: RunState): RunView => ({
   ...initRun(
     {
       id: "r1",
-      kind: "ticket",
+      kind: "project",
       seq: 1,
       projectId: "p1",
       ticketId: "t1",

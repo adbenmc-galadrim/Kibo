@@ -1,9 +1,6 @@
 import { z } from "zod";
-import { AGENT_RPC, type AgentRpcResult } from "./agent-rpc";
-import type { AiEvent } from "./ai";
-import { AI_RPC, type AiRpcResult } from "./ai-rpc";
+import { APP_RPC, type AppRpcResult } from "./app-rpc";
 import type { CodeEvent } from "./code";
-import { DELIVERY_RPC, type DeliveryRpcResult } from "./delivery-rpc";
 import type { KiboErrorCode } from "./errors";
 import type { FeatureState } from "./feature-state";
 import type { Instance } from "./instance";
@@ -11,11 +8,8 @@ import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
-import type { RunMomentsEvent } from "./moment";
 import type { OnHold } from "./on-hold";
-import { OVERLAP_RPC, type OverlapRpcResult } from "./overlap-rpc";
 import type { Page } from "./page";
-import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { PLAN_RPC, type PlanRpcResult } from "./plan-rpc";
 import type { ProjectMeta } from "./project";
 import { PROJECT_AGENT_RPC, type ProjectAgentRpcResult } from "./project-agent-rpc";
@@ -25,18 +19,14 @@ import { CORE_RPC, type CoreRpcResult } from "./rpc-core";
 import type { Rule } from "./rule";
 import type { RunChanged } from "./run";
 import type { ProjectSyncInfo } from "./sharing";
-import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
-import { SKILL_RPC, type SkillRpcResult } from "./skill-rpc";
 import type { SprintView } from "./sprint";
 import type { StartReason } from "./startability";
 import type { Status, StatusId } from "./status";
-import { SUBAGENT_RPC, type SubagentRpcResult } from "./subagent";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import type { Ticket } from "./ticket";
 import type { TicketSession } from "./ticket-session";
 import { TRACKING_RPC, type TrackingRpcResult } from "./tracking-rpc";
-import { VISIBILITY_RPC, type VisibilityRpcResult } from "./visibility-rpc";
 import type { Domain } from "./workspace-config";
 
 export type TicketView = Ticket & {
@@ -73,35 +63,24 @@ export type ProjectSnapshot = {
 export type ProjectSummary = ProjectMeta & {
   counts: Record<StatusId, number>;
   icon?: string | null;
-  demo?: boolean;
 };
 export type Session = { user: string; notifications: "native" | "browser" };
-export type Topic = "agents" | "config" | "agent-files" | "skills";
+export type Topic = "agents" | "config";
 export type ChangeMessage =
   | { projectId: string | null }
   | { topic: Topic }
   | RunChanged
   | CodeEvent
   | IntegrationEvent
-  | AiEvent
-  | Phase7Event
-  | RunMomentsEvent;
+  | Phase7Event;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   ...CORE_RPC,
   ...INTEGRATION_RPC,
-  ...AI_RPC,
   ...MARKET_RPC_REQUESTS,
   ...SYNC_RPC_REQUESTS,
-  ...PHASE14_RPC,
+  ...APP_RPC,
   ...PROJECT_AGENT_RPC,
-  ...VISIBILITY_RPC,
-  ...SIGNAL_RPC,
-  ...OVERLAP_RPC,
-  ...AGENT_RPC,
-  ...SKILL_RPC,
-  ...DELIVERY_RPC,
-  ...SUBAGENT_RPC,
   ...TRACKING_RPC,
   ...PLAN_RPC,
 ]);
@@ -109,18 +88,10 @@ export type RpcRequest = z.infer<typeof RpcRequest>;
 
 export type RpcResult = CoreRpcResult &
   IntegrationRpcResult &
-  AiRpcResult &
   MarketRpcResult &
   SyncRpcResult &
-  Phase14RpcResult &
+  AppRpcResult &
   ProjectAgentRpcResult &
-  VisibilityRpcResult &
-  SignalRpcResult &
-  OverlapRpcResult &
-  AgentRpcResult &
-  SkillRpcResult &
-  DeliveryRpcResult &
-  SubagentRpcResult &
   TrackingRpcResult &
   PlanRpcResult;
 

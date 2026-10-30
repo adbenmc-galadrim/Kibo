@@ -97,7 +97,6 @@ async function boot(
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
-    testAgentExecution: "shown",
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
     transcriptRoot: join(home, "fake"),
@@ -139,7 +138,7 @@ export async function startStack(
   return stack;
 }
 
-export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; livraison: Agent };
+export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket };
 
 export async function seedKibo(rpc: Rpc): Promise<Seeded> {
   const project = await rpc<ProjectMeta>({
@@ -157,7 +156,7 @@ export async function seedKibo(rpc: Rpc): Promise<Seeded> {
     });
   const receiver = await ticket("Récepteur de hooks", "Recevoir les hooks de Claude Code.");
   const docs = await ticket("Documentation", "Écrire le guide.");
-  return { project, receiver, docs, livraison: LIVRAISON_AGENT };
+  return { project, receiver, docs };
 }
 
 export const agentsOf = (rpc: Rpc) => rpc<AgentsState>({ method: "getAgents" });

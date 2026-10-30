@@ -6,7 +6,6 @@ import {
   writeInstanceData,
 } from "@kibo/core";
 import {
-  type AppSettings,
   type ComponentManifest,
   KiboError,
   type ListProjectEventsInput,
@@ -15,11 +14,9 @@ import {
   type ProjectEventPage,
   type ProjectSyncInfo,
   projectInfo,
-  type RunPeek,
   type TicketRun,
   validateConfig,
 } from "@kibo/schema";
-import type { ComponentDelivery } from "../delivery/component-calls";
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -39,9 +36,6 @@ export type GateHandlersDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
-  appSettings?: () => AppSettings;
-  peekRun?: (projectId: string, runId: string) => RunPeek;
-  delivery?: ComponentDelivery;
   projectEvents?: (input: ListProjectEventsInput) => ProjectEventPage;
   hasFolder?: (projectId: string) => boolean;
 };
@@ -153,16 +147,8 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     },
     settings: async (projectId) => ({
       tracking: docs.projectMeta(projectId).tracking,
-      agentExecution: deps.appSettings?.().agentExecution ?? "hidden",
+      agentExecution: "hidden",
     }),
     recipients: async (projectId) => listQuestionRecipients(docs.project(projectId)),
-    async peek(projectId, runId) {
-      if (!deps.peekRun) throw new KiboError("NOT_CONNECTED", "agents not started");
-      return deps.peekRun(projectId, runId);
-    },
-    async delivery(projectId, call) {
-      if (!deps.delivery) throw new KiboError("NOT_CONNECTED", "delivery is not started");
-      return deps.delivery.call(projectId, call);
-    },
   };
 }

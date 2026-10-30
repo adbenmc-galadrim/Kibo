@@ -21,7 +21,6 @@ import {
   type RpcRequest,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
@@ -137,7 +136,6 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
         delivery: localDelivery(deps.settings, meta.id),
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),
-        demo: isDemoProject(deps.settings, meta.id),
       }));
     case "createProject":
       return createProject(deps, req);

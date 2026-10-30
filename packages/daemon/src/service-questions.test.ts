@@ -11,8 +11,8 @@ import {
   type RunView,
   Ticket,
 } from "@kibo/schema";
-import type { AgentsPort } from "./agents-rpc";
 import { runView } from "./questions/questions.test-helper";
+import type { AgentsPort } from "./runs/rpc";
 import { call, createService } from "./service";
 import { openStore } from "./store";
 
@@ -52,10 +52,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
     },
     tokensToday: 0,
     resumable: [],
-    questions: [],
     projectAgents: [],
-    progress: [],
-    signals: [],
   });
   return {
     cancel: unused,
@@ -139,7 +136,7 @@ test("a component or a user writes questions as the viewer, whatever it announce
 });
 
 test("answering a question to validate of a finished run sends nothing and leaves it to deliver", () => {
-  const { s, answers, agentQuestion, answer, messages } = setup("done");
+  const { answers, agentQuestion, answer, messages } = setup("done");
   const q = agentQuestion("Bloquer le dépôt ?", false);
   expect(messages).toContainEqual({ topic: "agents" });
   const answered = answer(q?.id ?? "");
@@ -149,34 +146,21 @@ test("answering a question to validate of a finished run sends nothing and leave
     deliveredAt: null,
   });
   expect(answers).toEqual([]);
-  expect(call(s, { method: "getAgents" }).questions).toEqual([
-    { runId: "r1", open: 0, undelivered: 1, latestTitle: null },
-  ]);
 });
 
 test("answering the blocking question of a waiting run resumes nothing and leaves the answer unmarked", () => {
   const { answers, agentQuestion, answer, snapshot } = setup("waiting_input");
   const q = agentQuestion("Quel port ?", true);
-  answer(q?.id ?? "", { kind: "option", option: "Oui" });
+  const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
+  expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });
   expect(answers).toEqual([]);
   expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredAt: null, deliveredRunId: null });
-});
-
-test("open questions stay on the run that asked them, answers to deliver follow the main run", () => {
-  const { s, run, runs, agentQuestion, answer } = setup("done");
-  agentQuestion("Garder les archives ?", false);
-  answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
-  runs.push({ ...run, id: "r2", seq: 2, state: "running" });
-  expect(call(s, { method: "getAgents" }).questions).toEqual([
-    { runId: "r1", open: 1, undelivered: 0, latestTitle: "Garder les archives ?" },
-    { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
-  ]);
 });
 
 test("the agents state still answers when a run belongs to a removed project", () => {
   const { s, run, runs } = setup("done");
   runs.push({ ...run, id: "r9", seq: 9, projectId: "removed", ticketId: "t9" });
-  expect(call(s, { method: "getAgents" }).questions).toEqual([]);
+  expect(call(s, { method: "getAgents" }).runs.map((r) => r.id)).toEqual(["r1", "r9"]);
 });
 
 test("recipient commands update the snapshot and announce the project", () => {
@@ -199,14 +183,4 @@ test("recipient commands update the snapshot and announce the project", () => {
   expect(() => command({ method: "removeQuestionRecipient", recipientId: "client" })).toThrow(
     expect.objectContaining({ code: "CONFLICT" }),
   );
-});
-
-test("without ticket execution a blocking answer is recorded, no run resumes and delivering is refused", () => {
-  const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("waiting_input");
-  const q = agentQuestion("Quel port ?", true);
-  const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
-  expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });
-  expect(answers).toEqual([]);
-  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: null });
-  expect(() => s.deliverAnswers(project.id, ticket.id)).toThrow("AGENT_EXECUTION_REMOVED");
 });

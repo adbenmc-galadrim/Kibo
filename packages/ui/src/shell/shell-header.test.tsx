@@ -40,7 +40,6 @@ test("the project agent button toggles the panel and carries a dot while a batch
         active={{ kind: "project", projectId: "kibo" }}
         screen={null}
         project={kiboProject()}
-        branch={null}
         gitError={null}
         agents={state}
         agentPanel={{
@@ -61,10 +60,6 @@ test("the project agent button toggles the panel and carries a dot while a batch
   expect(toggled).toEqual(["toggle"]);
   view.rerender(props(waiting("b1")));
   expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
-  view.rerender(props({ ...waiting("b1"), signals: [{ projectId: "kibo", open: 2, unread: 1 }] }));
-  expect(screen.getByRole("button", { name: "Agent de projet · 2 signaux en boîte" })).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }));
-  expect(toggled).toEqual(["toggle", "show"]);
 });
 
 test("the header keeps the breadcrumb and the actions, without any sync state while online", async () => {
@@ -75,7 +70,6 @@ test("the header keeps the breadcrumb and the actions, without any sync state wh
         active={{ kind: "project", projectId: "kibo" }}
         screen={null}
         project={project}
-        branch={null}
         gitError={null}
         agents={agents()}
         agentPanel={{ available: true, open: false, toggle: () => {}, show: () => {} }}
@@ -110,7 +104,6 @@ const closedHeader = (matches: boolean) => {
         active={null}
         screen={null}
         project={null}
-        branch={null}
         gitError={null}
         agents={null}
         agentPanel={{ available: false, open: false, toggle: () => {}, show: () => {} }}

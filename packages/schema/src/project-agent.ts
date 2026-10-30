@@ -13,7 +13,6 @@ import {
 } from "./question";
 import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
-import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
 import { SprintCode, SprintDate, SprintName } from "./sprint";
 import { StatusId } from "./status";
 
@@ -23,7 +22,6 @@ export const WHY_MAX = 300;
 export const BATCH_COMMENT_MAX = 4_000;
 export const ACTION_TITLE_MAX = 200;
 export const ACTION_DESCRIPTION_MAX = 20_000;
-export const ACTION_BRIEF_MAX = 4_000;
 export const ACTION_DETAIL_MAX = 1_000;
 
 export const NewRef = z.string().regex(/^new:[1-9]\d{0,3}$/);
@@ -31,12 +29,11 @@ export const TicketRef = z.union([TicketKey, NewRef]);
 export type TicketRef = z.infer<typeof TicketRef>;
 export const LinkKind = z.enum(["blocks", "relates"]);
 export type LinkKind = z.infer<typeof LinkKind>;
-export { ActionId };
+export const ActionId = z.number().int().positive();
 
 const base = {
   id: ActionId,
   why: z.string().trim().max(WHY_MAX),
-  signals: z.array(SignalRef).max(SIGNAL_REFS_MAX).optional(),
 };
 const ActionTitle = z.string().trim().min(1).max(ACTION_TITLE_MAX);
 const ActionDescription = z.string().max(ACTION_DESCRIPTION_MAX);
@@ -74,16 +71,6 @@ export const ProposedAction = z.discriminatedUnion("type", [
   }),
   z.object({ ...base, type: z.literal("link"), from: TicketRef, to: TicketRef, kind: z.literal("blocks") }),
   z.object({ ...base, type: z.literal("unlink"), from: TicketRef, to: TicketRef, kind: LinkKind }),
-  z.object({
-    ...base,
-    type: z.literal("assignAgent"),
-    ticket: TicketRef,
-    profileId: z.string().min(1),
-    brief: z.string().max(ACTION_BRIEF_MAX).optional(),
-    fresh: z.boolean().optional(),
-  }),
-  z.object({ ...base, type: z.literal("deliverAnswers"), ticket: TicketRef }),
-  z.object({ ...base, type: z.literal("cancelRun"), runId: z.string().min(1) }),
   z.object({ ...base, type: z.literal("answerQuestion"), questionId: NodeId, answer: AnswerInput }),
   z.object({
     ...base,
@@ -114,7 +101,6 @@ export const ProposedAction = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("addRecipient"), name: QuestionRecipient.shape.name }),
   z.object({ ...base, type: z.literal("createNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
-  z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
   z.object({ ...base, type: z.literal("setSprint"), ticket: TicketRef, sprint: SprintCode.nullable() }),
   z.object({
     ...base,
@@ -129,7 +115,7 @@ export const ProposedAction = z.discriminatedUnion("type", [
 ]);
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
-export type ActionGroup = "tickets" | "sprints" | "agents" | "questions" | "notes" | "signals";
+export type ActionGroup = "tickets" | "sprints" | "questions" | "notes";
 
 export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createTicket: "tickets",
@@ -137,9 +123,6 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   setStatus: "tickets",
   link: "tickets",
   unlink: "tickets",
-  assignAgent: "agents",
-  deliverAnswers: "agents",
-  cancelRun: "agents",
   answerQuestion: "questions",
   createQuestion: "questions",
   updateQuestion: "questions",
@@ -148,12 +131,34 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   addRecipient: "questions",
   createNote: "notes",
   updateNote: "notes",
-  dismissSignal: "signals",
   setSprint: "sprints",
   createSprint: "sprints",
   remindQuestion: "questions",
   setHold: "tickets",
 };
+
+export const RETIRED_ACTION_TYPES = ["assignAgent", "deliverAnswers", "cancelRun", "dismissSignal"] as const;
+export const RetiredAction = z
+  .object({ id: ActionId, why: z.string(), type: z.enum(RETIRED_ACTION_TYPES) })
+  .passthrough();
+export type RetiredAction = z.infer<typeof RetiredAction>;
+
+const withoutCitedSignals = (raw: unknown): unknown => {
+  if (typeof raw !== "object" || raw === null || !("signals" in raw)) return raw;
+  const { signals: _signals, ...rest } = raw;
+  return rest;
+};
+
+export const StoredProposedAction = z.preprocess(
+  withoutCitedSignals,
+  z.union([ProposedAction, RetiredAction]),
+);
+export type StoredProposedAction = ProposedAction | RetiredAction;
+
+export const isRetiredAction = (action: StoredProposedAction): action is RetiredAction =>
+  RETIRED_ACTION_TYPES.some((type) => type === action.type);
+
+export const RETIRED_ACTION_DETAIL = "action retirée";
 
 export const ProposeBatchInput = z.object({
   summary: z.string().trim().min(1).max(BATCH_SUMMARY_MAX),
@@ -202,7 +207,7 @@ export type BatchRow = {
   sessionId: string;
   seq: number;
   summary: string;
-  actions: ProposedAction[];
+  actions: StoredProposedAction[];
   expected: ExpectedState[];
   createdAt: number;
 };

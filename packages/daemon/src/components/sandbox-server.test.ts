@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ComponentManifest } from "@kibo/schema";
-import type { DraftAssets } from "../ai/draft-preview";
 import { GLB, PNG } from "../files/files.test-helper";
 import { storedVersion } from "./fake-store.test-helper";
 import { type AssetLookup, type FileOpener, sandboxHeaders, startSandboxServer } from "./sandbox-server";
@@ -44,18 +43,12 @@ afterEach(() => {
   lookups = [];
   answer = stored;
 });
-function start(
-  lookup: AssetLookup = assets,
-  extraAncestors?: string[],
-  drafts?: DraftAssets,
-  files?: FileOpener,
-) {
+function start(lookup: AssetLookup = assets, extraAncestors?: string[], files?: FileOpener) {
   const s = startSandboxServer({
     port: 0,
     uiPort: 4317,
     assets: lookup,
     ...(extraAncestors && { extraAncestors }),
-    ...(drafts && { drafts }),
     ...(files && { files }),
   });
   servers.push(s);
@@ -241,7 +234,7 @@ describe("project files", () => {
             }
           : null,
     };
-    return start(assets, undefined, undefined, files);
+    return start(assets, undefined, files);
   }
   const glb = (dir: string) => writeFileSync(join(dir, "robot.glb"), GLB);
 
@@ -324,7 +317,7 @@ describe("project files", () => {
       logged.push(args);
     });
     try {
-      const s = start(assets, undefined, undefined, {
+      const s = start(assets, undefined, {
         open: async () => {
           throw new Error("disk gone");
         },
@@ -340,91 +333,5 @@ describe("project files", () => {
 
   test("without a file opener every token is a 404", async () => {
     expect((await get(start(), `/f/${T}/robot.glb`)).status).toBe(404);
-  });
-});
-
-describe("draft previews", () => {
-  const DRAFT = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
-  const BUNDLE = new TextEncoder().encode("draft-bundle");
-  const asked: string[] = [];
-  let draftCapabilities: ComponentManifest["capabilities"] = [];
-  const drafts: DraftAssets = {
-    async manifest(draftId) {
-      if (draftId !== DRAFT) return null;
-      return ComponentManifest.parse({ ...stored.manifest, capabilities: draftCapabilities });
-    },
-    async lookup(draftId, hash, file) {
-      asked.push(`${draftId}/${hash}/${file}`);
-      if (draftId !== DRAFT || hash !== H) return null;
-      return file === "index.html" ? "<!doctype html>draft" : file === "ui.css" ? ".d{}" : BUNDLE;
-    },
-  };
-  afterEach(() => {
-    asked.length = 0;
-    draftCapabilities = [];
-  });
-
-  test("a draft's csp follows the capabilities of its own manifest", async () => {
-    const s = start(assets, undefined, drafts);
-    draftCapabilities = ["audio", "assets"];
-    const html = await get(s, `/c/drafts/${DRAFT}/${H}/index.html`);
-    expect(html.headers.get("content-security-policy")).toBe(CSP_AUDIO_ASSETS);
-    draftCapabilities = [];
-    expect((await get(s, `/c/drafts/${DRAFT}/${H}/index.html`)).headers.get("content-security-policy")).toBe(
-      CSP,
-    );
-  });
-
-  test("a draft's files are served with the sandbox headers, without cache", async () => {
-    const s = start(assets, undefined, drafts);
-    const js = await get(s, `/c/drafts/${DRAFT}/${H}/ui.sandbox.js`);
-    expect(js.status).toBe(200);
-    expect(await js.text()).toBe("draft-bundle");
-    expect(js.headers.get("content-type")).toBe("text/javascript; charset=utf-8");
-    expect(js.headers.get("content-security-policy")).toBe(CSP);
-    expect(js.headers.get("cache-control")).toBe("no-store");
-    expect(js.headers.get("x-content-type-options")).toBe("nosniff");
-    expect(js.headers.get("referrer-policy")).toBe("no-referrer");
-    expect(js.headers.get("cross-origin-resource-policy")).toBe("same-site");
-    expect(js.headers.get("access-control-allow-origin")).toBe("*");
-    const html = await get(s, `/c/drafts/${DRAFT}/${H}/index.html`);
-    expect(html.headers.get("content-type")).toContain("text/html");
-    expect(html.headers.get("access-control-allow-origin")).toBeNull();
-    expect(html.headers.get("cache-control")).toBe("no-store");
-    const css = await get(s, `/c/drafts/${DRAFT}/${H}/ui.css`);
-    expect(css.headers.get("content-type")).toContain("text/css");
-  });
-
-  test("a lookup that finds nothing, an invalid path or a missing provider is a 404", async () => {
-    const s = start(assets, undefined, drafts);
-    expect((await get(s, `/c/drafts/${DRAFT}/${OTHER}/ui.sandbox.js`)).status).toBe(404);
-    for (const path of [
-      `/c/drafts/not-a-uuid/${H}/ui.sandbox.js`,
-      `/c/drafts/${DRAFT}/${H}/ui.tsx`,
-      `/c/drafts/${DRAFT}/${H}/kibo.component.json`,
-      `/c/drafts/${DRAFT}.attachments/${H}/1-maquette.png`,
-      `/c/drafts/${DRAFT}/${H}/../../${DRAFT}.attachments/1-maquette.png`,
-      `/c/drafts/${DRAFT}/${H}/%2e%2e/ui.tsx`,
-      `/c/drafts/${DRAFT}/..%2F..%2F/ui.sandbox.js`,
-    ]) {
-      const res = await get(s, path, { cookie: "kibo_session=x" });
-      expect(res.status).toBe(404);
-      expect(res.headers.get("content-security-policy")).toBe(CSP);
-    }
-    expect(asked).toEqual([`${DRAFT}/${OTHER}/ui.sandbox.js`]);
-    const bare = start();
-    expect((await get(bare, `/c/drafts/${DRAFT}/${H}/ui.sandbox.js`)).status).toBe(404);
-    expect((await get(s, `/c/drafts/${DRAFT}/${H}/ui.sandbox.js`, { host: "evil.test" })).status).toBe(403);
-    const post = await fetch(`http://127.0.0.1:${s.port}/c/drafts/${DRAFT}/${H}/ui.sandbox.js`, {
-      method: "POST",
-    });
-    expect(post.status).toBe(405);
-  });
-
-  test("installed components are still served next to the drafts", async () => {
-    const s = start(assets, undefined, drafts);
-    expect(await (await get(s, `/c/pr-queue/0.3.0/${H}/ui.sandbox.js`)).text()).toBe(
-      "sandbox:pr-queue@0.3.0",
-    );
   });
 });

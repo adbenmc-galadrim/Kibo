@@ -241,7 +241,7 @@ describe("embedded frames", () => {
 });
 
 describe("delivery calls", () => {
-  test("the delivery calls of the runs api reach the delivery handler of the project", async () => {
+  test("the delivery calls of the runs api are no longer connected", async () => {
     const calls: ComponentCall[] = [
       { kind: "run.deliver", ticketId: "t1" },
       { kind: "run.denials", runId: "r1" },
@@ -249,13 +249,8 @@ describe("delivery calls", () => {
       { kind: "run.deliveryAgent" },
     ];
     const { gate: g, handled } = testGate();
-    for (const call of calls) await g.call("p1", "builtin", call);
-    expect(handled).toEqual([
-      "delivery:p1:run.deliver",
-      "delivery:p1:run.denials",
-      "delivery:p1:run.allowAndResume",
-      "delivery:p1:run.deliveryAgent",
-    ]);
+    for (const call of calls) await refused(g.call("p1", "builtin", call), "NOT_CONNECTED");
+    expect(handled).toEqual([]);
   });
   test("a third-party component without read:run or write:run is refused each delivery call", async () => {
     const calls: ComponentCall[] = [

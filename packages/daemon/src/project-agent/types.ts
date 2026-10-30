@@ -12,7 +12,6 @@ import type {
   RunView,
 } from "@kibo/schema";
 import type { Orchestrator } from "../runs/orchestrator-types";
-import type { SignalService } from "../signals/service";
 
 export type ProjectAgentDataPort = {
   project(projectId: string): ProjectSnapshot;
@@ -22,7 +21,6 @@ export type ProjectAgentDataPort = {
   viewer(projectId: string): string;
   agents(projectId: string): AgentSummary[];
   guidelines(projectId: string): Guideline[];
-  isDemoProject(projectId: string): boolean;
   notes(projectId: string): Promise<{ path: string; title: string; hash: string }[]>;
   readNote(projectId: string, path: string): Promise<string | null>;
   writeNote(projectId: string, path: string, content: string, mode: "create" | "update"): Promise<void>;
@@ -45,8 +43,3 @@ export type AgentMcpSink = {
   run(runId: string): RunView | null;
   call(run: RunView, tool: AgentMcpRequest["tool"], input: unknown): Promise<string>;
 };
-
-export type ProjectAgentSignalsPort = Pick<
-  SignalService,
-  "markRead" | "openRefs" | "openCount" | "settle" | "list"
->;

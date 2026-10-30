@@ -14,7 +14,6 @@ mock.module("../api", () =>
       subscribeEvents: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "overlaps.ignored") return [];
         return null;
       },
     },

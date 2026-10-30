@@ -10,10 +10,8 @@ import { projectLabels } from "./batch-groups";
 import { buildConversation, lastUserMessage, type PanelStatus, panelStatus } from "./conversation";
 import { mergeOutbox } from "./outbox";
 import { projectQuestionLinks } from "./QuestionText";
-import { useAgentList } from "./use-agent-list";
 import { useOutbox } from "./use-outbox";
 import { useProjectAgent } from "./use-project-agent";
-import { useSignals } from "./use-signals";
 
 type Mode = { kind: "current" } | { kind: "past"; runId: string };
 
@@ -43,8 +41,7 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     const logged = buildConversation(log, view?.batches ?? [], view?.run ?? null);
     return readOnly ? logged : mergeOutbox(logged, outbox.outbox);
   }, [log, view, readOnly, outbox.outbox]);
-  const agentList = useAgentList(projectId);
-  const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
+  const labels = useMemo(() => projectLabels(project), [project]);
   const runs = useAgentsState()?.runs;
   const links = useMemo(
     () =>
@@ -53,7 +50,6 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
       ),
     [project, runs, host, projectId],
   );
-  const signals = useSignals(projectId);
   const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null);
   const agents = useMemo(() => (current.view ? agentListItems(current.view) : []), [current.view]);
 
@@ -87,7 +83,6 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     status,
     labels,
     links,
-    signals: signals.view?.signals ?? [],
     agents,
     selected: pastRunId ?? currentRunId,
     canReset: current.view?.session != null,

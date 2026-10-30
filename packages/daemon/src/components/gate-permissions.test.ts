@@ -2,16 +2,7 @@ import { expect, test } from "bun:test";
 import { BuiltinEntityType, type ComponentCall, type GrantedPermissions, type Instance } from "@kibo/schema";
 import { createEventLog } from "./events";
 import { createGate, missingPermission } from "./gate";
-import {
-  eventsDb,
-  findInstance,
-  granted,
-  idleHandlers,
-  instances,
-  PEEK,
-  refused,
-  testGate,
-} from "./gate-test-kit";
+import { eventsDb, findInstance, granted, idleHandlers, instances, refused, testGate } from "./gate-test-kit";
 import { createQuotas } from "./quotas";
 
 test("missingPermission names what is lacking", () => {
@@ -138,13 +129,13 @@ test("questions.recipients needs read:question and reaches the recipients handle
   expect(allowed.handled).toEqual(["recipients:p1"]);
 });
 
-test("run.peek needs read:run and reaches the peek handler with the project of the instance", async () => {
+test("run.peek needs read:run and is no longer connected once granted", async () => {
   const peek: ComponentCall = { kind: "run.peek", runId: "r1" };
   const denied = testGate();
   await refused(denied.gate.call("p1", "thirdparty", peek), "PERMISSION_DENIED");
   const allowed = testGate(createQuotas(), { ...granted, reads: ["run"] });
-  expect(await allowed.gate.call("p1", "thirdparty", peek)).toEqual(PEEK);
-  expect(allowed.handled).toEqual(["peek:p1:r1"]);
+  await refused(allowed.gate.call("p1", "thirdparty", peek), "NOT_CONNECTED");
+  expect(allowed.handled).toEqual([]);
 });
 
 test("a component reads and writes questions only with their permission, never marks them delivered", () => {

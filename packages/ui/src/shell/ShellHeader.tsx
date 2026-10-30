@@ -9,7 +9,6 @@ type Props = {
   active: TabTarget | null;
   screen: Screen | null;
   project: ProjectSnapshot | null;
-  branch: string | null;
   gitError: string | null;
   agents: AgentsState | null;
   agentPanel: { available: boolean; open: boolean; toggle(): void; show(): void };
@@ -18,21 +17,12 @@ type Props = {
 
 const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["mine"]);
 
-export function ShellHeader({
-  active,
-  screen,
-  project,
-  branch,
-  gitError,
-  agents,
-  agentPanel,
-  onOpen,
-}: Props) {
+export function ShellHeader({ active, screen, project, gitError, agents, agentPanel, onOpen }: Props) {
   return (
     <header className="k-top">
       <SidebarToggle whenClosed />
       <Breadcrumb
-        crumbs={crumbsFor(active, { project, branch, runs: agents?.runs })}
+        crumbs={crumbsFor(active, { project })}
         heading={screen !== null && HEADING_SCREENS.has(screen)}
         onOpen={onOpen}
       />
@@ -50,7 +40,6 @@ export function ShellHeader({
           agents={agents}
           open={agentPanel.open}
           onToggle={agentPanel.toggle}
-          onOpen={agentPanel.show}
         />
       )}
     </header>

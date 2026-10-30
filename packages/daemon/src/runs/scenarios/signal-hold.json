@@ -1,9 +1,0 @@
-{
-  "turns": [
-    {
-      "steps": [{ "say": "Je tiens la ligne." }, { "hold": true }],
-      "result": "Ligne rendue.",
-      "tokens": 200
-    }
-  ]
-}

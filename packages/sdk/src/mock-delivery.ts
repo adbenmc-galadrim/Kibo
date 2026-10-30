@@ -59,7 +59,7 @@ export function createMockRunDelivery(deps: {
     return initRun(
       {
         id: `mock-delivery-${seq}`,
-        kind: "ticket",
+        kind: "project",
         seq,
         projectId: snapshot.meta.id,
         ticketId,

@@ -48,9 +48,7 @@ const input = (p: Partial<OverviewInput> = {}): OverviewInput => ({
   queue: [{ runId: "r2", position: 1, reason: null }],
   notes: [{ path: "agent-de-projet/memoire.md", title: "Mémoire" }],
   agents: AGENTS,
-  demoProject: false,
   memory: "- Adam préfère les petits lots.",
-  openSignals: 0,
   ...p,
 });
 
@@ -101,13 +99,6 @@ describe("projectOverview", () => {
         description: "Agent opus-dev",
         model: "opus",
       },
-    ]);
-  });
-
-  test("the demo agent is assignable only in the demo project, the project agent never", () => {
-    expect(projectOverview(input({ demoProject: true })).profiles.map((p) => p.id)).toEqual([
-      "global:opus-dev",
-      "system:demo",
     ]);
   });
 
@@ -198,16 +189,6 @@ describe("ticket card and sheet", () => {
         { id: "r3", label: "opus-dev", state: "done", turns: 2 },
       ],
     });
-  });
-});
-
-describe("open signals in the overview", () => {
-  test("are counted and rendered", () => {
-    expect(projectOverview(input({ openSignals: 2 })).openSignals).toBe(2);
-    expect(renderOverview(projectOverview(input({ openSignals: 2 })))).toContain(
-      "## Signaux\n\nSignaux ouverts : 2",
-    );
-    expect(renderOverview(projectOverview(input()))).toContain("## Signaux\n\nAucun.");
   });
 });
 

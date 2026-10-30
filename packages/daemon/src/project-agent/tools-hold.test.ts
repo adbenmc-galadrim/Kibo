@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import type { ProjectAgentTool } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
-import { fakeSignals } from "../signals/signals.test-helper";
 import { type Harness, harness } from "./fakes.test-helper";
 import { handleProjectTool } from "./tools";
 
@@ -35,7 +34,6 @@ async function world() {
   });
   const deps = {
     data: h.data,
-    signals: fakeSignals(),
     agents: () => h.agents,
     store: { fingerprint: () => null, lastDecided: () => null },
     propose: () => "",

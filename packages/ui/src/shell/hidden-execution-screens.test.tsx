@@ -1,13 +1,11 @@
 import { afterEach, expect, mock, test } from "bun:test";
-import { type AgentExecution, EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
+import { EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { apiMock } from "../api-mock";
 import { configFixture, projectsFixture } from "../lib/fixtures";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
   getTabs: EMPTY_TABS,
-  "agents.list": { agents: [], partialWatch: false, notices: [] },
 };
 
 mock.module("../api", () =>
@@ -22,19 +20,12 @@ mock.module("../api", () =>
 );
 
 const { ScreenView } = await import("./ScreenView");
-const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
 
 afterEach(cleanup);
 const noop = () => undefined;
 
-const withSetting = (execution: AgentExecution, children: ReactNode) =>
+const screenView = (current: Screen) =>
   render(
-    <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>{children}</AppSettingsProvider>,
-  );
-
-const screenView = (execution: AgentExecution, current: Screen) =>
-  withSetting(
-    execution,
     <ScreenView
       screen={current}
       viewer="adam"
@@ -47,28 +38,17 @@ const screenView = (execution: AgentExecution, current: Screen) =>
     />,
   );
 
-const RETIRED = [
-  "agents",
-  "queue",
-  "skills",
-  "creations",
-  "components",
-  "sources",
-  "domains",
-  "sync",
-  "security",
-] as const;
+const RETIRED = ["components", "sources", "domains", "sync", "security"] as const;
 
-test("the agent-era screens render nothing, whatever the setting", () => {
-  for (const execution of ["hidden", "shown"] as const)
-    for (const current of RETIRED) {
-      const view = screenView(execution, current);
-      expect(view.container.innerHTML).toBe("");
-      view.unmount();
-    }
+test("the retired screens render nothing", () => {
+  for (const current of RETIRED) {
+    const view = screenView(current);
+    expect(view.container.innerHTML).toBe("");
+    view.unmount();
+  }
 });
 
 test("a tracking screen still renders", async () => {
-  const view = screenView("hidden", "general");
+  const view = screenView("general");
   await waitFor(() => expect(view.container.innerHTML).not.toBe(""));
 });

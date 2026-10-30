@@ -19,7 +19,6 @@ mock.module("../api", () =>
 );
 
 const { AppSidebar } = await import("./AppSidebar");
-const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
 
 const realMatchMedia = window.matchMedia;
 afterEach(() => {
@@ -57,38 +56,36 @@ function sidebar(
   onOpen: (t: unknown, newTab: boolean) => void = noop,
 ) {
   return render(
-    <AppSettingsProvider store={fixedStore({ agentExecution: "shown" })}>
-      <SidebarProvider defaultOpen={open}>
-        <SidebarTrigger />
-        <AppSidebar
-          projects={projectsFixture}
-          active={withPages()}
-          snapshots={new Map([["kibo", withPages()]])}
-          activeTarget={current ? { kind: "screen", screen: current } : null}
-          screen={current}
-          mineCount={2}
-          inboxCount={3}
-          workspaceName="Galadrim"
-          workspaceIcon={null}
-          viewer="adam"
-          onHelp={noop}
-          onOpen={onOpen}
-          onSearch={noop}
-          onNewProject={noop}
-          onNewPage={noop}
-          onRenamePage={noop}
-          onDeletePage={noop}
-          onEditProject={noop}
-          onDeleteProject={noop}
-        />
-      </SidebarProvider>
-    </AppSettingsProvider>,
+    <SidebarProvider defaultOpen={open}>
+      <SidebarTrigger />
+      <AppSidebar
+        projects={projectsFixture}
+        active={withPages()}
+        snapshots={new Map([["kibo", withPages()]])}
+        activeTarget={current ? { kind: "screen", screen: current } : null}
+        screen={current}
+        mineCount={2}
+        inboxCount={3}
+        workspaceName="Galadrim"
+        workspaceIcon={null}
+        viewer="adam"
+        onHelp={noop}
+        onOpen={onOpen}
+        onSearch={noop}
+        onNewProject={noop}
+        onNewPage={noop}
+        onRenamePage={noop}
+        onDeletePage={noop}
+        onEditProject={noop}
+        onDeleteProject={noop}
+      />
+    </SidebarProvider>,
   );
 }
 
-test("the sidebar keeps the tracking entries only, even on an agent screen", async () => {
+test("the sidebar keeps the tracking entries only, even on a retired screen", async () => {
   viewport(1440);
-  sidebar("queue");
+  sidebar("domains");
   expect(await screen.findByRole("button", { name: /Boîte de réception/ })).toBeTruthy();
   await act(() => Bun.sleep(150));
   expect(screen.getByRole("button", { name: /^Accueil/ })).toBeTruthy();

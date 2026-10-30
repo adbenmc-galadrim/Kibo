@@ -10,8 +10,6 @@ import {
   mcpToolName,
   PROJECT_AGENT_TOOLS,
   type ProjectAgentTool,
-  SKILL_REVIEW_TOOL,
-  skillTarget,
   TodoItem,
 } from "@kibo/schema";
 
@@ -43,25 +41,16 @@ const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null>
   read_note: (input) => text(input.path),
   list_profiles: () => null,
   project_changes: () => null,
-  list_signals: filters("state"),
   propose_batch: (input) => `${Array.isArray(input.actions) ? input.actions.length : 0} actions`,
 };
 
 const projectToolOf = (name: string | null | undefined): ProjectAgentTool | null =>
   PROJECT_AGENT_TOOLS.find((tool) => mcpToolName(tool) === name) ?? null;
 
-function reviewedCount(input: ToolInput): string | null {
-  const reviews = input.reviews;
-  if (!Array.isArray(reviews)) return null;
-  return `${reviews.length} ${reviews.length > 1 ? "skills" : "skill"}`;
-}
-
 function toolDetail(h: HookInput): string | null {
   const input = h.tool_input ?? {};
   const projectTool = projectToolOf(h.tool_name);
   if (projectTool) return MCP_DETAILS[projectTool](input);
-  if (h.tool_name === "Skill") return skillTarget(input);
-  if (h.tool_name === SKILL_REVIEW_TOOL) return reviewedCount(input);
   return (
     text(input.file_path) ??
     text(input.notebook_path) ??

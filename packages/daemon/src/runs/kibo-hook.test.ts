@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
+import { PROJECT_AGENT_TOOLS } from "@kibo/schema";
 import { FAIL_CLOSED_DENY, forwardHook, type PostFn } from "./kibo-hook";
 
 const TOKEN = "f".repeat(64);
@@ -231,7 +232,7 @@ test("the MCP executable reads its environment and asks the daemon for project t
         .map((l) => JSON.parse(l) as { id: number; result: { tools?: unknown[]; content?: unknown } })
         .map((r) => [r.id, r.result]),
     );
-    expect(replies.get(1)?.tools).toHaveLength(15);
+    expect(replies.get(1)?.tools).toHaveLength(2 + PROJECT_AGENT_TOOLS.length);
     expect(replies.get(2)?.content).toEqual([
       { type: "text", text: '{"items":[],"nextCursor":null,"total":0}' },
     ]);

@@ -13,7 +13,6 @@ import {
 import { z } from "zod";
 import { fakeAgentsPort } from "../agents-port.test-helper";
 import { runView } from "../questions/questions.test-helper";
-import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { type Harness, HUMAN, harness } from "./fakes.test-helper";
 import { handleProjectTool, TOOL_REPLY_MAX } from "./tools";
 
@@ -30,7 +29,6 @@ type World = {
   tickets: Ticket[];
   saved: { fp: ProjectFingerprint | null };
   proposed: unknown[];
-  signals: FakeSignals;
   tool(tool: ProjectAgentTool, input?: unknown): Promise<string>;
   json(tool: ProjectAgentTool, input?: unknown): Promise<unknown>;
 };
@@ -75,12 +73,8 @@ async function world(): Promise<World> {
   const saved: { fp: ProjectFingerprint | null } = { fp: null };
   const proposed: unknown[] = [];
   const lastDecided = (): Batch | null => null;
-  const signals = fakeSignals();
-  for (const seq of [1, 2, 3]) signals.add(seq, { projectId: h.project.id });
-  signals.close(2);
   const deps = {
     data: h.data,
-    signals,
     agents: () => h.agents,
     store: { fingerprint: () => saved.fp, lastDecided },
     propose: (_run: RunView, input: unknown) => {
@@ -95,7 +89,6 @@ async function world(): Promise<World> {
     tickets,
     saved,
     proposed,
-    signals,
     tool,
     json: async (name, input) => JSON.parse(await tool(name, input)),
   };
@@ -116,17 +109,7 @@ describe("read tools", () => {
     expect(overview).toMatchObject({ name: "Silo", key: "SILO", memory: "# Mémoire\n\nRien.\n" });
     expect(overview.runs.map((r: { id: string }) => r.id)).toEqual(["r1"]);
     expect(overview.profiles.map((p: { id: string }) => p.id)).toEqual(["global:opus"]);
-    expect(overview.openSignals).toBe(2);
-  });
-
-  test("list_signals pages the open signals by default and the closed ones on demand", async () => {
-    const w = await world();
-    const open = Page.parse(await w.json("list_signals"));
-    expect(open).toMatchObject({ total: 2, nextCursor: null });
-    expect(open.items).toMatchObject([{ ref: "sig:1", status: "new" }, { ref: "sig:3" }]);
-    const closed = Page.parse(await w.json("list_signals", { state: "closed" }));
-    expect(closed.items).toMatchObject([{ ref: "sig:2", status: "handled" }]);
-    expect(await codeOf(w.tool("list_signals", { state: "maybe" }))).toBe("INVALID_INPUT");
+    expect(overview).not.toHaveProperty("openSignals");
   });
 
   test("list_tickets pages by 50 and filters by status", async () => {
@@ -289,7 +272,6 @@ describe("inputs and limits", () => {
       agents: () => w.h.agents,
       store: { fingerprint: () => null, lastDecided: () => null },
       propose: () => "",
-      signals: w.signals,
     };
     const orphan = { ...w.run, projectId: null };
     expect(await codeOf(handleProjectTool(deps, orphan, "list_runs", {}))).toBe("FORBIDDEN");

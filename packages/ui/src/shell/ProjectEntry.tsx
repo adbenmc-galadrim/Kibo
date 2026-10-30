@@ -16,7 +16,7 @@ export type Link = (target: TabTarget | null) => {
 };
 
 export type ProjectEntryProps = {
-  project: ProjectMeta & { demo?: boolean };
+  project: ProjectMeta;
   active: ProjectSnapshot | null;
   activeTarget: TabTarget | null;
   projectActive: boolean;
@@ -68,8 +68,6 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
         <NavRow
           label={project.name}
           active={p.projectActive}
-          count={project.demo ? fr.nav.demo : null}
-          countYields
           className="k-project-row"
           data-actions={editable ? "2" : "1"}
           lead={<ProjectLead color={project.color} open={active !== null} />}

@@ -23,7 +23,15 @@ test("the agent-era screens are gone from the palette, even when execution was s
   const screens = buildItems(context).flatMap((i) =>
     i.run.kind === "target" && i.run.target.kind === "screen" ? [i.run.target.screen] : [],
   );
-  for (const retired of ["agents", "queue", "skills", "creations", "components", "sources", "domains"])
+  for (const retired of [
+    "agents",
+    "queue",
+    "skills",
+    "creations",
+    "components",
+    "sources",
+    "domains",
+  ] as const)
     expect(screens).not.toContain(retired);
   for (const query of ["attente", "skills", "creations", "composants", "domaines", "sources"])
     expect(searchItems(buildItems(context), query, "pages")).toEqual([]);
@@ -35,5 +43,5 @@ test("an opened screen comes back among the recents, a retired one does not", ()
       .find((s) => s.group === "recents")
       ?.items.map((i) => i.label);
   expect(recents(context)).toEqual(["Boîte de réception"]);
-  expect(recents({ ...context, recents: [{ kind: "screen", screen: "queue" }] })).toBeUndefined();
+  expect(recents({ ...context, recents: [{ kind: "screen", screen: "domains" }] })).toBeUndefined();
 });

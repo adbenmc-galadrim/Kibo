@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { type ProposedAction, StatusId } from "@kibo/schema";
 import fc from "fast-check";
 import { isNewRef, ticketRefsOf } from "./refs";
-import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
+import { answered, link, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, validateBatch } from "./validate";
 
 const ctx: BatchContext = {
@@ -21,11 +21,7 @@ const ctx: BatchContext = {
     run({ id: "r3", projectId: "other", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
 };
 
 const ref = fc.constantFrom("SILO-1", "SILO-2", "SILO-3", "SILO-999", "new:1", "new:2", "new:3");
@@ -71,14 +67,6 @@ const draft: fc.Arbitrary<Draft> = fc.oneof(
   }),
   fc.record({
     why,
-    type: fc.constant("assignAgent" as const),
-    ticket: ref,
-    profileId: fc.constantFrom("global:opus-dev", "system:assistant", "system:demo", "nope"),
-  }),
-  fc.record({ why, type: fc.constant("deliverAnswers" as const), ticket: ref }),
-  fc.record({ why, type: fc.constant("cancelRun" as const), runId: fc.constantFrom("r1", "r3", "rx") }),
-  fc.record({
-    why,
     type: fc.constant("answerQuestion" as const),
     questionId: fc.constantFrom("q1", "q2", "qx"),
     answer: fc.constant({ kind: "confirm" as const }),
@@ -113,12 +101,10 @@ const batches = fc
 
 const keys = new Set(ctx.project.tickets.map((t) => t.key));
 const questions = new Set(ctx.project.questions.map((q) => q.id));
-const runs = new Set(ctx.runs.filter((r) => r.projectId === ctx.project.meta.id).map((r) => r.id));
 
 function citesOnlyTheProject(action: ProposedAction): boolean {
   const refsOk = ticketRefsOf(action).every((r) => isNewRef(r) || keys.has(r));
   if (action.type === "answerQuestion") return refsOk && questions.has(action.questionId);
-  if (action.type === "cancelRun") return refsOk && runs.has(action.runId);
   return refsOk;
 }
 

@@ -8,8 +8,8 @@ import { z } from "zod";
 import { startDaemon } from "./daemon";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
-import { aiScenarioPath } from "./runs/fake-claude-ai";
-import { FAKE_CLAUDE } from "./runs/fake-claude-scenario";
+
+import { FAKE_CLAUDE, scenarioPath } from "./runs/fake-claude-scenario";
 
 const Envelope = z.object({ ok: z.literal(true), result: z.unknown() });
 const cleanups: (() => Promise<void> | void)[] = [];
@@ -38,7 +38,7 @@ async function launch() {
     agentEnv: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
-      KIBO_FAKE_CLAUDE_SCENARIO: aiScenarioPath("onboarding-ok.json"),
+      KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("done"),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
     },
     redactor,

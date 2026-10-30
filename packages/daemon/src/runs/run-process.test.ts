@@ -19,12 +19,11 @@ afterEach(() => {
 
 test("the tool set of the run reaches the child environment and cannot be forged", () => {
   const extra = { hookUrl: "u", token: "t", mcpUrl: "http://h/agent-mcp/r1" };
-  expect(childEnv({}, { ...extra, mcpTools: "ticket" }).KIBO_MCP_TOOLS).toBe("ticket");
   expect(childEnv({}, { ...extra, mcpTools: "project" }).KIBO_MCP_TOOLS).toBe("project");
   expect(
     childEnv({ KIBO_MCP_TOOLS: "project" }, { ...extra, mcpTools: null, env: { KIBO_MCP_TOOLS: "project" } }),
   ).not.toHaveProperty("KIBO_MCP_TOOLS");
-  expect(cleanEnv({ KIBO_MCP_TOOLS: "ticket", HOME: "/h" })).toEqual({ HOME: "/h" });
+  expect(cleanEnv({ KIBO_MCP_TOOLS: "project", HOME: "/h" })).toEqual({ HOME: "/h" });
 });
 
 test("the MCP URL reaches the child environment only for a project run", () => {

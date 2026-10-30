@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { KiboError, type ProposedAction } from "@kibo/schema";
 import { commandsFor, isSkipped, type RefTable, resolveRefs, staleReason } from "./apply-plan";
-import { AGENTS, answered, HUMAN, link, project, question, run, ticket } from "./test-kit";
+import { answered, HUMAN, link, project, question, run, ticket } from "./test-kit";
 import type { BatchContext } from "./validate";
 import { captureExpected } from "./validate";
 
@@ -19,11 +19,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   project: snapshot,
   runs: [run({ id: "r1", ticketId: "t2", state: "running" })],
   notes: [{ path: "a.md", hash: "h1" }],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
   ...p,
 });
 
@@ -80,7 +76,7 @@ describe("staleReason", () => {
     expect(stale(rename, { project: withTicket("t1", { id: "t1", description: "autre" }) })).toBeNull();
   });
 
-  test("status, question, note, run and answers", () => {
+  test("status, question and note", () => {
     expect(
       stale(
         { id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" },
@@ -110,29 +106,6 @@ describe("staleReason", () => {
         { notes: [{ path: "b.md", hash: "x" }] },
       ),
     ).toBe("modifié depuis la proposition : exists");
-    expect(
-      stale(
-        { id: 1, why, type: "cancelRun", runId: "r1" },
-        { runs: [run({ id: "r1", ticketId: "t2", state: "done" })] },
-      ),
-    ).toBe("modifié depuis la proposition : terminal");
-    expect(
-      stale(
-        { id: 1, why, type: "deliverAnswers", ticket: "SILO-3" },
-        {
-          project: {
-            ...snapshot,
-            questions: [...snapshot.questions, answered(question({ id: "q3", ticketId: "t3" }))],
-          },
-        },
-      ),
-    ).toBe("modifié depuis la proposition : undelivered");
-    expect(
-      stale(
-        { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" },
-        { runs: [run({ id: "r7", ticketId: "t3", state: "queued" })] },
-      ),
-    ).toBe("modifié depuis la proposition : activeRun");
   });
 
   test("nothing changed: not stale", () => {
@@ -145,10 +118,6 @@ const ids = { "SILO-1": "t1", "SILO-2": "t2", "SILO-3": "t3", "new:1": "t9" };
 const commands = (action: ProposedAction) => commandsFor(action, ids, HUMAN, snapshot);
 
 describe("commandsFor", () => {
-  test("dismissing a signal runs no project command", () => {
-    expect(commands({ id: 1, why, type: "dismissSignal", signal: "sig:3" })).toEqual([]);
-  });
-
   test("tickets", () => {
     expect(
       commands({
@@ -236,11 +205,8 @@ describe("commandsFor", () => {
     ]);
   });
 
-  test("agents and notes are run by the daemon", () => {
+  test("notes are run by the daemon", () => {
     for (const action of [
-      { id: 1, why, type: "assignAgent", ticket: "SILO-1", profileId: "global:opus-dev" },
-      { id: 1, why, type: "deliverAnswers", ticket: "SILO-3" },
-      { id: 1, why, type: "cancelRun", runId: "r1" },
       { id: 1, why, type: "createNote", path: "b.md", content: "" },
       { id: 1, why, type: "updateNote", path: "a.md", content: "" },
     ] satisfies ProposedAction[]) {
@@ -250,7 +216,7 @@ describe("commandsFor", () => {
 });
 
 test("isSkipped is true for unchecked actions", () => {
-  const action: ProposedAction = { id: 2, why, type: "cancelRun", runId: "r1" };
+  const action: ProposedAction = { id: 2, why, type: "setStatus", ticket: "SILO-1", statusId: "done" };
   expect(isSkipped(action, new Set([1, 3]))).toBe(true);
   expect(isSkipped(action, new Set([2]))).toBe(false);
 });

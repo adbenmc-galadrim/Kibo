@@ -1,9 +1,0 @@
-{
-  "agentType": "ecc:code-reviewer",
-  "description": "Porte qualité — correctness",
-  "toolUseId": "toolu_01AbCdEfGhIjKlMnOpQrStUv",
-  "spawnDepth": 1,
-  "requestShape": "agent",
-  "requestNonInteractive": true,
-  "model": "opus"
-}

@@ -62,9 +62,6 @@ function batchAgents(
   return deps.agents;
 }
 
-const agentsOf = (deps: ActionRunnerDeps, action: ProposedAction): ProjectAgentAgentsPort =>
-  batchAgents(deps, action)();
-
 function runCommands(deps: ActionRunnerDeps, action: ProposedAction, ids: TicketIds): Created | null {
   let created: Created | null = null;
   for (const command of commandsFor(action, ids, deps.by, projectFor(deps, action))) {
@@ -82,13 +79,6 @@ export async function runAction(
 ): Promise<Created | null> {
   const { data, projectId } = deps;
   switch (action.type) {
-    case "assignAgent":
-    case "deliverAnswers":
-      agentsOf(deps, action);
-      throw new KiboError("AGENT_EXECUTION_REMOVED", `${action.type}: Kibo no longer runs ticket agents`);
-    case "cancelRun":
-      agentsOf(deps, action).cancel(action.runId);
-      return null;
     case "createNote":
     case "updateNote":
       batchAgents(deps, action);

@@ -1,7 +1,0 @@
-{
-  "routes": [
-    { "prompt": "Modifie le composant Kibo", "scenario": "modify-ok.json" },
-    { "prompt": "Écris le composant Kibo", "scenario": "generate-ok.json" }
-  ],
-  "fallback": "generate-ok.json"
-}

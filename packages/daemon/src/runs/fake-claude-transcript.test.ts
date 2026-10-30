@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { isClaudeDenial } from "@kibo/schema";
-import { cleanFakeDirs, finish, readHooks, settings, start, tmp } from "./fake-claude.test-helper";
-import { FakeScenario, scenarioPath } from "./fake-claude-scenario";
+import { cleanFakeDirs, tmp } from "./fake-claude.test-helper";
 import {
   CLAUDE_DENIAL_TEXT,
   denialOutcome,
@@ -181,43 +179,4 @@ test("a tool refused by Claude Code gets the no-approval-surface result", () => 
   expect(use).toMatchObject({ type: "tool_use", name: "Bash", input: { command: "pnpm test" } });
   expect(result).toMatchObject({ tool_use_id: use?.id, is_error: true, content: CLAUDE_DENIAL_TEXT });
   expect(CLAUDE_DENIAL_TEXT.startsWith("Permission for this tool use was denied.")).toBe(true);
-  expect(isClaudeDenial(CLAUDE_DENIAL_TEXT)).toBe(true);
-});
-
-function withoutMcp(dir: string): string {
-  const scenario = FakeScenario.parse(JSON.parse(readFileSync(scenarioPath("delivery-denied"), "utf8")));
-  const turns = scenario.turns.map((t) => ({ ...t, steps: t.steps.filter((step) => !("mcp" in step)) }));
-  const file = join(dir, "delivery-denied.json");
-  writeFileSync(file, JSON.stringify({ turns }));
-  return file;
-}
-
-test("the delivery-denied scenario plays Claude Code refusals then resumes", async () => {
-  const state = tmp();
-  const log = join(state, "hooks.jsonl");
-  const env = { KIBO_FAKE_CLAUDE_SCENARIO: withoutMcp(state), KIBO_FAKE_CLAUDE_STATE: state };
-  const first = await finish(start(["--session-id", "s5", "--settings", settings(log)], env));
-  expect(first.code).toBe(0);
-  expect(first.lines.at(-1)?.permission_denials).toEqual([
-    { tool_name: "Bash" },
-    { tool_name: "Read" },
-    { tool_name: "Bash" },
-  ]);
-  const results = lines(join(state, "s5.jsonl"))
-    .flatMap(contentOf)
-    .filter((b) => b.type === "tool_result" && b.is_error === true);
-  expect(results).toHaveLength(3);
-  expect(results.every((b) => b.content === CLAUDE_DENIAL_TEXT)).toBe(true);
-  const hooks = readHooks(log);
-  expect(hooks.filter((h) => h.hook_event_name === "PreToolUse").map((h) => h.tool_input)).toEqual([
-    { command: "pnpm test" },
-    { file_path: "~/.claude/skills/full-delivery/reference/kibo.md" },
-    { command: 'sh -c "rm -rf x"' },
-  ]);
-  expect(hooks.filter((h) => h.hook_event_name === "PostToolUse")).toEqual([]);
-  const second = await finish(start(["--resume", "s5", "--settings", settings(log)], env, "Reprends."));
-  expect(second.code).toBe(0);
-  expect(second.lines.at(-1)?.permission_denials).toEqual([]);
-  const resumed = readHooks(log).filter((h) => h.hook_event_name === "PostToolUse");
-  expect(resumed.map((h) => h.tool_input)).toEqual([{ command: "echo resumed" }]);
 });

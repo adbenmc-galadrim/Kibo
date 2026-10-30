@@ -2,24 +2,10 @@ import { expect, test } from "bun:test";
 import type { TabTarget } from "@kibo/schema";
 import { hashToTarget, rememberTicketKey, resolveProjectKey, targetToHash } from "./target-hash";
 
-const run: TabTarget = { kind: "run", runId: "r1" };
-
-test("a run has its own address", () => {
-  expect(targetToHash(run)).toBe("#/runs/r1");
-  expect(hashToTarget("#/runs/r1")).toEqual(run);
-});
-
-test("a run address survives a round trip, even with odd characters", () => {
-  const odd: TabTarget = { kind: "run", runId: "run 4/é" };
-  expect(hashToTarget(targetToHash(odd))).toEqual(odd);
-  expect(hashToTarget("#/runs/r1/")).toEqual(run);
-});
-
-test("a run address without an id or with a broken one is no target", () => {
-  expect(hashToTarget("#/runs/")).toBeNull();
-  expect(hashToTarget("#/runs")).toBeNull();
-  expect(hashToTarget("#/runs/%E0%A4%A")).toBeNull();
-  expect(hashToTarget("#/runs/a/b")).toBeNull();
+test("an old run, skill or agents address is no target", () => {
+  expect(hashToTarget("#/runs/r1")).toBeNull();
+  expect(hashToTarget("#/skills/s")).toBeNull();
+  expect(hashToTarget("#/agents")).toBeNull();
 });
 
 test("a page address may name one question, read back the same way", () => {
@@ -77,6 +63,6 @@ test("an address may name the project by its key instead of its id", () => {
     kind: "project",
     projectId: "ZZZ",
   });
-  expect(resolveProjectKey(hashToTarget("#/runs/r1"), projects)).toEqual(run);
+  expect(resolveProjectKey(hashToTarget("#/inbox"), projects)).toEqual({ kind: "screen", screen: "inbox" });
   expect(resolveProjectKey(null, projects)).toBeNull();
 });

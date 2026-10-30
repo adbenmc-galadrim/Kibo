@@ -247,9 +247,10 @@ test("the agent error codes replace the profile one", () => {
   expect(isKiboErrorCode("PROFILE_IN_USE")).toBe(false);
 });
 
-test("the ticket agents are refused with a stable code", () => {
-  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(true);
-  expect(new KiboError("AGENT_EXECUTION_REMOVED", "assign").code).toBe("AGENT_EXECUTION_REMOVED");
+test("a failed backup has a stable code", () => {
+  expect(isKiboErrorCode("BACKUP_FAILED")).toBe(true);
+  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(false);
+  expect(new KiboError("BACKUP_FAILED", "backup").code).toBe("BACKUP_FAILED");
 });
 
 describe("phase 7 error codes", () => {
@@ -376,13 +377,10 @@ test("phase 14 methods are part of RpcRequest", () => {
   expect(RpcRequest.safeParse({ method: "deleteBackup", id: "../x" }).success).toBe(false);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { dir: null } }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { nope: 1 } }).success).toBe(false);
-  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "review" }).success).toBe(true);
-  expect(RpcRequest.safeParse({ method: "markTutorialSeen", view: "kanban" }).success).toBe(false);
 });
 
 test("phase 14 events and the help combo", () => {
   expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
-  expect(Phase7Event.safeParse({ type: "tutorial.changed" }).success).toBe(true);
   expect(KeyCombo.safeParse("mod+/").success).toBe(true);
-  expect(SYSTEM_AGENT_IDS).toEqual(["assistant", "generateur", "demo", "project-agent"]);
+  expect(SYSTEM_AGENT_IDS).toEqual(["project-agent"]);
 });

@@ -1,12 +1,10 @@
 import type { Capability, SandboxFile } from "@kibo/schema";
-import type { DraftAssets } from "../ai/draft-preview";
 import type { EmbedService } from "../embed/types";
 import {
   type AssetLookup,
   lookupAsset,
   parseAssetPath,
   parseDesignPath,
-  parseDraftAssetPath,
   parseEmbedPath,
   parseFilePath,
 } from "./asset-path";
@@ -54,7 +52,6 @@ export type SandboxServerOptions = {
   uiPort: number;
   assets: AssetLookup;
   extraAncestors?: readonly string[];
-  drafts?: DraftAssets;
   files?: FileOpener;
   designs?: FileOpener;
   embeds?: Pick<EmbedService, "relay">;
@@ -72,13 +69,6 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
     return new Response(body, {
       headers: { ...headersFor(capabilities), "content-type": TYPES[name], ...extra },
     });
-  };
-  const serveDraft = async (draftId: string, hash: string, name: SandboxFile): Promise<Response> => {
-    if (!opts.drafts) return plain("not found", 404);
-    const body = await opts.drafts.lookup(draftId, hash, name);
-    if (body === null) return plain("not found", 404);
-    const manifest = await opts.drafts.manifest(draftId);
-    return file(body, name, manifest?.capabilities ?? []);
   };
   const serveFile = async (
     token: string,
@@ -121,8 +111,6 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
       return serveFile(design.token, design.name, req.method, opts.designs);
     }
     if (req.method !== "GET") return plain("method not allowed", 405);
-    const draft = parseDraftAssetPath(pathname);
-    if (draft) return serveDraft(draft.draftId, draft.hash, draft.file);
     const asset = parseAssetPath(pathname, "c", SANDBOX_FILES);
     if (!asset) return plain("not found", 404);
     const found = lookupAsset(opts.assets, asset);

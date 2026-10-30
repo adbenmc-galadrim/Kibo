@@ -1,5 +1,18 @@
 import type { QuestionAnswer } from "./question-fields";
-import { isWakeupMessage, WAKEUP_PREFIX } from "./signal";
+
+export const WAKE_WINDOW_MS = 10 * 60_000;
+export const WAKEUP_PREFIX = "Réveil automatique : ";
+const WAKEUP_COUNT = /^(\d+) signa(?:l|ux) à traiter/;
+
+export type Wakeup = { projectId: string; lastAt: number | null; dueAt: number | null };
+
+export const isWakeupMessage = (text: string): boolean => text.startsWith(WAKEUP_PREFIX);
+
+export function wakeupCount(text: string): number | null {
+  if (!isWakeupMessage(text)) return null;
+  const match = WAKEUP_COUNT.exec(text.slice(WAKEUP_PREFIX.length));
+  return match?.[1] === undefined ? null : Number(match[1]);
+}
 
 export const ANSWER_QUOTE_MAX = 120;
 

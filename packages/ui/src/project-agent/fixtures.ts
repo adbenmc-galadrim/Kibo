@@ -177,7 +177,7 @@ const actions: ProposedAction[] = [
     title: "Export CSV des factures",
     why: "Titre plus précis",
   },
-  { id: 4, type: "assignAgent", ticket: "SILO-12", profileId: "opus", why: "Personne n'y travaille" },
+  { id: 4, type: "setStatus", ticket: "SILO-12", statusId: "in_progress", why: "Quelqu'un s'y met" },
   {
     id: 5,
     type: "createQuestion",

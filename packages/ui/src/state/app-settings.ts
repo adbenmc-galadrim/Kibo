@@ -1,6 +1,6 @@
 import type { AppSettings, AppSettingsPatch } from "@kibo/schema";
 
-export const DEFAULT_APP_SETTINGS: AppSettings = { agentExecution: "hidden" };
+export const DEFAULT_APP_SETTINGS: AppSettings = {};
 
 export type AppSettingsSource = {
   getAppSettings(): Promise<AppSettings>;

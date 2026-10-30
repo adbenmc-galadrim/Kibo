@@ -11,7 +11,6 @@ import type {
   HostLoad,
   HostSettings,
   HostView,
-  MachineLock,
   ProjectSnapshot,
   Question,
   RunLogEntry,
@@ -44,7 +43,6 @@ export type AgentDataPort = {
   assignTicket(projectId: string, ticketId: string, profileName: string): void;
   runStarted(projectId: string, ticketId: string): void;
   runDone(projectId: string, ticketId: string): void;
-  isDemoProject(projectId: string): boolean;
   createQuestion(
     projectId: string,
     ticketId: string,
@@ -86,7 +84,6 @@ export type OrchestratorOptions = {
   onSpawned?: (run: RunView) => Promise<void>;
   onTurnEnd?: (run: RunView) => Promise<void>;
   onEndedWithoutTurn?: (run: RunView) => Promise<void>;
-  locks?: () => MachineLock[];
 };
 
 export type ToolGuard = (call: {

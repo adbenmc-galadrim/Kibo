@@ -14,7 +14,6 @@ import {
 } from "./fakes.test-helper";
 
 const why = "";
-const REMOVED = new Set([5, 6]);
 
 async function withHarness<T>(fn: (h: Harness, s: Seeded) => Promise<T>): Promise<T> {
   const h = harness();
@@ -26,7 +25,7 @@ async function withHarness<T>(fn: (h: Harness, s: Seeded) => Promise<T>): Promis
 }
 
 const apply = (h: Harness, batch: Awaited<ReturnType<typeof propose>>, chosen: ReadonlySet<number>) =>
-  applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
+  applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
 
 const mutation = fc.record({
   renameFirst: fc.boolean(),
@@ -83,7 +82,7 @@ describe("executor properties", () => {
   });
 
   test("an unchecked action writes nothing", async () => {
-    const ids = Array.from({ length: 12 }, (_, i) => i + 1);
+    const ids = Array.from({ length: 9 }, (_, i) => i + 1);
     await fc.assert(
       fc.asyncProperty(fc.subarray(ids), (picked) =>
         withHarness(async (h, s) => {
@@ -94,28 +93,24 @@ describe("executor properties", () => {
             { id: 2, why, type: "updateTicket", ticket: "SILO-1", title: "Renommé" },
             { id: 3, why, type: "setStatus", ticket: "SILO-2", statusId: "done" },
             { id: 4, why, type: "link", from: "SILO-3", to: "SILO-4", kind: "blocks" },
-            { id: 5, why, type: "assignAgent", ticket: "SILO-5", profileId: "global:opus" },
-            { id: 6, why, type: "deliverAnswers", ticket: "SILO-6" },
-            { id: 7, why, type: "cancelRun", runId: s.runId },
             {
-              id: 8,
+              id: 5,
               why,
               type: "answerQuestion",
               questionId: s.open.id,
               answer: { kind: "text", text: "Oui" },
             },
-            { id: 9, why, type: "createQuestion", ticket: "SILO-7", title: "Nouvelle question ?" },
-            { id: 10, why, type: "createNote", path: "b.md", content: "# B\n" },
-            { id: 11, why, type: "updateNote", path: "a.md", content: "# A bis\n" },
-            { id: 12, why, type: "unlink", from: "SILO-8", to: "SILO-9", kind: "blocks" },
+            { id: 6, why, type: "createQuestion", ticket: "SILO-7", title: "Nouvelle question ?" },
+            { id: 7, why, type: "createNote", path: "b.md", content: "# B\n" },
+            { id: 8, why, type: "updateNote", path: "a.md", content: "# A bis\n" },
+            { id: 9, why, type: "unlink", from: "SILO-8", to: "SILO-9", kind: "blocks" },
           ];
           const batch = await propose(h, actions);
           h.commands.length = 0;
           const chosen = new Set(picked);
           const results = await apply(h, batch, chosen);
           for (const r of results) {
-            if (chosen.has(r.actionId))
-              expect(r.outcome).toBe(REMOVED.has(r.actionId) ? "failed" : "applied");
+            if (chosen.has(r.actionId)) expect(r.outcome).toBe("applied");
             else
               expect(r).toEqual({
                 actionId: r.actionId,
@@ -124,15 +119,14 @@ describe("executor properties", () => {
                 created: null,
               });
           }
-          const commandIds = [1, 2, 3, 4, 8, 9, 12];
+          const commandIds = [1, 2, 3, 4, 5, 6, 9];
           expect(h.commands).toHaveLength(commandIds.filter((id) => chosen.has(id)).length);
-          expect(h.agents.cancelled).toHaveLength(chosen.has(7) ? 1 : 0);
           const snap = h.data.project(h.project.id);
           expect(snap.tickets.some((t) => t.title === "Créé")).toBe(chosen.has(1));
           expect(titleOf(h, "SILO-1")).toBe(chosen.has(2) ? "Renommé" : "Ticket 1");
-          expect(snap.links.some((l) => l.from === t8 && l.to === t9)).toBe(!chosen.has(12));
-          expect(await h.data.readNote(h.project.id, "b.md")).toBe(chosen.has(10) ? "# B\n" : null);
-          expect(await h.data.readNote(h.project.id, "a.md")).toBe(chosen.has(11) ? "# A bis\n" : "# A\n");
+          expect(snap.links.some((l) => l.from === t8 && l.to === t9)).toBe(!chosen.has(9));
+          expect(await h.data.readNote(h.project.id, "b.md")).toBe(chosen.has(7) ? "# B\n" : null);
+          expect(await h.data.readNote(h.project.id, "a.md")).toBe(chosen.has(8) ? "# A bis\n" : "# A\n");
         }),
       ),
       { numRuns: 20 },

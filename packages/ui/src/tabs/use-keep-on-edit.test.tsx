@@ -58,7 +58,7 @@ test("a write in the preview's project keeps it, unless a dialog is open or the 
 
 test("a screen preview has no project: no write keeps it", () => {
   const screen: TabsState = {
-    tabs: [{ id: "s", target: { kind: "screen", screen: "agents" }, pinned: false, preview: true }],
+    tabs: [{ id: "s", target: { kind: "screen", screen: "inbox" }, pinned: false, preview: true }],
     activeId: "s",
     recents: [],
   };

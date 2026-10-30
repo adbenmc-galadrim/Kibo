@@ -5,10 +5,8 @@ import {
   KiboError,
   type PermissionMode,
   PROJECT_AGENT_MCP_TOOLS,
-  TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { tryKill } from "../process-group";
-import type { McpTools } from "./ask-mcp";
 import { type AgentFlags, agentArgs, checkedSkillRules, reservedAgentArgs } from "./cli-flags";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
 import type { LaunchInput } from "./run-process";
@@ -17,8 +15,7 @@ export type CliCaps = { permissionModes: string[] };
 
 const TOOL_EVENTS = new Set<string>(["PreToolUse", "PostToolUse"]);
 
-const isKiboTool = (rule: string) =>
-  TICKET_MCP_TOOLS.includes(rule) || PROJECT_AGENT_MCP_TOOLS.includes(rule);
+const isKiboTool = (rule: string) => ASK_TOOLS.includes(rule) || PROJECT_AGENT_MCP_TOOLS.includes(rule);
 
 function profileRules(allow: readonly string[]): string[] {
   const rules = AllowRules.safeParse(allow.filter((rule) => !isKiboTool(rule)));
@@ -28,13 +25,10 @@ function profileRules(allow: readonly string[]): string[] {
   return [...new Set([...kiboTools, ...rules.data])];
 }
 
-const baseTools = (tools: McpTools): readonly string[] => (tools === "ticket" ? TICKET_MCP_TOOLS : ASK_TOOLS);
-
 export function claudeSettings(
   hook: HookLauncher,
   allow: readonly string[] = [],
   deny: readonly string[] = [],
-  tools: McpTools = null,
   skillRules: readonly string[] = [],
 ): string {
   const rules = [...profileRules(allow), ...checkedSkillRules(skillRules)];
@@ -51,7 +45,7 @@ export function claudeSettings(
     ]),
   );
   const permissions = {
-    allow: [...baseTools(tools), ...rules],
+    allow: [...ASK_TOOLS, ...rules],
     ...(deny.length > 0 ? { deny: [...deny] } : {}),
   };
   return JSON.stringify({ hooks, permissions });
@@ -111,7 +105,7 @@ export function claudeArgs(input: ArgsInput): string[] {
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools, input.agentFlags?.skillRules),
+    claudeSettings(input.hook, input.allow, input.deny, input.agentFlags?.skillRules),
     "--mcp-config",
     input.mcpConfigFile ?? mcpServerConfig(input.hook),
     ...(input.isolated ? ISOLATION_ARGS : []),

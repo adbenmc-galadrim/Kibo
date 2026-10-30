@@ -127,7 +127,7 @@ describe("domain errors", () => {
 });
 
 describe("invalid requests", () => {
-  test("an invalid AI request is refused with a short message, never the raw schema error", async () => {
+  test("an invalid request is refused with a short message, never the raw schema error", async () => {
     const srv = startServer({
       service: createService(store, { user: "adam" }),
       token: TOKEN,
@@ -144,13 +144,13 @@ describe("invalid requests", () => {
     const res = await fetch(`${srv.url}/api/rpc`, {
       method: "POST",
       headers: { ...headers, cookie },
-      body: JSON.stringify({ method: "reviewComponentDraft", draftId: "x", version: "1", changes: [] }),
+      body: JSON.stringify({ method: "decideBatch", projectId: "p", batchId: 3, decision: "maybe" }),
     });
     srv.stop();
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({
       ok: false,
-      error: { code: "INVALID_INPUT", message: "invalid request: draftId, version" },
+      error: { code: "INVALID_INPUT", message: "invalid request: batchId, decision" },
     });
   });
 });

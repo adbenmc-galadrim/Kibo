@@ -12,7 +12,6 @@ import { type Host, HostProvider } from "./Host";
 const calls: RpcRequest[] = [];
 
 const answer = (req: RpcRequest): unknown => {
-  if (req.method === "deliver") return { kind: "parent", items: [] };
   if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
   if (req.method === "listCiRuns") return [];
   if (req.method === "getProjectAgent") return viewFixture({ batches: [] });

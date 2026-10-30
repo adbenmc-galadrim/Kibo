@@ -56,7 +56,7 @@ export function fingerprint(input: {
     questions: sortedRecord(project.questions.map((q) => [q.id, questionPrintOf(q)] as const)),
     runs: sortedRecord(
       input.runs
-        .filter((r) => r.projectId === project.meta.id && r.kind !== "project")
+        .filter((r) => r.projectId === project.meta.id && r.ticketId !== null)
         .map((r) => [r.id, r.state] as const),
     ),
     notes: sortedRecord(input.notes.map((n) => [n.path, n.hash] as const)),

@@ -11,7 +11,6 @@ import {
   testAgent,
   waitUntil,
 } from "./orchestrator.test-helper";
-import { openRunRegistry } from "./run-registry";
 
 cleanHarness();
 
@@ -38,40 +37,6 @@ test("a forbidden folder stored on the agent fails the run with its name", async
     await waitUntil(() => view()?.state === "failed");
     expect(view()?.error).toContain(".kibo");
     expect(fakeCalls(h.state, run.sessionId)).toEqual([]);
-  } finally {
-    await orch.stop();
-  }
-}, 30_000);
-
-test("a ticket run left in the queue by an older Kibo fails without launching and refuses an answer", async () => {
-  const h = setup({ scenario: "done" });
-  await h.orch.stop();
-  const legacy = openRunRegistry(h.store).create(
-    {
-      id: "legacy",
-      projectId: "p1",
-      ticketId: "t1",
-      ticketKey: "KIB-1",
-      ticketTitle: "Ticket KIB-1",
-      profileId: "global:opus",
-      profileName: "opus-dev",
-      agentScope: "global",
-      projectKey: null,
-      sessionId: crypto.randomUUID(),
-      brief: "",
-      kind: "ticket",
-      resumedFrom: null,
-    },
-    0,
-  );
-  const orch = createOrchestrator(h.options);
-  h.route(orch);
-  try {
-    const view = () => orch.state().runs.find((r) => r.id === legacy.id);
-    await waitUntil(() => view()?.state === "failed");
-    expect(view()?.error).toStartWith("AGENT_EXECUTION_REMOVED");
-    expect(fakeCalls(h.state, legacy.sessionId)).toEqual([]);
-    expect(() => orch.answer(legacy.id, "Reprends")).toThrow("AGENT_EXECUTION_REMOVED");
   } finally {
     await orch.stop();
   }

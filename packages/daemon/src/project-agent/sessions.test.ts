@@ -49,7 +49,6 @@ test("memory, past sessions and the rejection message", () => {
 
 test("only a project run with a project names its project", () => {
   expect(projectOfRun(run({ id: "r1", kind: "project" }))).toBe("p1");
-  expect(() => projectOfRun(run({ id: "r2" }))).toThrow("not a project run");
   expect(() => projectOfRun(run({ id: "r3", kind: "project", projectId: null }))).toThrow(
     expect.objectContaining({ code: "INVALID_INPUT" }),
   );

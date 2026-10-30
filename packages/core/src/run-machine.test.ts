@@ -17,7 +17,7 @@ const record: RunRecord = {
   sessionId: "s1",
   brief: "",
   createdAt: 100,
-  kind: "ticket",
+  kind: "project",
   resumedFrom: null,
 };
 const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent => ({
@@ -202,21 +202,6 @@ test("a ticket run that has started can be written to once it ended", () => {
   }
 });
 
-test("a run that never started or has no ticket cannot be written to once ended", () => {
-  const answered: RunEvent = { type: "answered", text: "x", rank: 0 };
-  const neverStarted = reduceRun(initRun(record, 0, 0), { type: "failed", error: "WORKSPACE_FAILED: x" }, 1);
-  const cancelledInQueue = reduceRun(initRun(record, 0, 0), { type: "cancelled" }, 1);
-  const task = initRun({ ...record, projectId: null, ticketId: null, ticketKey: null }, 0, 0);
-  const taskDone = reduceRun(
-    reduceRun(reduceRun(task, { type: "admitted", lane: 1 }, 1), spawned(false), 2),
-    exit(),
-    3,
-  );
-  for (const view of [neverStarted, cancelledInQueue, taskDone]) {
-    expect(() => reduceRun(view, answered, 10)).toThrow("INVALID_TRANSITION");
-  }
-});
-
 test("the active time sums the turns and leaves out the queue and the pause between them", () => {
   let v = running();
   expect(v).toMatchObject({ activeMs: 0, turnStartedAt: 120 });
@@ -299,16 +284,6 @@ test("cancelling or failing drops the waiting message; requeued needs one", () =
   });
 });
 
-test("a run without ticket still only answers a question", () => {
-  const task = { ...record, projectId: null, ticketId: null, ticketKey: null };
-  const v = reduceRun(
-    reduceRun(initRun(task, 5, 100), { type: "admitted", lane: 1 }, 110),
-    spawned(false),
-    120,
-  );
-  expect(() => reduceRun(v, { type: "answered", text: "x", rank: 1 }, 130)).toThrow("INVALID_TRANSITION");
-});
-
 test("the question stays on the run until the next turn starts, so the queue can tell an answer from a message", () => {
   let v = reduceRun(running(), hook("PostToolUse", { tool: ASK_TOOL, question: "Quel port ?" }), 150);
   v = reduceRun(v, exit(), 200);
@@ -330,18 +305,6 @@ test("the question stays on the run until the next turn starts, so the queue can
   );
   const requeued = reduceRun(reduceRun(asked, exit(), 150), { type: "requeued", rank: 1 }, 151);
   expect(requeued).toMatchObject({ state: "queued", question: "Je continue ?", pendingAnswer: "Vas-y" });
-});
-
-test("a setup step or a base fallback is journaled while starting and changes nothing else", () => {
-  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
-  const steps: RunEvent[] = [
-    { type: "setup", command: "pnpm worktree kib-14", status: "running" },
-    { type: "base_fallback", base: "feat/matrice-droits", from: "origin/dev" },
-  ];
-  for (const step of steps) {
-    expect(reduceRun(starting, step, 130)).toEqual(starting);
-    expect(() => reduceRun(running(), step, 130)).toThrow("INVALID_TRANSITION");
-  }
 });
 
 test("the session decision is journaled while starting and sets the run session only", () => {
@@ -418,9 +381,4 @@ test("a project run goes back to the head of the queue on a message after any en
       endedAt: null,
     });
   }
-});
-
-test("a ticket-kind run without ticket keeps refusing messages outside a question", () => {
-  const task = { ...record, projectId: null, ticketId: null, ticketKey: null };
-  expect(() => reduceRun(initRun(task, 5, 100), message("x"), 101)).toThrow("INVALID_TRANSITION");
 });

@@ -1,13 +1,6 @@
 import { expect, test } from "bun:test";
 import { PassThrough } from "node:stream";
-import {
-  PEEK_WORK_SPEC,
-  PROJECT_AGENT_TOOLS,
-  SIGNAL_PROJECT_SPEC,
-  SKILL_REVIEW_SPEC,
-  TICKET_PROGRESS_SPEC,
-  TOOL_SPECS,
-} from "@kibo/schema";
+import { PROJECT_AGENT_TOOLS, TOOL_SPECS } from "@kibo/schema";
 import { ASK_QUESTION_REPLY, ASK_REPLY, handleMcpLine, type McpTools, serveMcp } from "./ask-mcp";
 
 type Called = { tool: string; input: unknown };
@@ -22,7 +15,6 @@ const daemon = (reply = { text: "{}", isError: false }) => {
 };
 
 const QUESTIONS_ONLY: McpTools = null;
-const TICKET_RUN: McpTools = "ticket";
 const PROJECT_RUN: McpTools = "project";
 
 const call = (method: string, params?: unknown, tools: McpTools = QUESTIONS_ONLY, daemonCall = daemon().fn) =>
@@ -116,100 +108,26 @@ test("without a tool set only the two question tools are listed and nothing reac
   expect(d.calls).toEqual([]);
 });
 
-test("a ticket run lists the question tools, ticket_progress, signal_project, peek_work and skill_review, never the project tools", async () => {
-  expect(await toolNames(TICKET_RUN)).toEqual([
-    "ask_user",
-    "ask_question",
-    "ticket_progress",
-    "signal_project",
-    "peek_work",
-    "skill_review",
-  ]);
-  const list = (await call("tools/list", undefined, TICKET_RUN)) as { result: { tools: unknown[] } };
-  expect(list.result.tools.slice(2)).toEqual([
-    TICKET_PROGRESS_SPEC,
-    SIGNAL_PROJECT_SPEC,
-    PEEK_WORK_SPEC,
-    SKILL_REVIEW_SPEC,
-  ]);
-  const d = daemon();
-  for (const name of ["list_tickets", "list_signals"])
-    expect(await call("tools/call", { name, arguments: {} }, TICKET_RUN, d.fn)).toMatchObject({
-      error: { code: -32602 },
-    });
-  expect(d.calls).toEqual([]);
-});
-
-test("calling ticket_progress asks the daemon and relays its text or its error", async () => {
-  const plan = [{ id: "s1", title: "Lire", status: "doing" }];
-  const ok = daemon({ text: "Plan enregistré.", isError: false });
-  expect(
-    await call("tools/call", { name: "ticket_progress", arguments: { plan } }, TICKET_RUN, ok.fn),
-  ).toEqual({
-    jsonrpc: "2.0",
-    id: 1,
-    result: { content: [{ type: "text", text: "Plan enregistré." }], isError: false },
-  });
-  expect(ok.calls).toEqual([{ tool: "ticket_progress", input: { plan } }]);
-  const ko = daemon({ text: "INVALID_INPUT: plan or report required", isError: true });
-  expect(await call("tools/call", { name: "ticket_progress" }, TICKET_RUN, ko.fn)).toMatchObject({
-    result: { isError: true },
-  });
-  expect(ko.calls).toEqual([{ tool: "ticket_progress", input: {} }]);
-  const project = daemon();
-  expect(await call("tools/call", { name: "ticket_progress" }, PROJECT_RUN, project.fn)).toMatchObject({
-    error: { code: -32602 },
-  });
-  expect(project.calls).toEqual([]);
-});
-
-test("calling signal_project asks the daemon and relays its text or its error", async () => {
-  const input = { kind: "ticket", title: "Tests du récepteur de hooks" };
-  const ok = daemon({ text: "Signal sig:1 enregistré.", isError: false });
-  expect(await call("tools/call", { name: "signal_project", arguments: input }, TICKET_RUN, ok.fn)).toEqual({
-    jsonrpc: "2.0",
-    id: 1,
-    result: { content: [{ type: "text", text: "Signal sig:1 enregistré." }], isError: false },
-  });
-  expect(ok.calls).toEqual([{ tool: "signal_project", input }]);
-  const ko = daemon({ text: "QUOTA_EXCEEDED: a run sends 20 signals at most", isError: true });
-  expect(
-    await call("tools/call", { name: "signal_project", arguments: input }, TICKET_RUN, ko.fn),
-  ).toMatchObject({
-    result: { isError: true },
-  });
-  const project = daemon();
-  expect(
-    await call("tools/call", { name: "signal_project", arguments: input }, PROJECT_RUN, project.fn),
-  ).toMatchObject({ error: { code: -32602 } });
-  expect(project.calls).toEqual([]);
-});
-
-test("a project run lists the question tools, the twelve project tools and skill_review with their schemas", async () => {
+test("a project run lists the question tools and the project tools with their schemas, none of the ticket tools", async () => {
   const names = await toolNames(PROJECT_RUN);
-  expect(names).toHaveLength(15);
-  expect(names).toContain("list_signals");
-  expect(names).not.toContain("signal_project");
-  expect(names).not.toContain("peek_work");
-  expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS, "skill_review"]);
+  expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS]);
+  for (const retired of ["list_signals", "signal_project", "peek_work", "skill_review", "ticket_progress"])
+    expect(names).not.toContain(retired);
   const list = (await call("tools/list", undefined, PROJECT_RUN)) as {
     result: { tools: Array<{ name: string; description: string; inputSchema: unknown }> };
   };
-  expect(list.result.tools.slice(2)).toEqual([
-    ...TOOL_SPECS.map((s) => ({ name: s.name, description: s.description, inputSchema: s.inputSchema })),
-    SKILL_REVIEW_SPEC,
-  ]);
+  expect(list.result.tools.slice(2)).toEqual(
+    TOOL_SPECS.map((s) => ({ name: s.name, description: s.description, inputSchema: s.inputSchema })),
+  );
 });
 
-test("calling skill_review from a project run asks the daemon", async () => {
-  const input = { reviews: [{ skill: "a", verdict: "ok", note: "Bien." }] };
-  const ok = daemon({ text: "1 review enregistrée", isError: false });
-  expect(
-    await call("tools/call", { name: "skill_review", arguments: input }, PROJECT_RUN, ok.fn),
-  ).toMatchObject({
-    result: { content: [{ type: "text", text: "1 review enregistrée" }], isError: false },
-  });
-  expect(ok.calls).toEqual([{ tool: "skill_review", input }]);
+test("the tools of the retired ticket agents are refused in a project run and never reach the daemon", async () => {
+  const d = daemon();
+  for (const name of ["ticket_progress", "signal_project", "peek_work", "skill_review", "list_signals"])
+    expect(await call("tools/call", { name, arguments: {} }, PROJECT_RUN, d.fn)).toMatchObject({
+      error: { code: -32602 },
+    });
+  expect(d.calls).toEqual([]);
 });
 
 test("calling a project tool asks the daemon and relays its text or its error", async () => {
@@ -270,7 +188,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
   expect((await serve({}, [list]))[0]?.result.tools).toHaveLength(2);
   expect((await serve(url, [list]))[0]?.result.tools).toHaveLength(2);
   expect((await serve({ ...url, KIBO_MCP_TOOLS: "other" }, [list]))[0]?.result.tools).toHaveLength(2);
-  expect((await serve({ ...url, KIBO_MCP_TOOLS: "ticket" }, [list]))[0]?.result.tools).toHaveLength(6);
+  expect((await serve({ ...url, KIBO_MCP_TOOLS: "ticket" }, [list]))[0]?.result.tools).toHaveLength(2);
   const env = { ...url, KIBO_MCP_TOOLS: "project" };
   const replies = await serve(env, [
     list,
@@ -278,7 +196,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
     { jsonrpc: "2.0", id: 3, method: "ping" },
   ]);
   const byId = new Map(replies.map((r) => [r.id, r]));
-  expect(byId.get(1)?.result.tools).toHaveLength(15);
+  expect(byId.get(1)?.result.tools).toHaveLength(2 + PROJECT_AGENT_TOOLS.length);
   expect(byId.get(2)?.result.isError).toBe(true);
   expect(byId.get(3)?.result).toEqual({});
 });

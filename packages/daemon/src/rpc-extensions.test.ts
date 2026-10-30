@@ -34,8 +34,8 @@ test("requireLocal refuses a remote session", () => {
   expect(() => requireLocal(ctx)).not.toThrow();
 });
 
-test("a delivery method is answered by the extension that serves it", async () => {
-  const deliver = { method: "deliver", projectId: "p", ticketId: "t1" } as const;
-  const ext = { methods: ["deliver"] as const, handle: async () => "served" };
-  expect(await dispatchRpc(service, [ext], deliver, ctx, [])).toBe("served");
+test("an extension method is answered by the extension that serves it", async () => {
+  const settings = { method: "getAppSettings" } as const;
+  const ext = { methods: ["getAppSettings"] as const, handle: async () => "served" };
+  expect(await dispatchRpc(service, [ext], settings, ctx, [])).toBe("served");
 });

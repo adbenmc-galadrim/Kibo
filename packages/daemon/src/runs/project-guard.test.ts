@@ -21,7 +21,6 @@ const record: RunRecord = {
   resumedFrom: null,
 };
 const projectRun: RunView = initRun(record, 0, 0);
-const ticketRun: RunView = initRun({ ...record, ticketId: "t1", ticketKey: "SILO-1", kind: "ticket" }, 0, 0);
 const call = (tool: string) => ({ tool, input: null });
 
 test("a project run is denied every shell, write and web tool, whatever the rule form", () => {
@@ -38,7 +37,6 @@ test("a project run may read and use the kibo tools", () => {
   }
 });
 
-test("a ticket run or no run has no project guard", () => {
-  expect(projectRunGuard(ticketRun)).toBeNull();
+test("no run has no project guard", () => {
   expect(projectRunGuard(null)).toBeNull();
 });

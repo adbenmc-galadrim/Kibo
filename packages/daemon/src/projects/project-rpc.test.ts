@@ -111,21 +111,6 @@ test("getProject always carries the project's domains, empty for a local project
   expect(snapshot.domains).toEqual([]);
 });
 
-test("listProjects flags the demo project from the project settings", () => {
-  const { service, settings } = setup();
-  const create = (key: string) =>
-    ProjectMeta.parse(
-      service.handle({ method: "createProject", name: key, key, folder: null, color: "#F97316" }),
-    );
-  create("KIB");
-  settings.set(create("DEMO").id, "demo", "1");
-  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
-  expect(listed.map((p) => [p.key, p.demo])).toEqual([
-    ["KIB", false],
-    ["DEMO", true],
-  ]);
-});
-
 test("listProjects gives the folder of this machine, never the one of another machine for a shared project", () => {
   const { service, settings } = setup();
   const create = (key: string) =>

@@ -10,14 +10,13 @@ import type { ActivitySources } from "./project-activity";
 import type { RpcExtension } from "./rpc-extensions";
 import type { Service } from "./service";
 import { appSettingsRpc } from "./settings/app-settings-rpc";
-import { type AppSettingsStore, createAppSettingsStore } from "./settings/app-settings-store";
+import { createAppSettingsStore } from "./settings/app-settings-store";
 import type { Store } from "./store";
 import { type SprintEndDeps, startSprintEndWatch } from "./tracking/sprint-end";
 import { createSprintEndStore } from "./tracking/sprint-end-store";
 
 export type DaemonTracking = {
   rpc: RpcExtension[];
-  appSettings: AppSettingsStore;
   sink: ProjectEventSink;
   projectEvents(input: ListProjectEventsInput): ProjectEventPage;
   passes(agent: SprintEndDeps["agent"]): PollPass[];
@@ -62,7 +61,6 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   const sprintEnds = createSprintEndStore(store.db, Date.now);
   return {
     rpc: [appSettingsRpc({ store: appSettings, emit }), events.rpc, sessions.rpc],
-    appSettings,
     sink: events.sink,
     projectEvents: (req) => events.store.list(req),
     passes(agent) {

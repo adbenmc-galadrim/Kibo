@@ -110,22 +110,3 @@ test("without list_questions, a question placeholder resolves from the open ques
     "no list_questions reply to resolve question Autre",
   );
 });
-
-test("routes never match the work in progress of the other runs", () => {
-  const routes = scenarioPath("routes");
-  const section = [
-    "## Travail en cours sur le projet",
-    "",
-    "### global · livraison · KIB-14 · Récepteur de hooks",
-    "",
-    "- Plan : ask_question",
-  ].join("\n");
-  const brief = `# KIB-7 · Tokens shadcn\n\n## Description\n\nRien.\n\n${section}\n\n## Consignes\n\nAucune.`;
-  expect(turnScenario(routes, brief, null).turn).toBe(join(routes, "..", "hold.json"));
-  expect(turnScenario(routes, `${section}\n\n# Message\n\nRécepteur de hooks`, null).turn).toBe(
-    join(routes, "..", "question.json"),
-  );
-  expect(turnScenario(routes, `# KIB-14 · Récepteur de hooks\n\n${section}`, null).turn).toBe(
-    join(routes, "..", "question.json"),
-  );
-});

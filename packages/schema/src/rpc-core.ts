@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { AgentRef } from "./agent";
 import {
   type FilesInfo,
   MAX_PROJECT_ASSET_BYTES,
@@ -27,7 +26,7 @@ import type { NoteMeta, NotesInfo } from "./note";
 import { ProjectClient, type ProjectMeta, ProjectPatch } from "./project";
 import { ProjectSetup } from "./project-setup";
 import type { ProjectSnapshot, ProjectSummary, Session } from "./rpc";
-import type { AgentsState, AssignPreview, HostView, RunLogEntry, RunView } from "./run";
+import type { AgentsState, HostView, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
 import { TabsState } from "./tabs";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./workspace-config";
@@ -64,20 +63,6 @@ export const CORE_RPC = [
   z.object({ method: z.literal("config"), command: ConfigCommand }),
   z.object({ method: z.literal("getAgents") }),
   z.object({ method: z.literal("getRunLog"), runId: z.string().min(1) }),
-  z.object({
-    method: z.literal("previewAssign"),
-    projectId: z.string().min(1),
-    ticketId: NodeId,
-    profileId: AgentRef,
-  }),
-  z.object({
-    method: z.literal("assignAgent"),
-    projectId: z.string().min(1),
-    ticketId: NodeId,
-    profileId: AgentRef,
-    brief: z.string().max(10_000),
-    fresh: z.boolean().default(false),
-  }),
   z.object({
     method: z.literal("answerRun"),
     runId: z.string().min(1),
@@ -174,8 +159,6 @@ export type CoreRpcResult = {
   config: unknown;
   getAgents: AgentsState;
   getRunLog: RunLogEntry[];
-  previewAssign: AssignPreview;
-  assignAgent: RunView;
   answerRun: RunView;
   cancelRun: RunView;
   moveRun: null;

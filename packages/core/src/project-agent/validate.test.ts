@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProposeBatchInput, type ProposedAction } from "@kibo/schema";
-import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
+import { answered, link, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, validateBatch } from "./validate";
 
 const snapshot = project({
@@ -24,12 +24,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
     run({ id: "r3", projectId: "other", ticketId: "x", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
-  agentExecution: "shown",
   ...p,
 });
 
@@ -39,7 +34,6 @@ const problems = (input: ProposeBatchInput, c = ctx()) => {
   return result.ok ? [] : result.problems.map((p) => `#${p.actionId} ${p.message}`);
 };
 const why = "";
-const IMPORT = { kind: "import", ref: "plan" } as const;
 
 describe("validateBatch refuses a batch that lies about its targets", () => {
   test("unknown ticket", () => {
@@ -61,23 +55,6 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     expect(problems(batch({ id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "blocked" }))).toEqual(
       ["#1 raison de blocage requise"],
     );
-  });
-
-  test("Kibo agents are not assignable, demo only in the demo project, nor disabled, shadowed or unreadable agents", () => {
-    const assign = (profileId: string) =>
-      batch({ id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId });
-    for (const ref of ["system:assistant", "system:project-agent", "system:demo", "global:off-dev", "nope"]) {
-      expect(problems(assign(ref))).toEqual([`#1 agent non assignable « ${ref} »`]);
-    }
-    expect(problems(assign("system:demo"), ctx({ demoProject: true }))).toEqual([]);
-    expect(problems(assign("global:hidden"))).toEqual(["#1 agent non assignable « global:hidden »"]);
-    expect(problems(assign("global:broken"))).toEqual(["#1 agent non assignable « global:broken »"]);
-  });
-
-  test("assigning a ticket that already has an active run is accepted here", () => {
-    expect(
-      problems(batch({ id: 1, why, type: "assignAgent", ticket: "SILO-2", profileId: "global:opus-dev" })),
-    ).toEqual([]);
   });
 
   test("questions of another project or already answered", () => {
@@ -110,29 +87,6 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     ]);
     expect(problems(batch({ id: 1, why, type: "updateNote", path: "b.md", content: "" }))).toEqual([
       "#1 note introuvable « b.md »",
-    ]);
-  });
-
-  test("runs: unknown, of another project, or already over", () => {
-    const cancel = (runId: string) => batch({ id: 1, why, type: "cancelRun", runId });
-    expect(problems(cancel("r3"))).toEqual(["#1 run inconnu « r3 »"]);
-    expect(problems(cancel("r2"))).toEqual(["#1 run déjà terminé « r2 »"]);
-    expect(problems(cancel("r1"))).toEqual([]);
-  });
-
-  test("delivering answers needs undelivered answers", () => {
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-1" }))).toEqual([
-      "#1 aucune réponse à transmettre sur SILO-1",
-    ]);
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-3" }))).toEqual([]);
-  });
-
-  test("an imported answer is not an answer to deliver", () => {
-    const fromPlan = answered(question({ id: "q9", ticketId: "t2" }));
-    const imported = { ...fromPlan, answer: fromPlan.answer && { ...fromPlan.answer, by: IMPORT } };
-    const c = ctx({ project: { ...snapshot, questions: [...snapshot.questions, imported] } });
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-2" }), c)).toEqual([
-      "#1 aucune réponse à transmettre sur SILO-2",
     ]);
   });
 
@@ -273,78 +227,6 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     );
     const result = validateBatch(batch(...many), ctx());
     expect(result.ok && result.batch.actions.length).toBe(300);
-  });
-});
-
-describe("validateBatch checks the signals an action cites", () => {
-  const open = ctx({ signals: ["sig:1", "sig:2"], closedSignals: ["sig:4"] });
-  const create = (signals: string[]): ProposedAction => ({
-    id: 1,
-    why,
-    type: "createTicket",
-    ref: "new:1",
-    title: "Tests",
-    signals,
-  });
-
-  test("an unknown signal is refused", () => {
-    expect(problems(batch(create(["sig:9"])), open)).toEqual(["#1 signal inconnu « sig:9 »"]);
-    expect(problems(batch({ id: 1, why, type: "dismissSignal", signal: "sig:5" }), open)).toEqual([
-      "#1 signal inconnu « sig:5 »",
-    ]);
-  });
-
-  test("a closed signal is refused", () => {
-    expect(problems(batch(create(["sig:4"])), open)).toEqual(["#1 signal déjà clos « sig:4 »"]);
-    expect(problems(batch({ id: 1, why, type: "dismissSignal", signal: "sig:4" }), open)).toEqual([
-      "#1 signal déjà clos « sig:4 »",
-    ]);
-  });
-
-  test("open signals may be cited by several actions and dismissed", () => {
-    const status: ProposedAction = {
-      id: 2,
-      why,
-      type: "setStatus",
-      ticket: "SILO-1",
-      statusId: "todo",
-      signals: ["sig:1", "sig:2"],
-    };
-    const dismiss: ProposedAction = { id: 3, why: "sans suite", type: "dismissSignal", signal: "sig:2" };
-    expect(problems(batch(create(["sig:1"]), status, dismiss), open)).toEqual([]);
-  });
-
-  test("a signal is dismissed once", () => {
-    const dismiss = (id: number): ProposedAction => ({ id, why, type: "dismissSignal", signal: "sig:1" });
-    expect(problems(batch(dismiss(1), dismiss(2)), open)).toEqual(["#2 deux actions sur sig:1"]);
-  });
-
-  test("a dismissal expects nothing of the project", () => {
-    const result = validateBatch(batch({ id: 1, why, type: "dismissSignal", signal: "sig:1" }), open);
-    expect(result.ok && result.batch.expected).toEqual([{ actionId: 1, fields: {} }]);
-  });
-});
-
-describe("validateBatch with the agent execution hidden", () => {
-  const hidden = ctx({ agentExecution: "hidden" });
-  const assign = batch({ id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" });
-  const deliver = batch({ id: 2, why, type: "deliverAnswers", ticket: "SILO-3" });
-
-  test("refuses assignAgent and deliverAnswers with a clear message", () => {
-    const message = "exécution des agents masquée dans Kibo : action indisponible";
-    expect(problems(assign, hidden)).toEqual([`#1 ${message}`]);
-    expect(problems(deliver, hidden)).toEqual([`#2 ${message}`]);
-  });
-
-  test("accepts them again once the execution is shown", () => {
-    expect(problems(assign, ctx({ agentExecution: "shown" }))).toEqual([]);
-  });
-
-  test("refuses them when the context says nothing of the execution", () => {
-    const { agentExecution: _shown, ...silent } = ctx();
-    expect(problems(assign, silent)).toEqual([
-      "#1 exécution des agents masquée dans Kibo : action indisponible",
-    ]);
   });
 });
 

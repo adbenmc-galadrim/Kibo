@@ -1,10 +1,10 @@
 import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { currentStep, type RpcRequest, TutorialState } from "@kibo/schema";
+import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
@@ -14,7 +14,6 @@ import { pidsMatching, stubbornServer, survivors } from "./mcp/processes.test-he
 
 const VITE = "http://localhost:5173";
 const Published = z.object({ result: z.object({ version: z.object({ hash: z.string() }) }) });
-const ProjectSummaryRow = z.object({ key: z.string(), name: z.string(), demo: z.boolean().optional() });
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();
@@ -338,61 +337,5 @@ describe("startDaemon", () => {
     expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
     expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
     expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
-  });
-
-  test("startTutorial creates the tracking demo; its steps follow daemon events, the review is simulated", async () => {
-    const { d, home } = await launch();
-    const rpc = await pair(d);
-    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
-    const started = TutorialState.parse(await result({ method: "startTutorial" }));
-    const state = TutorialState.parse(await result({ method: "getTutorial" }));
-    expect(state).toEqual(started);
-    expect([state.status, currentStep(state)]).toEqual(["active", "overview"]);
-    const projects = ProjectSummaryRow.array().parse(await result({ method: "listProjects" }));
-    expect(projects.map((p) => [p.key, p.name, p.demo])).toEqual([["DEMO", "Démo Kibo", true]]);
-    const projectId = state.projectId ?? "";
-    await result({ method: "markTutorialSeen", view: "overview" });
-    await result({
-      method: "command",
-      projectId,
-      command: { method: "createTicket", title: "Livraison", feature: true },
-    });
-    const after = TutorialState.parse(await result({ method: "getTutorial" }));
-    expect([after.completed, currentStep(after)]).toEqual([["overview", "feature"], "review"]);
-    const elsewhere = await rpc({ method: "simulateTutorialReview", projectId: "p-other" });
-    expect([elsewhere.status, await elsewhere.text()]).toEqual([
-      400,
-      expect.stringContaining("INVALID_INPUT"),
-    ]);
-    const reviewed = TutorialState.parse(await result({ method: "simulateTutorialReview", projectId }));
-    expect(reviewed.completed).toEqual(["overview", "feature", "review"]);
-    const project = (await result({ method: "getProject", projectId })) as {
-      tickets: { key: string; statusId: string }[];
-    };
-    expect(project.tickets.find((t) => t.key === "DEMO-4")?.statusId).toBe("in_review");
-    const folder = await rpc({ method: "updateProject", projectId, patch: { folder: home } });
-    expect([folder.status, await folder.text()]).toEqual([
-      400,
-      expect.stringContaining("the demo project stays local"),
-    ]);
-    await result({ method: "resetTutorial" });
-    const again = TutorialState.parse(await result({ method: "startTutorial" }));
-    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, ["review"]]);
-    expect(ProjectSummaryRow.array().parse(await result({ method: "listProjects" }))).toHaveLength(1);
-    expect(await result({ method: "deleteProject", projectId })).toBeNull();
-    expect(await result({ method: "listProjects" })).toEqual([]);
-    expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
-  });
-
-  test("notes left in notes/DEMO before the demo are never erased with it", async () => {
-    const { d, home } = await launch();
-    mkdirSync(join(home, "notes", "DEMO"), { recursive: true });
-    writeFileSync(join(home, "notes", "DEMO", "mes-idees.md"), "# Mes idées\n");
-    const rpc = await pair(d);
-    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
-    const state = TutorialState.parse(await result({ method: "startTutorial" }));
-    expect(existsSync(join(home, "notes", "DEMO", ".kibo-demo"))).toBe(false);
-    expect(await result({ method: "deleteProject", projectId: state.projectId ?? "" })).toBeNull();
-    expect(existsSync(join(home, "notes", "DEMO", "mes-idees.md"))).toBe(true);
   });
 });

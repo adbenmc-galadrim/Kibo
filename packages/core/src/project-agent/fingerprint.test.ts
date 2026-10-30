@@ -32,10 +32,10 @@ const snapshot = project({
 });
 
 describe("fingerprint", () => {
-  test("keeps the compact fields of tickets, questions, runs and notes", () => {
+  test("keeps the compact fields of tickets, questions and notes", () => {
     const fp = fingerprint({
       project: snapshot,
-      runs: [run({ id: "r1", state: "running" }), run({ id: "r9", projectId: "other", state: "done" })],
+      runs: [],
       notes: [
         { path: "b.md", hash: "h2" },
         { path: "a.md", hash: "h1" },
@@ -57,7 +57,7 @@ describe("fingerprint", () => {
       q1: { state: "answered", title: "Question q1", recipient: "me" },
       q2: { state: "open", title: "Question q2", recipient: "me" },
     });
-    expect(fp.runs).toEqual({ r1: "running" });
+    expect(fp.runs).toEqual({});
     expect(fp.notes).toEqual({ "a.md": "h1", "b.md": "h2" });
   });
 
@@ -65,10 +65,10 @@ describe("fingerprint", () => {
     const at = (state: "starting" | "running") =>
       fingerprint({
         project: snapshot,
-        runs: [run({ id: "r1", state: "running" }), run({ id: "p1", kind: "project", state })],
+        runs: [run({ id: "p1", kind: "project", state })],
         notes: [],
       });
-    expect(at("starting").runs).toEqual({ r1: "running" });
+    expect(at("starting").runs).toEqual({});
     expect(
       diffFingerprints(at("starting"), at("running"), changeNames(snapshot, [], at("starting"))),
     ).toEqual([]);

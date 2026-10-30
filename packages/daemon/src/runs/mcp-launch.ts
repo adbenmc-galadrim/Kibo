@@ -9,7 +9,7 @@ export type McpLaunchInput = {
   hook: HookLauncher;
   token: string;
 };
-export type McpRoute = { mcpUrl: string; mcpTools: "project" | "ticket"; mcpConfigFile: string };
+export type McpRoute = { mcpUrl: string; mcpTools: "project"; mcpConfigFile: string };
 export type McpLaunch = McpRoute & { allow: string[]; deny: readonly string[] };
 
 export function mcpRoute(input: McpLaunchInput, tools: McpRoute["mcpTools"]): McpRoute {

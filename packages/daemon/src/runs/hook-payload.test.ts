@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { ASK_QUESTION_TOOL, ASK_TOOL, SKILL_REVIEW_TOOL, type TodoItem } from "@kibo/schema";
+import { ASK_QUESTION_TOOL, ASK_TOOL, type TodoItem } from "@kibo/schema";
 import { clipToolInput, reduceHookInput, reduceHookPost } from "./hook-payload";
 
 const base = { session_id: "s1", transcript_path: "/t/s1.jsonl", cwd: "/w", permission_mode: "default" };
@@ -276,24 +276,6 @@ test("the tool use id is kept when present, null otherwise", () => {
   expect(reduceHookInput({ ...event, tool_use_id: "toolu_01abc" }).toolUseId).toBe("toolu_01abc");
   expect(reduceHookInput(event).toolUseId).toBeNull();
   expect(reduceHookInput({ ...event, tool_use_id: null }).toolUseId).toBeNull();
-});
-
-test("a Skill call is summarized by its skill, read by skill, then name, then command", () => {
-  const skill = (tool_input: Record<string, unknown>) =>
-    reduceHookInput({ ...base, hook_event_name: "PostToolUse", tool_name: "Skill", tool_input }).detail;
-  expect(skill({ skill: "superpowers:brainstorming", args: "x" })).toBe("superpowers:brainstorming");
-  expect(skill({ name: "deploy" })).toBe("deploy");
-  expect(skill({ command: "tests" })).toBe("tests");
-  expect(skill({})).toBeNull();
-});
-
-test("a skill review is summarized by the number of reviewed skills", () => {
-  const review = (tool_input: Record<string, unknown>) =>
-    reduceHookInput({ ...base, hook_event_name: "PostToolUse", tool_name: SKILL_REVIEW_TOOL, tool_input })
-      .detail;
-  expect(review({ reviews: [{ skill: "a" }, { skill: "b" }] })).toBe("2 skills");
-  expect(review({ reviews: [{ skill: "a" }] })).toBe("1 skill");
-  expect(review({})).toBeNull();
 });
 
 test("a notebook edit and a multi edit are summarized by their path", () => {

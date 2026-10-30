@@ -27,15 +27,9 @@ test("a rejection with a comment costs one turn; Nouvel agent abandons the pendi
     projectId: project.id,
     batchId: first?.id,
     decision: "apply",
-    actionIds: [4, 5],
+    actionIds: [3, 4],
   });
-  expect(applied.results.map((r) => r.outcome)).toEqual([
-    "skipped",
-    "skipped",
-    "skipped",
-    "applied",
-    "applied",
-  ]);
+  expect(applied.results.map((r) => r.outcome)).toEqual(["skipped", "skipped", "applied", "applied"]);
   const [question] = (await snapshotOf(stack.rpc, project.id)).questions;
   expect(question).toMatchObject({
     ticketId: receiver.id,

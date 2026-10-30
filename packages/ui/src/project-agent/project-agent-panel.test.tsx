@@ -179,7 +179,7 @@ test("a wakeup on an answer shows as a discreet line, never as a bubble from Ada
   expect(panel().getAllByRole("listitem", { name: /^Toi · / })).toHaveLength(1);
 });
 
-test("a batch after a wakeup says so, names the source of each action and groups dismissals", async () => {
+test("a batch after a wakeup says so, and an old dismissal shows as retired", async () => {
   harness.log = [
     {
       id: 1,
@@ -196,7 +196,9 @@ test("a batch after a wakeup says so, names the source of each action and groups
   expect(await panel().findByText("Réveil automatique · 3 signaux")).toBeTruthy();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   expect(card.getByText("2 actions · après réveil")).toBeTruthy();
-  expect(await card.findByText("signal Ticket à créer de")).toBeTruthy();
-  expect(card.getByRole("button", { name: /opus-dev-2/ })).toBeTruthy();
-  expect(card.getByText("Signal sig:3 : sans suite")).toBeTruthy();
+  expect(card.getByText("Créer le ticket « Tests »")).toBeTruthy();
+  expect(card.queryByRole("button", { name: /opus-dev-2/ })).toBeNull();
+  expect(card.getByText("Action retirée : Kibo ne lance plus d'agent de ticket")).toBeTruthy();
+  expect(card.queryByText("Signal sig:3 : sans suite")).toBeNull();
+  expect(card.getAllByRole("checkbox")).toHaveLength(1);
 });

@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { blocksStop, fakeMeta } from "./fake-claude-ai";
+import { blocksStop, fakeMeta } from "./fake-claude-hooks";
 import { launchOf, writeLaunch } from "./fake-claude-launch";
 import { type McpCallLog, recordMcpCalls } from "./fake-claude-mcp";
 import { createPlayer, type HookRun } from "./fake-claude-play";

@@ -85,16 +85,5 @@ test("a remote session cannot grant trust through the real dispatch", async () =
   expect(
     await remoteRpc({ method: "approveComponent", id: "hello", version: "0.1.0", hash, trust: "sandboxed" }),
   ).toMatchObject(forbidden);
-  expect(
-    await remoteRpc({
-      method: "finalizeComponentDraft",
-      draftId: crypto.randomUUID(),
-      version: "0.1.0",
-      hash,
-      trust: "trusted",
-      strategy: "new-version",
-      target: null,
-    }),
-  ).toMatchObject(forbidden);
   expect(await remoteRpc({ method: "listComponents" })).toMatchObject({ ok: true });
 });

@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { batchStatusOfResults, MEMORY_NOTE_PATH, type ProposedAction, Question } from "@kibo/schema";
-import { runView } from "../questions/questions.test-helper";
+import {
+  batchStatusOfResults,
+  MEMORY_NOTE_PATH,
+  RETIRED_ACTION_DETAIL,
+  type RetiredAction,
+} from "@kibo/schema";
 import { applyBatch } from "./apply-batch";
 import {
   type Harness,
@@ -26,28 +30,12 @@ const setup = () => {
 };
 
 const why = "";
-const all = (actions: readonly ProposedAction[]) => new Set(actions.map((a) => a.id));
+const all = (actions: readonly { id: number }[]) => new Set(actions.map((a) => a.id));
 const apply = (h: Harness, batch: Awaited<ReturnType<typeof propose>>, chosen = all(batch.actions)) =>
-  applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
+  applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
 const outcomes = (results: { outcome: string }[]) => results.map((r) => r.outcome);
 
 describe("applyBatch", () => {
-  test("a dismissed signal is applied without any project command; cited signals change nothing", async () => {
-    const h = setup();
-    await seed(h);
-    h.signals.add(1, { projectId: h.project.id });
-    h.signals.add(2, { projectId: h.project.id, kind: "context" });
-    const batch = await propose(h, [
-      { id: 1, why, type: "createTicket", ref: "new:1", title: "Tests", signals: ["sig:1"] },
-      { id: 2, why, type: "dismissSignal", signal: "sig:2" },
-    ]);
-    const results = await apply(h, batch);
-    expect(outcomes(results)).toEqual(["applied", "applied"]);
-    expect(h.commands.map((c) => c.method)).toEqual(["createTicket"]);
-    expect(results[0]?.created?.key).toBe("SILO-10");
-    expect(results[1]).toEqual({ actionId: 2, outcome: "applied", detail: null, created: null });
-  });
-
   test("applies a six action batch in order, feeding new: references to the next actions", async () => {
     const h = setup();
     const s = await seed(h);
@@ -96,12 +84,7 @@ describe("applyBatch", () => {
         return out;
       },
     };
-    const results = await applyBatch(
-      { data, agents: () => h.agents, signals: h.signals },
-      batch,
-      all(batch.actions),
-      HUMAN,
-    );
+    const results = await applyBatch({ data, agents: () => h.agents }, batch, all(batch.actions), HUMAN);
     expect(outcomes(results)).toEqual(["applied", "failed", "skipped", "skipped", "applied"]);
     expect(results[1]?.detail).toContain("read-only");
     expect(results[2]?.detail).toBe("dépend de new:1 (échouée)");
@@ -123,15 +106,11 @@ describe("applyBatch", () => {
     expect(titleOf(h, "SILO-1")).toBe("Ticket 1");
   });
 
-  test("agents and notes actions go through the orchestrator and the notes", async () => {
+  test("a note action goes through the notes", async () => {
     const h = setup();
-    const s = await seed(h);
-    const batch = await propose(h, [
-      { id: 1, why, type: "cancelRun", runId: s.runId },
-      { id: 2, why, type: "createNote", path: MEMORY_NOTE_PATH, content: "" },
-    ]);
-    expect(outcomes(await apply(h, batch))).toEqual(["applied", "applied"]);
-    expect(h.agents.cancelled).toEqual([s.runId]);
+    await seed(h);
+    const batch = await propose(h, [{ id: 1, why, type: "createNote", path: MEMORY_NOTE_PATH, content: "" }]);
+    expect(outcomes(await apply(h, batch))).toEqual(["applied"]);
     const dir = h.notes.info(h.project.id).dir;
     expect(readFileSync(join(dir, MEMORY_NOTE_PATH), "utf8")).toBe("");
   });
@@ -154,7 +133,7 @@ describe("stale targets are never overwritten", () => {
     expect(titleOf(h, "SILO-2")).toBe("Proposé aussi");
   });
 
-  test("status, question, notes, runs and answers changed since the proposal are stale", async () => {
+  test("status, question and notes changed since the proposal are stale", async () => {
     const h = setup();
     const s = await seed(h);
     await h.data.writeNote(h.project.id, "b.md", "# B\n", "create");
@@ -163,12 +142,8 @@ describe("stale targets are never overwritten", () => {
       { id: 2, why, type: "answerQuestion", questionId: s.open.id, answer: { kind: "text", text: "80" } },
       { id: 3, why, type: "updateNote", path: "a.md", content: "# Proposé\n" },
       { id: 4, why, type: "createNote", path: "c.md", content: "# C\n" },
-      { id: 5, why, type: "cancelRun", runId: s.runId },
-      { id: 6, why, type: "deliverAnswers", ticket: "SILO-6" },
-      { id: 7, why, type: "assignAgent", ticket: "SILO-4", profileId: "global:opus" },
     ]);
-    const [t3, t4, t6] = [s.tickets[2]?.id ?? "", s.tickets[3]?.id ?? "", s.tickets[5]?.id ?? ""];
-    h.command({ method: "setStatus", ticketId: t3, statusId: "in_review" });
+    h.command({ method: "setStatus", ticketId: s.tickets[2]?.id ?? "", statusId: "in_review" });
     h.command({
       method: "answerQuestion",
       questionId: s.open.id,
@@ -177,22 +152,10 @@ describe("stale targets are never overwritten", () => {
     });
     await h.data.writeNote(h.project.id, "a.md", "# Adam\n", "update");
     await h.data.writeNote(h.project.id, "c.md", "# Déjà là\n", "create");
-    h.agents.runs[0] = { ...(h.agents.runs[0] ?? runView({ id: s.runId })), state: "done" };
-    const extra = Question.parse(
-      h.command({ method: "createQuestion", ticketId: t6, title: "Autre ?", createdBy: HUMAN, runId: null }),
-    );
-    h.command({
-      method: "answerQuestion",
-      questionId: extra.id,
-      answer: { kind: "text", text: "oui" },
-      by: HUMAN,
-    });
-    h.agents.runs.push(runView({ id: "r9", projectId: h.project.id, ticketId: t4, state: "queued" }));
     h.commands.length = 0;
     const results = await apply(h, batch);
-    expect(outcomes(results)).toEqual(Array(7).fill("stale"));
+    expect(outcomes(results)).toEqual(Array(4).fill("stale"));
     expect(h.commands).toEqual([]);
-    expect(h.agents.cancelled).toEqual([]);
     expect(statusOf(h, "SILO-3")).toBe("in_review");
     expect(await h.data.readNote(h.project.id, "a.md")).toBe("# Adam\n");
     expect(await h.data.readNote(h.project.id, "c.md")).toBe("# Déjà là\n");
@@ -228,18 +191,32 @@ describe("applyBatch after a partial decision", () => {
   });
 });
 
-describe("ticket agents removed", () => {
-  test("a pending batch keeps its other actions but fails assignAgent and deliverAnswers with the code", async () => {
+describe("retired actions", () => {
+  test("a stored batch keeps its other actions and skips each retired one, even when checked", async () => {
     const h = setup();
-    await seed(h);
-    const batch = await propose(h, [
-      { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus" },
+    const s = await seed(h);
+    const proposed = await propose(h, [
       { id: 2, why, type: "setStatus", ticket: "SILO-2", statusId: "done" },
-      { id: 3, why, type: "deliverAnswers", ticket: "SILO-6" },
     ]);
+    const retired: RetiredAction[] = [
+      { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus" },
+      { id: 3, why, type: "deliverAnswers", ticket: "SILO-6" },
+      { id: 4, why, type: "cancelRun", runId: s.runId },
+      { id: 5, why, type: "dismissSignal", signal: "sig:1" },
+    ];
+    const batch = { ...proposed, actions: [...proposed.actions, ...retired] };
+    h.commands.length = 0;
     const results = await apply(h, batch);
-    expect(outcomes(results)).toEqual(["failed", "applied", "failed"]);
-    for (const r of [results[0], results[2]]) expect(r?.detail).toStartWith("AGENT_EXECUTION_REMOVED: ");
+    expect(outcomes(results)).toEqual(["skipped", "applied", "skipped", "skipped", "skipped"]);
+    for (const r of results.filter((x) => x.actionId !== 2))
+      expect(r).toEqual({
+        actionId: r.actionId,
+        outcome: "skipped",
+        detail: RETIRED_ACTION_DETAIL,
+        created: null,
+      });
+    expect(h.commands.map((c) => c.method)).toEqual(["setStatus"]);
+    expect(h.agents.cancelled).toEqual([]);
     expect(statusOf(h, "SILO-2")).toBe("done");
   });
 });

@@ -82,9 +82,6 @@ export const frProject = {
     keepsNoFolder: "Les notes restent sur le disque ; l'historique des runs est conservé.",
     confirmLabel: (name: string) => `Tape ${name} pour confirmer`,
     confirm: "Supprimer",
-    demoTitle: "Supprimer le projet de démonstration ?",
-    demoHelp: "Ses tickets, ses pages et ses notes disparaissent. Tes autres projets ne sont pas touchés.",
-    demoConfirm: "Supprimer la démo",
     cancel: "Annuler",
     busyTitle: "Des agents travaillent sur ce projet",
     busy: (n: number) =>

@@ -15,9 +15,6 @@ export type DaemonComponentsInput = Pick<
   | "integrations"
   | "presence"
   | "sharing"
-  | "peekRun"
-  | "delivery"
-  | "appSettings"
   | "projectEvents"
 >;
 

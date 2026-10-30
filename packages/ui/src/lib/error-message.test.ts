@@ -37,8 +37,8 @@ test("every component error code has its own French text", () => {
   );
 });
 
-test("a refused ticket agent says where development happens now", () => {
-  expect(errorMessage(new KiboError("AGENT_EXECUTION_REMOVED", "assign: x"))).toBe(
-    "Kibo ne lance plus d'agent de ticket : le développement se fait dans T3 Code avec /full-delivery.",
+test("a failed backup has its own French text", () => {
+  expect(errorMessage(new KiboError("BACKUP_FAILED", "backup: x"))).toBe(
+    "La sauvegarde n'a pas pu être écrite.",
   );
 });

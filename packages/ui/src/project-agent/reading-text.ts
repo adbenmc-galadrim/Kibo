@@ -43,7 +43,6 @@ const LABELS: Record<ReadTool, Label> = {
   read_note: noteLabel,
   list_profiles: () => r.profiles,
   project_changes: () => r.changes,
-  list_signals: () => r.signals,
 };
 
 const isReadTool = (name: string): name is ReadTool => Object.hasOwn(LABELS, name);

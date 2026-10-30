@@ -26,7 +26,6 @@ import {
   validationAsk,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { isDemoProject } from "../demo/demo-project";
 import type { CommandMeta, Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
 import { localDelivery } from "../project-folder";
@@ -184,6 +183,5 @@ export function createDataPort(
     runDone(projectId, ticketId) {
       docs.trigger(projectId, { kind: "run_done", ticketId });
     },
-    isDemoProject: (projectId) => isDemoProject(settings, projectId),
   };
 }

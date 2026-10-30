@@ -12,7 +12,6 @@ import {
   type ProjectSnapshot,
   type Question,
   type RunView,
-  type Skill,
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
@@ -133,8 +132,6 @@ type Setup = {
   markFails?: boolean;
   lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn">;
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
-  skills?: Skill[];
-  locks?: OrchestratorOptions["locks"];
   children?: Record<string, number>;
   externalRefs?: Record<string, TicketView["externalRefs"]>;
 };
@@ -161,7 +158,7 @@ export function setup(o: Setup): Harness {
   const data: AgentDataPort = {
     ...agentsPort(profiles),
     projectKey: () => testProject.meta.key,
-    skills: () => o.skills ?? [],
+    skills: () => [],
     ticketContext: (projectId, ticketId) => {
       const found = testProject.tickets.find((x) => x.id === ticketId);
       const t = found && { ...found, externalRefs: o.externalRefs?.[ticketId] ?? found.externalRefs };
@@ -185,7 +182,6 @@ export function setup(o: Setup): Harness {
     runDone: (_projectId, ticketId) => {
       done.push(ticketId);
     },
-    isDemoProject: () => false,
     createQuestion: () => null,
     answerRunQuestion: () => null,
     runQuestions: () => [],
@@ -245,7 +241,6 @@ export function setup(o: Setup): Harness {
     },
     ...o.lifecycle,
     cliFallbacks: o.cliFallbacks,
-    locks: o.locks,
   };
   orch = createOrchestrator(options);
   current = {
@@ -270,25 +265,6 @@ export function setup(o: Setup): Harness {
   };
   return current;
 }
-
-export const knownSkill = (id: string): Skill => ({
-  id,
-  source: "user",
-  projectId: null,
-  plugin: null,
-  name: id,
-  description: "",
-  path: `/skills/${id}`,
-  file: null,
-  problem: null,
-  hash: null,
-  readOnly: false,
-  shadowedBy: null,
-  files: [],
-  usage: { last: null, runs30d: 0 },
-  reviews: { open: 0 },
-  modifiedAt: null,
-});
 
 export const cleanHarness = () =>
   afterEach(async () => {

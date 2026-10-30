@@ -5,12 +5,9 @@ import { TicketKey } from "./ids";
 import { LabelName } from "./label";
 import { NotePath } from "./note";
 import type { OnHold } from "./on-hold";
-import { TICKET_TOOL_NAMES } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
 import { type QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import { RunState } from "./run";
-import { PROJECT_SIGNAL_TOOLS } from "./signal";
-import { SHARED_TOOL_NAMES, SKILL_REVIEW_TOOL } from "./skill";
 import type { SprintSummary } from "./sprint-summary";
 import type { StartReason } from "./startability";
 import { StatusId } from "./status";
@@ -27,15 +24,11 @@ export const PROJECT_AGENT_TOOLS = [
   "list_profiles",
   "project_changes",
   "propose_batch",
-  ...PROJECT_SIGNAL_TOOLS,
 ] as const;
 export type ProjectAgentTool = (typeof PROJECT_AGENT_TOOLS)[number];
 
 export const mcpToolName = (tool: string): string => `mcp__kibo__${tool}`;
-export const PROJECT_AGENT_MCP_TOOLS: readonly string[] = [
-  ...PROJECT_AGENT_TOOLS.map(mcpToolName),
-  SKILL_REVIEW_TOOL,
-];
+export const PROJECT_AGENT_MCP_TOOLS: readonly string[] = PROJECT_AGENT_TOOLS.map(mcpToolName);
 export const PROJECT_AGENT_READ_TOOLS: readonly string[] = ["Read", "Grep", "Glob"];
 export const PROJECT_AGENT_DENY: readonly string[] = [
   "Bash",
@@ -63,10 +56,6 @@ export const ListQuestionsInput = z.object({
   recipient: z.string().trim().min(1).max(RECIPIENT_ID_MAX).optional(),
 });
 export type ListQuestionsInput = z.infer<typeof ListQuestionsInput>;
-export const ListSignalsInput = CursorInput.extend({
-  state: z.enum(["open", "closed", "all"]).default("open"),
-});
-export type ListSignalsInput = z.infer<typeof ListSignalsInput>;
 export const ListRunsInput = z.object({ state: RunState.optional() });
 export const ReadNoteInput = z.object({ path: NotePath });
 const NoInput = z.object({});
@@ -83,11 +72,10 @@ export const TOOL_INPUTS: Record<ProjectAgentTool, z.ZodTypeAny> = {
   list_profiles: NoInput,
   project_changes: NoInput,
   propose_batch: ProposeBatchInput,
-  list_signals: ListSignalsInput,
 };
 
 export const AgentMcpRequest = z.object({
-  tool: z.enum([...PROJECT_AGENT_TOOLS, ...TICKET_TOOL_NAMES, ...SHARED_TOOL_NAMES]),
+  tool: z.enum(PROJECT_AGENT_TOOLS),
   input: z.record(z.string(), z.unknown()).default({}),
 });
 export type AgentMcpRequest = z.infer<typeof AgentMcpRequest>;
@@ -149,7 +137,6 @@ export type ProjectOverview = {
   notes: { path: string; title: string }[];
   profiles: AssignableAgent[];
   memory: string;
-  openSignals: number;
   sprints: SprintSummary[];
   held: TicketCard[];
 };

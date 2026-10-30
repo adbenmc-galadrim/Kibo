@@ -1,5 +1,7 @@
+import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
-import type { ProjectMeta, Question, SignalsView } from "@kibo/schema";
+import { join } from "node:path";
+import type { ProjectMeta, Question } from "@kibo/schema";
 import {
   agentsOf,
   type Rpc,
@@ -26,6 +28,20 @@ function questionsOf(rpc: Rpc, projectId: string) {
   };
 }
 
+function dueAtOf(home: string, projectId: string): number | null {
+  const db = new Database(join(home, "runs.db"), { readonly: true });
+  try {
+    const row = db
+      .query<{ due_at: number | null }, [string]>(
+        "SELECT due_at FROM project_agent_wakeups WHERE project_id = ?",
+      )
+      .get(projectId);
+    return row?.due_at ?? null;
+  } finally {
+    db.close();
+  }
+}
+
 const openRun = (rpc: Rpc, projectId: string) =>
   waitFor(async () => (await viewOf(rpc, projectId)).run ?? undefined);
 
@@ -45,8 +61,7 @@ test("an answer wakes the project agent once, a second one waits for the window"
   expect((await viewOf(stack.rpc, project.id)).batches.map((b) => b.status)).toEqual(["pending"]);
 
   await questions.answer(format, "Markdown");
-  const signals = await stack.rpc<SignalsView>({ method: "listSignals", projectId: project.id });
-  expect(signals.wakeup.dueAt).not.toBeNull();
+  expect(dueAtOf(stack.home, project.id)).not.toBeNull();
   await Bun.sleep(2_000);
   const runs = (await agentsOf(stack.rpc)).runs.filter((r) => r.projectId === project.id);
   expect(runs.map((r) => [r.id, r.turns])).toEqual([[run.id, 1]]);

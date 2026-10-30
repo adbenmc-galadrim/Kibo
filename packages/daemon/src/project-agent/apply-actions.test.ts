@@ -9,7 +9,7 @@ afterEach(() => {
   for (const h of open.splice(0)) h.close();
 });
 
-test("an agent or note action is refused without the agents port, before any write", async () => {
+test("a note action is refused without the agents port, before any write", async () => {
   const h = harness();
   open.push(h);
   const ticket = h.ticket("Tournée");
@@ -21,8 +21,8 @@ test("an agent or note action is refused without the agents port, before any wri
     refs: new Map(),
   };
   const actions: ProposedAction[] = [
-    { id: 1, why: "", type: "assignAgent", ticket: "SILO-1", profileId: "opus" },
-    { id: 2, why: "", type: "createNote", path: "a.md", content: "# A\n" },
+    { id: 1, why: "", type: "createNote", path: "a.md", content: "# A\n" },
+    { id: 2, why: "", type: "updateNote", path: "a.md", content: "# B\n" },
   ];
   for (const action of actions) {
     await expect(runAction(deps, action, { "SILO-1": ticket.id })).rejects.toMatchObject({

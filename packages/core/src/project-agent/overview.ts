@@ -1,7 +1,6 @@
 import {
   type AgentSummary,
   type AssignableAgent,
-  DEMO_AGENT_REF,
   isOpen,
   isTerminal,
   MEMORY_NOTE_PATH,
@@ -26,9 +25,7 @@ export type OverviewInput = {
   queue: readonly QueueEntry[];
   notes: readonly { path: string; title: string }[];
   agents: readonly AgentSummary[];
-  demoProject: boolean;
   memory: string;
-  openSignals: number;
 };
 
 export const ACTIVE_STATUSES: readonly string[] = ["in_progress", "in_review", "blocked"];
@@ -37,11 +34,8 @@ const BUDGET = { tickets: 2_400, runs: 600, questions: 800, notes: 600 };
 
 const usable = (a: AgentSummary): boolean =>
   a.settings.enabled && a.shadowedBy === null && a.problem === null;
-const assignableScope = (a: AgentSummary, demoProject: boolean): boolean =>
-  a.scope !== "system" || (demoProject && a.ref === DEMO_AGENT_REF);
-
-export function assignableAgents(agents: readonly AgentSummary[], demoProject: boolean): AgentSummary[] {
-  return agents.filter((a) => usable(a) && assignableScope(a, demoProject));
+export function assignableAgents(agents: readonly AgentSummary[]): AgentSummary[] {
+  return agents.filter((a) => usable(a) && a.scope !== "system");
 }
 
 export const assignableEntry = (a: AgentSummary): AssignableAgent => ({
@@ -76,9 +70,8 @@ export function projectOverview(input: OverviewInput): ProjectOverview {
     })),
     recipients: [...project.questionRecipients],
     notes: input.notes.map((n) => ({ path: n.path, title: n.title })),
-    profiles: assignableAgents(input.agents, input.demoProject).map(assignableEntry),
+    profiles: assignableAgents(input.agents).map(assignableEntry),
     memory: input.memory,
-    openSignals: input.openSignals,
     sprints: sprintSummaries(project),
     held: project.tickets.filter((t) => t.onHold !== null).map((t) => ticketCard(project, t)),
   };
@@ -162,11 +155,6 @@ export function renderOverview(overview: ProjectOverview): string {
     ...section(
       "Agents assignables",
       overview.profiles.map((p) => `- ${p.id} (${p.name}, ${p.model}) : ${p.description}`),
-      "Aucun.",
-    ),
-    ...section(
-      "Signaux",
-      overview.openSignals > 0 ? [`Signaux ouverts : ${overview.openSignals}`] : [],
       "Aucun.",
     ),
     ...section(

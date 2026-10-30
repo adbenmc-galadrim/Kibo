@@ -1,4 +1,3 @@
-import type { Signal } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { AlarmClock, BookSearch, Bot, Clock, Loader2, RotateCcw } from "lucide-react";
@@ -19,7 +18,6 @@ type Props = {
   status: PanelStatus;
   readOnly: boolean;
   labels: DiffLabels;
-  signals: readonly Signal[];
   onTicket(key: string): void;
   onRetry(): void;
   onResend(id: string): void;
@@ -34,7 +32,6 @@ function Item({
   item,
   readOnly,
   labels,
-  signals,
   onTicket,
   onRetry,
   onResend,
@@ -76,7 +73,6 @@ function Item({
           <BatchCard
             batch={item.batch}
             labels={labels}
-            signals={signals}
             afterWakeup={item.afterWakeup}
             readOnly={readOnly}
             onDecide={async (d) => {

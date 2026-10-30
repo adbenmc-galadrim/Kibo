@@ -8,7 +8,6 @@ afterEach(cleanup);
 const LABELS: DiffLabels = {
   status: (id) => id,
   ticket: () => null,
-  profile: (id) => id,
   question: () => null,
   recipient: (r) => r,
 };
@@ -34,7 +33,6 @@ test("the project agent chat shows tables with ticket keys that open the ticket"
       status="ready"
       readOnly={false}
       labels={LABELS}
-      signals={[]}
       onTicket={(key) => opened.push(key)}
       onRetry={() => {}}
       onResend={() => {}}

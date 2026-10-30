@@ -18,7 +18,7 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     projectKey: "KIB",
     sessionId: `s-${p.id}`,
     brief: "",
-    kind: "ticket",
+    kind: "project",
     resumedFrom: null,
     createdAt: 0,
     label: "opus-dev",

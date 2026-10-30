@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import type { Usage } from "./transcript";
 
 export const FAKE_CLAUDE_VERSION = "2.1.283";
@@ -10,8 +9,6 @@ export type LineContext = {
   cwd: string;
   parentUuid: string | null;
   at?: Date;
-  sidechain?: boolean;
-  agentId?: string;
 };
 
 export type TranscriptLine = {
@@ -26,7 +23,6 @@ export type TranscriptLine = {
   timestamp: string;
   message: Record<string, unknown>;
   toolUseResult?: unknown;
-  agentId?: string;
 };
 
 export type TextContent = { type: "text"; text: string };
@@ -35,7 +31,7 @@ export type FakePatch = { added: number; removed: number };
 
 const base = (ctx: LineContext, type: TranscriptLine["type"]): Omit<TranscriptLine, "message"> => ({
   parentUuid: ctx.parentUuid,
-  isSidechain: ctx.sidechain === true,
+  isSidechain: false,
   userType: "external",
   cwd: ctx.cwd,
   sessionId: ctx.sessionId,
@@ -43,7 +39,6 @@ const base = (ctx: LineContext, type: TranscriptLine["type"]): Omit<TranscriptLi
   type,
   uuid: randomUUID(),
   timestamp: (ctx.at ?? new Date()).toISOString(),
-  ...(ctx.agentId === undefined ? {} : { agentId: ctx.agentId }),
 });
 
 function assistantLine(ctx: LineContext, content: unknown[], usage?: Usage): TranscriptLine {
@@ -138,16 +133,6 @@ export const asInput = (value: unknown): Record<string, unknown> =>
     ? Object.fromEntries(Object.entries(value))
     : {};
 
-export function writeOutcome(extra: Record<string, unknown>): ToolOutcome {
-  const input = asInput(extra.tool_input);
-  const filePath = typeof input.file_path === "string" ? input.file_path : "";
-  return {
-    content: `File created successfully at: ${filePath}`,
-    isError: false,
-    toolUseResult: { type: "create", filePath, content: input.content ?? "" },
-  };
-}
-
 function lastUuid(path: string): string | null {
   if (!existsSync(path)) return null;
   const last = readFileSync(path, "utf8").trimEnd().split("\n").at(-1) ?? "";
@@ -166,21 +151,12 @@ export type Transcript = {
   raw(line: string): void;
   toolUse(tool: string, input: Record<string, unknown>): string;
   toolResult(id: string, outcome: ToolOutcome): void;
-  sidechain(on: boolean): void;
-  subagent(agentId: string, meta: Record<string, unknown>): Transcript;
 };
 
-export function openTranscript(path: string, sessionId: string, cwd: string, agentId?: string): Transcript {
+export function openTranscript(path: string, sessionId: string, cwd: string): Transcript {
   let parentUuid = lastUuid(path);
-  let sidechain = agentId !== undefined;
   const add = (make: (ctx: LineContext) => TranscriptLine) => {
-    const line = make({
-      sessionId,
-      cwd,
-      parentUuid,
-      sidechain,
-      ...(agentId === undefined ? {} : { agentId }),
-    });
+    const line = make({ sessionId, cwd, parentUuid });
     appendTranscript(path, line);
     parentUuid = line.uuid;
   };
@@ -195,15 +171,6 @@ export function openTranscript(path: string, sessionId: string, cwd: string, age
       return id;
     },
     toolResult: (id, outcome) => add((ctx) => toolResultLine(ctx, id, outcome)),
-    sidechain(on) {
-      sidechain = on;
-    },
-    subagent(id, meta) {
-      const dir = join(dirname(path), sessionId, "subagents");
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, `agent-${id}.meta.json`), JSON.stringify(meta));
-      return openTranscript(join(dir, `agent-${id}.jsonl`), sessionId, cwd, id);
-    },
   };
 }
 

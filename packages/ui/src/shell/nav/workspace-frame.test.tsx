@@ -32,7 +32,6 @@ function renderFrame(tabs: Tab[]) {
       <WorkspaceFrame
         tabs={tabsOf(tabs)}
         describe={() => ({ title: "Mes tickets", icon: Ticket, color: null, missing: false })}
-        isDirty={() => false}
         onNewTab={() => undefined}
       >
         <span />
@@ -81,7 +80,6 @@ const renderSidebarState = () =>
       <WorkspaceFrame
         tabs={tabsOf([tab("a")])}
         describe={() => ({ title: "Mes tickets", icon: Ticket, color: null, missing: false })}
-        isDirty={() => false}
         onNewTab={() => undefined}
       >
         <SidebarState />

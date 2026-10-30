@@ -15,7 +15,6 @@ import type { TabsAction } from "./tabs-model";
 type Props = {
   state: TabsState;
   describe(target: TabTarget): TabDescription;
-  isDirty(target: TabTarget): boolean;
   dispatch(action: TabsAction): void;
   onNewTab(): void;
   onOpenWindow: ((target: TabTarget) => void) | null;
@@ -26,7 +25,6 @@ type ItemProps = {
   tab: Tab;
   active: boolean;
   description: TabDescription;
-  dirty: boolean;
   dispatch(action: TabsAction): void;
   onOpenWindow: ((target: TabTarget) => void) | null;
 };
@@ -38,7 +36,7 @@ const tabTone = (active: boolean) =>
     ? "bg-background text-foreground"
     : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
-function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: ItemProps) {
+function TabItem({ tab, active, description, dispatch, onOpenWindow }: ItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: tab.id });
   const Icon = description.icon;
   const close = () => dispatch({ type: "close", id: tab.id });
@@ -96,13 +94,6 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
                 {description.title}
               </span>
             )}
-            {!tab.pinned && dirty && (
-              <span
-                role="img"
-                aria-label={fr.tabs.dirty}
-                className="size-1.5 shrink-0 rounded-full bg-amber-500"
-              />
-            )}
           </button>
           {!tab.pinned && (
             <button
@@ -123,7 +114,7 @@ function TabItem({ tab, active, description, dirty, dispatch, onOpenWindow }: It
   );
 }
 
-export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWindow, error }: Props) {
+export function TabBar({ state, describe, dispatch, onNewTab, onOpenWindow, error }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const pinned = state.tabs.filter((t) => t.pinned);
   const open = state.tabs.filter((t) => !t.pinned);
@@ -142,7 +133,6 @@ export function TabBar({ state, describe, isDirty, dispatch, onNewTab, onOpenWin
       tab={tab}
       active={state.activeId === tab.id}
       description={describe(tab.target)}
-      dirty={isDirty(tab.target)}
       dispatch={dispatch}
       onOpenWindow={onOpenWindow}
     />

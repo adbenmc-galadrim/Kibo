@@ -210,6 +210,5 @@ export const Phase7Event = z.discriminatedUnion("type", [
   z.object({ type: z.literal("sessions.changed") }),
   z.object({ type: z.literal("sandbox.changed") }),
   z.object({ type: z.literal("backups.changed") }),
-  z.object({ type: z.literal("tutorial.changed") }),
 ]);
 export type Phase7Event = z.infer<typeof Phase7Event>;

@@ -7,8 +7,6 @@ type AppSettingsRpcDeps = { store: AppSettingsStore; emit(message: ChangeMessage
 function parsePatch(patch: unknown): AppSettingsPatch {
   const parsed = AppSettingsPatch.safeParse(patch);
   if (!parsed.success) throw new KiboError("INVALID_INPUT", `invalid app settings: ${parsed.error.message}`);
-  if (parsed.data.agentExecution !== undefined)
-    throw new KiboError("AGENT_EXECUTION_REMOVED", "setAppSettings: Kibo no longer runs ticket agents");
   return parsed.data;
 }
 

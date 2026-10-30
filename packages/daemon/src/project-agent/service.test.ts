@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
 import { MEMORY_NOTE_PATH, type ProposeBatchInput, type RunView } from "@kibo/schema";
-import { projectAgentAgent } from "../runs/agents-port.test-helper";
-import { projectAgentBody } from "./bootstrap";
 import { GOOD_TOKEN, type Kit, PROJECT_ID, serviceKit } from "./service.test-helper";
 
 let kit: Kit;
@@ -239,16 +236,11 @@ test("summaries list one entry per project with an open session, with pendingBat
 
 test("the MCP sink accepts only a live project run token and hands the run to the tools", async () => {
   const run = await openTurn();
-  const ticketRun = { ...run, id: crypto.randomUUID(), kind: "ticket" as const };
-  kit.runs.set(ticketRun.id, ticketRun);
   expect(kit.svc.mcp.verify(run.id, "b".repeat(64))).toBe(false);
   expect(kit.svc.mcp.verify(run.id, GOOD_TOKEN)).toBe(true);
-  expect(() => kit.svc.mcp.verify(ticketRun.id, GOOD_TOKEN)).toThrow("not a project run");
   expect(kit.svc.mcp.run(run.id)).toEqual(run);
   expect(kit.svc.mcp.run(crypto.randomUUID())).toBeNull();
   expect(await kit.svc.mcp.call(run, "list_tickets", {})).toBe(`list_tickets:${run.id}`);
-  await expect(kit.svc.mcp.call(ticketRun, "list_tickets", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
-  await expect(kit.svc.mcp.call(run, "ticket_progress", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
 
 test("the project agent's prompt takes the body of its file, and falls back to Kibo's role", async () => {
@@ -261,33 +253,15 @@ test("the project agent's prompt takes the body of its file, and falls back to K
   expect(custom.systemPrompt).not.toContain("chef de projet du projet Silo");
 });
 
-test("the body of kibo-project-agent.md feeds the project agent, Kibo's default role otherwise", () => {
-  const file = (body: string) => ({
-    frontmatter: { name: "kibo-project-agent", description: "Chef", extra: "", extraKeys: [] },
-    body,
-  });
-  const withFile = projectAgentAgent();
-  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: file("Mon rôle") }) })).toBe("Mon rôle");
-  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: null }) })).toBe(DEFAULT_PROJECT_AGENT_BODY);
-  expect(projectAgentBody({ agentOf: () => null })).toBe(DEFAULT_PROJECT_AGENT_BODY);
-});
-
-test("execution hidden: the prompt leaves out the ticket agents and a batch that launches one is refused", async () => {
-  kit.setAgentExecution("hidden");
+test("the prompt never offers the ticket agents and a batch that launches one is refused", async () => {
   const run = await openTurn();
   const turn = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
-  expect(turn.systemPrompt).toContain("ni `assignAgent` ni `deliverAnswers`");
-  const launch: ProposeBatchInput = {
+  expect(turn.systemPrompt).not.toContain("assignAgent");
+  expect(turn.systemPrompt).not.toContain("deliverAnswers");
+  const launch = {
     summary: "Confier",
     actions: [{ id: 1, why: "prêt", type: "assignAgent", ticket: "SILO-1", profileId: "global:opus-dev" }],
   };
-  expect(() => kit.svc.propose(run, launch)).toThrow(
-    expect.objectContaining({
-      code: "INVALID_INPUT",
-      detail: "#1 assignAgent : exécution des agents masquée dans Kibo : action indisponible",
-    }),
-  );
+  expect(() => kit.svc.propose(run, launch)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
   expect(kit.store.batches(run.id)).toHaveLength(0);
-  kit.setAgentExecution("shown");
-  expect(kit.svc.propose(run, launch)).toBe("Lot 1 enregistré, en attente de validation d'adam.");
 });

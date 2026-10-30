@@ -14,9 +14,7 @@ import {
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { agentsFixture } from "../lib/fixtures";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
-import { signalsView } from "../project-agent/signal-fixtures";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
@@ -226,9 +224,6 @@ mock.module("../api", () =>
         if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
         if (req.method === "getProjectAgent")
           return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
-        if (req.method === "listSignals") return Promise.resolve(signalsView());
-        if (req.method === "agents.list")
-          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
         saved.push(req);
         if (req.method === "command" && req.command.method === "addPage")
           return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
@@ -769,15 +764,4 @@ test("the project agent docks beside the content under the tab bar, its button s
   expect(screen.getByRole("button", { name: "Agent de projet" }).getAttribute("aria-pressed")).toBe("false");
   expect(docked()).toBe("");
   restore();
-});
-
-test("the signal badge of the header opens the project agent conversation", async () => {
-  agents = { ...agentsFixture(), signals: [{ projectId: "p1", open: 3, unread: 3 }] };
-  renderShell();
-  await go("#/p/p1/");
-  const user = userEvent.setup();
-  expect(await screen.findByRole("button", { name: "Agent de projet · 3 signaux en boîte" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }));
-  const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
-  expect(within(panel).queryByRole("tab")).toBeNull();
 });

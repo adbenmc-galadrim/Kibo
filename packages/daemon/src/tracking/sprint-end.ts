@@ -8,7 +8,7 @@ import {
   sprintEndDigest,
 } from "@kibo/schema";
 import type { Docs } from "../docs";
-import { projectWritable } from "../signals/bootstrap";
+import { projectWritable } from "../project-agent/wakeup/bootstrap";
 import type { SprintEndStore } from "./sprint-end-store";
 
 export const SPRINT_END_HISTORY_DAYS = 7;

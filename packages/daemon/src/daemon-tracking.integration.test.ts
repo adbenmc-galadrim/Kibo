@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { fakeBuild, okReport } from "./components/service.test-helper";
 import { startDaemon } from "./daemon";
@@ -44,7 +43,7 @@ async function launch() {
     body: JSON.stringify({ token: d.token }),
   });
   const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
-  return async (req: RpcRequest): Promise<unknown> => {
+  return async (req: Record<string, unknown>): Promise<unknown> => {
     const res = await fetch(`${d.url}/api/rpc`, {
       method: "POST",
       headers: { "content-type": "application/json", origin: d.url, cookie },
@@ -56,17 +55,17 @@ async function launch() {
   };
 }
 
-test("a daemon started with KIBO_FIXED_NOW reports it and keeps agent execution hidden", async () => {
+test("a daemon started with KIBO_FIXED_NOW reports it and has no agent execution setting", async () => {
   const rpc = await launch();
   expect(await rpc({ method: "getAppInfo" })).toMatchObject({ fixedNow: FIXED_NOW });
-  expect(await rpc({ method: "getAppSettings" })).toEqual({ agentExecution: "hidden" });
+  expect(await rpc({ method: "getAppSettings" })).toEqual({});
   expect(await rpc({ method: "setAppSettings", patch: { agentExecution: "shown" } })).toEqual({
-    refused: "AGENT_EXECUTION_REMOVED",
+    refused: "INVALID_INPUT",
   });
-  expect(await rpc({ method: "getAppSettings" })).toEqual({ agentExecution: "hidden" });
+  expect(await rpc({ method: "getAppSettings" })).toEqual({});
 });
 
-test("a daemon built without the option refuses every ticket agent launch", async () => {
+test("the daemon refuses every ticket agent launch as an unknown request", async () => {
   const rpc = await launch();
   const Created = z.object({ id: z.string() });
   const project = Created.parse(
@@ -76,7 +75,7 @@ test("a daemon built without the option refuses every ticket agent launch", asyn
     await rpc({ method: "command", projectId: project.id, command: { method: "createTicket", title: "Un" } }),
   );
   const target = { projectId: project.id, ticketId: ticket.id };
-  const refused = { refused: "AGENT_EXECUTION_REMOVED" };
+  const refused = { refused: "INVALID_INPUT" };
   expect(
     await rpc({ method: "assignAgent", ...target, profileId: "global:opus", brief: "", fresh: false }),
   ).toEqual(refused);

@@ -77,6 +77,8 @@ type RunRow = {
 };
 type EventRow = { id: number; run_id: string; at: number; data: string };
 
+const PROJECT_RUNS = "kind = 'project'";
+
 function toKind(r: RunRow): RunKind {
   const parsed = RunKind.safeParse(r.kind);
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `run ${r.id}: unknown kind ${r.kind}`);
@@ -255,8 +257,16 @@ export function openRunStore(home: string): RunStore {
       const row = insertEvent.get({ run_id: runId, at, data: JSON.stringify(event) }) as { id: number };
       return { id: row.id, at, event };
     },
-    records: () => (db.query("SELECT * FROM runs ORDER BY seq").all() as RunRow[]).map(toRecord),
-    events: () => (db.query("SELECT * FROM run_events ORDER BY id").all() as EventRow[]).map(toEntry),
+    records: () =>
+      (db.query(`SELECT * FROM runs WHERE ${PROJECT_RUNS} ORDER BY seq`).all() as RunRow[]).map(toRecord),
+    events: () =>
+      (
+        db
+          .query(
+            `SELECT * FROM run_events WHERE run_id IN (SELECT id FROM runs WHERE ${PROJECT_RUNS}) ORDER BY id`,
+          )
+          .all() as EventRow[]
+      ).map(toEntry),
     log: (runId) =>
       (
         db

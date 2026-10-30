@@ -1,16 +1,12 @@
 import { z } from "zod";
-import { AutoLinkReason, OverlapKind, OverlapRole } from "./overlap";
-import type { Step } from "./progress";
 import type { RunState } from "./run";
-import { SIGNAL_TITLE_MAX, SignalKind, SignalRef } from "./signal";
 
-export const MOMENT_MESSAGE_MAX = 8_000;
-export const MOMENT_DETAIL_MAX = 4_000;
-export const MOMENT_RAW_MAX = 2_000;
-export const TRANSCRIPT_PASS_MAX_BYTES = 4 * 1024 * 1024;
-export const MOMENT_ACTIONS_MAX = 200;
+const MOMENT_MESSAGE_MAX = 8_000;
+const MOMENT_DETAIL_MAX = 4_000;
+const MOMENT_RAW_MAX = 2_000;
+const MOMENT_ACTIONS_MAX = 200;
 
-export const ACTION_KINDS = [
+const ACTION_KINDS = [
   "read",
   "edit",
   "create",
@@ -36,7 +32,7 @@ export type RunActionOutcome = z.infer<typeof RunActionOutcome>;
 
 const Count = z.number().int().nonnegative();
 
-export const RunAction = z.object({
+const RunAction = z.object({
   tool: z.string().max(100),
   kind: ActionKind,
   label: z.string().max(200),
@@ -48,15 +44,13 @@ export const RunAction = z.object({
   callId: z.string().max(64).optional(),
   command: z.string().max(500).optional(),
 });
-export type RunAction = z.infer<typeof RunAction>;
 
-export const REMINDER_KINDS = ["plan", "report", "skills", "report_skills", "overlap"] as const;
-export type ReminderKind = (typeof REMINDER_KINDS)[number];
+const REMINDER_KINDS = ["plan", "report", "skills", "report_skills", "overlap"] as const;
 
 export const PartialReason = z.enum(["path-rejected", "unreadable", "unknown-format"]);
 export type PartialReason = z.infer<typeof PartialReason>;
 
-export const MomentData = z.discriminatedUnion("kind", [
+const MomentData = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("message"), text: z.string().max(MOMENT_MESSAGE_MAX) }),
   z.object({
     kind: z.literal("actions"),
@@ -67,47 +61,13 @@ export const MomentData = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("reasoning"), text: z.string().max(MOMENT_MESSAGE_MAX) }),
   z.object({ kind: z.literal("reminder"), reminder: z.enum(REMINDER_KINDS) }),
   z.object({
-    kind: z.literal("signal"),
-    signalId: z.string().min(1),
-    ref: SignalRef,
-    signalKind: SignalKind,
-    title: z.string().max(SIGNAL_TITLE_MAX),
-  }),
-  z.object({
-    kind: z.literal("overlap"),
-    overlapId: z.string().min(1),
-    overlapKind: OverlapKind,
-    role: OverlapRole,
-    withRunId: z.string().min(1),
-    withRunName: z.string().max(200),
-    summary: z.string().max(300),
-  }),
-  z.object({
-    kind: z.literal("auto_link"),
-    autoLinkId: z.string().min(1).nullable(),
-    fromTicketKey: z.string().min(1).max(40),
-    toTicketKey: z.string().min(1).max(40),
-    reason: AutoLinkReason,
-    path: z.string().max(4_096),
-    name: z.string().max(200).nullable(),
-    failure: z.literal("cycle").nullable(),
-  }),
-  z.object({
-    kind: z.literal("subagent"),
-    subagentId: z.string().min(1).max(200),
-    type: z.string().max(100),
-    description: z.string().max(200),
-  }),
-  z.object({
     kind: z.literal("raw"),
     text: z.string().max(MOMENT_RAW_MAX),
     partial: PartialReason.nullable(),
   }),
 ]);
-export type MomentData = z.infer<typeof MomentData>;
-export type MomentKind = MomentData["kind"];
 
-export const RunMoment = z.object({
+const RunMoment = z.object({
   id: z.number().int(),
   runId: z.string().min(1),
   seq: z.number().int().nonnegative(),
@@ -116,15 +76,9 @@ export const RunMoment = z.object({
   subagentId: z.string().min(1).max(200).optional(),
   data: MomentData,
 });
-export type RunMoment = z.infer<typeof RunMoment>;
+type RunMoment = z.infer<typeof RunMoment>;
 
 export type RunMomentsEvent = { type: "run.moments"; runId: string; moments: RunMoment[] };
-export type RunMomentsPage = {
-  moments: RunMoment[];
-  internalPlan: Step[] | null;
-  partial: PartialReason | null;
-  source: "pending" | "transcript" | "hooks";
-};
 export type RunPeek = {
   runId: string;
   label: string;

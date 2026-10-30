@@ -6,21 +6,21 @@ import { useShownTabs } from "./use-shown-tabs";
 import type { TabsApi } from "./use-tabs";
 
 const page: TabTarget = { kind: "page", projectId: "p1", pageId: "1@2" };
-const agents: TabTarget = { kind: "screen", screen: "agents" };
-const run: TabTarget = { kind: "run", runId: "r1" };
-const skill: TabTarget = { kind: "skill", skillId: "superpowers:brainstorming" };
+const domains: TabTarget = { kind: "screen", screen: "domains" };
+const components: TabTarget = { kind: "screen", screen: "components" };
+const sources: TabTarget = { kind: "screen", screen: "sources" };
 const notes: TabTarget = { kind: "page", projectId: "p1", pageId: "3@2" };
 
 const state = (activeId: string): TabsState => ({
   tabs: [
-    { id: "a", target: agents, pinned: false, preview: false },
+    { id: "a", target: domains, pinned: false, preview: false },
     { id: "k", target: page, pinned: false, preview: false },
-    { id: "r", target: run, pinned: false, preview: false },
-    { id: "s", target: skill, pinned: false, preview: false },
+    { id: "r", target: components, pinned: false, preview: false },
+    { id: "s", target: sources, pinned: false, preview: false },
     { id: "n", target: notes, pinned: false, preview: false },
   ],
   activeId,
-  recents: [agents, page],
+  recents: [domains, page],
 });
 
 function shownTabs(activeId = "k") {
@@ -39,7 +39,7 @@ function shownTabs(activeId = "k") {
 
 const ids = (tabs: TabsApi) => tabs.state.tabs.map((t) => t.id);
 
-test("an open Agents, run or skill tab is not shown in the tab bar", () => {
+test("an open Domaines, Composants or Sources tab is not shown in the tab bar", () => {
   const { tabs } = shownTabs();
   expect(ids(tabs)).toEqual(["k", "n"]);
   expect(tabs.state.recents).toEqual([page]);

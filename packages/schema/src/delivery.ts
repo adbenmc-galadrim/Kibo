@@ -2,7 +2,8 @@ import { z } from "zod";
 import { AddDirs } from "./add-dir";
 import { AgentRef, type AgentSettings, type AgentSummary } from "./agent";
 import { AllowRules } from "./allow-rule";
-import type { AgentsState } from "./run";
+import type { DeliveryItem } from "./delivery-order";
+import type { RunView } from "./run";
 
 export const AbsPath = z
   .string()
@@ -116,6 +117,4 @@ export function deliveryAgentInfo(
 export const deliveryBrief = (ticketKey: string): string => `/full-delivery ${ticketKey}`;
 export const updateDeliveryBrief = (ticketKey: string): string => `/update-delivery ${ticketKey}`;
 
-export type RunDeliveryStep = { runId: string; step: number; note: string };
-export const runDeliverySteps = (state: Pick<AgentsState, "delivery">): RunDeliveryStep[] =>
-  state.delivery ?? [];
+export type DeliverResult = RunView | { kind: "parent"; items: DeliveryItem[] };

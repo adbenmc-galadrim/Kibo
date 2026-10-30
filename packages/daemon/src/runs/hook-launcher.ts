@@ -17,7 +17,7 @@ export function hookShellCommand(launcher: HookLauncher): string {
 export type McpServerEnv = {
   KIBO_MCP_URL: string;
   KIBO_RUN_TOKEN: string;
-  KIBO_MCP_TOOLS?: "project" | "ticket";
+  KIBO_MCP_TOOLS?: "project";
 };
 
 export function mcpServerConfig(launcher: HookLauncher, env?: McpServerEnv): string {

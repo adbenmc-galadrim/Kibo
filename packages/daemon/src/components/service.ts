@@ -6,13 +6,10 @@ import {
   KiboError,
   type PresencePeer,
   type ProjectSyncInfo,
-  type RunPeek,
   type TicketRun,
   type ValidationReport,
 } from "@kibo/schema";
 import type { CommandHub } from "../command-path";
-import type { ComponentDelivery } from "../delivery/component-calls";
-import { hasLinkedRepo } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -20,7 +17,6 @@ import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { createProjectSettings, ensureSettingsTable } from "../notes/settings";
 import { localFolder } from "../project-folder";
-import type { AppSettingsStore } from "../settings/app-settings-store";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
@@ -56,9 +52,6 @@ export type ComponentsDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
-  peekRun?: (projectId: string, runId: string) => RunPeek;
-  delivery?: ComponentDelivery;
-  appSettings: Pick<AppSettingsStore, "get">;
   projectEvents?: GateHandlersDeps["projectEvents"];
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
@@ -154,11 +147,10 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       backends: () => backends,
       manifestOf: (ref) => registry.manifestOf(ref),
-      appSettings: () => deps.appSettings.get(),
       hasFolder: (projectId) => {
         const doc = deps.docs.project(projectId);
         const local = localFolder(settings, getProjectMeta(doc), getKeyAllocator(doc) === "server");
-        return hasLinkedRepo(settings, projectId, local !== null);
+        return local !== null;
       },
     }),
   });

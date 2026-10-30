@@ -15,7 +15,7 @@ import { z } from "zod";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
 import { createGateHandlers } from "./gate-handlers";
-import { PEEK, stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
+import { stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
 
 const fileCalls: unknown[] = [];
 const files: FilesService = {
@@ -274,16 +274,6 @@ test("embedded frames reach the embed gate with the manifest of the calling inst
     );
 });
 
-test("peeking a run goes to the agents, and says so when they are not started", async () => {
-  const idle = createGateHandlers(stubHandlerDeps);
-  await expect(idle.peek("p1", "r1")).rejects.toThrow("NOT_CONNECTED");
-  const handlers = createGateHandlers({
-    ...stubHandlerDeps,
-    peekRun: (projectId, runId) => ({ ...PEEK, runId: `${projectId}/${runId}` }),
-  });
-  expect(await handlers.peek("p1", "r1")).toEqual({ ...PEEK, runId: "p1/r1" });
-});
-
 const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   id: "p1",
   key: "SILO",
@@ -299,13 +289,12 @@ const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   client: null,
 });
 
-test("settings.get reads the project tracking and the machine agent execution", async () => {
+test("settings.get reads the project tracking, agent execution stays hidden", async () => {
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
     docs: { ...stubDocs, projectMeta: () => metaWith({ openLimit: 3 }) },
-    appSettings: () => ({ agentExecution: "shown" }),
   });
-  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 }, agentExecution: "shown" });
+  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 }, agentExecution: "hidden" });
   const defaults = createGateHandlers({
     ...stubHandlerDeps,
     docs: { ...stubDocs, projectMeta: () => metaWith(null) },

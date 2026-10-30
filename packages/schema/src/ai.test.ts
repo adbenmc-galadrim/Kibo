@@ -7,7 +7,6 @@ import {
   FinalizeComponentDraftInput,
   MAX_DRAFT_REVISIONS,
   ReviseComponentDraftInput,
-  RpcRequest,
   StartComponentDraftInput,
   StarterPlan,
 } from "./index";
@@ -193,25 +192,6 @@ test("finalize requires a sha256 hash and a trust level other than builtin", () 
   expect(FinalizeComponentDraftInput.safeParse(base).success).toBe(true);
   expect(FinalizeComponentDraftInput.safeParse({ ...base, hash: "abc" }).success).toBe(false);
   expect(FinalizeComponentDraftInput.safeParse({ ...base, trust: "builtin" }).success).toBe(false);
-});
-
-test("RpcRequest carries the new AI methods", () => {
-  expect(
-    RpcRequest.parse({ method: "suggestStarter", role: "other", text: "Je suis freelance" }).method,
-  ).toBe("suggestStarter");
-  expect(
-    RpcRequest.safeParse({
-      method: "startComponentDraft",
-      draft: { mode: "modify", id: "burndown", description: "Ajoute un titre" },
-    }).success,
-  ).toBe(true);
-  expect(RpcRequest.safeParse({ method: "suggestStarter", role: "other", text: "" }).success).toBe(false);
-  const draftId = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
-  expect(
-    RpcRequest.parse({ method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros" }),
-  ).toEqual({ method: "reviseComponentDraft", draftId, feedback: "Mets le total en gros", attachments: [] });
-  expect(RpcRequest.safeParse({ method: "previewComponentDraft", draftId }).success).toBe(true);
-  expect(RpcRequest.safeParse({ method: "previewComponentDraft", draftId: "x" }).success).toBe(false);
 });
 
 test("AiEvent parses both events and nothing else", () => {

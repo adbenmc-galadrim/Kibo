@@ -14,14 +14,13 @@ import {
 } from "@kibo/schema";
 import type { RpcExtension } from "../rpc-extensions";
 import type { ProjectTurnPort } from "../runs/orchestrator-types";
-import { formatClock } from "../signals/clock";
 import type { AgentContext, ProjectAgentDeps } from "./context";
 import { type DecideInput, decideBatch } from "./decide";
 import { proposeBatch } from "./propose";
 import { projectAgentRpc } from "./rpc";
 import { currentRun, pastSessions, projectOfRun, safeLog, summaryOf, withDigest } from "./sessions";
 import { createTurnPort } from "./turns";
-import type { AgentMcpSink, ProjectAgentSignalsPort } from "./types";
+import type { AgentMcpSink } from "./types";
 
 export type { ProjectAgentAgents, ProjectAgentDeps } from "./context";
 
@@ -35,7 +34,6 @@ export type ProjectAgentService = {
   propose(run: RunView, input: unknown): string;
   turns: ProjectTurnPort;
   mcp: AgentMcpSink;
-  signals: ProjectAgentSignalsPort;
   rpc: RpcExtension;
 };
 export type ProjectAgentCore = Omit<ProjectAgentService, "rpc">;
@@ -131,9 +129,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
   const ctx: AgentContext = {
     ...deps,
     now: deps.now ?? Date.now,
-    formatTime: deps.formatTime ?? formatClock,
     agentBody: deps.agentBody ?? (() => ""),
-    agentExecution: deps.agentExecution ?? (() => "hidden"),
     turnNotes: new Map(),
     baselines: new Map(),
   };
@@ -147,7 +143,6 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     propose: (run, input) => proposeBatch(ctx, run, input),
     turns: createTurnPort(ctx),
     mcp: mcpSink(ctx),
-    signals: deps.signals,
   };
   return { ...core, rpc: projectAgentRpc(core) };
 }

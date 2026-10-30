@@ -5,13 +5,12 @@ import { join } from "node:path";
 import {
   ASK_QUESTION_TOOL,
   type AskInput,
-  DEFAULT_AGENT_SETTINGS,
   type HookPayload,
   type Question,
   type RunView,
 } from "@kibo/schema";
 import { answered, runView } from "../questions/questions.test-helper";
-import { agentGuardOf } from "./agent-guard";
+import { closedGuard } from "./agent-guard";
 import type { HookSink } from "./hook-route";
 import { createHookSink, withAgentQuestions } from "./hook-sink";
 import { openRunRegistry } from "./run-registry";
@@ -134,27 +133,24 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
   const store = openRunStore(home);
   try {
     const registry = openRunRegistry(store);
-    const run = (id: string, kind: "ticket" | "project") =>
-      registry.create(
-        {
-          id,
-          projectId: "p1",
-          ticketId: kind === "ticket" ? "t1" : null,
-          ticketKey: kind === "ticket" ? "SILO-1" : null,
-          ticketTitle: "Agent de projet · Silo",
-          profileId: kind === "ticket" ? "global:opus" : "system:project-agent",
-          profileName: "x",
-          agentScope: "global",
-          projectKey: null,
-          sessionId: `s-${id}`,
-          brief: "",
-          kind,
-          resumedFrom: null,
-        },
-        0,
-      );
-    run("p", "project");
-    run("t", "ticket");
+    registry.create(
+      {
+        id: "p",
+        projectId: "p1",
+        ticketId: null,
+        ticketKey: null,
+        ticketTitle: "Agent de projet · Silo",
+        profileId: "system:project-agent",
+        profileName: "x",
+        agentScope: "global",
+        projectKey: null,
+        sessionId: "s-p",
+        brief: "",
+        kind: "project",
+        resumedFrom: null,
+      },
+      0,
+    );
     const sink = createHookSink({ live: new Map(), registry, agentGuard: () => null });
     const bash = { ...write, tool: "Bash" };
     expect(sink.receive("p", bash, { command: "ls" })).toMatchObject({
@@ -162,7 +158,6 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
       decision: "deny",
     });
     expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "SILO-1" })).toBeNull();
-    expect(sink.receive("t", bash, { command: "ls" })).toBeNull();
   } finally {
     store.close();
   }
@@ -189,24 +184,17 @@ test("the agent guard joins the project guard, the first deny wins and a throw d
           projectKey: null,
           sessionId: `s-${id}`,
           brief: "",
-          kind: "ticket",
+          kind: "project",
           resumedFrom: null,
         },
         0,
       );
-    const rules = {
-      settings: {
-        ...DEFAULT_AGENT_SETTINGS,
-        genericSubagents: false,
-        skills: { mode: "list" as const, ids: ["brainstorming"] },
-      },
-    };
     const sink = createHookSink({
       live: new Map(),
       registry,
       agentGuard: (run) => {
         if (run.id === "r2") throw new Error("catalog down");
-        return agentGuardOf(rules);
+        return closedGuard;
       },
     });
     const skill = { ...write, tool: "Skill" };
@@ -214,7 +202,11 @@ test("the agent guard joins the project guard, the first deny wins and a throw d
       decision: "deny",
       reason: expect.stringContaining("skill non autorisé par Kibo"),
     });
-    expect(sink.receive("r1", skill, { skill: "brainstorming" })).toBeNull();
+    expect(sink.receive("r1", skill, { skill: "brainstorming" })).toMatchObject({ decision: "deny" });
+    expect(sink.receive("r1", { ...write, tool: "Bash" }, { command: "ls" })).toMatchObject({
+      decision: "deny",
+      reason: "the project agent only reads and proposes",
+    });
     expect(sink.receive("r1", { ...write, tool: "Agent" }, { subagent_type: "seo" })).toMatchObject({
       decision: "deny",
       reason: expect.stringContaining("sous-agent non autorisé par Kibo"),

@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agentSummary } from "@kibo/core/agents/summary";
 import { type BatchContext, renderProblems, validateBatch } from "@kibo/core/project-agent/validate";
 import {
   type Agent,
@@ -22,10 +21,8 @@ import { createNotesService, type NotesService } from "../notes/service";
 import { runView } from "../questions/questions.test-helper";
 import { testAgent } from "../runs/agents-port.test-helper";
 import { call, createService, type Service } from "../service";
-import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { openStore } from "../store";
 import { createProjectAgentDataPort } from "./data-port";
-import { signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const HUMAN = { kind: "human", ref: "adam" } as const;
@@ -79,10 +76,7 @@ export function fakeAgents(): FakeAgents {
       host: HOST,
       tokensToday: 0,
       resumable: [],
-      questions: [],
       projectAgents: [],
-      progress: [],
-      signals: [],
     }),
     cancel(runId) {
       fake.cancelled.push(runId);
@@ -98,7 +92,6 @@ export type Harness = {
   notes: NotesService;
   data: ProjectAgentDataPort;
   agents: FakeAgents;
-  signals: FakeSignals;
   project: ProjectMeta;
   commands: ProjectCommand[];
   projectReads: () => number;
@@ -153,7 +146,6 @@ export function harness(): Harness {
     notes,
     data,
     agents: fakeAgents(),
-    signals: fakeSignals(),
     project,
     commands,
     projectReads: () => reads,
@@ -178,16 +170,12 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
     project: h.data.project(h.project.id),
     runs: h.agents.state().runs,
     notes: notes.map((n) => ({ path: n.path, hash: n.hash })),
-    agents: AGENTS.map(agentSummary),
-    demoProject: false,
     viewer: "adam",
-    ...signalRefs(h.signals, h.project.id),
   };
 }
 
 export async function propose(h: Harness, actions: ProposedAction[]): Promise<Batch> {
-  const context = { ...(await contextOf(h)), agentExecution: "shown" as const };
-  const checked = validateBatch({ summary: "Ranger le projet", actions }, context);
+  const checked = validateBatch({ summary: "Ranger le projet", actions }, await contextOf(h));
   if (!checked.ok) throw new Error(renderProblems(checked.problems));
   return {
     id: "b1",

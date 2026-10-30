@@ -1,16 +1,11 @@
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
-import {
-  type AgentExecution,
-  PROJECT_AGENT_REF,
-  type ProjectEventSink,
-  type ProjectFingerprint,
-} from "@kibo/schema";
+import type { ProjectEventSink, ProjectFingerprint } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { planRpc } from "../plan/plan-rpc";
 import { createPlanService } from "../plan/plan-service";
 import type { RpcExtension } from "../rpc-extensions";
 import type { Notice } from "../runs/notifier";
-import type { AgentDataPort, Orchestrator } from "../runs/orchestrator-types";
+import type { Orchestrator } from "../runs/orchestrator-types";
 import type { Service } from "../service";
 import { ready } from "../service-ports";
 import { applyBatch } from "./apply-batch";
@@ -19,12 +14,7 @@ import { createProjectAgentDataPort, type ProjectAgentDataDeps } from "./data-po
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";
 import { handleProjectTool } from "./tools";
-import type {
-  ProjectAgentAgentsPort,
-  ProjectAgentDataPort,
-  ProjectAgentOps,
-  ProjectAgentSignalsPort,
-} from "./types";
+import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentOps } from "./types";
 
 export type ProjectAgentBoot = { agent: ProjectAgentService; plan: { rpc: RpcExtension }; stop(): void };
 
@@ -35,29 +25,22 @@ export type ProjectAgentBootInput = {
   settings: ProjectAgentDataDeps["settings"];
   orchestrator: () => ProjectAgentAgents & Pick<Orchestrator, "onRunState">;
   notify: (notice: Notice) => void;
-  signals: ProjectAgentSignalsPort;
   agentBody?: () => string;
-  agentExecution?: () => AgentExecution;
   events?: ProjectEventSink;
 };
-
-export const projectAgentBody = (data: Pick<AgentDataPort, "agentOf">): string =>
-  data.agentOf(PROJECT_AGENT_REF)?.file?.body ?? DEFAULT_PROJECT_AGENT_BODY;
 
 type OpsDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
-  signals: ProjectAgentSignalsPort;
   store: ProjectAgentStore;
   agent: () => ProjectAgentService;
   events?: ProjectEventSink;
 };
 
-function projectAgentOps({ data, agents, signals, store, agent, events }: OpsDeps): ProjectAgentOps {
+function projectAgentOps({ data, agents, store, agent, events }: OpsDeps): ProjectAgentOps {
   const toolDeps = {
     data,
     agents,
-    signals,
     store: {
       fingerprint: (runId: string, current?: ProjectFingerprint) => agent().baseline(runId, current),
       lastDecided: (projectId: string, since: number) => store.lastDecided(projectId, since),
@@ -67,7 +50,7 @@ function projectAgentOps({ data, agents, signals, store, agent, events }: OpsDep
   };
   return {
     tool: (run, tool, input) => handleProjectTool(toolDeps, run, tool, input),
-    apply: (batch, chosen, by) => applyBatch({ data, agents, signals, events }, batch, chosen, by),
+    apply: (batch, chosen, by) => applyBatch({ data, agents, events }, batch, chosen, by),
   };
 }
 
@@ -100,19 +83,16 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
   const agent = createProjectAgentService({
     store,
     data,
-    signals: input.signals,
     ops: projectAgentOps({
       data,
       agents,
-      signals: input.signals,
       store,
       agent: () => ready(self, "INTERNAL", "the project agent is not ready"),
       events: input.events,
     }),
     agents,
     notify: input.notify,
-    agentBody: input.agentBody ?? (() => projectAgentBody(service.agentData)),
-    agentExecution: input.agentExecution,
+    agentBody: input.agentBody ?? (() => DEFAULT_PROJECT_AGENT_BODY),
     emit: () => service.docs.emit({ topic: "agents" }),
   });
   self = agent;

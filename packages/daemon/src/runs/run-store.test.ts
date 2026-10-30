@@ -1,11 +1,12 @@
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError, RunEvent } from "@kibo/schema";
 import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
 import { z } from "zod";
+import { FIXTURE_HOME_021 } from "../testing/make-home-0.21";
 import { type NewRun, openRunStore } from "./run-store";
 
 const dirs: string[] = [];
@@ -20,7 +21,7 @@ afterEach(() => {
 
 const newRun = (id: string): NewRun => ({
   id,
-  kind: "ticket",
+  kind: "project",
   projectId: "p1",
   ticketId: "t1",
   ticketKey: "KIB-14",
@@ -57,6 +58,31 @@ test("runs get increasing sequence numbers and survive a reopen", () => {
     ["r1", "admitted"],
   ]);
   b.close();
+});
+
+test("a mixed base reads without error and only yields project runs", () => {
+  const h = home();
+  const s = openRunStore(h);
+  s.create(newRun("r1"), 0, 10);
+  s.create(newRun("r2"), 1, 20);
+  s.close();
+  const raw = new Database(join(h, "runs.db"));
+  raw.exec("DROP TRIGGER IF EXISTS runs_no_update");
+  raw.exec("UPDATE runs SET kind = 'ticket' WHERE id = 'r2'");
+  raw.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => r.id)).toEqual(["r1"]);
+  expect(again.events().map((e) => e.runId)).toEqual(["r1"]);
+  again.close();
+});
+
+test("a 0.21 home keeps its project agent run and hides its ticket runs", () => {
+  const h = home();
+  cpSync(FIXTURE_HOME_021, h, { recursive: true });
+  const s = openRunStore(h);
+  expect(s.records().map((r) => [r.id, r.kind])).toEqual([["r4", "project"]]);
+  expect(s.events()).toEqual([]);
+  s.close();
 });
 
 test("a write waits for another process to release its lock", async () => {
@@ -155,7 +181,7 @@ const V016_RUNS =
   "ticket_id TEXT, ticket_key TEXT, ticket_title TEXT NOT NULL, profile_id TEXT NOT NULL, " +
   "profile_name TEXT NOT NULL, session_id TEXT NOT NULL, brief TEXT NOT NULL, created_at INTEGER NOT NULL)";
 
-test("a v0.16 database opens, its runs resumed from nothing, and new runs keep their origin", () => {
+test("a v0.16 database opens, its ticket runs stay hidden, and new runs keep their origin", () => {
   const h = home();
   const old = new Database(join(h, "runs.db"), { create: true });
   old.exec(V016_RUNS);
@@ -167,14 +193,11 @@ test("a v0.16 database opens, its runs resumed from nothing, and new runs keep t
   s.create({ ...newRun("r2"), sessionId: "s-r1", resumedFrom: "r1" }, 1, 10);
   s.close();
   const again = openRunStore(h);
-  expect(again.records().map((r) => [r.id, r.sessionId, r.resumedFrom])).toEqual([
-    ["r1", "s-r1", null],
-    ["r2", "s-r1", "r1"],
-  ]);
+  expect(again.records().map((r) => [r.id, r.sessionId, r.resumedFrom])).toEqual([["r2", "s-r1", "r1"]]);
   again.close();
 });
 
-test("a database without run kinds opens, old runs are ticket runs, and a project run keeps its kind", () => {
+test("a database without run kinds opens, old runs are hidden ticket runs, a project run stays", () => {
   const h = home();
   const old = new Database(join(h, "runs.db"), { create: true });
   old.exec(V016_RUNS);
@@ -188,10 +211,7 @@ test("a database without run kinds opens, old runs are ticket runs, and a projec
   s.create(project, 1, 10);
   s.close();
   const again = openRunStore(h);
-  expect(again.records().map((r) => [r.id, r.kind])).toEqual([
-    ["r1", "ticket"],
-    ["r2", "project"],
-  ]);
+  expect(again.records().map((r) => [r.id, r.kind])).toEqual([["r2", "project"]]);
   again.close();
 });
 
@@ -299,11 +319,7 @@ test("the agent columns are added once, the scope defaults to global", () => {
   oldDatabase(h);
   openRunStore(h).close();
   const s = openRunStore(h);
-  expect(s.records().map((r) => [r.id, r.agentScope])).toEqual([
-    ["r1", "global"],
-    ["r2", "global"],
-    ["r3", "global"],
-  ]);
+  expect(s.records().map((r) => [r.id, r.agentScope])).toEqual([["r2", "global"]]);
   s.close();
 });
 
@@ -317,9 +333,7 @@ test("agent references are rewritten in a transaction and the runs stay append-o
   );
   expect(count).toBe(2);
   expect(s.records().map((r) => [r.profileId, r.profileName, r.agentScope, r.projectKey])).toEqual([
-    ["global:opus", "opus", "global", "KIB"],
     ["system:project-agent", "kibo-project-agent", "system", "KIB"],
-    ["uuid-gone", "ancien", "global", "KIB"],
   ]);
   s.close();
   const raw = new Database(join(h, "runs.db"));

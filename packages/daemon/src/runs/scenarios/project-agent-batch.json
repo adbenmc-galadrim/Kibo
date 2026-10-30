@@ -20,13 +20,6 @@
               },
               {
                 "id": 2,
-                "why": "L'agent livraison est libre.",
-                "type": "assignAgent",
-                "ticket": "KIB-1",
-                "profileId": "{{profile:livraison}}"
-              },
-              {
-                "id": 3,
                 "why": "Les tests méritent leur ticket.",
                 "type": "createTicket",
                 "ref": "new:1",
@@ -34,7 +27,7 @@
                 "parent": "KIB-2"
               },
               {
-                "id": 4,
+                "id": 3,
                 "why": "La doc n'est pas tranchée.",
                 "type": "createQuestion",
                 "ticket": "KIB-1",
@@ -43,7 +36,7 @@
                 "provisional": "Non"
               },
               {
-                "id": 5,
+                "id": 4,
                 "why": "Garder le fil.",
                 "type": "updateNote",
                 "path": "agent-de-projet/memoire.md",
@@ -53,7 +46,7 @@
           }
         }
       ],
-      "result": "J'ai proposé un lot de 5 actions.",
+      "result": "J'ai proposé un lot de 4 actions.",
       "tokens": 1800
     },
     {

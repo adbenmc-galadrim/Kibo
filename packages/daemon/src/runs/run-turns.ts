@@ -18,9 +18,7 @@ type RunTurnsDeps = {
 
 export function createRunTurns(deps: RunTurnsDeps) {
   async function project(run: RunView, runDir: string): Promise<Prepared> {
-    const mentions = deps.preparer.skillMentions(run.projectId);
-    const pendingAnswer = run.pendingAnswer === null ? null : mentions(run.pendingAnswer);
-    const project = await deps.opts.projectTurns.prepare({ ...run, pendingAnswer }, runDir);
+    const project = await deps.opts.projectTurns.prepare(run, runDir);
     const turn = deps.preparer.prepare(run, runDir, {
       kind: "project",
       systemPrompt: project.systemPrompt,

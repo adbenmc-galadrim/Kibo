@@ -1,26 +1,13 @@
-import { agentGuard, type GuardRules } from "@kibo/core/agents/guard";
-import { type Agent, type AgentRef, parseAgentRef, systemAgentName } from "@kibo/schema";
+import type { GuardDecision } from "@kibo/schema";
 import type { ToolGuard } from "./orchestrator-types";
 
-const CLOSED: GuardRules = {
-  subagents: [],
-  genericSubagents: false,
-  allSubagents: false,
-  skills: { mode: "list", ids: [] },
+const SUBAGENT_TOOLS = new Set(["Agent", "Task"]);
+const SKILL_TOOL = "Skill";
+
+const deny = (reason: string): GuardDecision => ({ decision: "deny", reason });
+
+export const closedGuard: ToolGuard = ({ tool }) => {
+  if (SUBAGENT_TOOLS.has(tool)) return deny("sous-agent non autorisé par Kibo");
+  if (tool === SKILL_TOOL) return deny("skill non autorisé par Kibo");
+  return null;
 };
-
-export function subagentName(ref: AgentRef): string {
-  const parsed = parseAgentRef(ref);
-  return parsed.scope === "system" ? systemAgentName(parsed.id) : parsed.name;
-}
-
-function rulesOf(agent: Pick<Agent, "settings"> | null): GuardRules {
-  if (agent === null) return CLOSED;
-  const { subagents, genericSubagents, allSubagents, skills } = agent.settings;
-  return { subagents: subagents.map(subagentName), genericSubagents, allSubagents, skills };
-}
-
-export function agentGuardOf(agent: Pick<Agent, "settings"> | null): ToolGuard {
-  const guard = agentGuard(rulesOf(agent));
-  return ({ tool, input }) => guard({ tool, input: input ?? {} });
-}

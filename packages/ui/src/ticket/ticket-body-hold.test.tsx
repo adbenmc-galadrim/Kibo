@@ -11,7 +11,7 @@ mock.module("../api", () =>
         Promise.resolve(
           req.method === "listProjectEvents"
             ? { items: [], nextBefore: null }
-            : req.method === "listCiRuns" || req.method === "autoLinks.list"
+            : req.method === "listCiRuns"
               ? []
               : null,
         ),

@@ -57,14 +57,20 @@ test("the tracking routes stay", () => {
     expect([hash, retiredRoute(hash)]).toEqual([hash, null]);
 });
 
-test("retired screens and the hashes of run, skill and changes tabs", () => {
-  const retired: Screen[] = ["agents", "queue", "skills", "creations", "components", "sources", "domains"];
+test("retired screens, and the hashes of the run, skill and changes tabs", () => {
+  const retired: Screen[] = ["components", "sources", "domains"];
   expect(retired.every(isRetiredScreen)).toBe(true);
   expect(isRetiredScreen("general")).toBe(false);
   const home = (hash: string) => retiredRoute(hash) !== null;
-  expect(home(targetToHash({ kind: "changes", projectId: "p1", worktree: null }))).toBe(true);
-  expect(home(targetToHash({ kind: "run", runId: "r1" }))).toBe(true);
-  expect(home(targetToHash({ kind: "skill", skillId: "s" }))).toBe(true);
+  for (const hash of [
+    "#/agents",
+    "#/agents/queue",
+    "#/agents/skills",
+    "#/runs/r1",
+    "#/skills/s",
+    "#/p/p1/changes",
+  ])
+    expect([hash, home(hash)]).toEqual([hash, true]);
   expect(home(targetToHash({ kind: "ticket", projectId: "p1", ticketId: "t1" }))).toBe(false);
   expect(home(targetToHash({ kind: "screen", screen: "inbox" }))).toBe(false);
 });

@@ -95,11 +95,9 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   const onAction = paletteActionHandler({ set, go, activeProjectId, cycleTheme });
   const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
 
-  const { branch, isDirty, sheetProject, paletteContext } = useWorkspaceView({
+  const { sheetProject, paletteContext } = useWorkspaceView({
     active,
     project,
-    ticketProject,
-    git,
     dialogs,
     projects,
     snapshots,
@@ -111,12 +109,7 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   return (
     <HostProvider host={host}>
       <PageActionsProvider>
-        <WorkspaceFrame
-          tabs={shownTabs}
-          describe={describe}
-          isDirty={isDirty}
-          onNewTab={() => setPalette({ newTab: true })}
-        >
+        <WorkspaceFrame tabs={shownTabs} describe={describe} onNewTab={() => setPalette({ newTab: true })}>
           <AppSidebar
             className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"
             projects={projects}
@@ -139,7 +132,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
               active={active}
               screen={screen}
               project={project}
-              branch={branch}
               gitError={project ? git.error : null}
               agents={agents}
               agentPanel={agentPanel}

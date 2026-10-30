@@ -40,7 +40,6 @@ export type PaletteItem = {
     | "ticket"
     | "page"
     | "project"
-    | "changes"
     | "new"
     | "theme"
     | "projectAgent"

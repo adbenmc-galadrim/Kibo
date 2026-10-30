@@ -1,18 +1,18 @@
-import { type Batch, isDecidable, type Signal, undecidedActionIds } from "@kibo/schema";
+import { type Batch, isDecidable, undecidedActionIds } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { BatchActionRow } from "./BatchActionRow";
-import { type DiffLabels, groupActions } from "./batch-groups";
+import { type DiffLabels, groupActions, retiredActions } from "./batch-groups";
+import { RetiredActionRow } from "./RetiredActionRow";
 
 export type Decision = { decision: "apply"; actionIds: number[] } | { decision: "reject"; comment?: string };
 
 type Props = {
   batch: Batch;
   labels: DiffLabels;
-  signals: readonly Signal[];
   afterWakeup: boolean;
   readOnly: boolean;
   onDecide(d: Decision): Promise<void>;
@@ -56,16 +56,17 @@ function RejectForm({ busy, onCancel, onConfirm }: RejectProps) {
   );
 }
 
-export function BatchCard({ batch, labels, signals, afterWakeup, readOnly, onDecide }: Props) {
-  const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(batch.actions.map((a) => a.id)));
+export function BatchCard({ batch, labels, afterWakeup, readOnly, onDecide }: Props) {
+  const actions = groupActions(batch.actions).flatMap((group) => group.actions);
+  const retired = retiredActions(batch.actions);
+  const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(actions.map((a) => a.id)));
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectable = isDecidable(batch) && !readOnly;
   const open = new Set(selectable ? undecidedActionIds(batch) : []);
   const status = statusText(batch);
-  const actions = groupActions(batch.actions).flatMap((group) => group.actions);
-  const chosen = batch.actions.map((a) => a.id).filter((id) => open.has(id) && checked.has(id));
+  const chosen = actions.map((a) => a.id).filter((id) => open.has(id) && checked.has(id));
 
   const change = (id: number, on: boolean) =>
     setChecked((prev) => {
@@ -115,12 +116,14 @@ export function BatchCard({ batch, labels, signals, afterWakeup, readOnly, onDec
               action={action}
               expected={batch.expected.find((e) => e.actionId === action.id)}
               labels={labels}
-              signals={signals}
               selectable={open.has(action.id)}
               checked={checked.has(action.id)}
               result={batch.results.find((r) => r.actionId === action.id)}
               onCheck={(on) => change(action.id, on)}
             />
+          ))}
+          {retired.map((action) => (
+            <RetiredActionRow key={action.id} result={batch.results.find((r) => r.actionId === action.id)} />
           ))}
         </ul>
       )}

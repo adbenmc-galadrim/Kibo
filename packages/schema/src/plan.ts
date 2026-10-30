@@ -23,15 +23,22 @@ export type PlanAction = Extract<ProposedAction, { type: PlanActionType }>;
 
 const PLAN_TYPES: ReadonlySet<string> = new Set(PLAN_ACTION_TYPES);
 
-export const PlanAction = ProposedAction.superRefine((action, ctx): action is PlanAction => {
-  if (PLAN_TYPES.has(action.type)) return true;
-  ctx.addIssue({
-    code: z.ZodIssueCode.custom,
-    path: ["type"],
-    message: `${action.type} is not allowed in a plan`,
+const PlanTypeGate = z
+  .object({ type: z.string() })
+  .passthrough()
+  .superRefine((action, ctx) => {
+    if (PLAN_TYPES.has(action.type)) return;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["type"],
+      message: `${action.type} is not allowed in a plan`,
+      fatal: true,
+    });
   });
-  return false;
-});
+
+export const PlanAction = PlanTypeGate.pipe(ProposedAction).refine((action): action is PlanAction =>
+  PLAN_TYPES.has(action.type),
+);
 export const PlanActions = z.array(PlanAction).min(1).max(PLAN_ACTIONS_MAX);
 
 export const PlanProblem = z.object({ actionId: ActionId, type: z.string(), message: z.string() });

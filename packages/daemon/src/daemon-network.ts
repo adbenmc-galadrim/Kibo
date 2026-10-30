@@ -1,4 +1,3 @@
-import type { DraftAssets } from "./ai/draft-preview";
 import { type SandboxServerOptions, startSandboxServer } from "./components/sandbox-server";
 import type { Closer } from "./daemon-shutdown";
 import { listInterfaces } from "./remote/interfaces";
@@ -22,17 +21,10 @@ export async function startRemote(
 }
 
 export function startDaemonSandbox(
-  opts: Omit<SandboxServerOptions, "drafts">,
-  drafts: () => DraftAssets | null,
+  opts: SandboxServerOptions,
   front: Closer[],
 ): { url: string; port: number } {
-  const sandbox = startSandboxServer({
-    ...opts,
-    drafts: {
-      lookup: async (...a) => drafts()?.lookup(...a) ?? null,
-      manifest: async (draftId) => drafts()?.manifest(draftId) ?? null,
-    },
-  });
+  const sandbox = startSandboxServer(opts);
   front.push(() => sandbox.stop());
   return sandbox;
 }

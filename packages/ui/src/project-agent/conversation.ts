@@ -9,7 +9,7 @@ import {
   wakeupCount,
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { frSignals } from "../i18n/fr-signals";
+import { frWakeup } from "../i18n/fr-wakeup";
 import { errorText } from "./format";
 import type { OutboxState } from "./outbox";
 
@@ -29,7 +29,7 @@ const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "as
 const t = frProjectAgent.conversation;
 export function wakeupText(text: string): string {
   const count = wakeupCount(text);
-  return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
+  return count === null ? frWakeup.label : frWakeup.event(count);
 }
 
 export function readingTool(payload: HookPayload): string | null {
@@ -100,7 +100,7 @@ class Builder {
   wakeupLines(entry: RunLogEntry, text: string): void {
     const answers = wakeupAnswers(text);
     answers.forEach(({ label, quote }, k) => {
-      const line = frSignals.wakeup.answered(label, quote);
+      const line = frWakeup.answered(label, quote);
       this.push({ kind: "wakeup", id: `log-${entry.id}-a${k}`, at: entry.at, text: line });
     });
     if (answers.length === 0 || wakeupCount(text) !== null)

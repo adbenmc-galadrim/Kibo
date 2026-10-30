@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { headRank } from "@kibo/core/scheduler";
-import { type Agent, isProjectRun, isTerminal, RunEvent, type RunView } from "@kibo/schema";
+import { type Agent, isTerminal, RunEvent, type RunView } from "@kibo/schema";
 import { addDirsOf, realpathOrNull } from "./add-dirs";
 import { NO_CLI_FALLBACKS } from "./cli-flags";
 import type { OrchestratorOptions, ToolGuard } from "./orchestrator-types";
@@ -35,7 +35,6 @@ export type LaunchDeps = {
   stopping: () => boolean;
 };
 
-const TICKET_RUN_REMOVED = "AGENT_EXECUTION_REMOVED: Kibo no longer runs ticket agents";
 const EXIT_STATES = new Set(["starting", "running", "done", "failed", "cancelled"]);
 const titled = (title: string | null, prompt: string) => (title === null ? prompt : `${title}\n\n${prompt}`);
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -102,10 +101,6 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     const initial = registry.get(runId);
     const runDir = join(opts.home, "runs", runId);
     try {
-      if (!isProjectRun(initial)) {
-        registry.apply(runId, { type: "failed", error: TICKET_RUN_REMOVED });
-        return;
-      }
       const agent = deps.agentOf(initial.profileId);
       const prepared = await turns.project(initial, runDir);
       const { turn } = prepared;

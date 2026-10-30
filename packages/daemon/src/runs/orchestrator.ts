@@ -1,16 +1,7 @@
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove } from "@kibo/core/scheduler";
-import {
-  type Agent,
-  type HostLoad,
-  HostSettings,
-  isProjectRun,
-  isTerminal,
-  KiboError,
-  type RunView,
-} from "@kibo/schema";
-import { createLocksWatch } from "../locks/locks-watch";
-import { agentGuardOf } from "./agent-guard";
+import { type Agent, type HostLoad, HostSettings, isTerminal, KiboError, type RunView } from "@kibo/schema";
+import { closedGuard } from "./agent-guard";
 import { assertLeaf, childrenProbe } from "./children-probe";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
@@ -40,7 +31,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const listeners = new Set<() => void>();
   const stateListeners = new Set<(run: RunView) => void>();
   let load: HostLoad = { cpu: 0, ram: 0 };
-  const locks = createLocksWatch(opts.locks);
   let stopping = false;
   let signature = "";
   let emitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,8 +83,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         .finally(() => guarded("queue pass", tick));
     }
     const current = JSON.stringify([next.waiting, Math.round(load.cpu), Math.round(load.ram)]);
-    const locksChanged = locks.refresh();
-    if (current !== signature || locksChanged) {
+    if (current !== signature) {
       signature = current;
       emit();
     }
@@ -104,7 +93,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const hooks = createHookSink({
     live,
     registry,
-    agentGuard: (run) => guards.get(run.id) ?? agentGuardOf(opts.data.agentOf(run.profileId)),
+    agentGuard: (run) => guards.get(run.id) ?? closedGuard,
   });
 
   for (const run of registry.interrupted()) {
@@ -143,8 +132,6 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     },
     answer(runId, text) {
       const target = registry.get(runId);
-      if (!isProjectRun(target))
-        throw new KiboError("AGENT_EXECUTION_REMOVED", "answer: Kibo no longer runs ticket agents");
       if (isTerminal(target.state)) assertLeaf(childrenProbe(opts.data)(target));
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
@@ -185,11 +172,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         host: hostView(),
         tokensToday: registry.tokensSince(startOfDay(now())),
         resumable: resumableRuns(resumeContext(runs)),
-        questions: [],
         projectAgents: [],
-        progress: [],
-        signals: [],
-        locks: locks.current(),
       };
     },
     log: (runId) => registry.log(runId),

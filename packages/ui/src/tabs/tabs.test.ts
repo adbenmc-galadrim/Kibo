@@ -20,13 +20,7 @@ describe("hash codec", () => {
     { kind: "project", projectId: "p1" },
     page("1@2"),
     { kind: "ticket", projectId: "p1", ticketId: "4@2" },
-    { kind: "changes", projectId: "p1", worktree: null },
-    { kind: "changes", projectId: "p1", worktree: "/wt/kib 12" },
     { kind: "file", projectId: "p1", worktree: "/wt", path: "packages/core/ticket.ts", line: 42 },
-    { kind: "screen", screen: "agents" },
-    { kind: "screen", screen: "queue" },
-    { kind: "screen", screen: "skills" },
-    { kind: "skill", skillId: "superpowers:brainstorming" },
     { kind: "screen", screen: "general" },
     { kind: "screen", screen: "domains" },
     { kind: "screen", screen: "components" },
@@ -50,13 +44,9 @@ describe("hash codec", () => {
     expect(hashToTarget("#/p/%E0%A4%A/")).toBeNull();
   });
   test("screens keep their addresses", () => {
-    expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
-    expect(hashToTarget("#/agents/skills")).toEqual({ kind: "screen", screen: "skills" });
-    expect(hashToTarget("#/skills/a%3Ab")).toEqual({ kind: "skill", skillId: "a:b" });
-    expect(targetToHash({ kind: "skill", skillId: "a:b" })).toBe("#/skills/a%3Ab");
+    for (const retired of ["#/agents", "#/agents/queue", "#/agents/skills", "#/skills/a%3Ab", "#/creations"])
+      expect(hashToTarget(retired)).toBeNull();
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
-    expect(targetToHash({ kind: "screen", screen: "creations" })).toBe("#/creations");
-    expect(hashToTarget("#/creations")).toEqual({ kind: "screen", screen: "creations" });
     expect(hashToTarget("#/settings/general")).toEqual({ kind: "screen", screen: "general" });
     expect(hashToTarget("#/settings/integrations")).toEqual({ kind: "screen", screen: "integrations" });
     expect(hashToTarget("#/settings/sync")).toEqual({ kind: "screen", screen: "sync" });
@@ -64,7 +54,6 @@ describe("hash codec", () => {
     expect(hashToTarget("#/settings/appearance")).toEqual({ kind: "screen", screen: "appearance" });
     expect(targetToHash({ kind: "screen", screen: "security" })).toBe("#/settings/security");
     expect(hashToTarget("#/settings/components")).toEqual({ kind: "screen", screen: "sources" });
-    expect(hashToTarget("#/agents")).toEqual({ kind: "screen", screen: "agents" });
     expect(targetToHash({ kind: "screen", screen: "components" })).toBe("#/components");
     expect(hashToTarget("#/mine")).toEqual({ kind: "screen", screen: "mine" });
     expect(targetToHash({ kind: "screen", screen: "inbox" })).toBe("#/inbox");
@@ -84,7 +73,7 @@ describe("tabsReducer", () => {
     s = open(s, { kind: "ticket", projectId: "p1", ticketId: "x" }, "t2", true);
     s = tabsReducer(s, { type: "pin", id: "t2", pinned: true });
     s = open(s, { kind: "project", projectId: "p2" }, "t3", true);
-    s = open(s, { kind: "screen", screen: "agents" }, "t4", true);
+    s = open(s, { kind: "screen", screen: "inbox" }, "t4", true);
     s = tabsReducer(s, { type: "activate", id: "t2" });
     const out = tabsReducer(s, { type: "closeProject", projectId: "p1" });
     expect(out.tabs.map((t) => t.id)).toEqual(["t3", "t4"]);
@@ -312,7 +301,7 @@ test("retarget swaps a tab's target in place, or falls back to the tab already s
 test("a page tab is not doubled by a question, it is aimed at it", () => {
   const page = { kind: "page", projectId: "p1", pageId: "pg" } as const;
   let s = tabsReducer(EMPTY_TABS, { type: "open", target: page, newTab: true, id: "t1" });
-  s = tabsReducer(s, { type: "open", target: { kind: "screen", screen: "agents" }, newTab: true, id: "t2" });
+  s = tabsReducer(s, { type: "open", target: { kind: "screen", screen: "inbox" }, newTab: true, id: "t2" });
   s = tabsReducer(s, { type: "open", target: { ...page, question: "q1" }, newTab: true, id: "t3" });
   expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t2"]);
   expect(s.activeId).toBe("t1");

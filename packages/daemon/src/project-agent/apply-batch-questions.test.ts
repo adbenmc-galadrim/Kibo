@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import type { ProposedAction } from "@kibo/schema";
 import { applyBatch } from "./apply-batch";
 import { type Harness, HUMAN, harness, propose, questionOf, seedQuestions } from "./fakes.test-helper";
 
@@ -14,9 +13,9 @@ const setup = () => {
 };
 
 const why = "";
-const all = (actions: readonly ProposedAction[]) => new Set(actions.map((a) => a.id));
+const all = (actions: readonly { id: number }[]) => new Set(actions.map((a) => a.id));
 const apply = (h: Harness, batch: Awaited<ReturnType<typeof propose>>, chosen = all(batch.actions)) =>
-  applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
+  applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
 const outcomes = (results: { outcome: string }[]) => results.map((r) => r.outcome);
 
 describe("question actions", () => {

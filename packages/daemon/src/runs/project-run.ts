@@ -1,7 +1,6 @@
 import { headRank } from "@kibo/core/scheduler";
 import {
   type Agent,
-  isProjectRun,
   isTerminal,
   KiboError,
   PROJECT_AGENT_DENY,
@@ -28,9 +27,7 @@ export function createProjectRun(
 ): string {
   const agent = agentOf(PROJECT_AGENT_REF);
   assertWritable(input.projectId);
-  const open = registry
-    .all()
-    .some((r) => isProjectRun(r) && r.projectId === input.projectId && !isTerminal(r.state));
+  const open = registry.all().some((r) => r.projectId === input.projectId && !isTerminal(r.state));
   if (open) throw new KiboError("CONFLICT", `project ${input.projectId} already has an open project run`);
   const id = crypto.randomUUID();
   registry.create(

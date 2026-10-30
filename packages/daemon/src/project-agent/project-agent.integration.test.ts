@@ -24,7 +24,7 @@ const memoryOf = async (rpc: Rpc, projectId: string): Promise<string> => {
 
 test("a project turn reads the project through the real MCP server, its batch is applied as the human, and the next turn reads the digest", async () => {
   const stack = await startStack();
-  const { project, docs, livraison } = await seedKibo(stack.rpc);
+  const { project, docs } = await seedKibo(stack.rpc);
   const started = await send(stack.rpc, project.id, "Où en est-on ?");
   expect(started).toMatchObject({ kind: "project", ticketTitle: "Agent de projet · Kibo" });
   await turnDone(stack.rpc, started.id, 1);
@@ -48,7 +48,12 @@ test("a project turn reads the project through the real MCP server, its batch is
   expect(view.session).toMatchObject({ runId: started.id, closedAt: null });
   expect(batch).toMatchObject({ seq: 1, status: "pending", summary: "Lancer KIB-1 et noter le plan" });
   expect(batch?.expected).toContainEqual({ actionId: 1, fields: { statusId: "todo" } });
-  expect(batch?.actions.find((a) => a.type === "assignAgent")).toMatchObject({ profileId: livraison.ref });
+  expect(batch?.actions.map((a) => a.type)).toEqual([
+    "setStatus",
+    "createTicket",
+    "createQuestion",
+    "updateNote",
+  ]);
   expect(stack.notices).toContainEqual({ title: "Lot à valider", body: "Agent de projet · Kibo : lot n° 1" });
   expect((await agentsOf(stack.rpc)).projectAgents).toEqual([
     { projectId: project.id, runId: started.id, state: "done", pendingBatchId: batch?.id ?? "" },
@@ -58,36 +63,34 @@ test("a project turn reads the project through the real MCP server, its batch is
     projectId: project.id,
     batchId: batch?.id,
     decision: "apply",
-    actionIds: [1, 2, 3, 5],
+    actionIds: [1, 2, 4],
   });
   expect(decided).toMatchObject({
     status: "partial",
     decidedBy: { kind: "human", ref: "adam" },
-    chosen: [1, 2, 3, 5],
+    chosen: [1, 2, 4],
   });
   const snapshot = await snapshotOf(stack.rpc, project.id);
   const created = snapshot.tickets.find((t) => t.title === "Tests du récepteur");
   expect(decided.results.map((r) => [r.actionId, r.outcome])).toEqual([
     [1, "applied"],
-    [2, "failed"],
-    [3, "applied"],
-    [4, "skipped"],
-    [5, "applied"],
+    [2, "applied"],
+    [3, "skipped"],
+    [4, "applied"],
   ]);
-  expect(decided.results[1]?.detail).toStartWith("AGENT_EXECUTION_REMOVED: ");
-  expect(decided.results[2]?.created).toEqual({ ticketId: created?.id ?? "", key: "KIB-3" });
+  expect(decided.results[1]?.created).toEqual({ ticketId: created?.id ?? "", key: "KIB-3" });
   expect(created).toMatchObject({ key: "KIB-3", parentId: docs.id });
   expect(snapshot.questions).toEqual([]);
   expect(await memoryOf(stack.rpc, project.id)).toBe("# Mémoire\n- KIB-1 lancé");
 
-  expect((await agentsOf(stack.rpc)).runs.filter((r) => r.kind === "ticket")).toEqual([]);
+  expect((await agentsOf(stack.rpc)).runs.map((r) => [r.id, r.kind])).toEqual([[started.id, "project"]]);
 
   await send(stack.rpc, project.id, "Et maintenant ?");
   await turnDone(stack.rpc, started.id, 2);
   const second = stack.calls(started.sessionId)[1];
   expect(second?.argv).toContain("--resume");
   expect(second?.prompt).toContain("## Depuis ton dernier tour");
-  expect(second?.prompt).toContain("Dernier lot : n° 1 — appliqué 3, périmé 0, échec 1, ignoré 1");
+  expect(second?.prompt).toContain("Dernier lot : n° 1 — appliqué 3, périmé 0, échec 0, ignoré 1");
   expect(second?.prompt).toContain("KIB-1");
   expect(second?.prompt).toContain("Et maintenant ?");
   const changes = second?.mcp[0];

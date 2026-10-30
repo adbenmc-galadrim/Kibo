@@ -2,7 +2,6 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type AgentContext, launchFlags, skillAllowRule, subagentsJson } from "@kibo/core/agents/compose";
 import type { ContextFile } from "@kibo/core/context";
-import { rewriteSkillMentions } from "@kibo/core/skill-mentions";
 import {
   AGENT_BODY_MAX,
   type Agent,
@@ -13,7 +12,7 @@ import {
   type Skill,
   type SkillsRule,
 } from "@kibo/schema";
-import { agentGuardOf } from "./agent-guard";
+import { closedGuard } from "./agent-guard";
 import type { AgentFlags, CliFallbacks } from "./cli-flags";
 import type { AgentDataPort, ToolGuard } from "./orchestrator-types";
 import { writeRunContext } from "./workspace-prep";
@@ -122,10 +121,6 @@ const briefOf = (files: ContextFile[]) => files.find((f) => f.path === "brief.md
 export function createTurnPreparer(deps: { data: AgentLookup; fallbacks: CliFallbacks }) {
   const { fallbacks } = deps;
   return {
-    skillMentions(projectId: string | null): (text: string) => string {
-      const known = new Set(deps.data.skills(projectId).map((s) => s.id));
-      return (text) => rewriteSkillMentions(text, known);
-    },
     prepare(run: RunView, runDir: string, content: TurnContent): PreparedTurn {
       const composed = composeAgent(deps.data, run.profileId, run.projectId);
       const agents = fallbacks.agentsInline && composed.agentsJson !== null ? inlineAgents(composed) : null;
@@ -148,7 +143,7 @@ export function createTurnPreparer(deps: { data: AgentLookup; fallbacks: CliFall
           fallbacks,
         },
         promptTitle: fallbacks.nameInPrompt ? `# ${run.label}` : null,
-        guard: agentGuardOf(composed.agent),
+        guard: closedGuard,
         agent: composed.agent,
       };
     },

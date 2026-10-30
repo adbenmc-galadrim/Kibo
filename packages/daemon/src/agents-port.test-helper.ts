@@ -1,5 +1,5 @@
 import type { AgentsState, RunView } from "@kibo/schema";
-import type { AgentsPort } from "./agents-rpc";
+import type { AgentsPort } from "./runs/rpc";
 
 export type FakeAgentsPort = AgentsPort & { change(run: RunView): void };
 
@@ -41,10 +41,7 @@ export function fakeAgentsPort(runs: RunView[]): FakeAgentsPort {
       host: HOST,
       tokensToday: 0,
       resumable: [],
-      questions: [],
       projectAgents: [],
-      progress: [],
-      signals: [],
     }),
     change(run) {
       for (const listener of listeners) listener(run);

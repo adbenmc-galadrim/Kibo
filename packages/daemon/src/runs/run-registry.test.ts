@@ -28,7 +28,7 @@ const newRun = (id: string): NewRun => ({
   projectKey: "KIB",
   sessionId: `s-${id}`,
   brief: "",
-  kind: "ticket",
+  kind: "project",
   resumedFrom: null,
 });
 const spawned: RunEvent = { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 };

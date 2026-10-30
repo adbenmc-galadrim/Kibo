@@ -7,7 +7,7 @@ const record = (
   id: string,
   seq: number,
   ticketId: string | null = "t1",
-  kind: RunRecord["kind"] = "ticket",
+  kind: RunRecord["kind"] = "project",
 ): RunRecord => ({
   id,
   seq,
@@ -55,13 +55,9 @@ test("a finished ticket run resumes when it is the latest, its process gone and 
   expect(canResume(run, context([run, ended("b", 2)]))).toBe(false);
   expect(canResume(run, context([run], { alive: (id) => id === "a" }))).toBe(false);
   expect(canResume(run, context([run], { profileIds: new Set() }))).toBe(false);
-  const task = ended("t", 1, null);
-  expect(canResume(task, context([task]))).toBe(false);
-  const neverStarted = { ...run, startedAt: null };
-  expect(canResume(neverStarted, context([neverStarted]))).toBe(false);
   const active = { ...run, state: "running" as const };
   expect(canResume(active, context([active]))).toBe(false);
-  expect(resumableRuns(context([run, ended("b", 2), ended("c", 3, "t2"), task]))).toEqual(["b", "c"]);
+  expect(resumableRuns(context([run, ended("b", 2), ended("c", 3, "t2")]))).toEqual(["b", "c"]);
 });
 
 test("a ticket run never resumes once its ticket has children", () => {

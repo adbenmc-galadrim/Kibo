@@ -16,7 +16,6 @@ import {
   Copy,
   FileText,
   FolderKanban,
-  GitCommitHorizontal,
   Info,
   Keyboard,
   Plus,
@@ -55,7 +54,6 @@ const ICONS = {
   ticket: Ticket,
   page: FileText,
   project: FolderKanban,
-  changes: GitCommitHorizontal,
   new: Plus,
   theme: SunMoon,
   projectAgent: Bot,
@@ -65,9 +63,6 @@ const ICONS = {
   whatsNew: Sparkles,
   report: Bug,
   about: Info,
-  agents: SCREENS.agents.icon,
-  queue: SCREENS.queue.icon,
-  skills: SCREENS.skills.icon,
   general: SCREENS.general.icon,
   domains: SCREENS.domains.icon,
   components: SCREENS.components.icon,
@@ -80,7 +75,6 @@ const ICONS = {
   sync: SCREENS.sync.icon,
   shortcuts: SCREENS.shortcuts.icon,
   workspace: SCREENS.workspace.icon,
-  creations: SCREENS.creations.icon,
 };
 const FILTER_LABEL: Record<PaletteFilter, string> = {
   all: fr.palette.all,

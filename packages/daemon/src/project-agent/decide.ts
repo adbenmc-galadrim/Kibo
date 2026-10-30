@@ -9,7 +9,6 @@ import {
   type ProjectAgentRpcRequest,
   undecidedActionIds,
 } from "@kibo/schema";
-import { guarded } from "../runs/orchestrator-support";
 import type { AgentContext } from "./context";
 import { rejectionMessage } from "./sessions";
 
@@ -114,7 +113,6 @@ export async function decideBatch(
   const all = await applyResults(ctx, batch, chosen, by);
   const results = all.filter((r) => scope.has(r.actionId));
   const applied = ctx.store.appendBatchEvent(batch.id, { type: "results", results }, ctx.now());
-  guarded("signal settlement", () => ctx.signals.settle(applied, results, by));
   ctx.emit();
   return applied;
 }

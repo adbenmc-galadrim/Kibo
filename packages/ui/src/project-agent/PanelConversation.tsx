@@ -25,7 +25,6 @@ export function PanelConversation({ projectName, chat, inert, onNew }: Props) {
           status={chat.status}
           readOnly={chat.readOnly}
           labels={chat.labels}
-          signals={chat.signals}
           onTicket={chat.openTicket}
           onRetry={chat.retry}
           onResend={chat.resend}

@@ -16,12 +16,11 @@ const SIDEBAR_STYLE: CSSProperties & Record<"--sidebar-width", string> = {
 type Props = {
   tabs: TabsApi;
   describe(target: TabTarget): TabDescription;
-  isDirty(target: TabTarget): boolean;
   onNewTab(): void;
   children: ReactNode;
 };
 
-export function WorkspaceFrame({ tabs, describe, isDirty, onNewTab, children }: Props) {
+export function WorkspaceFrame({ tabs, describe, onNewTab, children }: Props) {
   const visible = showTabBar(tabs.state, tabs.error);
   const sidebar = useSidebarOpen();
   useEffect(() => {
@@ -38,7 +37,6 @@ export function WorkspaceFrame({ tabs, describe, isDirty, onNewTab, children }: 
         <TabBar
           state={tabs.state}
           describe={describe}
-          isDirty={isDirty}
           dispatch={tabs.dispatch}
           onNewTab={onNewTab}
           onOpenWindow={inTauri() ? null : openWindow}

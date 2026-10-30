@@ -9,7 +9,7 @@ export const fixedStore = (settings: AppSettings): AppSettingsStore => ({
   update: (patch: AppSettingsPatch) => Promise.resolve({ ...settings, ...patch }),
 });
 
-const StoreContext = createContext<AppSettingsStore>(fixedStore({ agentExecution: "hidden" }));
+const StoreContext = createContext<AppSettingsStore>(fixedStore({}));
 
 export function clientSettingsSource(client: Pick<KiboClient, "rpc" | "subscribeTopic">): AppSettingsSource {
   return {

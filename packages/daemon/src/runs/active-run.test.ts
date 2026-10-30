@@ -18,7 +18,7 @@ const runOf = (id: string, ticketId: string, state: RunState): RunView => ({
       projectKey: null,
       sessionId: `s-${id}`,
       brief: "",
-      kind: "ticket",
+      kind: "project",
       resumedFrom: null,
       createdAt: 0,
     },

@@ -133,7 +133,7 @@ export function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
   seq += 1;
   return {
     seq,
-    kind: "ticket",
+    kind: "project",
     projectId: PROJECT_ID,
     ticketId: null,
     ticketKey: null,
@@ -227,10 +227,6 @@ export const questionContext = (p: Partial<BatchContext> = {}): BatchContext => 
   project: questionSnapshot(),
   runs: [run({ id: ACTIVE_RUN, ticketId: "t2", ticketKey: "SILO-2", label: "opus-dev-1", state: "running" })],
   notes: [],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
   ...p,
 });

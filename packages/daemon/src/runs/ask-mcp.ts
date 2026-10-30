@@ -1,13 +1,6 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
-import {
-  QUESTION_IMAGE_LIMITS,
-  QUESTION_OPTIONS_MAX,
-  RECIPIENT_ID_MAX,
-  SHARED_TOOL_SPECS,
-  TICKET_TOOL_SPECS,
-  TOOL_SPECS,
-} from "@kibo/schema";
+import { QUESTION_IMAGE_LIMITS, QUESTION_OPTIONS_MAX, RECIPIENT_ID_MAX, TOOL_SPECS } from "@kibo/schema";
 import { z } from "zod";
 import { callDaemonTool, type McpToolReply } from "./mcp-client";
 
@@ -78,17 +71,16 @@ const ASK_TOOL_SPECS = [
   },
 ];
 
-export type McpTools = "project" | "ticket" | null;
+export type McpTools = "project" | null;
 export type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
 
-const PROJECT_TOOL_SPECS = [
-  ...TOOL_SPECS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
-  ...SHARED_TOOL_SPECS,
-];
+const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) => ({
+  name,
+  description,
+  inputSchema,
+}));
 
-const DAEMON_TOOL_SPECS = { project: PROJECT_TOOL_SPECS, ticket: TICKET_TOOL_SPECS };
-
-const daemonTools = (tools: McpTools) => (tools === null ? [] : DAEMON_TOOL_SPECS[tools]);
+const daemonTools = (tools: McpTools) => (tools === null ? [] : PROJECT_TOOL_SPECS);
 
 const listedTools = (tools: McpTools) => [
   ...ASK_TOOL_SPECS.map(({ reply: _reply, ...spec }) => spec),
@@ -97,7 +89,7 @@ const listedTools = (tools: McpTools) => [
 
 export function mcpToolsOf(env: Record<string, string | undefined>): McpTools {
   const tools = env.KIBO_MCP_TOOLS;
-  return tools === "project" || tools === "ticket" ? tools : null;
+  return tools === "project" ? tools : null;
 }
 
 const argumentsOf = (params: Record<string, unknown> | undefined): unknown => params?.arguments ?? {};

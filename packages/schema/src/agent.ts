@@ -20,7 +20,7 @@ export type AgentScope = z.infer<typeof AgentScope>;
 export const AgentName = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
 export type AgentName = z.infer<typeof AgentName>;
 
-export const SYSTEM_AGENT_IDS = ["assistant", "generateur", "demo", "project-agent"] as const;
+export const SYSTEM_AGENT_IDS = ["project-agent"] as const;
 export type SystemAgentId = (typeof SYSTEM_AGENT_IDS)[number];
 
 const NAME = "[a-z0-9][a-z0-9-]{0,63}";
@@ -62,10 +62,9 @@ export const systemIdOfName = (name: string): SystemAgentId | null =>
   SYSTEM_AGENT_IDS.find((id) => systemAgentName(id) === name) ?? null;
 
 export const PROJECT_AGENT_REF: AgentRef = systemAgentRef("project-agent");
-export const DEMO_AGENT_REF: AgentRef = systemAgentRef("demo");
 export const LEGACY_DEMO_ASSIGNEE = "demo";
 export const assigneeName = (assignee: { kind: "human" | "agent"; ref: string }): string =>
-  assignee.kind === "agent" && assignee.ref === LEGACY_DEMO_ASSIGNEE ? systemAgentName("demo") : assignee.ref;
+  assignee.kind === "agent" && assignee.ref === LEGACY_DEMO_ASSIGNEE ? "kibo-demo" : assignee.ref;
 
 export const AGENT_BODY_MAX = 100_000;
 export const AGENT_DESCRIPTION_MAX = 1_024;
@@ -124,35 +123,22 @@ export const AgentSettingsPatch = z.object(SETTINGS_SHAPE).partial().strict();
 export type AgentSettingsPatch = z.infer<typeof AgentSettingsPatch>;
 export const DEFAULT_AGENT_SETTINGS: AgentSettings = AgentSettings.parse({});
 
-const SYSTEM_PERMISSION: Record<SystemAgentId, PermissionMode> = {
-  assistant: "default",
-  generateur: "acceptEdits",
-  demo: "acceptEdits",
-  "project-agent": "default",
-};
-const SYSTEM_DEFAULT_PARALLEL: Record<SystemAgentId, number> = {
-  assistant: 1,
-  generateur: 2,
-  demo: 1,
-  "project-agent": 1,
-};
-
-function systemParallel(id: SystemAgentId, stored: number | undefined): number {
-  if (id === "demo" || stored === undefined) return SYSTEM_DEFAULT_PARALLEL[id];
+function systemParallel(stored: number | undefined): number {
+  if (stored === undefined) return 1;
   return Math.min(Math.max(1, stored), SYSTEM_MAX_PARALLEL);
 }
 
-export function systemAgentSettings(id: SystemAgentId, stored: Partial<AgentSettings>): AgentSettings {
+export function systemAgentSettings(stored: Partial<AgentSettings>): AgentSettings {
   return {
     ...DEFAULT_AGENT_SETTINGS,
     workspace: "isolated",
-    permissionMode: SYSTEM_PERMISSION[id],
-    maxParallel: systemParallel(id, stored.maxParallel),
+    permissionMode: "default",
+    maxParallel: systemParallel(stored.maxParallel),
     enabled: stored.enabled ?? true,
     subagents: [],
     genericSubagents: false,
     allSubagents: false,
-    skills: id === "project-agent" ? { mode: "all" } : { mode: "list", ids: [] },
+    skills: { mode: "list", ids: [] },
   };
 }
 

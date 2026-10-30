@@ -31,7 +31,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     projectKey: "KIB",
     sessionId: `s-${p.id}`,
     brief: "",
-    kind: "ticket",
+    kind: "project",
     resumedFrom: null,
     createdAt: NOW - 20 * MIN,
     label: "opus-dev",
@@ -258,10 +258,7 @@ export function agentsFixture(): AgentsState {
     },
     tokensToday: 1_200_000,
     resumable: [],
-    questions: [],
     projectAgents: [],
-    progress: [],
-    signals: [],
   };
 }
 

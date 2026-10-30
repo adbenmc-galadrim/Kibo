@@ -2,17 +2,14 @@ import {
   type ActionType,
   ANSWER_TEXT_MAX,
   type AnswerInput,
-  answersToDeliver,
   type Batch,
   type ExpectedState,
-  isTerminal,
   type ProposeBatchInput,
   type ProposedAction,
   type Question,
 } from "@kibo/schema";
-import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
-import { assignableAgents } from "./overview";
-import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
+import { type BatchContext, captureExpected, ticketByKey } from "./expected";
+import { isNewRef, ticketRefsOf } from "./refs";
 import { holdChecks } from "./validate-hold";
 import { answerQuestionCheck, questionChecks } from "./validate-questions";
 import { type Check, type Edge, nodeOf, openScan, type Scan, touch } from "./validate-scan";
@@ -21,8 +18,6 @@ import { sprintChecks } from "./validate-sprints";
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
 export { assignableAgents, assignableEntry } from "./overview";
-
-const TICKET_AGENT_ACTIONS: ReadonlySet<ActionType> = new Set(["assignAgent", "deliverAnswers"]);
 
 export type ActionProblem = { actionId: number; type: ActionType; message: string };
 export type ValidBatch = { actions: ProposedAction[]; expected: ExpectedState[] };
@@ -33,11 +28,6 @@ function refProblem(scan: Scan, ref: string, index: number): string | null {
   const at = scan.declared.get(ref);
   if (at === undefined) return `référence ${ref} inconnue`;
   return at >= index ? `référence ${ref} déclarée après usage` : null;
-}
-
-function signalProblem(scan: Scan, ref: string): string | null {
-  if (scan.ctx.signals.includes(ref)) return null;
-  return scan.ctx.closedSignals.includes(ref) ? `signal déjà clos « ${ref} »` : `signal inconnu « ${ref} »`;
 }
 
 function statusProblems(scan: Scan, statusId: string | undefined, reason: string | undefined): string[] {
@@ -139,24 +129,6 @@ const checks: { [T in ActionType]: Check<T> } = {
     );
     return [];
   },
-  assignAgent(scan, a) {
-    const assignable = assignableAgents(scan.ctx.agents, scan.ctx.demoProject).some(
-      (p) => p.ref === a.profileId,
-    );
-    return assignable ? touch(scan, `${a.ticket}.agent`) : [`agent non assignable « ${a.profileId} »`];
-  },
-  deliverAnswers(scan, a) {
-    const ticket = ticketByKey(scan.ctx.project)(a.ticket);
-    const pending = ticket ? answersToDeliver(scan.ctx.project.questions, ticket.id) : [];
-    return pending.length > 0
-      ? touch(scan, `${a.ticket}.answers`)
-      : [`aucune réponse à transmettre sur ${a.ticket}`];
-  },
-  cancelRun(scan, a) {
-    const target = ticketRuns(scan.ctx.runs, scan.ctx.project.meta.id).find((r) => r.id === a.runId);
-    if (!target) return [`run inconnu « ${a.runId} »`];
-    return isTerminal(target.state) ? [`run déjà terminé « ${a.runId} »`] : touch(scan, `${a.runId}.run`);
-  },
   answerQuestion(scan, a) {
     const problem = answerQuestionCheck(scan, a.questionId);
     if (typeof problem === "string") return [problem];
@@ -172,9 +144,6 @@ const checks: { [T in ActionType]: Check<T> } = {
     if (!scan.ctx.notes.some((n) => n.path === a.path)) return [`note introuvable « ${a.path} »`];
     return touch(scan, `${a.path}.content`);
   },
-  dismissSignal(scan, a) {
-    return touch(scan, a.signal);
-  },
   ...sprintChecks,
   ...holdChecks,
 };
@@ -188,37 +157,9 @@ function runCheck<T extends ActionType>(
   return check(scan, action, index);
 }
 
-const adoptedBy = (scan: Scan, action: ProposedAction): string | null =>
-  (action.type === "createTicket" || action.type === "updateTicket") && typeof action.parent === "string"
-    ? nodeOf(scan, action.parent)
-    : null;
-
-function parentProblem(scan: Scan, ticket: string, later: readonly ProposedAction[]): string | null {
-  const node = nodeOf(scan, ticket);
-  const children =
-    [...scan.parents.values()].filter((p) => p === node).length +
-    later.filter((a) => adoptedBy(scan, a) === node).length;
-  return children > 0
-    ? `ce ticket regroupe ${children} sous-ticket${children > 1 ? "s" : ""} : lance les sous-tickets`
-    : null;
-}
-
-function actionProblems(
-  scan: Scan,
-  actions: readonly ProposedAction[],
-  action: ProposedAction,
-  index: number,
-) {
-  const refs = [
-    ...ticketRefsOf(action).flatMap((ref) => refProblem(scan, ref, index) ?? []),
-    ...[...new Set(signalRefsOf(action))].flatMap((ref) => signalProblem(scan, ref) ?? []),
-  ];
-  if (refs.length > 0) return refs;
-  if (scan.ctx.agentExecution !== "shown" && TICKET_AGENT_ACTIONS.has(action.type))
-    return ["exécution des agents masquée dans Kibo : action indisponible"];
-  const parent =
-    action.type === "assignAgent" ? parentProblem(scan, action.ticket, actions.slice(index + 1)) : null;
-  return parent === null ? runCheck(scan, action, index) : [parent];
+function actionProblems(scan: Scan, action: ProposedAction, index: number) {
+  const refs = ticketRefsOf(action).flatMap((ref) => refProblem(scan, ref, index) ?? []);
+  return refs.length > 0 ? refs : runCheck(scan, action, index);
 }
 
 export function validateBatch(input: ProposeBatchInput, ctx: BatchContext): BatchValidation {
@@ -227,7 +168,7 @@ export function validateBatch(input: ProposeBatchInput, ctx: BatchContext): Batc
   const problems = input.actions.flatMap((action, index): ActionProblem[] => {
     const messages = ids.has(action.id)
       ? ["identifiant d'action en double"]
-      : actionProblems(scan, input.actions, action, index);
+      : actionProblems(scan, action, index);
     ids.add(action.id);
     return messages.map((message) => ({ actionId: action.id, type: action.type, message }));
   });

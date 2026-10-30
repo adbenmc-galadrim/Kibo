@@ -334,22 +334,19 @@ test("a frame list refuses an invalid url and names the cause", async () => {
   expect(calls.filter((c) => c.method === "command")).toHaveLength(0);
 });
 
-const filterChoice = async (execution: "hidden" | "shown") => {
-  const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
+const filterChoice = () => {
   render(
-    <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
-      <InstanceSettingsDialog
-        projectId="p1"
-        instance={instance}
-        title="Kanban"
-        schema={schema}
-        onClose={() => {}}
-      />
-    </AppSettingsProvider>,
+    <InstanceSettingsDialog
+      projectId="p1"
+      instance={instance}
+      title="Kanban"
+      schema={schema}
+      onClose={() => {}}
+    />,
   );
   return screen.getByRole("combobox", { name: "Filtre" }).textContent;
 };
 
-test("hidden execution: the widget filter reads Moi, not Moi + agents", async () => {
-  expect(await filterChoice("hidden")).toBe("Moi");
+test("the widget filter reads Moi, not Moi + agents", () => {
+  expect(filterChoice()).toBe("Moi");
 });

@@ -118,7 +118,7 @@ test("the folder is local only, must exist, and is refused while runs are active
   busy.close();
 });
 
-test("worktree settings are local, checked, and work on a read-only shared project", () => {
+test("worktree settings are local and work on a read-only shared project", () => {
   const s = setup({ sharing: SHARED_SYNC });
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
@@ -132,15 +132,6 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
     s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
   expect(() => update({ worktree }, REMOTE)).toThrow("FORBIDDEN");
-  for (const pathTemplate of ["/tmp/{slug}", "../../x/{slug}", "{slug}/../../x", "{nope}"])
-    expect(() => update({ worktree: { ...worktree, pathTemplate } })).toThrow("INVALID_INPUT");
-  expect(() => update({ worktree: { ...worktree, setup: "make {nope}" } })).toThrow("INVALID_INPUT");
-  const recipe = { copyFrom: ["{repo}"], copy: [".env"], env: null, after: ["pnpm install"] };
-  for (const copy of [["../x"], ["/abs/.env"]])
-    expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, copy } } })).toThrow("INVALID_INPUT");
-  expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, after: ["echo {nope}"] } } })).toThrow(
-    "INVALID_INPUT",
-  );
   expect(s.settings.get(s.project.id, LOCAL_WORKTREE_KEY)).toBeNull();
   expect(update({ worktree }).worktree).toEqual(worktree);
   expect(s.snapshot().meta.worktree).toEqual(worktree);
