@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { type ProjectCommand, Ticket } from "@kibo/schema";
 import { seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
-import { defineServer } from "./server";
 
 const base = { id: "probe", version: "0.1.0", kind: "widget" as const, title: "Probe" };
 
@@ -15,12 +14,11 @@ test("every attempt is recorded in used, denials also in violations", async () =
   expect(m.violations).toEqual(["data", "net https://example.com/x"]);
 });
 
-test("data, programmed fetch and actions work in memory", async () => {
+test("data and programmed fetch work in memory, actions are refused", async () => {
   const m = createMockSdk(
     { ...base, reads: ["ticket"], writes: [], data: true, net: ["api.github.com"] },
     {
       fetch: (url) => ({ status: 200, headers: {}, body: url }),
-      server: defineServer({ actions: { count: async (ctx) => (await ctx.list("ticket")).length } }),
       seed: (run) => run({ method: "createTicket", title: "A" }),
     },
   );
@@ -28,7 +26,6 @@ test("data, programmed fetch and actions work in memory", async () => {
   expect(await m.sdk.data.get<{ a: number }>("k")).toEqual({ a: 1 });
   expect(await m.sdk.data.keys()).toEqual(["k"]);
   expect((await m.sdk.fetch("https://api.github.com/x")).body).toBe("https://api.github.com/x");
-  expect(await m.sdk.action<number>("count")).toBe(1);
   await expect(m.sdk.action("nope")).rejects.toThrow("PERMISSION_DENIED");
 });
 

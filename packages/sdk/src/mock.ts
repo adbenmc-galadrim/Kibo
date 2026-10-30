@@ -30,7 +30,6 @@ import { activityOf, createMockRuns } from "./mock-runs";
 import { createMockSettings } from "./mock-settings";
 import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
-import type { ServerContext } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import { createSpotlightStore } from "./spotlight";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
@@ -105,15 +104,6 @@ export function createMockSdk(
     agent: opts.deliveryAgent === undefined ? MOCK_DELIVERY_AGENT_INFO : opts.deliveryAgent,
   });
 
-  const serverContext = (): ServerContext => ({
-    instanceId: sdk.instanceId,
-    config: sdk.config,
-    list: sdk.list,
-    run: sdk.run,
-    data: sdk.data,
-    fetch: sdk.fetch,
-  });
-
   const backend: ProjectBackend = {
     snapshot: async () => readProject(doc, today, activityOf(runs)),
     run: async (cmd) => componentRun(cmd),
@@ -127,7 +117,6 @@ export function createMockSdk(
       configPatches,
       runs: () => runs,
       access: () => access,
-      serverContext,
       embeds,
       peek: mockRuns.peek,
       settings: () => settings.read(),

@@ -6,7 +6,7 @@ import {
   readAppVersion,
   type VersionFiles,
   withAppVersion,
-} from "@kibo/devkit";
+} from "./release-version";
 
 const desktop = resolve(import.meta.dir, "..");
 const CHANGELOG = resolve(desktop, "../../CHANGELOG.md");

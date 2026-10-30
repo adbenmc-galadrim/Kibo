@@ -25,7 +25,6 @@ import type { MockRunDelivery } from "./mock-delivery";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockEmbeds } from "./mock-embed";
 import { activityOf } from "./mock-runs";
-import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
 
 export type MockFetch = (url: string, init: FetchInit) => FetchResponse | Promise<FetchResponse>;
@@ -37,12 +36,10 @@ export type MockCallDeps = {
   configPatches: Record<string, unknown>[];
   runs(): TicketRun[];
   access(): ProjectAccess;
-  serverContext(): ServerContext;
   peek(runId: string): RunPeek;
   settings(): ComponentSettings;
   delivery: MockRunDelivery;
   fetch?: MockFetch;
-  server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   events?: ProjectEvent[];
@@ -98,11 +95,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
       case "fetch":
         if (!deps.fetch) throw new KiboError("NOT_FOUND", `no response programmed for ${c.url}`);
         return deps.fetch(c.url, c.init);
-      case "action": {
-        const action = deps.server?.actions?.[c.name];
-        if (!action) throw new KiboError("PERMISSION_DENIED", `unknown action ${c.name}`);
-        return action(deps.serverContext(), c.input);
-      }
+      case "action":
+        throw new KiboError("PERMISSION_DENIED", `unknown action ${c.name}`);
       case "mcp.call":
         return mcpReply(deps, `${c.server}/${c.tool}`);
       case "mcp.read":

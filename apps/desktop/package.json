@@ -13,7 +13,6 @@
     "test": "bun test scripts"
   },
   "devDependencies": {
-    "@kibo/devkit": "workspace:*",
     "@kibo/schema": "workspace:*",
     "@tauri-apps/cli": "2.11.5"
   }

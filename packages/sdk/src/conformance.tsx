@@ -21,7 +21,7 @@ import { SdkProvider } from "./react";
 
 export type ConformanceModule = { manifest: unknown; Component: ComponentType };
 export type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
-export type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "server" | "config" | "mcp" | "ciRuns"> & {
+export type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "config" | "mcp" | "ciRuns"> & {
   runs?: (snapshot: ProjectSnapshot) => TicketRun[];
 };
 

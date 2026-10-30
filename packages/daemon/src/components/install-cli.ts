@@ -1,8 +1,8 @@
 import { lstat, mkdir, readlink, rename, rm, symlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { isCompiled } from "@kibo/devkit";
 import { KiboError } from "@kibo/schema";
+import { isCompiled } from "../compiled";
 
 type InstallOptions = {
   execPath?: string;

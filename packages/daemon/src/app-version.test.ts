@@ -23,3 +23,10 @@ test("a malformed injected version is refused", () => {
     /not a X\.Y\.Z or X\.Y\.Z-alpha\.N version/,
   );
 });
+
+test("a tauri.conf.json without a valid version is refused", () => {
+  expect(() => appVersion({}, () => "{}")).toThrow(/tauri.conf.json has no version/);
+  expect(() => appVersion({}, () => '{"version": "1.0"}')).toThrow(
+    /not a X\.Y\.Z or X\.Y\.Z-alpha\.N version/,
+  );
+});

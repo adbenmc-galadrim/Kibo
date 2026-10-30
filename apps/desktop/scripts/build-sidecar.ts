@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { readAppVersion } from "@kibo/devkit";
+import { readAppVersion } from "./release-version";
 
 const root = resolve(import.meta.dir, "../../..");
 const { values } = parseArgs({ options: { out: { type: "string" } } });

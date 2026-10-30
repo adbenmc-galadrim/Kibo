@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@kibo/core": "workspace:*",
-    "@kibo/devkit": "workspace:*",
     "@kibo/schema": "workspace:*",
     "@modelcontextprotocol/sdk": "1.31.0",
     "loro-crdt": "1.16.3",

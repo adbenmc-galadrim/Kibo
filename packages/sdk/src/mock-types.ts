@@ -24,7 +24,6 @@ import type { MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import type { MockEmbedOptions } from "./mock-embed";
 import type { MockHold } from "./mock-holds";
-import type { ServerDefinition } from "./server";
 import type { AllowAndResumeInput, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type MockSdk = {
@@ -71,7 +70,6 @@ export type MockSdkOptions = {
   format?: ComponentFormat;
   runs?: TicketRun[];
   fetch?: MockFetch;
-  server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   events?: ProjectEvent[];

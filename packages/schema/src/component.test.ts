@@ -13,14 +13,12 @@ import {
   grantedOf,
   isActive,
   isBuiltinId,
-  isEmbeddedSpecifier,
   isSafeNotePath,
   NetRule,
   permissionList,
   permissionOfCall,
   RpcRequest,
   ruleCovers,
-  SHARED_SPECIFIERS,
   shortHash,
   splitRef,
   validateConfig,
@@ -223,15 +221,4 @@ describe("versions", () => {
     });
     expect(() => applyMigrations(m, 2, 1, { config: {}, data: {} })).toThrow("INVALID_INPUT");
   });
-});
-
-test("embedded specifiers cover three and the kits", () => {
-  expect(isEmbeddedSpecifier("three")).toBe(true);
-  expect(isEmbeddedSpecifier("three/addons/controls/OrbitControls.js")).toBe(true);
-  expect(isEmbeddedSpecifier("@kibo/sdk/three")).toBe(true);
-  expect(isEmbeddedSpecifier("@kibo/sdk/game")).toBe(true);
-  expect(isEmbeddedSpecifier("threejs")).toBe(false);
-  expect(isEmbeddedSpecifier("@kibo/sdk/mock")).toBe(false);
-  expect(SHARED_SPECIFIERS).toContain("@kibo/sdk/ui/table");
-  expect(SHARED_SPECIFIERS).toContain("@kibo/sdk/ui/switch");
 });

@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createProjectDoc, readProject } from "@kibo/core";
 import { type ComponentCall, ComponentManifest, type DesignFrame, type TicketRun } from "@kibo/schema";
-import { defineMigrations } from "./migrations";
 import { createSdk } from "./sdk";
-import { defineServer } from "./server";
 import type { ProjectBackend, SdkContext, SdkMode } from "./types";
 
 const ctx: SdkContext = {
@@ -205,13 +203,4 @@ describe("design", () => {
     ]);
     expect(sdk.capabilities).toEqual(["design"]);
   });
-});
-
-test("defineServer and defineMigrations validate their shape", () => {
-  expect(() => defineServer({ jobs: { sync: { everyMinutes: 0, run: async () => undefined } } })).toThrow(
-    "INVALID_INPUT",
-  );
-  expect(defineServer({ actions: { ping: async () => "pong" } }).actions?.ping).toBeDefined();
-  expect(() => defineMigrations({ 0: {} })).toThrow("INVALID_INPUT");
-  expect(Object.keys(defineMigrations({ 1: {}, 2: {} }))).toEqual(["1", "2"]);
 });

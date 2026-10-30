@@ -9,14 +9,7 @@
     "./conformance": "./src/conformance.tsx",
     "./conformance-overflow": "./src/conformance-overflow.ts",
     "./fixtures": "./src/fixtures.ts",
-    "./sandbox": "./src/sandbox.tsx",
     "./key-guard": "./src/key-guard.ts",
-    "./server": "./src/server.ts",
-    "./adapter": "./src/adapter.ts",
-    "./migrations": "./src/migrations.ts",
-    "./dev": "./src/dev.tsx",
-    "./three": "./src/three/index.ts",
-    "./game": "./src/game/index.ts",
     "./theme.css": "./src/theme.css",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
@@ -35,9 +28,7 @@
     "markdown-it": "14.3.1",
     "next-themes": "0.4.6",
     "radix-ui": "1.6.7",
-    "sonner": "2.0.8",
-    "three": "0.186.1",
-    "zod": "3.25.76"
+    "sonner": "2.0.8"
   },
   "peerDependencies": {
     "react": "19.1.1",
@@ -49,8 +40,6 @@
     "@types/markdown-it": "14.1.2",
     "@types/react": "19.1.13",
     "@types/react-dom": "19.1.9",
-    "@types/three": "0.186.0",
-    "fast-check": "4.3.0",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   }
