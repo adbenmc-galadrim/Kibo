@@ -168,8 +168,9 @@ describe("identifier bounds", () => {
 
 describe("daemon events", () => {
   test("phase 7 events do not reuse integration event types", () => {
-    expect(Phase7Event.safeParse({ type: "presence.changed", projectId: "p1" }).success).toBe(true);
-    expect(Phase7Event.safeParse({ type: "collab.changed" }).success).toBe(true);
+    expect(Phase7Event.safeParse({ type: "sessions.changed" }).success).toBe(true);
+    expect(Phase7Event.safeParse({ type: "presence.changed", projectId: "p1" }).success).toBe(false);
+    expect(Phase7Event.safeParse({ type: "collab.changed" }).success).toBe(false);
     expect(Phase7Event.safeParse({ type: "sync" }).success).toBe(false);
   });
 });

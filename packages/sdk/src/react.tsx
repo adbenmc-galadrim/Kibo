@@ -3,7 +3,6 @@ import {
   type EntityType,
   KiboError,
   type MemberInfo,
-  type PresencePeer,
   type ProjectSyncInfo,
   type QuestionRecipient,
   type RunPeek,
@@ -63,16 +62,8 @@ const EMPTY_SHARING: ProjectSyncInfo = {
   members: [],
 };
 
-const readPresence: Read<PresencePeer[]> = (sdk) => sdk.presence.list();
-const watchPresence: Watch = (sdk, l) => sdk.presence.subscribe(l);
 const readSharing: Read<ProjectSyncInfo> = (sdk) => sdk.sharing();
 const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
-const NO_PEERS: PresencePeer[] = [];
-
-export function usePresence(): PresencePeer[] {
-  return useSdkValue(useSdk(), readPresence, watchPresence, NO_PEERS);
-}
-
 export function useSharing(): ProjectSyncInfo {
   return useSdkValue(useSdk(), readSharing, watchProject, EMPTY_SHARING);
 }

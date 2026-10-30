@@ -5,7 +5,6 @@ import type {
   DeliveryAgent,
   McpCallResult,
   MemberInfo,
-  PresencePeer,
   ProjectAccess,
   ProjectAsset,
   ProjectCommand,
@@ -51,7 +50,6 @@ export type MockSdk = {
   snapshot(): ProjectSnapshot;
   setRuns(runs: TicketRun[]): void;
   setAccess(access: ProjectAccess): void;
-  setPresence(peers: PresencePeer[]): void;
   focusRequests: boolean[];
   selections: (Selection | null)[];
   setVisible(visible: boolean): void;
@@ -80,7 +78,6 @@ export type MockSdkOptions = {
   description?: string | null;
   client?: string | null;
   folder?: string | null;
-  presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];
   assets?: ProjectAsset[];

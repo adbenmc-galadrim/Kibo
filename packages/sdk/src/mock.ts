@@ -63,9 +63,7 @@ export function createMockSdk(
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
-  const presenceChanges = createNotifier();
   let access: ProjectAccess = "write";
-  let peers = opts.presence ?? [];
   if (opts.shared) enableServerAllocation(doc);
   const run = (cmd: ProjectCommand) => {
     const result = executeProjectCommand(doc, cmd);
@@ -128,7 +126,6 @@ export function createMockSdk(
       manifest,
       configPatches,
       runs: () => runs,
-      peers: () => peers,
       access: () => access,
       serverContext,
       embeds,
@@ -139,7 +136,6 @@ export function createMockSdk(
     subscribe: changes.subscribe,
     runs: async () => runs,
     subscribeRuns: runChanges.subscribe,
-    subscribePresence: presenceChanges.subscribe,
     subscribeConfig: (listener) => settings.subscribe(listener),
   };
 
@@ -206,10 +202,6 @@ export function createMockSdk(
         return record(`mcp:${server}`, `mcp ${server}`, () => inner.mcp.importItem(server, item));
       },
     },
-    presence: {
-      list: () => record("read:ticket", "read presence", () => inner.presence.list()),
-      subscribe: inner.presence.subscribe,
-    },
     sharing: () => record("read:ticket", "read sharing", () => inner.sharing()),
     capability: (name) => {
       const permission = capPermission(name);
@@ -262,10 +254,6 @@ export function createMockSdk(
     },
     setTracking: settings.setTracking,
     setAgentExecution: settings.setAgentExecution,
-    setPresence: (next) => {
-      peers = next;
-      presenceChanges.emit();
-    },
     focusRequests,
     selections,
     setVisible: visible.set,

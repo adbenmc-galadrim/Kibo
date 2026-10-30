@@ -10,7 +10,6 @@ import {
   KiboError,
   type McpCallResult,
   type MemberInfo,
-  type PresencePeer,
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
@@ -37,7 +36,6 @@ export type MockCallDeps = {
   manifest: ComponentManifest;
   configPatches: Record<string, unknown>[];
   runs(): TicketRun[];
-  peers(): PresencePeer[];
   access(): ProjectAccess;
   serverContext(): ServerContext;
   peek(runId: string): RunPeek;
@@ -121,8 +119,6 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
             title: c.item.title,
           },
         });
-      case "presence.list":
-        return deps.peers();
       case "sharing.get":
         return deps.shared
           ? {

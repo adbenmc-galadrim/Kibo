@@ -30,9 +30,8 @@ export type Docs = {
   assertWritable(projectId: string): void;
   setWriteGuard(guard: (projectId: string) => void): () => void;
   projectMeta(projectId: string): ProjectMeta;
-  updateProjectMeta(projectId: string, patch: ProjectPatch, folderInDoc: boolean): ProjectMeta;
+  updateProjectMeta(projectId: string, patch: ProjectPatch): ProjectMeta;
   identity(projectId: string): string;
-  setIdentity(fn: (projectId: string) => string): () => void;
   activity(projectId: string): ProjectActivity;
   today(): string;
 };

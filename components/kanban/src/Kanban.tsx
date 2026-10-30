@@ -15,12 +15,10 @@ import {
   groupOfTicket,
   menuDeliverEntry,
   readSource,
-  remoteRuns,
   SelectionChip,
   useDeliverFlow,
   useDeliveryAgentKnown,
   useEntities,
-  usePresence,
   useQuestionsChipData,
   useSdk,
   useSelection,
@@ -66,7 +64,6 @@ export function Kanban() {
   const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
-  const peers = usePresence();
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
   const delivery = useDeliverFlow();
@@ -107,7 +104,6 @@ export function Kanban() {
     blocked: isBlocked(t, questionList),
     blocking: blockingQuestion(t, questionList),
     members: sharing.members,
-    remote: agentTraces ? remoteRuns(peers, t.key) : [],
     questions,
   });
   const deliverOf = (t: TicketView) =>

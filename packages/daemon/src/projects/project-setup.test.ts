@@ -171,7 +171,6 @@ test("the seed never goes through the live command path, so a failing command ca
     },
     icons: service.icons,
     settings,
-    collab: () => null,
     adopt: (id, doc) => adopted.set(id, doc),
     fileTicket: () => ({ ticketId: "", key: null }),
   };

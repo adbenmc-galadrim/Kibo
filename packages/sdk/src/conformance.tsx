@@ -4,7 +4,6 @@ import {
   diffPermissions,
   formatsOf,
   grantedOf,
-  type PresencePeer,
   type ProjectCommand,
   type ProjectSnapshot,
   permissionList,
@@ -27,15 +26,6 @@ export type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "server" | "conf
 };
 
 const THEMES: Theme[] = ["dark", "light"];
-const COLLEAGUE: PresencePeer = {
-  deviceId: "conformance-device",
-  self: false,
-  userId: "u-lea",
-  name: "Léa",
-  pageId: null,
-  ticketId: null,
-  runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
-};
 const LAZY_LOAD_TIMEOUT_MS = 25_000;
 const RENDER_TEST_TIMEOUT_MS = 45_000;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -101,7 +91,7 @@ export function runConformance(
       [
         "shared project with provisional keys",
         seed,
-        { shared: true, presence: [COLLEAGUE], members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
+        { shared: true, members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
       ],
     ];
     const check = (options: MockSdkOptions) =>

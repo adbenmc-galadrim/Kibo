@@ -1,13 +1,6 @@
 import { statSync } from "node:fs";
 import { isAbsolute } from "node:path";
-import {
-  iconOwnerKey,
-  KiboError,
-  type ProjectMeta,
-  ProjectPatch,
-  type ProjectSyncInfo,
-  type RpcRequest,
-} from "@kibo/schema";
+import { iconOwnerKey, KiboError, type ProjectMeta, ProjectPatch, type RpcRequest } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { decodeIcon } from "../icons/decode-icon";
 import type { IconStore } from "../icons/icon-store";
@@ -22,10 +15,7 @@ export type ProjectAdminDeps = {
   settings: ProjectSettings;
   icons: IconStore;
   store: Pick<Store, "transaction">;
-  sharing(projectId: string): ProjectSyncInfo;
   activeRuns(projectId: string): number;
-  detach(projectId: string): void;
-  isLocked(projectId: string): boolean;
   folderExists?(path: string): boolean;
 };
 type UpdateRequest = Extract<RpcRequest, { method: "updateProject" }>;
@@ -46,10 +36,6 @@ export function folderIsDirectory(path: string): boolean {
     return false;
   }
 }
-
-const keepsFolderOutOfDoc = (info: ProjectSyncInfo): boolean => info.shared || info.keyAllocator === "server";
-const ownsActiveShare = (info: ProjectSyncInfo): boolean =>
-  info.shared && info.role === "owner" && info.access !== "revoked";
 
 function parsePatch(patch: unknown): ProjectPatch {
   const parsed = ProjectPatch.safeParse(patch);
@@ -74,11 +60,6 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
     refuseActiveRuns(projectId);
   };
 
-  const storeLocalFolder = (projectId: string, folder: string | null) => {
-    if (folder === null) deps.settings.unset(projectId, LOCAL_FOLDER_KEY);
-    else deps.settings.set(projectId, LOCAL_FOLDER_KEY, folder);
-  };
-
   const admin: ProjectAdmin = {
     updateProject(req, ctx) {
       const { projectId } = req;
@@ -88,16 +69,11 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       if (patch.folder !== undefined) checkFolder(projectId, patch.folder, ctx);
       const local = [patch.worktree, patch.storybook, patch.duplication, patch.delivery];
       if (local.some((value) => value !== undefined)) requireLocal(ctx);
-      const outOfDoc = keepsFolderOutOfDoc(deps.sharing(projectId));
-      const touchesDoc = [patch.name, patch.color, patch.tracking].some((value) => value !== undefined);
-      if (touchesDoc || (patch.folder !== undefined && !outOfDoc)) deps.docs.assertWritable(projectId);
+      const touchesDoc = [patch.name, patch.color, patch.tracking, patch.folder].some((v) => v !== undefined);
+      if (touchesDoc) deps.docs.assertWritable(projectId);
       return deps.store.transaction(() => {
-        const folder = patch.folder;
-        if (folder !== undefined) {
-          if (outOfDoc) storeLocalFolder(projectId, folder);
-          else deps.settings.unset(projectId, LOCAL_FOLDER_KEY);
-        }
-        return deps.docs.updateProjectMeta(projectId, patch, !outOfDoc);
+        if (patch.folder !== undefined) deps.settings.unset(projectId, LOCAL_FOLDER_KEY);
+        return deps.docs.updateProjectMeta(projectId, patch);
       });
     },
     setIcon(req) {
@@ -125,15 +101,9 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       assertNotInbox(projectId, "deleting a project");
       deps.docs.project(projectId);
       refuseActiveRuns(projectId);
-      if (deps.isLocked(projectId)) throw new KiboError("CONFLICT", `project ${projectId} is being shared`);
-      const sync = deps.sharing(projectId);
-      if (ownsActiveShare(sync)) {
-        throw new KiboError("CONFLICT", `project ${projectId} is shared: stop sharing first`);
-      }
       deps.store.transaction(() => {
         deps.icons.remove(iconOwnerKey({ kind: "project", projectId }));
         deps.settings.remove(projectId);
-        if (sync.shared) deps.detach(projectId);
         deps.docs.removeProject(projectId);
       });
       return null;

@@ -12,7 +12,6 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
         if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
         return Promise.resolve(null);
       },

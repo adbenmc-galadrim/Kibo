@@ -34,7 +34,7 @@ import { type ActivitySources, type ActivityTracker, createActivityTracker } fro
 import { withLocalSettings } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
-import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
+import { handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { type AnswerWake, afterQuestionCommands } from "./questions/question-events";
@@ -53,7 +53,6 @@ export type ComponentsPort = {
   handle(req: ComponentRequest): Promise<unknown>;
 };
 
-export type { CollabPort } from "./projects/project-rpc";
 export type { AgentsPort } from "./runs/rpc";
 export type AnswerWakePort = { wake: AnswerWake };
 
@@ -66,7 +65,6 @@ export type Service = {
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
   attachIntegrations(rpc: IntegrationRpc): () => void;
-  attachCollab(port: CollabPort): () => void;
   attachProjectAgent(port: ProjectAgentSummaries): () => void;
   attachAnswerWake(port: AnswerWakePort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
@@ -106,12 +104,9 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let tracker: ActivityTracker | null = null;
   const components = portSlot<ComponentsPort>();
   const integrations = portSlot<IntegrationRpc>();
-  const collab = portSlot<CollabPort>();
   const projectAgent = portSlot<ProjectAgentSummaries>();
   const answerWake = portSlot<AnswerWakePort>();
   let writeGuard: ((projectId: string) => void) | null = null;
-  const osIdentity = () => opts.user;
-  let identity: (projectId: string) => string = osIdentity;
   ensureSettingsTable(store.db);
   const settings = createProjectSettings(store.db);
   ensureIconsTable(store.db);
@@ -210,15 +205,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       const doc = docs.project(projectId);
       return withLocalSettings(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
     },
-    updateProjectMeta: (projectId, patch, folderInDoc) =>
-      writeProjectMeta(docs, settings, projectId, patch, folderInDoc),
-    identity: (projectId) => identity(projectId),
-    setIdentity(fn) {
-      identity = fn;
-      return () => {
-        if (identity === fn) identity = osIdentity;
-      };
-    },
+    updateProjectMeta: (projectId, patch) => writeProjectMeta(docs, settings, projectId, patch),
+    identity: () => opts.user,
     activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
     today: (opts.clock ?? createClock(null)).today,
   };
@@ -235,7 +223,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     docs,
     icons,
     settings,
-    collab: () => collab.get(),
     adopt,
     fileTicket: createFileTicket({ docs, store, restore }),
   };
@@ -263,7 +250,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     attachComponents: components.attach,
     attachIntegrations: integrations.attach,
-    attachCollab: collab.attach,
     attachProjectAgent: projectAgent.attach,
     attachAnswerWake: answerWake.attach,
     triggerRules(projectId, trigger) {

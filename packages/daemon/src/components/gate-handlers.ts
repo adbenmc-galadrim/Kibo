@@ -10,9 +10,7 @@ import {
   KiboError,
   type ListProjectEventsInput,
   PROJECT_EVENTS_PAGE_MAX,
-  type PresencePeer,
   type ProjectEventPage,
-  type ProjectSyncInfo,
   projectInfo,
   type TicketRun,
   validateConfig,
@@ -30,8 +28,6 @@ export type GateHandlersDeps = {
   manifestOf(ref: string): Promise<ComponentManifest>;
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
-  presence?: (projectId: string) => PresencePeer[];
-  sharing?: (projectId: string) => ProjectSyncInfo;
   projectEvents?: (input: ListProjectEventsInput) => ProjectEventPage;
   hasFolder?: (projectId: string) => boolean;
 };
@@ -127,8 +123,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       );
       return null;
     },
-    presence: async (projectId) => deps.presence?.(projectId) ?? [],
-    sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
+    sharing: async (projectId) => localSyncInfo(docs.project(projectId)),
     project: async (projectId) => {
       const today = docs.today();
       const info = projectInfo(readProject(docs.project(projectId), today, docs.activity(projectId)), today);

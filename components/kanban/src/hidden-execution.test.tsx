@@ -12,17 +12,6 @@ function board(agentExecution: AgentExecution, config: Record<string, unknown> =
     viewer: "adam",
     agentExecution,
     config,
-    presence: [
-      {
-        deviceId: "d2",
-        self: false,
-        userId: "u-lea",
-        name: "Léa",
-        pageId: null,
-        ticketId: null,
-        runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
-      },
-    ],
     seed: (run) =>
       run({ method: "createTicket", title: "Schéma", assignee: { kind: "agent", ref: "full-delivery" } }),
   });
@@ -35,17 +24,16 @@ function board(agentExecution: AgentExecution, config: Record<string, unknown> =
   );
 }
 
-test("hidden execution: a card shows no agent profile, no run and no colleague run", async () => {
+test("hidden execution: a card shows no agent profile and no run", async () => {
   board("hidden");
   expect(await screen.findByText("Schéma")).toBeTruthy();
   expect(screen.queryByText("full-delivery")).toBeNull();
   expect(screen.queryByText(/opus-dev/)).toBeNull();
 });
 
-test("shown execution: the card shows its run and the colleague run again", async () => {
+test("shown execution: the card shows its run again", async () => {
   board("shown");
   expect(await screen.findByText("opus-dev-2")).toBeTruthy();
-  expect(screen.getByText("opus-dev-1 · Léa")).toBeTruthy();
 });
 
 test("hidden execution: an instance set to « mine » says Moi, not Moi + agents", async () => {

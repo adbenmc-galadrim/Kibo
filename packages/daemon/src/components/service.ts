@@ -1,13 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { getKeyAllocator, getProjectMeta, readProject } from "@kibo/core";
-import {
-  type ComponentManifest,
-  type Instance,
-  KiboError,
-  type PresencePeer,
-  type ProjectSyncInfo,
-  type TicketRun,
-} from "@kibo/schema";
+import { type ComponentManifest, type Instance, KiboError, type TicketRun } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -32,8 +25,6 @@ export type ComponentsDeps = {
   runs(projectId: string): TicketRun[];
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
-  presence?: (projectId: string) => PresencePeer[];
-  sharing?: (projectId: string) => ProjectSyncInfo;
   projectEvents?: GateHandlersDeps["projectEvents"];
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;

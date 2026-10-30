@@ -19,7 +19,6 @@ import type {
   McpCallResult,
   McpImportItem,
   Page,
-  PresencePeer,
   ProjectAsset,
   ProjectCommand,
   ProjectEditRequest,
@@ -149,7 +148,6 @@ export type KiboSdk = {
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
   setConfig(patch: Record<string, unknown>): Promise<void>;
   mcp: McpApi;
-  presence: PresenceApi;
   sharing(): Promise<ProjectSyncInfo>;
   capabilities: readonly Capability[];
   capability(name: Capability): void;
@@ -168,11 +166,6 @@ export type KiboSdk = {
   spotlight: SpotlightApi;
 };
 
-export type PresenceApi = {
-  list(): Promise<PresencePeer[]>;
-  subscribe(listener: () => void): () => void;
-};
-
 export type ProjectBackend = {
   snapshot(): Promise<ProjectSnapshot>;
   run(cmd: ProjectCommand): Promise<unknown>;
@@ -180,7 +173,6 @@ export type ProjectBackend = {
   subscribe(listener: () => void): () => void;
   runs(): Promise<TicketRun[]>;
   subscribeRuns(listener: () => void): () => void;
-  subscribePresence?(listener: () => void): () => void;
   subscribeConfig?(listener: () => void): () => void;
 };
 

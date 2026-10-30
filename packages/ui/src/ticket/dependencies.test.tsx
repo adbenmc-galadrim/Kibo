@@ -19,7 +19,6 @@ mock.module("../api", () =>
       subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getPresence") return [];
         return answer(req);
       },
       subscribe: () => () => undefined,

@@ -8,7 +8,6 @@ import {
   type ProjectMeta,
   type ProjectSnapshot,
   type ProjectSummary,
-  type ProjectSyncInfo,
 } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
 import {
@@ -23,14 +22,6 @@ import { openStore } from "../store";
 import { createProjectAdmin, folderIsDirectory } from "./admin";
 
 const REMOTE: RpcContext = { sessionHash: "r", remote: true };
-const LOCAL_SYNC: ProjectSyncInfo = {
-  shared: false,
-  keyAllocator: "local",
-  role: null,
-  access: "write",
-  members: [],
-};
-const SHARED_SYNC: ProjectSyncInfo = { ...LOCAL_SYNC, shared: true, keyAllocator: "server", role: "editor" };
 const PNG = "iVBORw0KGgoAAA==";
 const dirs: string[] = [];
 const tmp = () => {
@@ -42,7 +33,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-function setup(opts: { sharing?: ProjectSyncInfo; activeRuns?: number } = {}) {
+function setup(opts: { activeRuns?: number } = {}) {
   const store = openStore(tmp());
   const service = createService(store, { user: "adam" });
   const settings = createProjectSettings(store.db);
@@ -59,10 +50,7 @@ function setup(opts: { sharing?: ProjectSyncInfo; activeRuns?: number } = {}) {
     settings,
     icons: service.icons,
     store,
-    sharing: () => opts.sharing ?? LOCAL_SYNC,
     activeRuns: () => opts.activeRuns ?? 0,
-    detach: () => {},
-    isLocked: () => false,
     folderExists: (path) => {
       probed.push(path);
       return path.startsWith("/tmp/ok");
@@ -118,8 +106,8 @@ test("the folder is local only, must exist, and is refused while runs are active
   busy.close();
 });
 
-test("worktree settings are local and work on a read-only shared project", () => {
-  const s = setup({ sharing: SHARED_SYNC });
+test("worktree settings are local and work on a read-only project", () => {
+  const s = setup();
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });
@@ -140,8 +128,8 @@ test("worktree settings are local and work on a read-only shared project", () =>
   s.close();
 });
 
-test("storybook settings are local, checked, and work on a read-only shared project", () => {
-  const s = setup({ sharing: SHARED_SYNC });
+test("storybook settings are local, checked, and work on a read-only project", () => {
+  const s = setup();
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });
@@ -167,25 +155,8 @@ test("storybook settings are local, checked, and work on a read-only shared proj
   s.close();
 });
 
-test("a shared project keeps its folder out of the doc", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  const req = {
-    method: "updateProject",
-    projectId: s.project.id,
-    patch: { folder: "/tmp/ok/shared" },
-  } as const;
-  expect(s.admin.updateProject(req, LOCAL_CONTEXT).folder).toBe("/tmp/ok/shared");
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBe("/tmp/ok/shared");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
-  expect(s.summary()?.folder).toBe("/tmp/ok/shared");
-  s.admin.updateProject({ ...req, patch: { folder: null } }, LOCAL_CONTEXT);
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBeNull();
-  expect(s.summary()?.folder).toBeNull();
-  s.close();
-});
-
-test("a read-only shared project refuses doc fields but accepts its local folder", () => {
-  const s = setup({ sharing: SHARED_SYNC });
+test("a read-only project refuses doc fields and its folder", () => {
+  const s = setup();
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });
@@ -194,8 +165,7 @@ test("a read-only shared project refuses doc fields but accepts its local folder
   expect(() => update({ name: "Noyau" })).toThrow("FORBIDDEN");
   expect(s.summary()?.name).toBe("Kibo");
   expect(s.service.docs.project(s.project.id).getMap("meta").get("name")).toBe("Kibo");
-  expect(update({ folder: "/tmp/ok/x" }).folder).toBe("/tmp/ok/x");
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBe("/tmp/ok/x");
+  expect(() => update({ folder: "/tmp/ok/x" })).toThrow("FORBIDDEN");
   expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
   s.close();
 });
@@ -320,7 +290,7 @@ test("an existing folder is an absolute path to a directory", () => {
 });
 
 test("duplication settings are local, need a local session, and null restores the defaults", () => {
-  const s = setup({ sharing: SHARED_SYNC });
+  const s = setup();
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });

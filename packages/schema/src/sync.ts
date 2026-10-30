@@ -204,8 +204,6 @@ export type SyncStatus = {
 export type PresencePeer = PresenceState & { deviceId: string; self: boolean };
 
 export const Phase7Event = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("collab.changed") }),
-  z.object({ type: z.literal("presence.changed"), projectId }),
   z.object({ type: z.literal("market.changed") }),
   z.object({ type: z.literal("sessions.changed") }),
   z.object({ type: z.literal("sandbox.changed") }),

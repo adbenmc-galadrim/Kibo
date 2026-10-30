@@ -107,7 +107,6 @@ export function createFrameSdk(
       call,
       subscribe,
       subscribeRuns: subscribe,
-      subscribePresence: subscribe,
       subscribeConfig: subscribe,
     },
     manifest,

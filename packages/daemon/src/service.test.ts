@@ -234,15 +234,13 @@ describe("service", () => {
     store.close();
   });
 
-  test("updateProjectMeta writes the doc and the workspace copy, and folder only where asked", () => {
+  test("updateProjectMeta writes the doc and the workspace copy", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
     const p = s.handle(newProject) as ProjectMeta;
     const seen: unknown[] = [];
     s.onChange((m) => seen.push(m));
-    expect(
-      s.docs.updateProjectMeta(p.id, { name: "Noyau", color: "#6366F1", folder: "/tmp/kibo" }, true),
-    ).toEqual({
+    expect(s.docs.updateProjectMeta(p.id, { name: "Noyau", color: "#6366F1", folder: "/tmp/kibo" })).toEqual({
       ...p,
       name: "Noyau",
       color: "#6366F1",
@@ -251,11 +249,6 @@ describe("service", () => {
     expect(seen).toEqual([{ projectId: p.id }, { projectId: null }]);
     const [summary] = s.handle({ method: "listProjects" }) as ProjectSummary[];
     expect([summary?.name, summary?.color, summary?.folder]).toEqual(["Noyau", "#6366F1", "/tmp/kibo"]);
-    s.docs.updateProjectMeta(p.id, { folder: "/tmp/elsewhere" }, false);
-    expect((s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot).meta.folder).toBe(
-      "/tmp/kibo",
-    );
-    expect((s.handle({ method: "listProjects" }) as ProjectSummary[])[0]?.folder).toBe("/tmp/elsewhere");
     store.close();
   });
 
@@ -415,13 +408,9 @@ describe("local project data", () => {
     store.close();
   });
 
-  test("the local identity is the OS user until another one is installed", () => {
+  test("the local identity is the OS user", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
-    expect(s.docs.identity("p1")).toBe("adam");
-    const restore = s.docs.setIdentity((id) => `account-${id}`);
-    expect(s.docs.identity("p1")).toBe("account-p1");
-    restore();
     expect(s.docs.identity("p1")).toBe("adam");
     store.close();
   });

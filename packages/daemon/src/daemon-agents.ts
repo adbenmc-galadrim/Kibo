@@ -1,4 +1,3 @@
-import type { RunSource } from "./collab/bootstrap";
 import type { DaemonOptions } from "./daemon-options";
 import type { Closer } from "./daemon-shutdown";
 import { defaultHookLauncher } from "./runs/hook-launcher";
@@ -15,7 +14,6 @@ export type AgentsInput = {
   baseUrl(): string;
   projectTurns: OrchestratorOptions["projectTurns"];
   ready(orchestrator: Orchestrator): void;
-  attachRuns(source: RunSource): Closer;
 };
 
 export async function startAgents(input: AgentsInput, closers: Closer[]): Promise<Orchestrator> {
@@ -36,6 +34,6 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
   });
   closers.push(() => orchestrator.stop());
   input.ready(orchestrator);
-  closers.push(input.attachRuns(orchestrator), service.attachAgents(orchestrator));
+  closers.push(service.attachAgents(orchestrator));
   return orchestrator;
 }

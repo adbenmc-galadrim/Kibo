@@ -251,7 +251,7 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
     fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
     websocket: {
       open(ws) {
-        ws.send(JSON.stringify({ type: "presence.changed", projectId: "p1" }));
+        ws.send(JSON.stringify({ type: "backups.changed" }));
         ws.send(JSON.stringify({ type: "sessions.changed" }));
         ws.send(JSON.stringify({ projectId: "p2" }));
       },
@@ -267,7 +267,7 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
   });
   const offEvents = client.subscribeEvents((e) => seen.push(e.type));
   await done.promise;
-  expect(seen).toEqual(["presence.changed", "sessions.changed", "project:p2"]);
+  expect(seen).toEqual(["backups.changed", "sessions.changed", "project:p2"]);
   offProject();
   offEvents();
   server.stop(true);

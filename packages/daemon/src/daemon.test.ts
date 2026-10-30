@@ -126,20 +126,22 @@ describe("startDaemon", () => {
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
 
-  test("the sync client is wired and unconfigured by default", async () => {
+  test("team sync is gone: its RPCs are refused and no sync table is created", async () => {
     const { d, home } = await launch();
-    const rpc = await pair(d);
-    const status = await (await rpc({ method: "getSyncStatus" })).json();
-    expect(status).toMatchObject({
-      ok: true,
-      result: { state: "unconfigured", serverUrl: null, projects: [] },
+    const cookie = await pairCookie(d);
+    const res = await fetch(`${d.url}/api/rpc`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: d.url, cookie },
+      body: JSON.stringify({ method: "getSyncStatus" }),
     });
+    expect(res.status).toBe(400);
     const db = new Database(join(home, "kibo.db"), { readonly: true });
     const tables = db
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
       .all();
     db.close();
-    expect(tables.map((t) => t.name)).toEqual(expect.arrayContaining(["sync_config", "sync_projects"]));
+    expect(tables.map((t) => t.name)).not.toContain("sync_config");
+    expect(tables.map((t) => t.name)).not.toContain("sync_projects");
   });
 
   test("remote access is gone: /api/pair-code answers 404 and the daemon listens on 127.0.0.1", async () => {

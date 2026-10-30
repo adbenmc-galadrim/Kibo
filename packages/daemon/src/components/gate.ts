@@ -9,7 +9,6 @@ import {
   isReservedCommand,
   KiboError,
   type KiboErrorCode,
-  type PresencePeer,
   type ProjectCommand,
   type ProjectInfo,
   type ProjectSyncInfo,
@@ -37,7 +36,6 @@ export type GateHandlers = {
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
   embed(projectId: string, instance: Instance, url: string): Promise<unknown>;
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
-  presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
@@ -78,8 +76,6 @@ function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: Comp
     case "mcp.read":
     case "mcp.import":
       return h.mcp(projectId, inst.id, call);
-    case "presence.list":
-      return h.presence(projectId);
     case "sharing.get":
       return h.sharing(projectId);
     case "settings.get":

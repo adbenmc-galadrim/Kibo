@@ -13,6 +13,8 @@ export const DROPPED_KIBO_TABLES: readonly string[] = [
   "sync_items",
   "sync_cursors",
   "sync_outbox",
+  "sync_config",
+  "sync_projects",
 ];
 
 export type LegacyKiboResult = { droppedTables: string[]; removedRemoteSessions: number };

@@ -10,7 +10,6 @@ import {
   type ProjectSnapshot,
   type Ticket,
 } from "@kibo/schema";
-import { createProjectHosts } from "../collab/project-hosts";
 import { projectDocId } from "../projects/doc-ids";
 import { createService } from "../service";
 import { openStore, type Store } from "../store";
@@ -73,16 +72,14 @@ describe("inbox", () => {
     again.close();
   });
 
-  test("the inbox stays out of every project list: projectIds, sync hosts, doc listeners", () => {
+  test("the inbox stays out of every project list: projectIds, doc listeners", () => {
     const store = openStore(tmp());
     const s = createService(store, { user: "adam" });
     const seenDocs: string[] = [];
     s.docs.onProjectDoc((id) => seenDocs.push(id));
     const p = s.handle(newProject) as ProjectMeta;
     s.handle(inboxCommand({ method: "createTicket", title: "A" }));
-    const hosts = createProjectHosts(s.docs, "adam");
     expect(s.docs.projectIds()).toEqual([p.id]);
-    expect(hosts.projectIds()).toEqual([p.id]);
     const failing = createService(failingSaves(store, new Set([projectDocId(INBOX_ID)])), { user: "adam" });
     failing.docs.onProjectDoc((id) => seenDocs.push(id));
     expect(() => failing.handle(inboxCommand({ method: "createTicket", title: "lost" }))).toThrow(

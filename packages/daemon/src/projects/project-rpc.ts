@@ -17,7 +17,6 @@ import {
   KiboError,
   type ProjectMeta,
   ProjectSetup,
-  type ProjectSyncInfo,
   type RpcRequest,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -36,13 +35,11 @@ import {
 } from "../project-folder";
 import { setupProject } from "./project-setup";
 
-export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
   workspace: LoroDoc;
   docs: Docs;
   icons: Pick<IconStore, "version">;
   settings: Pick<ProjectSettings, "get" | "set">;
-  collab(): CollabPort | null;
   adopt(id: string, doc: LoroDoc): void;
   fileTicket: ReturnType<typeof createFileTicket>;
 };
@@ -100,14 +97,12 @@ function createProject(
 
 function getProject(deps: ProjectRpcDeps, projectId: string) {
   const doc = deps.docs.project(projectId);
-  const snapshot = {
+  return {
     ...readProject(doc, deps.docs.today(), deps.docs.activity(projectId)),
     meta: deps.docs.projectMeta(projectId),
     viewer: deps.docs.identity(projectId),
     icon: deps.icons.version(projectIcon(projectId)),
   };
-  const collab = deps.collab();
-  return collab ? { ...snapshot, sync: collab.syncInfo(projectId, doc) } : snapshot;
 }
 
 function runCommand(deps: ProjectRpcDeps, req: Extract<RpcRequest, { method: "command" }>): unknown {

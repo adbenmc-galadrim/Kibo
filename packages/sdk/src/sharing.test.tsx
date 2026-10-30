@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { ComponentManifest, type PresencePeer, type TicketView } from "@kibo/schema";
+import { ComponentManifest, type TicketView } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
-import { assigneeLabel, remoteRuns } from "./members";
+import { assigneeLabel } from "./members";
 import { createMockSdk } from "./mock";
 import { TicketKeyLabel } from "./ticket-key";
 
@@ -14,23 +14,12 @@ const manifest = (reads: ("ticket" | "status")[]) =>
     reads,
     writes: [],
   });
-const lea: PresencePeer = {
-  deviceId: "d2",
-  self: false,
-  userId: "u-lea",
-  name: "Léa",
-  pageId: "pg1",
-  ticketId: "t1",
-  runs: [{ ticketKey: "KIB-12", profile: "opus-dev-1", state: "running" }],
-};
-
-test("presence and sharing need the ticket read permission", async () => {
-  const denied = createMockSdk(manifest(["status"]), { presence: [lea] });
-  await expect(denied.sdk.presence.list()).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
+test("sharing needs the ticket read permission", async () => {
+  const denied = createMockSdk(manifest(["status"]));
   await expect(denied.sdk.sharing()).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
-  expect(denied.violations).toEqual(["read presence", "read sharing"]);
-  const allowed = createMockSdk(manifest(["ticket"]), { presence: [lea] });
-  expect(await allowed.sdk.presence.list()).toEqual([lea]);
+  expect(denied.violations).toEqual(["read sharing"]);
+  const allowed = createMockSdk(manifest(["ticket"]));
+  expect((await allowed.sdk.sharing()).access).toBe("write");
   expect(allowed.used).toContain("read:ticket");
 });
 
@@ -48,31 +37,11 @@ test("a shared mock project creates tickets with a provisional key", async () =>
   expect((await m.sdk.sharing()).access).toBe("read-only");
 });
 
-test("presence changes reach the subscribers", async () => {
-  const m = createMockSdk(manifest(["ticket"]));
-  let calls = 0;
-  const off = m.sdk.presence.subscribe(() => {
-    calls += 1;
-  });
-  m.setPresence([lea]);
-  off();
-  m.setPresence([]);
-  expect(calls).toBe(1);
-  expect(await m.sdk.presence.list()).toEqual([]);
-});
-
 test("assignee names come from members, agents keep their profile", () => {
   const members = [{ userId: "u-lea", name: "Léa", role: "editor" as const }];
   expect(assigneeLabel({ kind: "human", ref: "u-lea" }, members)).toBe("Léa");
   expect(assigneeLabel({ kind: "human", ref: "adam" }, members)).toBe("adam");
   expect(assigneeLabel({ kind: "agent", ref: "opus-dev-1" }, members)).toBe("opus-dev-1");
-});
-
-test("remote runs are labelled with the colleague's name", () => {
-  expect(remoteRuns([lea, { ...lea, self: true, name: "Adam" }], "KIB-12")).toEqual([
-    { label: "opus-dev-1 · Léa", state: "running" },
-  ]);
-  expect(remoteRuns([lea], null)).toEqual([]);
 });
 
 test("a provisional key is shown in italics with an explanation", () => {

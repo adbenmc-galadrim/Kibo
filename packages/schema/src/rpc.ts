@@ -23,7 +23,6 @@ import type { SprintView } from "./sprint";
 import type { StartReason } from "./startability";
 import type { Status, StatusId } from "./status";
 import type { Phase7Event } from "./sync";
-import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import type { Ticket } from "./ticket";
 import type { TicketSession } from "./ticket-session";
 import { TRACKING_RPC, type TrackingRpcResult } from "./tracking-rpc";
@@ -78,7 +77,6 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...CORE_RPC,
   ...INTEGRATION_RPC,
   ...SESSION_RPC,
-  ...SYNC_RPC_REQUESTS,
   ...APP_RPC,
   ...PROJECT_AGENT_RPC,
   ...TRACKING_RPC,
@@ -89,7 +87,6 @@ export type RpcRequest = z.infer<typeof RpcRequest>;
 export type RpcResult = CoreRpcResult &
   IntegrationRpcResult &
   SessionRpcResult &
-  SyncRpcResult &
   AppRpcResult &
   ProjectAgentRpcResult &
   TrackingRpcResult &

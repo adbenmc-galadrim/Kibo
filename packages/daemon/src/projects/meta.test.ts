@@ -39,7 +39,7 @@ function setup() {
 
 test("worktree settings are written locally, never to the project doc nor the workspace", () => {
   const { service, settings, project } = setup();
-  const meta = writeProjectMeta(service.docs, settings, project.id, { worktree }, true);
+  const meta = writeProjectMeta(service.docs, settings, project.id, { worktree });
   expect(meta.worktree).toEqual(worktree);
   expect(JSON.parse(settings.get(project.id, LOCAL_WORKTREE_KEY) ?? "null")).toEqual(worktree);
   expect(JSON.stringify(service.docs.project(project.id).toJSON())).not.toContain("pnpm worktree");
@@ -50,7 +50,7 @@ test("worktree settings are written locally, never to the project doc nor the wo
 
 test("a mixed patch splits: the name goes to the docs, the worktree stays local", () => {
   const { service, settings, project } = setup();
-  const meta = writeProjectMeta(service.docs, settings, project.id, { name: "Silo 2", worktree }, true);
+  const meta = writeProjectMeta(service.docs, settings, project.id, { name: "Silo 2", worktree });
   expect(meta).toMatchObject({ name: "Silo 2", worktree });
   expect(service.docs.project(project.id).getMap("meta").get("name")).toBe("Silo 2");
   expect(service.docs.project(project.id).getMap("meta").get("worktree")).toBeUndefined();
@@ -58,8 +58,8 @@ test("a mixed patch splits: the name goes to the docs, the worktree stays local"
 
 test("a null worktree unsets the local settings", () => {
   const { service, settings, project } = setup();
-  writeProjectMeta(service.docs, settings, project.id, { worktree }, true);
-  const meta = writeProjectMeta(service.docs, settings, project.id, { worktree: null }, true);
+  writeProjectMeta(service.docs, settings, project.id, { worktree });
+  const meta = writeProjectMeta(service.docs, settings, project.id, { worktree: null });
   expect(meta.worktree).toBeNull();
   expect(settings.get(project.id, LOCAL_WORKTREE_KEY)).toBeNull();
 });
@@ -67,41 +67,35 @@ test("a null worktree unsets the local settings", () => {
 test("delivery settings are local, listed, and a null delivery unsets them", () => {
   const { service, settings, project } = setup();
   const delivery = { ...EMPTY_DELIVERY, root: "/home/dev/Documents/silo", allow: ["Bash(pnpm *)"] };
-  const meta = writeProjectMeta(service.docs, settings, project.id, { delivery }, true);
+  const meta = writeProjectMeta(service.docs, settings, project.id, { delivery });
   expect(meta.delivery).toEqual(delivery);
   expect(JSON.parse(settings.get(project.id, LOCAL_DELIVERY_KEY) ?? "null")).toEqual(delivery);
   expect(JSON.stringify(service.docs.project(project.id).toJSON())).not.toContain("Documents/silo");
   expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Documents/silo");
   const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
   expect(listed.find((p) => p.id === project.id)?.delivery).toEqual(delivery);
-  expect(writeProjectMeta(service.docs, settings, project.id, { delivery: null }, true).delivery).toBeNull();
+  expect(writeProjectMeta(service.docs, settings, project.id, { delivery: null }).delivery).toBeNull();
   expect(settings.get(project.id, LOCAL_DELIVERY_KEY)).toBeNull();
 });
 
 test("the description is synced in the project doc, never in the workspace registry", () => {
   const { service, settings, project } = setup();
-  for (const folderInDoc of [false, true]) {
-    const description = `Saisie hors ligne ${folderInDoc}`;
-    const meta = writeProjectMeta(service.docs, settings, project.id, { description }, folderInDoc);
-    expect(meta.description).toBe(description);
-    expect(service.docs.project(project.id).getMap("meta").get("description")).toBe(description);
-    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Saisie hors ligne");
-  }
-  expect(
-    writeProjectMeta(service.docs, settings, project.id, { description: null }, false).description,
-  ).toBeNull();
+  const description = "Saisie hors ligne";
+  const meta = writeProjectMeta(service.docs, settings, project.id, { description });
+  expect(meta.description).toBe(description);
+  expect(service.docs.project(project.id).getMap("meta").get("description")).toBe(description);
+  expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Saisie hors ligne");
+  expect(writeProjectMeta(service.docs, settings, project.id, { description: null }).description).toBeNull();
 });
 
 test("the client is synced in the project doc, never in the workspace registry", () => {
   const { service, settings, project } = setup();
-  for (const folderInDoc of [false, true]) {
-    const client = `Silo SA ${folderInDoc}`;
-    const meta = writeProjectMeta(service.docs, settings, project.id, { client }, folderInDoc);
-    expect(meta.client).toBe(client);
-    expect(service.docs.project(project.id).getMap("meta").get("client")).toBe(client);
-    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Silo SA");
-  }
-  expect(writeProjectMeta(service.docs, settings, project.id, { client: null }, false).client).toBeNull();
+  const client = "Silo SA";
+  const meta = writeProjectMeta(service.docs, settings, project.id, { client });
+  expect(meta.client).toBe(client);
+  expect(service.docs.project(project.id).getMap("meta").get("client")).toBe(client);
+  expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Silo SA");
+  expect(writeProjectMeta(service.docs, settings, project.id, { client: null }).client).toBeNull();
 });
 
 test("createProject and a later update write the client to the project doc only", () => {
@@ -116,7 +110,7 @@ test("createProject and a later update write the client to the project doc only"
   }) as ProjectMeta;
   expect(created.client).toBe("Bâtisseurs SA");
   expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Bâtisseurs SA");
-  const updated = service.docs.updateProjectMeta(created.id, { client: "Silo SA" }, false);
+  const updated = service.docs.updateProjectMeta(created.id, { client: "Silo SA" });
   expect(updated.client).toBe("Silo SA");
   expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Silo SA");
   const registry = JSON.stringify(service.docs.workspace.toJSON());

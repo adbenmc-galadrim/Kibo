@@ -89,7 +89,6 @@ const preview = (refused: boolean) => {
         blocked
         blocking={question}
         members={[]}
-        remote={[]}
         questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
         readOnly={false}
         refused={refused}

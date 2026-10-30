@@ -4,12 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError, type KiboErrorCode } from "@kibo/schema";
 import { type CodeService, createCodeService } from "./code/code-service";
-import {
-  createGitFixture,
-  type GitFixture,
-  installFakeBin,
-  readFakeBinLog,
-} from "./code/testing/git-fixture";
+import { createGitFixture, type GitFixture } from "./code/testing/git-fixture";
 import { startServer } from "./server";
 import { call, createService, type Service } from "./service";
 import { openStore, type Store } from "./store";

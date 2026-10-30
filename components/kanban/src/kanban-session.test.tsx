@@ -21,7 +21,6 @@ const renderCard = (patch: Partial<TicketView>) => {
         blocked={false}
         blocking={null}
         members={[]}
-        remote={[]}
         questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
         menu={null}
         title={<span>{base.title}</span>}

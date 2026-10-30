@@ -40,7 +40,6 @@ function setup() {
     docs: service.docs,
     icons: service.icons,
     settings,
-    collab: () => null,
     adopt: (id) => adopted.push(id),
     fileTicket: (req) => {
       filed.push(req.ticketId);

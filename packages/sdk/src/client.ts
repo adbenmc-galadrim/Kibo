@@ -258,10 +258,6 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
       }),
     runs: async (): Promise<TicketRun[]> => [],
     subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
-    subscribePresence: (listener) =>
-      client.subscribeEvents((m) => {
-        if (m.type === "presence.changed" && m.projectId === projectId) listener();
-      }),
     subscribeConfig: (listener) => client.subscribeTopic("config", listener),
   };
 }

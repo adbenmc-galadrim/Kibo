@@ -12,7 +12,6 @@ import {
   useSdk,
 } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { AgentChip } from "./AgentChip";
 import { BlockedBadge, CardBadges, HeldBadge, OptionalBadge } from "./CardBadges";
@@ -43,7 +42,6 @@ export type CardFacts = {
   blocked: boolean;
   blocking: Question | null;
   members: MemberInfo[];
-  remote: { label: string; state: string }[];
   questions: QuestionsChipData;
 };
 
@@ -63,7 +61,7 @@ function StepChip({ ticket }: { ticket: TicketView }) {
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, run, ciRuns, blocked, blocking, members, remote, questions, menu, title } = props;
+  const { ticket: t, group, run, ciRuns, blocked, blocking, members, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
   const reason = startReasonText(t.startReason, t.waitingOn);
@@ -116,15 +114,6 @@ export function KanbanCardContent(props: Props) {
           className="max-w-full"
         />
         <StepChip ticket={t} />
-        {remote.map((r) => (
-          <span
-            key={r.label}
-            className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
-          >
-            <Bot absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
-            <span className="truncate">{r.label}</span>
-          </span>
-        ))}
         {t.assignee?.kind === "human" && members.length > 0 && (
           <Badge variant="outline" className="max-w-full text-3xs font-normal">
             <span className="truncate">{assigneeLabel(t.assignee, members)}</span>

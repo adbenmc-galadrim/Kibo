@@ -5,10 +5,7 @@ import { createGate } from "./gate";
 import { eventsDb, findInstance, idleHandlers, refused, testGate } from "./gate-test-kit";
 import { createQuotas } from "./quotas";
 
-test("presence.list, sharing.get and settings.get reach their handlers for the caller's project", async () => {
-  const peers = [
-    { deviceId: "d2", self: false, userId: "u-lea", name: "Léa", pageId: null, ticketId: null, runs: [] },
-  ];
+test("sharing.get and settings.get reach their handlers for the caller's project", async () => {
   const asked: string[] = [];
   const gate = createGate({
     instance: findInstance,
@@ -16,13 +13,9 @@ test("presence.list, sharing.get and settings.get reach their handlers for the c
     events: createEventLog(eventsDb()),
     handlers: {
       ...idleHandlers,
-      presence: async (projectId) => {
-        asked.push(projectId);
-        return peers;
-      },
       sharing: async (projectId) => {
         asked.push(projectId);
-        return { shared: true, keyAllocator: "server", role: "editor", access: "write", members: [] };
+        return { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
       },
       settings: async (projectId) => {
         asked.push(projectId);
@@ -30,13 +23,12 @@ test("presence.list, sharing.get and settings.get reach their handlers for the c
       },
     },
   });
-  expect(await gate.call("p1", "builtin", { kind: "presence.list" })).toEqual(peers);
-  expect(await gate.call("p2", "builtin", { kind: "sharing.get" })).toMatchObject({ shared: true });
+  expect(await gate.call("p2", "builtin", { kind: "sharing.get" })).toMatchObject({ access: "write" });
   expect(await gate.call("p3", "builtin", { kind: "settings.get" })).toEqual({
     tracking: { openLimit: 3 },
     agentExecution: "hidden",
   });
-  expect(asked).toEqual(["p1", "p2", "p3"]);
+  expect(asked).toEqual(["p2", "p3"]);
 });
 
 test("questions.recipients reaches the recipients handler", async () => {

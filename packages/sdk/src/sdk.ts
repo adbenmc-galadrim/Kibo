@@ -12,7 +12,6 @@ import {
   KiboError,
   type McpCallResult,
   mcpCovered,
-  type PresencePeer,
   type ProjectCommand,
   type ProjectEvent,
   type ProjectInfo,
@@ -163,13 +162,6 @@ export function createSdk(
       await call({ kind: "config.set", patch });
     },
     mcp: mcpApi(manifest, guard, call, ctx.config),
-    presence: {
-      async list() {
-        guard.needRead("ticket");
-        return call<PresencePeer[]>({ kind: "presence.list" });
-      },
-      subscribe: (listener) => backend.subscribePresence?.(listener) ?? (() => undefined),
-    },
     async sharing() {
       guard.needRead("ticket");
       return call<ProjectSyncInfo>({ kind: "sharing.get" });

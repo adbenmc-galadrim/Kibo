@@ -347,32 +347,6 @@ test("shows member names and provisional keys", async () => {
   expect(await screen.findByText("Léa")).toBeTruthy();
 });
 
-test("shows a colleague's run on the card", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    agentExecution: "shown",
-    presence: [
-      {
-        deviceId: "d2",
-        self: false,
-        userId: "u-lea",
-        name: "Léa",
-        pageId: null,
-        ticketId: null,
-        runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
-      },
-    ],
-    seed: (run) =>
-      run({ method: "createTicket", title: "Schéma", assignee: { kind: "agent", ref: "opus-dev-1" } }),
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect(await screen.findByText("opus-dev-1 · Léa")).toBeTruthy();
-});
-
 test("cards cannot be moved in a read-only project", async () => {
   const m = createMockSdk(manifest, {
     viewer: "adam",

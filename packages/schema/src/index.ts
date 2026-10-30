@@ -112,7 +112,6 @@ export * from "./status-projection";
 export * from "./storybook";
 export * from "./surface";
 export * from "./sync";
-export * from "./sync-rpc";
 export * from "./tabs";
 export * from "./ticket";
 export * from "./ticket-group";

@@ -46,6 +46,8 @@ test("the dead tables and remote sessions go, docs, events, component events and
     "sync_items",
     "sync_cursors",
     "sync_outbox",
+    "sync_config",
+    "sync_projects",
   ]);
   for (const table of DROPPED_KIBO_TABLES) expect(tableNames(db)).not.toContain(table);
   expect(db.query("SELECT count(*) AS n FROM component_events").get()).toEqual({ n: 1 });

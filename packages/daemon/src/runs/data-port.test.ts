@@ -253,7 +253,7 @@ test("a run reads the local worktree settings of its project", () => {
       color: "#F97316",
     }) as ProjectMeta;
     const worktree = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: null, recipe: null };
-    s.docs.updateProjectMeta(meta.id, { worktree }, true);
+    s.docs.updateProjectMeta(meta.id, { worktree });
     const ticket = call(s, {
       method: "command",
       projectId: meta.id,

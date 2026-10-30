@@ -4,8 +4,8 @@ import { cpSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KiboError, RunEvent } from "@kibo/schema";
-import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
 import { z } from "zod";
+import { holdWriteLock } from "../testing/hold-write-lock";
 import { FIXTURE_HOME_021 } from "../testing/make-home-0.21";
 import { type NewRun, openRunStore } from "./run-store";
 

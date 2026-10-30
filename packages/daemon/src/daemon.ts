@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { backupsRpc } from "./backups/rpc";
 import { declareRefRpc } from "./code/declare-ref";
-import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { migrateDomainScopes } from "./config/domain-scope-migration";
 import { startProjectAdmin } from "./daemon-admin";
@@ -61,8 +60,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     { devOrigins, redactor },
     closers,
   );
-  const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
-  closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
   const tracking = startDaemonTracking({ store, service, clock, activity }, closers);
   const notes = await startNotes({ db: store.db, home: opts.home, docs: service.docs });
@@ -76,8 +73,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sandboxOrigin: () => sandboxOrigin,
       runs: () => [],
       integrations: () => integrations.hooks,
-      presence: (projectId) => collab.presence.peers(projectId),
-      sharing: (projectId) => collab.syncInfo(projectId),
       projectEvents: tracking.projectEvents,
     },
     closers,
@@ -101,7 +96,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => projectAgent.stop());
   wakeup.start();
-  const admin = startProjectAdmin(store, service, { collab, agents: () => agents });
+  const admin = startProjectAdmin(store, service, () => agents);
   const code = startCodeTracking(
     service,
     closers,
@@ -154,7 +149,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [collab.handler, admin.handler],
+    handlers: [admin.handler],
   });
   front.push(() => server.stop());
   uiPort = server.port;
@@ -180,7 +175,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       ready: (orchestrator) => {
         agents = orchestrator;
       },
-      attachRuns: (source) => collab.attachRuns(source),
     },
     closers,
   );
