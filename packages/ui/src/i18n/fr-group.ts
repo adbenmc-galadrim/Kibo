@@ -56,7 +56,6 @@ export const frFeature = {
     blockers.length === 0
       ? "Prochaine étape à livrer."
       : `Prochaine étape à livrer une fois ${blockers.join(", ")} ${blockers.length > 1 ? "fusionnées" : "fusionné"}.`,
-  deliverNext: "Livrer la prochaine étape",
   copyCommand: "Copier la commande",
   nextStepWaits: (key: string, reason: string) => `Prochaine étape ${key} : ${reason}.`,
   noStartableStep: "Aucune étape démarrable pour l'instant.",
@@ -66,7 +65,6 @@ export const frFeature = {
   sprint: "Sprint",
   unplanned: "À planifier",
   chooseSprint: "Choisir le sprint",
-  remainingSteps: (n: number) => plural(n, "étape restante", "étapes restantes"),
   wontFit: (n: number, sprint: string) =>
     `${plural(n, "étape restante", "étapes restantes")} : ne tiendra pas dans ${sprint}.`,
   sprintOver: (n: number, sprint: string) =>

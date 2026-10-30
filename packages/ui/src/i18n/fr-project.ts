@@ -12,20 +12,7 @@ export const frProject = {
     folder: "Dossier",
     folderHelp: "Le dossier reste sur ta machine. Vide pour délier.",
     worktree: "Worktrees des agents",
-    worktreeBase: "Base",
     worktreePath: "Chemin",
-    worktreeSetup: "Commande de préparation",
-    worktreeHelp:
-      "Variables : {branch} {slug} {key} ; {path} dans la commande. La commande s'exécute depuis la racine du dépôt, sur ta machine.",
-    worktreeExample: "Exemple : origin/dev · ../silo-{slug} · pnpm worktree {branch}",
-    worktreeErrors: {
-      base: "La base doit être une branche (main) ou une branche distante (origin/dev).",
-      path: "Le chemin doit rester dans le dépôt ou à côté de lui.",
-      setup: "La commande fait 1000 caractères au plus.",
-      setupVariables: "La commande n'accepte que les variables {branch} {slug} {key} {path}.",
-      setupQuoted:
-        "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
-    },
     storybook: "Storybook",
     storybookOrigin: "Adresse",
     storybookOriginHelp: "Storybook local (pnpm storybook) ou déployé en https ; http seulement en local.",

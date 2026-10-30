@@ -4,7 +4,6 @@ export const frMoments = {
     activity: "Activité",
     tabs: "Vues du ticket",
     report: "Compte rendu",
-    chronology: "Chronologie",
     mixed: "plan et fil mêlés",
     runs: "Chronologie des runs",
     run: (n: number) => `Run ${n}`,

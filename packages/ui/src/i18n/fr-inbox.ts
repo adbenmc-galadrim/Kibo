@@ -30,5 +30,4 @@ export const frInbox = {
     } satisfies Partial<Record<KiboErrorCode, string>>,
     failed: "Impossible de rattacher ce ticket.",
   },
-  noAgent: "Rattache d'abord ce ticket à un projet : un agent travaille dans le dossier d'un projet.",
 };

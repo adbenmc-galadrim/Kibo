@@ -31,7 +31,7 @@ export const frComponentsManage = {
   },
   cli: {
     title: "Commande kibo",
-    help: "Installe la commande kibo dans ~/.local/bin pour créer, tester et publier tes composants.",
+    help: "Installe la commande kibo dans ~/.local/bin pour suivre tes tickets depuis le terminal.",
     install: "Installer la commande kibo",
     installed: (path: string) => `Installée : ${path}`,
     notInstalled: "Non installée",

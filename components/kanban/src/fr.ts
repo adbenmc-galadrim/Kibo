@@ -3,7 +3,7 @@ import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, FULL_DELIVERY_AGENT, shortReas
 export const fr = {
   session: (tool: string) => `Session ${tool} en cours`,
   retouch: (step: string) => `retouche · ${step}`,
-  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi" },
+  filter: { label: "Tickets affichés", mine: "Moi" },
   mode: {
     all: "Tous",
     sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
