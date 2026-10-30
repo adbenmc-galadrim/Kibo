@@ -6,7 +6,12 @@ export const frBackups = {
   none: "Aucune sauvegarde pour l'instant",
   last: (when: string, size: string, reason: string) => `Dernière sauvegarde ${when} · ${size} · ${reason}`,
   justNow: "à l'instant",
-  reasons: { auto: "automatique", manual: "manuelle", update: "avant mise à jour" },
+  reasons: {
+    auto: "automatique",
+    manual: "manuelle",
+    update: "avant mise à jour",
+    migration: "avant le retrait de l'ancien Kibo",
+  },
   next: (when: string) => `Prochaine : ${when}`,
   soon: "dans moins d'une heure",
   today: (time: string) => `aujourd'hui à ${time}`,

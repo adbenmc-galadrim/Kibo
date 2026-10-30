@@ -38,9 +38,11 @@ export type RunStore = {
   close(): void;
 };
 
-const APPEND_ONLY = ["runs", "run_events", "run_tokens"];
+export const APPEND_ONLY_RUN_TABLES = ["runs", "run_events", "run_tokens"] as const;
 const noUpdate = (table: string) =>
   `CREATE TRIGGER IF NOT EXISTS ${table}_no_update BEFORE UPDATE ON ${table} BEGIN SELECT RAISE(ABORT, 'append-only'); END`;
+export const noDeleteTrigger = (table: string) =>
+  `CREATE TRIGGER IF NOT EXISTS ${table}_no_delete BEFORE DELETE ON ${table} BEGIN SELECT RAISE(ABORT, 'append-only'); END`;
 const RUNS_NO_UPDATE = noUpdate("runs");
 const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE, project_id TEXT, " +
@@ -52,10 +54,7 @@ const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS run_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL REFERENCES runs(id), " +
     "hash TEXT NOT NULL, at INTEGER NOT NULL)",
   "CREATE TABLE IF NOT EXISTS host_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
-  ...APPEND_ONLY.flatMap((t) => [
-    noUpdate(t),
-    `CREATE TRIGGER IF NOT EXISTS ${t}_no_delete BEFORE DELETE ON ${t} BEGIN SELECT RAISE(ABORT, 'append-only'); END`,
-  ]),
+  ...APPEND_ONLY_RUN_TABLES.flatMap((t) => [noUpdate(t), noDeleteTrigger(t)]),
 ];
 
 type RunRow = {

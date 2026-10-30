@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const BackupReason = z.enum(["auto", "manual", "update"]);
+export const BackupReason = z.enum(["auto", "manual", "update", "migration"]);
 export type BackupReason = z.infer<typeof BackupReason>;
-export const BackupId = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z$/);
+export const BackupId = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z(-avant-retrait)?$/);
 export type BackupId = z.infer<typeof BackupId>;
 export const BackupInfo = z.object({
   id: BackupId,

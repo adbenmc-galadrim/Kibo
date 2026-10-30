@@ -28,6 +28,7 @@ test("the last backup line says when, how big and why", () => {
     "Dernière sauvegarde à l'instant · 12,4 Mo · manuelle",
   );
   expect(lastBackupLine(info(at(3, 9, 0), "update"), now)).toContain("avant mise à jour");
+  expect(lastBackupLine(info(at(3, 9, 0), "migration"), now)).toContain("avant le retrait de l'ancien Kibo");
 });
 
 test("the next backup is told as today, tomorrow or a date, and soon when already due", () => {

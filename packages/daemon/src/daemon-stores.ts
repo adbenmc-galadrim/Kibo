@@ -7,6 +7,7 @@ import { startBackupSchedule } from "./backups/schedule";
 import { type BackupsService, createBackupsService } from "./backups/service";
 import type { Closer } from "./daemon-shutdown";
 import { createRedactor, type Redactor } from "./integrations/redact";
+import { runLegacyMigrations } from "./migrations/legacy";
 import { openRunStore, type RunStore } from "./runs/run-store";
 import { createSandboxService, type SandboxService } from "./sandbox/sandbox-service";
 import { openLocalSettings } from "./settings";
@@ -23,6 +24,7 @@ export function openDaemonStores(
   opts: { home: string; redactor?: Redactor },
   closers: Closer[],
 ): DaemonStores {
+  runLegacyMigrations(opts.home, Date.now, (line) => console.error(`[kibo-daemon] ${line}`));
   const store = openStore(opts.home);
   closers.push(() => store.close());
   const runs = openRunStore(opts.home);
