@@ -52,3 +52,34 @@ test("a hash typed by the user still opens its target", () => {
 
   expect(open).toHaveBeenCalledWith(readme);
 });
+
+test("an old URL opened with a restored tab is left to the redirect home", () => {
+  location.hash = "#/agents";
+  renderHook((p: Props) => useHashSync(p.tabs, p.route), {
+    initialProps: { tabs: api(state("board", ["board"])), route: null },
+  });
+
+  expect(location.hash).toBe("#/agents");
+  expect(open).not.toHaveBeenCalled();
+});
+
+test("a tab restored after an old URL was opened does not overwrite it", () => {
+  location.hash = "#/agents";
+  const { rerender } = renderHook((p: Props) => useHashSync(p.tabs, p.route), {
+    initialProps: { tabs: api(state(null, [])), route: null },
+  });
+
+  rerender({ tabs: api(state("board", ["board"])), route: null });
+
+  expect(location.hash).toBe("#/agents");
+});
+
+test("an old project URL does not open a tab on its way home", () => {
+  location.hash = "#/p/silo/changes";
+  const changes: TabTarget = { kind: "page", projectId: "silo", pageId: "changes" };
+  renderHook((p: Props) => useHashSync(p.tabs, p.route), {
+    initialProps: { tabs: api(state("board", ["board"])), route: changes },
+  });
+
+  expect(open).not.toHaveBeenCalled();
+});
