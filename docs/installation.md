@@ -49,16 +49,16 @@ Les sommes SHA256SUMS protègent d'un téléchargement corrompu, pas d'une relea
 
 ## Où sont tes données
 
-Tout vit dans `~/.kibo` : bases `kibo.db` et `runs.db`, composants (`components/`), notes (`notes/`), fichiers des projets (`files/`). Rien n'est envoyé ailleurs, sauf ce que tu partages par la synchronisation et les appels aux agents.
+Tout vit dans `~/.kibo` : bases `kibo.db` et `runs.db`, notes (`notes/`), fichiers des projets (`files/`). Rien n'est envoyé ailleurs, sauf les appels aux agents.
 
 ## Sauvegardes et restauration
 
-Kibo sauvegarde `~/.kibo` une fois par jour au plus et avant chaque mise à jour, dans `~/.kibo/backups` par défaut (dossier modifiable dans Paramètres › Général › Sauvegardes). Une sauvegarde contient `kibo.db`, `runs.db`, `components/` et `notes/` ; jamais le jeton, l'accès distant ni les fichiers des projets (`files/`).
+Kibo sauvegarde `~/.kibo` une fois par jour au plus et avant chaque mise à jour, dans `~/.kibo/backups` par défaut (dossier modifiable dans Paramètres › Général › Sauvegardes). Une sauvegarde contient `kibo.db`, `runs.db` et `notes/` ; jamais le jeton ni les fichiers des projets (`files/`).
 
 Restaurer se fait à la main :
 
 1. Quitte Kibo.
-2. Dans `~/.kibo`, remplace `kibo.db`, `runs.db`, `components/` et `notes/` par ceux du dossier de la sauvegarde choisie.
+2. Dans `~/.kibo`, remplace `kibo.db`, `runs.db` et `notes/` par ceux du dossier de la sauvegarde choisie.
 3. Relance Kibo.
 
 ## Désinstaller

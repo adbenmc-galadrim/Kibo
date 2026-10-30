@@ -2,9 +2,9 @@
 
 Centre de contrôle de projets de code, local-first, piloté par l'IA.
 Un workspace contient des projets ; un projet contient des pages ; une page contient des composants
-(Kanban, tickets, graphe de dépendances, notes…) que l'utilisateur peut créer lui-même.
+(vue d'ensemble, planning, Kanban, graphe de dépendances, questions, maquettes), écrits avec le SDK public.
 
-État : phase 7 · Sync et marketplace livrée (`v1.0`), MVP complet. Rapports dans `docs/superpowers/rapports/`.
+État : alpha, suivi de projets en local (phase 33 : retrait de l'ancien Kibo). Rapports dans `docs/superpowers/rapports/`.
 
 ## Lancer
 
