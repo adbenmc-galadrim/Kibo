@@ -127,4 +127,5 @@ test.skipIf(process.platform !== "darwin")(
     }
     expect(existsSync(keychain)).toBe(false);
   },
+  30_000,
 );

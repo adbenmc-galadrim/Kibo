@@ -40,8 +40,9 @@ import { createFakeHost } from "./testing/fake-host";
 
 const SECRET = "ghp_TESTSECRET0123456789abcdefghijklmn";
 const MCP_ENV = "mcp-env-secret-0123456789";
+const MCP_RELAY_ENV = "mcp-relay-secret-9876543210";
 const MCP_BEARER = "mcp-bearer-secret-0123456789";
-const SECRETS = [SECRET, MCP_ENV, MCP_BEARER, FIGMA_TOKEN, PENPOT_TOKEN];
+const SECRETS = [SECRET, MCP_ENV, MCP_RELAY_ENV, MCP_BEARER, FIGMA_TOKEN, PENPOT_TOKEN];
 const FOREIGN_ECHO = JSON.stringify({ message: `upstream said ${MCP_ENV}` });
 
 type McpHttp = Awaited<ReturnType<typeof startFakeMcpHttp>>;
@@ -220,12 +221,12 @@ async function mcpRelayScenario(): Promise<void> {
       args: [FAKE_MCP_STDIO],
       envNames: ["FAKE_TOKEN"],
     };
-    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: MCP_ENV });
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: MCP_RELAY_ENV });
     const echoed = await hub.call("direct", "echo_env", {}, null);
     expect(echoed.content).toEqual([{ type: "text", text: "invalid token ***" }]);
     await hub.call("direct", "log_env", {}, null);
     await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
-    expect(output.lines().join("\n")).not.toContain(MCP_ENV);
+    expect(output.lines().join("\n")).not.toContain(MCP_RELAY_ENV);
   } finally {
     await hub.stop();
     db.close();
@@ -239,6 +240,7 @@ function journalsWereWritten(tables: Place[]): void {
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
   expect(table("mcp_calls")).toContain('"tool":"echo_env"');
   expect(table("mcp_calls")).not.toContain(MCP_ENV);
+  expect(table("mcp_calls")).not.toContain(MCP_RELAY_ENV);
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
   expect(table("integration_events")).toContain("connected as adam (token)");
   expect(table("component_events")).not.toBe("");
