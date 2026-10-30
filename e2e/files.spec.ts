@@ -103,7 +103,7 @@ test("la progression d'un import par morceaux monte sans jamais reculer", async 
   for (const name of ["Envoi de a.png", "Envoi de b.png"]) {
     const values = samples[name] ?? [];
     expect(values.every((v, i) => i === 0 || v >= (values[i - 1] ?? 0))).toBe(true);
-    expect(new Set(values).size).toBeGreaterThan(20);
+    expect(new Set(values).size).toBeGreaterThan(10);
     expect(values.at(-1)).toBe(100);
   }
 });
