@@ -11,7 +11,7 @@ import type { Docs } from "../docs";
 import { projectKnown } from "../project-agent/wakeup/bootstrap";
 import type { SprintEndStore } from "./sprint-end-store";
 
-export const SPRINT_END_HISTORY_DAYS = 7;
+const SPRINT_END_HISTORY_DAYS = 7;
 
 export type SprintEndDeps = {
   docs: Pick<Docs, "projectIds" | "project">;
@@ -21,7 +21,7 @@ export type SprintEndDeps = {
   log: (what: string) => (e: unknown) => void;
 };
 
-export type SprintEndWatch = { pass(): void; markOld(): void };
+type SprintEndWatch = { pass(): void; markOld(): void };
 
 function daysBefore(day: string, days: number): string {
   const date = new Date(`${day}T00:00:00Z`);

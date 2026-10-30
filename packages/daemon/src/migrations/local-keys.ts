@@ -87,7 +87,7 @@ export function restoreLocalKeysOnce(
   return allocated;
 }
 
-export type LocalKeysDeps = {
+type LocalKeysDeps = {
   docs: Pick<Docs, "project" | "projectIds" | "save" | "emit">;
   settings: Pick<ProjectSettings, "get" | "set">;
   sink: ProjectEventSink;

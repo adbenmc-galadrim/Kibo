@@ -2,7 +2,7 @@ import type { ProjectEventSink } from "@kibo/schema";
 import { recordStopped, type SessionTicket } from "./session-events";
 import type { SessionStore } from "./session-store";
 
-export type SessionSweepDeps = {
+type SessionSweepDeps = {
   store: Pick<SessionStore, "sweep">;
   tickets(projectId: string): readonly SessionTicket[];
   now(): number;

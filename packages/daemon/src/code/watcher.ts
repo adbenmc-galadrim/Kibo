@@ -3,7 +3,7 @@ import { relative, resolve } from "node:path";
 import { MAX_EVENT_PATHS } from "@kibo/schema";
 import { isInside } from "./safe-path";
 
-export type WatchTarget = { path: string; recursive: boolean };
+type WatchTarget = { path: string; recursive: boolean };
 export type WatchHandle = { mode(): "watch" | "poll"; close(): void };
 export type Watcher = { close(): void };
 export type WatchFn = (
@@ -13,7 +13,7 @@ export type WatchFn = (
   onError: (e: unknown) => void,
 ) => Watcher;
 export type ChangedPaths = string[] | null;
-export type WatchOptions = {
+type WatchOptions = {
   root?: string;
   debounceMs?: number;
   pollMs?: number;

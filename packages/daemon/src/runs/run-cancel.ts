@@ -5,7 +5,7 @@ import type { RunRegistry } from "./run-registry";
 
 const IDLE_STATES: ReadonlySet<string> = new Set(["queued", "waiting_input"]);
 
-export type CancelDeps = {
+type CancelDeps = {
   registry: Pick<RunRegistry, "get" | "apply">;
   live: ReadonlyMap<string, Pick<LiveRun, "proc">>;
   tick(): void;

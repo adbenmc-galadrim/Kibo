@@ -6,7 +6,7 @@ import { currentOperation, hasHead, MAX_FILE_BYTES, readDiff, readStatus, sha1 }
 import type { WorktreeHandle } from "./repo";
 import { assertNotSymlink, resolveInWorktree } from "./safe-path";
 
-export type HunkInput = { path: string; area: ChangeArea; index: number; header: string };
+type HunkInput = { path: string; area: ChangeArea; index: number; header: string };
 
 const validate = (h: WorktreeHandle, paths: string[]) => {
   for (const p of paths) resolveInWorktree(h.path, p);

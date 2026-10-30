@@ -16,9 +16,9 @@ import { openProjectAgentStore, type ProjectAgentStore } from "./store";
 import { handleProjectTool } from "./tools";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentOps } from "./types";
 
-export type ProjectAgentBoot = { agent: ProjectAgentService; plan: { rpc: RpcExtension }; stop(): void };
+type ProjectAgentBoot = { agent: ProjectAgentService; plan: { rpc: RpcExtension }; stop(): void };
 
-export type ProjectAgentBootInput = {
+type ProjectAgentBootInput = {
   home: string;
   service: Pick<Service, "attachProjectAgent" | "agentData"> & { docs: Docs };
   notes: ProjectAgentDataDeps["notes"];

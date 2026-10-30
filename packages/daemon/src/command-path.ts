@@ -10,14 +10,14 @@ export type CommandHub = {
   intercept(interceptor: CommandInterceptor): () => void;
 };
 
-export type CommandPath = {
+type CommandPath = {
   run(projectId: string, command: ProjectCommand, meta?: CommandMeta): unknown;
   trigger(projectId: string, trigger: RuleTrigger): number;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
 };
 
-export type CommandPathDeps = {
+type CommandPathDeps = {
   store: Store;
   project(id: string): LoroDoc;
   save(projectId: string): void;

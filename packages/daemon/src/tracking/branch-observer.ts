@@ -4,7 +4,7 @@ import { KIBO_COMMAND } from "../docs";
 import { call, type Service } from "../service";
 import type { Log } from "./refs-reader";
 
-export type ObserverDeps = { service: Service; refs(folder: string): Promise<string[]>; log: Log };
+type ObserverDeps = { service: Service; refs(folder: string): Promise<string[]>; log: Log };
 
 const NOT_STARTED: ReadonlySet<StatusId> = new Set(["backlog", "todo"]);
 

@@ -22,7 +22,7 @@ export type FrameService = {
   metadata(key: DesignFrameKey): Promise<FrameMeta>;
   open(token: string): Promise<ServedFile | null>;
 };
-export type FrameServiceDeps = {
+type FrameServiceDeps = {
   cache: FrameCache;
   providers: Record<ImageDesignProvider, DesignProviderClient>;
   penpotInstance(): string | null;

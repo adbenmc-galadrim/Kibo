@@ -195,7 +195,7 @@ function writeRunDirs(home: string): void {
 
 const GENERATED = ["kibo.db", "runs.db", "runs", "kibo.db-wal", "kibo.db-shm", "runs.db-wal", "runs.db-shm"];
 
-export function makeHome032(home: string): void {
+function makeHome032(home: string): void {
   for (const name of GENERATED) rmSync(join(home, name), { recursive: true, force: true });
   mkdirSync(home, { recursive: true, mode: 0o700 });
   writeKibo(home);

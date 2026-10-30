@@ -8,7 +8,7 @@ import {
 } from "../components/net-proxy-address";
 import { directTransport, type Transport } from "../components/net-proxy-transport";
 
-export type PinnedFetchDeps = {
+type PinnedFetchDeps = {
   resolve: Resolver;
   transport?: Transport;
   allowAddress?: (ip: string) => boolean;

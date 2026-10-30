@@ -26,7 +26,7 @@ export type BackupsService = {
   tick(): Promise<void>;
 };
 
-export type BackupsDeps = {
+type BackupsDeps = {
   home: string;
   userHome: string;
   settings: LocalSettings;

@@ -17,7 +17,7 @@ export const DROPPED_KIBO_TABLES: readonly string[] = [
   "sync_projects",
 ];
 
-export type LegacyKiboResult = { droppedTables: string[]; removedRemoteSessions: number };
+type LegacyKiboResult = { droppedTables: string[]; removedRemoteSessions: number };
 
 function ensureMarkerTable(db: Database): void {
   db.exec(

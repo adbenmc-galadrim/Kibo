@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { cpus, totalmem } from "node:os";
 import { type HostInfo, type HostLoad, KiboError } from "@kibo/schema";
 
-export type LoadDeps = {
+type LoadDeps = {
   platform: NodeJS.Platform;
   cpuTimes: () => { idle: number; total: number };
   memoryPressure: () => string;

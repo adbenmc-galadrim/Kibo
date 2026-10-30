@@ -8,7 +8,7 @@ import { createEventRecorder, type EventRecorder } from "./recorder";
 import { projectEventsRpc } from "./rpc";
 import { createEventStore, type EventStore } from "./store";
 
-export type ProjectEventsDeps = {
+type ProjectEventsDeps = {
   store: Store;
   service: Service;
   now: () => number;

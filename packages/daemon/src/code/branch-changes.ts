@@ -16,7 +16,7 @@ import type { WorktreeHandle } from "./repo";
 import { firstLine } from "./run";
 import { resolveInWorktree } from "./safe-path";
 
-export type BranchBase = { name: string; ref: string };
+type BranchBase = { name: string; ref: string };
 
 const MAX_BRANCH_COMMITS = 100;
 const MAX_UNPUSHED_SCAN = 1000;

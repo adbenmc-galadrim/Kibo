@@ -38,7 +38,7 @@ const FOLLOWED: ReadonlySet<string> = new Set(["open", "draft"]);
 
 const sourceOf = (e: CommandEvent): ProjectEventSource => (e.meta.origin === "kibo" ? "kibo" : "user");
 
-export function rootOf(snapshot: ProjectSnapshot, ticketId: string): TicketView | null {
+function rootOf(snapshot: ProjectSnapshot, ticketId: string): TicketView | null {
   const byId = new Map(snapshot.tickets.map((t) => [t.id, t]));
   const seen = new Set<string>();
   let current = byId.get(ticketId);
@@ -51,7 +51,7 @@ export function rootOf(snapshot: ProjectSnapshot, ticketId: string): TicketView 
   return current ?? null;
 }
 
-export function featureIdOf(snapshot: ProjectSnapshot, ticketId: string | null): string | null {
+function featureIdOf(snapshot: ProjectSnapshot, ticketId: string | null): string | null {
   if (ticketId === null) return null;
   const root = rootOf(snapshot, ticketId);
   if (!root) return null;

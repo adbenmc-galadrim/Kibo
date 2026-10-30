@@ -16,7 +16,7 @@ export type WakeupDeps = {
   grace?: number;
 };
 
-export type WakeupScheduler = {
+type WakeupScheduler = {
   requestAnswer(projectId: string, questionId: string): WakePlan;
   start(): void;
   stop(): void;

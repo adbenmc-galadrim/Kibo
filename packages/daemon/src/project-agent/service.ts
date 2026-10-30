@@ -22,7 +22,7 @@ import { currentRun, pastSessions, projectOfRun, safeLog, summaryOf, withDigest 
 import { createTurnPort } from "./turns";
 import type { AgentMcpSink } from "./types";
 
-export type { ProjectAgentAgents, ProjectAgentDeps } from "./context";
+export type { ProjectAgentAgents } from "./context";
 
 export type ProjectAgentService = {
   view(projectId: string, runId?: string): ProjectAgentView;

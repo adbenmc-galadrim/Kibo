@@ -10,7 +10,7 @@ export type TransportInit = {
   tls?: { serverName: string };
 };
 export type Transport = (url: string, init: TransportInit) => Promise<Response>;
-export type DirectTransportOptions = { ca?: string };
+type DirectTransportOptions = { ca?: string };
 
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
@@ -55,7 +55,7 @@ function webStream(res: IncomingMessage): ReadableStream<Uint8Array> {
   });
 }
 
-export function createDirectTransport(options: DirectTransportOptions = {}): Transport {
+function createDirectTransport(options: DirectTransportOptions = {}): Transport {
   return (url, init) =>
     new Promise((resolve, reject) => {
       const req = request(

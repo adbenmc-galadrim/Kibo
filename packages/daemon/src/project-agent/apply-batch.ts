@@ -15,7 +15,7 @@ import {
 import { type ActionRunnerDeps, type Created, runAction } from "./apply-actions";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
-export type ApplyBatchDeps = {
+type ApplyBatchDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   events?: ProjectEventSink;

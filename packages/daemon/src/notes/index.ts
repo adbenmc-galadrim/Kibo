@@ -4,7 +4,7 @@ import type { NoteMeta } from "@kibo/schema";
 import { immediateTransaction } from "../sqlite-busy";
 
 export type IndexedNote = { path: string; markdown: string; mtime: number; size: number };
-export type NotesIndex = {
+type NotesIndex = {
   replace(projectId: string, projectKey: string, notes: IndexedNote[]): void;
   list(projectId: string): NoteMeta[];
   get(projectId: string, path: string): NoteMeta | null;

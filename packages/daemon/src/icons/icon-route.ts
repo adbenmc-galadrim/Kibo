@@ -1,7 +1,7 @@
 import { type IconOwner, iconOwnerKey } from "@kibo/schema";
 import type { IconStore } from "./icon-store";
 
-export type IconRouteDeps = {
+type IconRouteDeps = {
   icons: Pick<IconStore, "get">;
   origins(): string[];
   hasSession(req: Request): boolean;

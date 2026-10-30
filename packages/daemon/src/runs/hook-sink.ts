@@ -13,7 +13,7 @@ import type { LiveRun } from "./run-launch";
 import type { RunRegistry } from "./run-registry";
 import { sameRunToken } from "./run-token";
 
-export type HookSinkDeps = {
+type HookSinkDeps = {
   live: Map<string, LiveRun>;
   registry: RunRegistry;
   agentGuard: (run: RunView) => ToolGuard | null;
@@ -50,7 +50,7 @@ export function createHookSink({ live, registry, agentGuard }: HookSinkDeps): Ho
   };
 }
 
-export type QuestionHookDeps = {
+type QuestionHookDeps = {
   runOf(runId: string): RunView | null;
   data: Pick<AgentDataPort, "createQuestion">;
   onQuestion: (run: RunView, question: Question) => void;

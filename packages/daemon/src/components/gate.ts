@@ -36,13 +36,13 @@ export type GateHandlers = {
   project(projectId: string): Promise<ProjectInfo>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
 };
-export type GateDeps = {
+type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
   handlers: GateHandlers;
   quotas: Quotas;
   events: EventLog;
 };
-export type Gate = { call(projectId: string, instanceId: string, call: ComponentCall): Promise<unknown> };
+type Gate = { call(projectId: string, instanceId: string, call: ComponentCall): Promise<unknown> };
 
 const REFUSALS = new Set<KiboErrorCode>([
   "NOT_FOUND",

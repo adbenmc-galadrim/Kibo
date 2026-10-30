@@ -23,7 +23,7 @@ export type Uploads = {
   cancel(uploadId: string): Promise<void>;
   close(): Promise<void>;
 };
-export type UploadsOptions = {
+type UploadsOptions = {
   dir(projectId: string): string;
   now?: () => number;
   maxProjectBytes?: number;

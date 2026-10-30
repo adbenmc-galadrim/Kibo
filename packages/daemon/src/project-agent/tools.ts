@@ -27,7 +27,7 @@ import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const TOOL_REPLY_MAX = 200_000;
 
-export type ProjectToolDeps = {
+type ProjectToolDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   store: {

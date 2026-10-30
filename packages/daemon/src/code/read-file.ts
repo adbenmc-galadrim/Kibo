@@ -7,7 +7,7 @@ import { resolveInWorktree } from "./safe-path";
 export const MAX_FILE_BYTES = 1_000_000;
 const BINARY_PROBE_BYTES = 8000;
 
-export type Blob = { sha: string; size: number };
+type Blob = { sha: string; size: number };
 type Meta = { modifiedAt: number | null; tracked: boolean; dirty: boolean };
 
 export const sha1 = (bytes: Uint8Array): string => new Bun.CryptoHasher("sha1").update(bytes).digest("hex");

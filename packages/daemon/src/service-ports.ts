@@ -1,6 +1,6 @@
 import { KiboError, type KiboErrorCode } from "@kibo/schema";
 
-export type PortSlot<T> = { get(): T | null; attach(port: T): () => void };
+type PortSlot<T> = { get(): T | null; attach(port: T): () => void };
 
 export function portSlot<T>(): PortSlot<T> {
   let current: T | null = null;

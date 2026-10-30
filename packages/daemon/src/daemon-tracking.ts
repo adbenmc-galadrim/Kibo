@@ -14,16 +14,16 @@ import type { Store } from "./store";
 import { type SprintEndDeps, startSprintEndWatch } from "./tracking/sprint-end";
 import { createSprintEndStore } from "./tracking/sprint-end-store";
 
-export type DaemonTracking = {
+type DaemonTracking = {
   rpc: RpcExtension[];
   sink: ProjectEventSink;
   projectEvents(input: ListProjectEventsInput): ProjectEventPage;
   passes(agent: SprintEndDeps["agent"]): PollPass[];
 };
 
-export type LateActivity = Required<ActivitySources> & { bind(sources: Required<ActivitySources>): void };
+type LateActivity = Required<ActivitySources> & { bind(sources: Required<ActivitySources>): void };
 
-export type DaemonTrackingInput = { store: Store; service: Service; clock: Clock; activity: LateActivity };
+type DaemonTrackingInput = { store: Store; service: Service; clock: Clock; activity: LateActivity };
 
 const NO_SESSIONS: ReadonlyMap<string, TicketSession> = new Map();
 const NO_EVENTS: ReadonlyMap<string, number> = new Map();

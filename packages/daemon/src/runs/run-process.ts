@@ -42,11 +42,11 @@ export type StreamResult = {
   denied: string[];
   raw: string;
 };
-export type PsReader = (pid: number) => string | null;
+type PsReader = (pid: number) => string | null;
 export type ProcessOutcome = { code: number; result: StreamResult | null; stderrTail: string };
 export type RunProcess = { pid: number; kill(): void; exited: Promise<ProcessOutcome> };
 
-export const KILL_GRACE_MS = 5000;
+const KILL_GRACE_MS = 5000;
 
 export function killGroup(pid: number, graceMs = KILL_GRACE_MS): void {
   if (!signalGroup(pid, "SIGTERM")) return;
@@ -57,7 +57,7 @@ export function killGroup(pid: number, graceMs = KILL_GRACE_MS): void {
   escalate.unref();
 }
 
-export const readPs: PsReader = (pid) => {
+const readPs: PsReader = (pid) => {
   const res = Bun.spawnSync(["ps", "-o", "args=", "-p", String(pid)], { stdout: "pipe", stderr: "ignore" });
   return res.exitCode === 0 ? res.stdout.toString() : null;
 };

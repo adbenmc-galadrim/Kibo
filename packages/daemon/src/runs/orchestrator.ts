@@ -14,14 +14,7 @@ import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import { reapOrphan } from "./runner";
 
-export type {
-  AgentDataPort,
-  Orchestrator,
-  OrchestratorOptions,
-  ProjectTurnPort,
-  TicketContext,
-  ToolGuard,
-} from "./orchestrator-types";
+export type { AgentDataPort, Orchestrator, OrchestratorOptions } from "./orchestrator-types";
 
 export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const now = opts.now ?? Date.now;

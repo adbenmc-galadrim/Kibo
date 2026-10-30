@@ -26,7 +26,7 @@ import { decideProjectSession, type SessionDecision } from "./session-decision";
 import { transcriptTokensAt } from "./transcript";
 
 export type LiveRun = { hash: string; proc: RunProcess };
-export type LaunchDeps = {
+type LaunchDeps = {
   opts: OrchestratorOptions;
   registry: RunRegistry;
   live: Map<string, LiveRun>;

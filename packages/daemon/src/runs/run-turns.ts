@@ -3,7 +3,7 @@ import type { OrchestratorOptions } from "./orchestrator-types";
 import { PROJECT_WORKSPACE_LABEL } from "./project-run";
 import type { createTurnPreparer, PreparedTurn } from "./run-prepare";
 
-export type Prepared = {
+type Prepared = {
   turn: PreparedTurn;
   cwd: string;
   label: string;

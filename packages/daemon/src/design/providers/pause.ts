@@ -1,4 +1,4 @@
-export type RatePause = {
+type RatePause = {
   active(): boolean;
   until(): number | null;
   set(retryAfterSeconds: number | null): void;

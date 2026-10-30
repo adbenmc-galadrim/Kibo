@@ -10,7 +10,7 @@ export type LoginShellRun = { shell: string; args: string[]; script: string; tim
 export type LoginShellRunner = (
   run: LoginShellRun,
 ) => Promise<{ code: number; stdout: string; timedOut: boolean }>;
-export type LoginPathOptions = {
+type LoginPathOptions = {
   platform: NodeJS.Platform;
   env: Record<string, string | undefined>;
   run: LoginShellRunner;

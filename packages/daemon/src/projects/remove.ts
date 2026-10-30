@@ -4,13 +4,13 @@ import type { LoroDoc } from "loro-crdt";
 import type { Store } from "../store";
 import { projectDocId, WORKSPACE_DOC_ID } from "./doc-ids";
 
-export type ProjectRemovalDeps = {
+type ProjectRemovalDeps = {
   store: Pick<Store, "transaction" | "delete" | "save">;
   workspace: LoroDoc;
   drop(projectId: string): void;
   emit(message: ChangeMessage): void;
 };
-export type ProjectRemoval = {
+type ProjectRemoval = {
   remove(projectId: string): void;
   onRemoved(listener: (projectId: string) => void): () => void;
 };

@@ -3,8 +3,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { runBounded } from "./bounded-process";
 
-export type PlacedWorkspace = { cwd: string; label: string };
-export type GitRunner = (
+type GitRunner = (
   args: string[],
   cwd: string,
   timeoutMs?: number,

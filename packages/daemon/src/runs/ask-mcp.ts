@@ -11,7 +11,7 @@ const McpMessage = z.object({
   params: z.record(z.string(), z.unknown()).optional(),
 });
 
-export type McpReply = {
+type McpReply = {
   jsonrpc: "2.0";
   id: number | string | null;
   result?: unknown;
@@ -72,7 +72,7 @@ const ASK_TOOL_SPECS = [
 ];
 
 export type McpTools = "project" | null;
-export type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
+type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
 
 const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) => ({
   name,
@@ -87,7 +87,7 @@ const listedTools = (tools: McpTools) => [
   ...daemonTools(tools),
 ];
 
-export function mcpToolsOf(env: Record<string, string | undefined>): McpTools {
+function mcpToolsOf(env: Record<string, string | undefined>): McpTools {
   const tools = env.KIBO_MCP_TOOLS;
   return tools === "project" ? tools : null;
 }

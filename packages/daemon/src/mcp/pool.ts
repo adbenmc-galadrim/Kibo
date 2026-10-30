@@ -9,7 +9,7 @@ type Live = {
   timer: ReturnType<typeof setTimeout> | null;
   busy: number;
 };
-export type PoolDeps = {
+type PoolDeps = {
   home: string;
   secret: SecretResolver;
   resolve: Resolver;
@@ -18,7 +18,7 @@ export type PoolDeps = {
   onError(id: string, detail: string): void;
   report(error: unknown): void;
 };
-export type McpPool = {
+type McpPool = {
   connection(id: string): Promise<McpConnection | null>;
   has(id: string): boolean;
   use<T>(id: string, server: McpServerInput, run: (c: McpConnection) => Promise<T>): Promise<T>;

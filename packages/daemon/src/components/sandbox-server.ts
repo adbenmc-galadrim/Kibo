@@ -3,7 +3,7 @@ import type { EmbedService } from "../embed/types";
 import { parseDesignPath, parseEmbedPath, parseFilePath } from "./asset-path";
 import { type FileOpener, fileResponse } from "./file-response";
 
-export { type FileOpener, fileHeaders, type ServedFile } from "./file-response";
+export type { FileOpener } from "./file-response";
 
 const FRAMING: ReadonlySet<Capability> = new Set(["design", "embed"]);
 

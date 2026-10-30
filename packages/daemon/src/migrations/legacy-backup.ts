@@ -6,7 +6,7 @@ import { appVersion } from "../app-version";
 import { backupIdAt } from "../backups/backup-id";
 import { SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 
-export type LegacyBackup = { dir: string; files: string[] };
+type LegacyBackup = { dir: string; files: string[] };
 
 export const LEGACY_DATABASES = ["kibo.db", "runs.db"] as const;
 const SUFFIX = "-avant-retrait";

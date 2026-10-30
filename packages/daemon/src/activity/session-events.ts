@@ -2,7 +2,7 @@ import type { ProjectEventData, ProjectEventInput, ProjectEventSink, TicketView 
 import type { ClosedSession } from "./session-store";
 
 export type SessionTicket = Pick<TicketView, "id" | "key" | "keyLabel" | "parentId" | "delivery">;
-export type SessionEnd = "stop" | "timeout";
+type SessionEnd = "stop" | "timeout";
 
 function rootIdOf(ticket: SessionTicket, tickets: readonly SessionTicket[]): string {
   const byId = new Map(tickets.map((t) => [t.id, t]));
@@ -38,7 +38,7 @@ export const startedEvent = (
   tool: string,
 ): ProjectEventInput => sessionEvent("session_started", ticket, tickets, { tool });
 
-export const stoppedEvent = (
+const stoppedEvent = (
   ticket: SessionTicket,
   tickets: readonly SessionTicket[],
   closed: ClosedSession,

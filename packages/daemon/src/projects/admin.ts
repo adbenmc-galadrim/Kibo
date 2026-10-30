@@ -10,7 +10,7 @@ import { LOCAL_FOLDER_KEY } from "../project-folder";
 import { type RpcContext, type RpcHandler, requireLocal } from "../rpc-extensions";
 import type { Store } from "../store";
 
-export type ProjectAdminDeps = {
+type ProjectAdminDeps = {
   docs: Docs;
   settings: ProjectSettings;
   icons: IconStore;

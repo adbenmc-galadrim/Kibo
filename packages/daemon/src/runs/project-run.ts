@@ -51,7 +51,7 @@ export function createProjectRun(
   return id;
 }
 
-export type ProjectLaunch = McpLaunch;
+type ProjectLaunch = McpLaunch;
 
 export function projectLaunch(input: McpLaunchInput): ProjectLaunch {
   return {

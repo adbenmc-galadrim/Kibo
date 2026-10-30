@@ -7,7 +7,7 @@ export const TRACKING_MIGRATED_KEY = "trackingMigratedAt";
 export const OVERVIEW_MIGRATED_KEY = "overviewMigratedAt";
 const MAX_PASSES = 5;
 
-export type TrackingMigrationDeps = {
+type TrackingMigrationDeps = {
   docs: Docs;
   settings: Pick<ProjectSettings, "get" | "set">;
   log: (line: string) => void;

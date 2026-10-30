@@ -7,8 +7,8 @@ import type { IntegrationHost } from "../integrations/types";
 import type { CiStore } from "./ci-store";
 
 export const MAX_LOG_BYTES = 20 * 1024 * 1024;
-export const LOG_RETENTION_MS = 14 * 24 * 3_600_000;
-export type CiLogDeps = {
+const LOG_RETENTION_MS = 14 * 24 * 3_600_000;
+type CiLogDeps = {
   host: IntegrationHost;
   api: GithubApi;
   store: CiStore;

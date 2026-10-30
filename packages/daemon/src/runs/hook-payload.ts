@@ -94,7 +94,7 @@ function askOf(h: HookInput): AskInput | null {
   return askInputFromTool(h.tool_input ?? null, h.tool_name === ASK_TOOL);
 }
 
-export const MAX_TODOS = 100;
+const MAX_TODOS = 100;
 const TODO_TEXT_MAX = 160;
 
 function todoOf(raw: unknown): TodoItem[] {
@@ -139,8 +139,8 @@ export function reduceHookInput(raw: unknown): HookPayload {
   return reduce(parseHookInput(raw));
 }
 
-export const MAX_TEXT = 2000;
-export const MAX_INPUT_KEYS = 20;
+const MAX_TEXT = 2000;
+const MAX_INPUT_KEYS = 20;
 
 function clipValue(value: unknown, depth: number): unknown {
   if (typeof value === "string") return value.slice(0, MAX_TEXT);

@@ -7,7 +7,7 @@ import type { Orchestrator, OrchestratorOptions } from "./runs/orchestrator-type
 import type { RunStore } from "./runs/run-store";
 import type { Service } from "./service";
 
-export type AgentsInput = {
+type AgentsInput = {
   opts: DaemonOptions;
   runs: RunStore;
   service: Service;

@@ -4,7 +4,7 @@ import type { Redactor } from "./redact";
 import type { SecretStore } from "./types";
 
 export const KEYCHAIN_SERVICE = "dev.kibo";
-export const KEYCHAIN_TIMEOUT_MS = 60_000;
+const KEYCHAIN_TIMEOUT_MS = 60_000;
 
 export type KeychainBackend = {
   get(o: { service: string; name: string }): Promise<string | null>;

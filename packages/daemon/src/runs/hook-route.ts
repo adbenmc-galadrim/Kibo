@@ -6,10 +6,10 @@ export type HookSink = {
   receive(runId: string, payload: HookPayload, toolInput: Record<string, unknown> | null): HookReply | null;
 };
 
-export type HookClock = { now(): number; log(line: string): void };
+type HookClock = { now(): number; log(line: string): void };
 
 export const MAX_HOOK_BYTES = 262_144;
-export const SLOW_HOOK_MS = 1_000;
+const SLOW_HOOK_MS = 1_000;
 
 const SYSTEM_CLOCK: HookClock = {
   now: () => performance.now(),

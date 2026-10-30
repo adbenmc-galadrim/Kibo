@@ -22,7 +22,7 @@ export function triggerRules(service: Service, projectId: string, trigger: RuleT
   }
 }
 
-export function completeMerge(service: Service, projectId: string, ticketId: string, pr: GithubPrRef): void {
+function completeMerge(service: Service, projectId: string, ticketId: string, pr: GithubPrRef): void {
   const snapshot = call(service, { method: "getProject", projectId });
   if (pr.base !== null && pr.base !== integrationBranch(snapshot.meta.worktree)) return;
   triggerRules(service, projectId, { kind: "pr_merged", ticketId });
@@ -36,8 +36,8 @@ export function recordPr(service: Service, projectId: string, ticketId: string, 
   call(service, { method: "command", projectId, command: { method: "upsertExternalRef", ticketId, ref } });
 }
 
-export type PrWrite = (ref: GithubPrRef) => void;
-export type PrTransition = {
+type PrWrite = (ref: GithubPrRef) => void;
+type PrTransition = {
   projectId: string;
   ticketId: string;
   previous: GithubPrRef | null;

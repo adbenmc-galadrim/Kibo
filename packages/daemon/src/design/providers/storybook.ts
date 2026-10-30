@@ -14,7 +14,7 @@ export type StorybookClient = {
   index(origin: string): Promise<StorybookIndex | null>;
   forget(origin: string): void;
 };
-export type StorybookClientDeps = { fetch: IntegrationFetch; now(): number; log(message: string): void };
+type StorybookClientDeps = { fetch: IntegrationFetch; now(): number; log(message: string): void };
 
 const PROBE_MAX_BYTES = 65_536;
 const decoder = new TextDecoder();

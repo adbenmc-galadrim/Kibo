@@ -14,7 +14,7 @@ export type Candidate = {
 
 const RANK: Record<PrState, number> = { open: 0, draft: 0, merged: 1, closed: 2 };
 
-export const pickPr = (prs: readonly PrInfo[]): PrInfo | null =>
+const pickPr = (prs: readonly PrInfo[]): PrInfo | null =>
   [...prs].sort((a, b) => RANK[a.state] - RANK[b.state] || b.number - a.number)[0] ?? null;
 
 const isPr = (ref: ExternalRef): ref is GithubPrRef => ref.kind === "github_pr";

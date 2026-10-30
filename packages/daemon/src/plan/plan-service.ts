@@ -18,7 +18,7 @@ import { type ActionRunnerDeps, type Created, runAction } from "../project-agent
 import type { ProjectAgentDataPort } from "../project-agent/types";
 import { planContext } from "./plan-context";
 
-export type PlanServiceDeps = { data: ProjectAgentDataPort; events?: ProjectEventSink };
+type PlanServiceDeps = { data: ProjectAgentDataPort; events?: ProjectEventSink };
 
 export type PlanService = {
   preview(projectId: string, actions: readonly PlanAction[]): PlanPreview;

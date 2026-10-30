@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type McpPost = (url: string, init: RequestInit) => Promise<Response>;
 export type McpToolReply = { text: string; isError: boolean };
-export type McpEnv = { KIBO_MCP_URL?: string; KIBO_RUN_TOKEN?: string };
+type McpEnv = { KIBO_MCP_URL?: string; KIBO_RUN_TOKEN?: string };
 
 export const MCP_TIMEOUT_MS = 5_000;
 

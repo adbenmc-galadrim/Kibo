@@ -7,7 +7,7 @@ import { sessionRpc } from "./session-rpc";
 import { createSessionStore } from "./session-store";
 import { createSessionSweep } from "./session-sweep";
 
-export type TicketSessionsInput = {
+type TicketSessionsInput = {
   db: Database;
   service: Service;
   clock: { now(): number };
@@ -16,7 +16,7 @@ export type TicketSessionsInput = {
   env?: Env;
 };
 
-export type TicketSessions = {
+type TicketSessions = {
   rpc: RpcExtension;
   pass(): void;
   activity(projectId: string): ReadonlyMap<string, TicketSession>;
@@ -24,7 +24,7 @@ export type TicketSessions = {
 
 const consoleLog = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what} failed`, e);
 
-export async function currentBranch(cwd: string, env: Env = {}): Promise<string | null> {
+async function currentBranch(cwd: string, env: Env = {}): Promise<string | null> {
   try {
     const result = await createGit(cwd, env).run(["rev-parse", "--abbrev-ref", "HEAD"]);
     const branch = result.stdout.trim();

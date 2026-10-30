@@ -15,8 +15,8 @@ import { openRunStore, type RunStore } from "./runs/run-store";
 import { openLocalSettings } from "./settings";
 import { openStore, type Store } from "./store";
 
-export type DaemonStores = { store: Store; runs: RunStore; token: string; redactor: Redactor };
-export type LocalServices = {
+type DaemonStores = { store: Store; runs: RunStore; token: string; redactor: Redactor };
+type LocalServices = {
   backups: BackupsService;
   scheduleBackups(): Closer;
 };

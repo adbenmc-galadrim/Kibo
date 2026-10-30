@@ -13,7 +13,7 @@ import type { Docs } from "../docs";
 
 const MARKER = "domainsScopedAt";
 
-export type DomainScopeDeps = { docs: Docs; log: (line: string) => void; now: () => number };
+type DomainScopeDeps = { docs: Docs; log: (line: string) => void; now: () => number };
 
 function usageByProject(docs: Docs): DomainUsageByProject {
   const usage = new Map<string, Map<string, number>>();

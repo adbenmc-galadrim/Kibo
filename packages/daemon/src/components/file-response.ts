@@ -8,7 +8,7 @@ export type FileOpener = { open(token: string): Promise<ServedFile | null> };
 const READ_FLAGS = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
 const HEAD_BYTES = 16;
 
-export function fileHeaders(mime: ProjectAssetMime, size: number): Record<string, string> {
+function fileHeaders(mime: ProjectAssetMime, size: number): Record<string, string> {
   return {
     "content-type": mime,
     "content-length": String(size),

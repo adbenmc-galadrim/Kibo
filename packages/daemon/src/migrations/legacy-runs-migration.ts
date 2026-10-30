@@ -27,7 +27,7 @@ export const DROPPED_RUNS_TABLES: readonly string[] = [
   "project_signals",
 ];
 
-export type LegacyRunsResult = { removedRuns: number; removedRunIds: string[]; droppedTables: string[] };
+type LegacyRunsResult = { removedRuns: number; removedRunIds: string[]; droppedTables: string[] };
 
 const TICKET_RUNS = "SELECT id FROM runs WHERE kind = 'ticket'";
 const SAFE_RUN_ID = /^[\w-]+$/;

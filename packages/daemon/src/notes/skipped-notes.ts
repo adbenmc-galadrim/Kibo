@@ -1,7 +1,7 @@
 import type { KiboError } from "@kibo/schema";
 
 export type SkippedNote = { path: string; error: KiboError };
-export type SkippedNotes = {
+type SkippedNotes = {
   report(projectId: string, skipped: SkippedNote[]): void;
   forget(projectId: string): void;
 };

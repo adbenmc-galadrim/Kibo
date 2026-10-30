@@ -18,15 +18,8 @@ import {
 import { readProxiedBody } from "./net-proxy-body";
 import { directTransport, type Transport } from "./net-proxy-transport";
 
-export {
-  bareHost,
-  checkedAddress,
-  isPublicAddress,
-  pinnedRequest,
-  type Resolver,
-  systemResolver,
-} from "./net-proxy-address";
-export type { Transport, TransportInit } from "./net-proxy-transport";
+export { isPublicAddress, type Resolver } from "./net-proxy-address";
+export type { Transport } from "./net-proxy-transport";
 
 export type ProxyHooks = Pick<ComponentIntegrationHooks, "aliases" | "observe" | "secret">;
 export type NetProxyOptions = {

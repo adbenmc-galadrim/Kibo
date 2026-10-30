@@ -8,8 +8,8 @@ export type FileTicketDeps = {
   store: Pick<Store, "transaction">;
   restore(projectId: string): void;
 };
-export type FileRequest = Extract<RpcRequest, { method: "fileTicket" }>;
-export type FiledTicket = { ticketId: string; key: string | null };
+type FileRequest = Extract<RpcRequest, { method: "fileTicket" }>;
+type FiledTicket = { ticketId: string; key: string | null };
 
 function restoreBoth(deps: FileTicketDeps, projectId: string, error: unknown): never {
   try {

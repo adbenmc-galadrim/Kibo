@@ -4,7 +4,7 @@ import { ENV_FILE_MAX_BYTES, findEnvPort } from "@kibo/schema";
 
 const ENV_FILES = [".env.local", ".env"];
 
-export function readBoundedFile(path: string): string | null {
+function readBoundedFile(path: string): string | null {
   try {
     const stat = statSync(path, { throwIfNoEntry: false });
     if (!stat?.isFile() || stat.size > ENV_FILE_MAX_BYTES) return null;

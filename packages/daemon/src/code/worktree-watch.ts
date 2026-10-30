@@ -10,7 +10,7 @@ export type WorktreeWatch = {
   settle(projectId: string, h: WorktreeHandle): Promise<void>;
   stop(): void;
 };
-export type WorktreeWatchOptions = {
+type WorktreeWatchOptions = {
   idleMs: number;
   onChange(projectId: string, worktree: string, paths: string[] | undefined): void;
   log(what: string): (e: unknown) => void;

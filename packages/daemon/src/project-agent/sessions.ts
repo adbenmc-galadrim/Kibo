@@ -12,7 +12,7 @@ import {
 } from "@kibo/schema";
 import type { ProjectAgentAgentsPort } from "./types";
 
-export const SESSION_TITLE_MAX = 120;
+const SESSION_TITLE_MAX = 120;
 
 export const currentRun = (session: ProjectAgentSession | null, runs: readonly RunView[]): RunView | null =>
   session ? (runs.find((r) => r.id === session.runId) ?? null) : null;
@@ -39,7 +39,7 @@ export function projectOfRun(run: RunView): string {
   return run.projectId;
 }
 
-export type SessionDigest = Pick<ProjectAgentSessionView, "title" | "messages">;
+type SessionDigest = Pick<ProjectAgentSessionView, "title" | "messages">;
 
 function counts(event: RunEvent): boolean {
   if (event.type === "answered") return !isWakeupMessage(event.text);

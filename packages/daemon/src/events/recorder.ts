@@ -9,7 +9,7 @@ import type { CommandEvent } from "../docs";
 import type { EventStore } from "./store";
 import { deliveredRoots, markDelivered, TRACKED_METHODS, translate } from "./translate";
 
-export type EventRecorderDeps = {
+type EventRecorderDeps = {
   store: EventStore;
   snapshot(projectId: string): ProjectSnapshot;
   emit(projectId: string): void;

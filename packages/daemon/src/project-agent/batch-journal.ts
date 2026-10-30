@@ -6,7 +6,7 @@ export type BatchJournalPort = {
 };
 export type BatchJournal = BatchJournalPort & { close(): void };
 
-export type BatchJournalDeps = {
+type BatchJournalDeps = {
   events: ProjectEventSink;
   turnOf(runId: string): number | null;
   onRunState(listener: (run: Pick<RunView, "id" | "state">) => void): () => void;

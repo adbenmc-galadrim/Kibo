@@ -4,7 +4,7 @@ import { reduceHookPost } from "./hook-payload";
 
 export type PostFn = (url: string, init: RequestInit) => Promise<Response>;
 
-export type ForwardInput = {
+type ForwardInput = {
   stdin: string;
   env: Record<string, string | undefined>;
   fetch?: PostFn;

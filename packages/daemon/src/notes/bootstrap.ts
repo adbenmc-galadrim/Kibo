@@ -5,14 +5,14 @@ import { ensureNotesTables } from "./index";
 import { createNotesService, type NotesService } from "./service";
 import { ensureSettingsTable } from "./settings";
 
-export type NotesDeps = {
+type NotesDeps = {
   db: Database;
   home: string;
   docs: Pick<Docs, "projectIds" | "emit" | "onProjectRemoved"> & {
     projectMeta(projectId: string): Pick<ProjectMeta, "id" | "key" | "folder">;
   };
 };
-export type StartedNotes = {
+type StartedNotes = {
   notes: NotesService;
   notesDir(projectId: string): string;
   stop(): void;

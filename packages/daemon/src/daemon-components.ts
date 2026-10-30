@@ -7,7 +7,7 @@ import { createIntegrationHost, type HostParts } from "./integrations/host";
 import type { Redactor } from "./integrations/redact";
 import type { Service } from "./service";
 
-export type DaemonComponentsInput = Pick<
+type DaemonComponentsInput = Pick<
   ComponentsDeps,
   "db" | "notes" | "sandboxOrigin" | "runs" | "integrations" | "projectEvents"
 >;

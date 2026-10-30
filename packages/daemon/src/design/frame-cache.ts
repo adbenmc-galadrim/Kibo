@@ -36,7 +36,7 @@ export type FrameCache = {
   purge(): number;
   totalBytes(): number;
 };
-export type FrameCacheDeps = {
+type FrameCacheDeps = {
   db: Database;
   home: string;
   now(): number;

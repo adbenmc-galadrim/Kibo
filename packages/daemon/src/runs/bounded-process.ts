@@ -1,6 +1,6 @@
 import { signalGroup, tryKill } from "../process-group";
 
-export type BoundedResult = { code: number; stdout: string; stderr: string; timedOut: boolean };
+type BoundedResult = { code: number; stdout: string; stderr: string; timedOut: boolean };
 
 export async function runBounded(
   argv: string[],

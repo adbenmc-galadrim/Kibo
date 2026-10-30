@@ -13,13 +13,13 @@ export type WakeupBootInput = {
   answerGrace?: number;
 };
 
-export type WakeupBoot = {
+type WakeupBoot = {
   start(): void;
   stop(): void;
   wakeOnAnswer(projectId: string, questionId: string): void;
 };
 
-export function answeredLines(docs: Pick<Docs, "project" | "today">) {
+function answeredLines(docs: Pick<Docs, "project" | "today">) {
   return (projectId: string, questionIds: readonly string[]): AnsweredLine[] => {
     const questions = readProject(docs.project(projectId), docs.today()).questions;
     return questionIds.flatMap((id) => {

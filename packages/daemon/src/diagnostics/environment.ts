@@ -3,7 +3,7 @@ import type { Exec } from "./claude-status";
 
 const VERSION_TIMEOUT_MS = 5_000;
 
-export type EnvironmentDeps = {
+type EnvironmentDeps = {
   daemon: { address: string; home: string };
   refreshAi: () => Promise<AiStatus>;
   exec: Exec;

@@ -1,12 +1,12 @@
 import type { ChangeKind, Worktree } from "@kibo/schema";
 
-export type StatusEntry = {
+type StatusEntry = {
   path: string;
   origPath: string | null;
   staged: ChangeKind | null;
   unstaged: ChangeKind | null;
 };
-export type ParsedStatus = {
+type ParsedStatus = {
   head: string | null;
   branch: string | null;
   upstream: string | null;
@@ -127,7 +127,7 @@ export function parseWorktrees(raw: string): Worktree[] {
     .map((d, index) => ({ path: d.path, head: d.head, branch: d.branch, isMain: index === 0 }));
 }
 
-export type NameStatus = { path: string; origPath: string | null; kind: ChangeKind };
+type NameStatus = { path: string; origPath: string | null; kind: ChangeKind };
 
 const NAME_STATUS_KIND: Record<string, ChangeKind> = { A: "added", D: "deleted", R: "renamed", C: "added" };
 

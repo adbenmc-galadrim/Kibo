@@ -1,7 +1,7 @@
 import { realpathSync } from "node:fs";
 import { type AgentSettings, isSafeAddDir, KiboError, type ProjectDelivery } from "@kibo/schema";
 
-export type AddDirsIo = { home: string; realpath(path: string): string | null; log(line: string): void };
+type AddDirsIo = { home: string; realpath(path: string): string | null; log(line: string): void };
 
 const UNSAFE = "it holds secrets or leaves the home folder";
 

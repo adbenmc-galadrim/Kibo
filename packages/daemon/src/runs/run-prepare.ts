@@ -17,10 +17,10 @@ import type { AgentFlags, CliFallbacks } from "./cli-flags";
 import type { AgentDataPort, ToolGuard } from "./orchestrator-types";
 import { writeRunContext } from "./workspace-prep";
 
-export type AgentLookup = Pick<AgentDataPort, "agentOf" | "skills">;
+type AgentLookup = Pick<AgentDataPort, "agentOf" | "skills">;
 export type LaunchFlags = ReturnType<typeof launchFlags>;
 
-export type ComposedAgent = {
+type ComposedAgent = {
   agent: Agent;
   context: AgentContext;
   subagents: { name: string; file: AgentFile }[];
@@ -67,7 +67,7 @@ function skillEntries(rule: SkillsRule, known: readonly Skill[]): AgentContext["
   return { mode: "list", entries: rule.ids.map((id) => ({ id, description: description(id) })) };
 }
 
-export function composeAgent(data: AgentLookup, ref: AgentRef, projectId: string | null): ComposedAgent {
+function composeAgent(data: AgentLookup, ref: AgentRef, projectId: string | null): ComposedAgent {
   const agent = mainAgent(data, ref);
   const subagents = agent.settings.subagents.map((sub) => subagentOf(data, sub, projectId));
   const { skills } = agent.settings;
@@ -88,7 +88,7 @@ export function composeAgent(data: AgentLookup, ref: AgentRef, projectId: string
   };
 }
 
-export function skillRules(rule: SkillsRule, withArgs: boolean): string[] {
+function skillRules(rule: SkillsRule, withArgs: boolean): string[] {
   if (rule.mode === "all") return [];
   return rule.ids.flatMap((id) => (withArgs ? [skillAllowRule(id), `Skill(${id} *)`] : [skillAllowRule(id)]));
 }

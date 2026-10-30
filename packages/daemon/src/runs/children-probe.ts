@@ -5,7 +5,7 @@ export function assertLeaf(childCount: number): void {
   if (childCount > 0) throw new KiboError("TICKET_HAS_CHILDREN", parentTicketDetail(childCount));
 }
 
-export type ChildrenProbe = (run: Pick<RunView, "projectId" | "ticketId">) => number;
+type ChildrenProbe = (run: Pick<RunView, "projectId" | "ticketId">) => number;
 
 export function childrenProbe(data: Pick<AgentDataPort, "ticketContext">): ChildrenProbe {
   const projects = new Map<string, ProjectSnapshot>();

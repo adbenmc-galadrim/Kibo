@@ -23,7 +23,7 @@ import { createSkippedNotes, type SkippedNote } from "./skipped-notes";
 import { type NotesWatcher, type WatchFn, watchNotes } from "./watch";
 
 export type NotesProject = { id: string; key: string; folder: string | null };
-export type NotesServiceDeps = {
+type NotesServiceDeps = {
   db: Database;
   home: string;
   homeDir?: string;

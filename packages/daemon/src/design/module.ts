@@ -17,7 +17,7 @@ import { createStorybook, type StorybookClient } from "./providers/storybook";
 import type { DesignProviderClient } from "./providers/types";
 import { createStorybookOrigins, type StorybookOrigins } from "./storybook-origins";
 
-export type DesignModule = IntegrationModule & { gate: DesignGate; open: FrameService["open"] };
+type DesignModule = IntegrationModule & { gate: DesignGate; open: FrameService["open"] };
 
 const detailOf = (e: unknown) => (e instanceof KiboError ? e.detail : String(e));
 

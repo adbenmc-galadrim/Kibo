@@ -1,6 +1,5 @@
 import type { Database } from "bun:sqlite";
 import type {
-  Binding,
   CiRun,
   CommandResult,
   IntegrationEvent,
@@ -8,12 +7,9 @@ import type {
   IntegrationRpcRequest,
   IntegrationRpcResult,
   IntegrationStatus,
-  MappedRemote,
   ProjectCommand,
   ProjectMeta,
   ProjectSnapshot,
-  PullPage,
-  PushOp,
   SecretName,
   Worktree,
 } from "@kibo/schema";
@@ -24,7 +20,7 @@ import type { ProjectSettings } from "../notes/settings";
 import type { Notice } from "../runs/notifier";
 
 export type { DesignGate } from "../design/gate";
-export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
+export type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 export type SystemNotification = Notice;
 export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: string; stderr: string }>;
 
@@ -90,11 +86,6 @@ export type IntegrationFetch = (
   init: IntegrationFetchInit,
   rules: InternalRule[],
 ) => Promise<IntegrationResponse>;
-
-export type AdapterRunner = {
-  pull(projectId: string, binding: Binding, cursor: string | null): Promise<PullPage>;
-  push(projectId: string, binding: Binding, op: PushOp): Promise<MappedRemote>;
-};
 
 export type IntegrationMethod = IntegrationRpcRequest["method"];
 export type IntegrationHandlers = {

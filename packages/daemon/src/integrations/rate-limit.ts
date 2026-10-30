@@ -1,5 +1,5 @@
 export type RateLimitGate = { observe(headers: Headers): void; blockedUntil(): number | null };
-export const GITHUB_RATE_FLOOR = 100;
+const GITHUB_RATE_FLOOR = 100;
 
 const WATCHED_RESOURCES = new Set(["core", "graphql"]);
 

@@ -1,4 +1,3 @@
-import { runModel } from "@kibo/core/agents/compose";
 import {
   type Agent,
   type AgentFile,
@@ -13,7 +12,7 @@ import {
   systemAgentSettings,
 } from "@kibo/schema";
 
-export type MemoryAgentInput = {
+type MemoryAgentInput = {
   ref: AgentRef;
   scope: AgentScope;
   name: string;
@@ -67,6 +66,3 @@ export function memoryAgentSource(agents: readonly Agent[], skills: readonly Ski
 }
 
 export const NEUTRAL_AGENT_SOURCE: AgentSource = memoryAgentSource(NEUTRAL_SYSTEM_AGENTS);
-
-export const agentModelOf = (agent: Pick<Agent, "file">): string =>
-  runModel(agent.file?.frontmatter ?? null).model;

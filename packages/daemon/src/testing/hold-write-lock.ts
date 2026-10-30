@@ -8,7 +8,7 @@ db.exec("COMMIT");
 db.close();
 `;
 
-export type HeldWriteLock = { released: Promise<number> };
+type HeldWriteLock = { released: Promise<number> };
 
 export async function holdWriteLock(file: string, ms: number): Promise<HeldWriteLock> {
   const child = Bun.spawn([process.execPath, "-e", LOCKER], {
