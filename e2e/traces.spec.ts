@@ -58,7 +58,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban and the pa
     method: "saveTabs",
     state: {
       tabs: [
-        { id: "agents", target: { kind: "screen", screen: "agents" }, pinned: false, preview: false },
+        { id: "components", target: { kind: "screen", screen: "components" }, pinned: false, preview: false },
         { id: "graph", target: graph, pinned: false, preview: false },
         { id: "kanban", target: kanban, pinned: false, preview: false },
       ],
@@ -75,7 +75,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban and the pa
     await capture(page, info, "kanban");
     await expect.soft(tabs.getByRole("tab", { name: /Kanban/ })).toBeVisible();
     await expect.soft(tabs.getByRole("tab", { name: /Graphe/ })).toBeVisible();
-    await expect.soft(tabs.getByRole("tab", { name: /^Agents/ })).toHaveCount(0);
+    await expect.soft(tabs.getByRole("tab", { name: /^Composants/ })).toHaveCount(0);
     await expect.soft(page.getByText(AGENT_TRACES)).toHaveCount(0);
 
     await card.getByRole("button", { name: /Actions/ }).click();
@@ -106,7 +106,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban and the pa
       .soft(palette.getByRole("option", { name: /^Agents$|Assigner|Files d'attente|Répondre à/ }))
       .toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect.soft(tabs.getByRole("tab", { name: /^Agents/ })).toHaveCount(0);
+    await expect.soft(tabs.getByRole("tab", { name: /^Composants/ })).toHaveCount(0);
   } finally {
     await assignAgent(page, null);
   }

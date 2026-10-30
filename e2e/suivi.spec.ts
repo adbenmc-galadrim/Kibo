@@ -148,6 +148,7 @@ test("the Kanban shows review, CI and sessions, and a CLI session lights SILO-51
   await openSiloKanbanAll(page);
   const pr20 = kanbanCard(page, "SILO-45");
   await expect(pr20).toContainText("#20");
+  await expect(pr20.getByRole("note", { name: "changements demandés" })).toBeVisible();
   await expect(pr20.getByLabel("CI cassée")).toBeVisible();
   await expect(kanbanCard(page, "SILO-33").getByLabel("Session T3 Code en cours")).toBeVisible();
 
@@ -164,12 +165,17 @@ test("the Kanban shows review, CI and sessions, and a CLI session lights SILO-51
   expect(text(ticket, "statusId")).toBe("todo");
 });
 
-test("a retouche posed by the CLI shows on the delivered SILO-21 card", async ({ page }, info) => {
+test("a retouche posed by the CLI shows on the delivered SILO-21 card with its update command", async ({
+  page,
+}, info) => {
   expect(kiboCli(info, ["tickets", "step", "SILO-21", "7", "--update"])).toContain(
     "retouche · 7 · Porte qualité",
   );
   await openSiloKanbanAll(page);
-  await expect(kanbanCard(page, "SILO-21")).toContainText("retouche · Phase 7/12 · Porte qualité");
+  const silo21 = kanbanCard(page, "SILO-21");
+  await expect(silo21).toContainText("retouche · Phase 7/12 · Porte qualité");
+  await silo21.click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Copier /update-delivery SILO-21" })).toBeVisible();
 });
 
 test("the sprint sheet carries the report of F5 to S43, and the batch turns partial", async ({
