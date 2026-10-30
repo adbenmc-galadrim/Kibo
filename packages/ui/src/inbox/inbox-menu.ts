@@ -2,7 +2,7 @@ import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { FolderInput, Maximize2, Trash2 } from "lucide-react";
 import type { frInbox } from "../i18n/fr-inbox";
 
-export type InboxMenuInput = {
+type InboxMenuInput = {
   texts: typeof frInbox;
   actions: { open(): void; file(): void; remove(): void };
 };

@@ -3,7 +3,7 @@ import { frWidgets } from "../i18n/fr-widgets";
 import { findComponent } from "../registry";
 
 export type FieldValue = string | number | boolean | string[] | null;
-export type FieldKind = "enum" | "boolean" | "number" | "string" | "asset" | "frame" | "frames";
+type FieldKind = "enum" | "boolean" | "number" | "string" | "asset" | "frame" | "frames";
 export type FormField = { key: string; field: ConfigField; value: FieldValue };
 
 export const isStringList = (v: unknown): v is string[] =>

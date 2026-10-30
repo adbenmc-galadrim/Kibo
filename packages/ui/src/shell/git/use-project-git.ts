@@ -4,7 +4,7 @@ import { client } from "../../api";
 import { errorMessage } from "../../lib/error-message";
 import { GIT_RETRY_MS, resolveWorktree, useWorktrees } from "./use-worktrees";
 
-export type ProjectGit = {
+type ProjectGit = {
   worktrees: Worktree[] | null;
   main: Worktree | null;
   hasRepo: boolean;

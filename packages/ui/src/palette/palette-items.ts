@@ -52,7 +52,7 @@ export type PaletteItem = {
     | { kind: "local"; action: LocalAction };
   ticket: { projectId: string; ticketId: string; keyLabel: string } | null;
 };
-export type PaletteSection = { group: PaletteGroup; items: PaletteItem[]; more: string[] };
+type PaletteSection = { group: PaletteGroup; items: PaletteItem[]; more: string[] };
 export type PaletteContext = {
   projects: ProjectSummary[];
   snapshots: Map<string, ProjectSnapshot>;

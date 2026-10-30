@@ -15,7 +15,7 @@ import { addOverviewPage } from "./nav/overview-page";
 import { addPlanningPage } from "./nav/planning-page";
 import { type ProjectMenuActions, projectMenuEntries } from "./project-menu";
 
-export type ProjectHeaderMenuProps = {
+type ProjectHeaderMenuProps = {
   project: ProjectMeta;
   shifted: boolean;
   editable: boolean;

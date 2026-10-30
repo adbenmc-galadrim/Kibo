@@ -1,6 +1,6 @@
 import { fr } from "../i18n/fr";
 
-export type Language = { id: string; label: string };
+type Language = { id: string; label: string };
 
 const TYPESCRIPT: Language = { id: "typescript", label: "TypeScript" };
 const JAVASCRIPT: Language = { id: "javascript", label: "JavaScript" };

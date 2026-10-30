@@ -7,7 +7,7 @@ import {
   type TrackingSettings,
 } from "@kibo/schema";
 
-export type Fields = {
+type Fields = {
   name: string;
   color: string;
   folder: string;

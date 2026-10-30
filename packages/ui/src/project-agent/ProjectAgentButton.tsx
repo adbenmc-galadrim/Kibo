@@ -14,7 +14,7 @@ type Props = {
 const PENDING =
   "flex h-[13px] items-center rounded-[8px] bg-(--tracking-brand-btn) px-[5px] font-mono text-[10.5px] leading-[1.2] font-semibold text-white tabular-nums";
 
-export const pendingBatchId = (agents: AgentsState | null, projectId: string): string | null =>
+const pendingBatchId = (agents: AgentsState | null, projectId: string): string | null =>
   agents?.projectAgents.find((p) => p.projectId === projectId && p.pendingBatchId !== null)?.pendingBatchId ??
   null;
 

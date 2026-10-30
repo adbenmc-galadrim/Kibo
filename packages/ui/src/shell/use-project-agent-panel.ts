@@ -6,7 +6,7 @@ import { useOpened } from "./use-opened";
 
 export const PANEL_OPEN_KEY = "kibo.projectAgent.open";
 
-export type ProjectAgentPanelState = {
+type ProjectAgentPanelState = {
   available: boolean;
   open: boolean;
   opened: boolean;

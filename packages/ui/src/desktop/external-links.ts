@@ -1,4 +1,4 @@
-export type OutgoingLink = { url: string | null };
+type OutgoingLink = { url: string | null };
 
 const parse = (href: string): URL | null => {
   try {

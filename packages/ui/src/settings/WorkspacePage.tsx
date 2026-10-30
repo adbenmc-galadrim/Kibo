@@ -17,11 +17,7 @@ type Props = { config: WorkspaceConfig | null };
 
 const currentName = (config: WorkspaceConfig): string => config.workspaceName ?? fr.workspace.defaultName;
 
-export function workspacePatch(
-  config: WorkspaceConfig,
-  name: string,
-  description: string,
-): WorkspacePatch | null {
+function workspacePatch(config: WorkspaceConfig, name: string, description: string): WorkspacePatch | null {
   const patch: WorkspacePatch = {};
   const trimmedName = name.trim();
   if (trimmedName !== currentName(config)) patch.name = trimmedName;

@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useReducer, useState } f
 import { type FocusAction, focusReducer } from "./focus-mode";
 import { createSelectionBus, type SelectionBus } from "./selection-bus";
 
-export type PageState = {
+type PageState = {
   focusedId: string | null;
   dispatch(action: FocusAction): void;
   bus: SelectionBus;

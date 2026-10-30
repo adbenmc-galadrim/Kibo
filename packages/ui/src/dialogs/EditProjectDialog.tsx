@@ -40,7 +40,7 @@ type Props = {
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
 
-export function editFailure(e: unknown): string {
+function editFailure(e: unknown): string {
   if (e instanceof KiboError && e.code === "CONFLICT") return t.folderBusy;
   const known = e instanceof KiboError ? KNOWN[e.code] : undefined;
   if (!known) console.error(e);

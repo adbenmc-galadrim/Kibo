@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export type TabShortcut =
+type TabShortcut =
   | { kind: "newTab" }
   | { kind: "palette" }
   | { kind: "close" }

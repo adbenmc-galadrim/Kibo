@@ -4,7 +4,7 @@ const KIB = 1024;
 const MIB = KIB * 1024;
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
-export const formatBytes = (bytes: number): string => {
+const formatBytes = (bytes: number): string => {
   if (bytes < KIB) return `${bytes} o`;
   if (bytes < MIB) return `${decimal.format(bytes / KIB)} Kio`;
   return `${decimal.format(bytes / MIB)} Mio`;

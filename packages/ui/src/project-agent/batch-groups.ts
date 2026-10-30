@@ -13,7 +13,7 @@ import {
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 
-export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
+type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { field?: string; before: string; after: string };
 export type DiffLabels = {
   status(statusId: string): string;

@@ -9,7 +9,7 @@ const isRetiredTab = (target: TabTarget): boolean => retiredRoute(targetToHash(t
 
 const hiddenTab = (state: TabsState) => (tab: Tab) => tab.id !== state.activeId && isRetiredTab(tab.target);
 
-export function withoutExecutionTabs(state: TabsState): TabsState {
+function withoutExecutionTabs(state: TabsState): TabsState {
   const hidden = hiddenTab(state);
   return {
     ...state,

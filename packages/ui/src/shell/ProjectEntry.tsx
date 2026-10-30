@@ -15,7 +15,7 @@ export type Link = (target: TabTarget | null) => {
   onDoubleClick(e: MouseEvent): void;
 };
 
-export type ProjectEntryProps = {
+type ProjectEntryProps = {
   project: ProjectMeta;
   active: ProjectSnapshot | null;
   activeTarget: TabTarget | null;

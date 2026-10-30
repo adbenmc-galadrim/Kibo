@@ -21,7 +21,7 @@ import { useId, useState } from "react";
 import { client } from "../api";
 import { frInbox } from "../i18n/fr-inbox";
 
-export type FileTicketDialogProps = {
+type FileTicketDialogProps = {
   ticket: TicketView;
   hasChildren: boolean;
   hasLinks: boolean;

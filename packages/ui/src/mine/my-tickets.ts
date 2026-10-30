@@ -7,15 +7,9 @@ import {
 } from "@kibo/schema";
 
 export type MineTab = "assigned" | "agents";
-export type MineGroup = { project: ProjectMeta; tickets: TicketView[] };
+type MineGroup = { project: ProjectMeta; tickets: TicketView[] };
 
-export const MINE_STATUS_ORDER: readonly StatusId[] = [
-  "blocked",
-  "in_progress",
-  "todo",
-  "in_review",
-  "backlog",
-];
+const MINE_STATUS_ORDER: readonly StatusId[] = ["blocked", "in_progress", "todo", "in_review", "backlog"];
 
 const rank = (s: StatusId) => MINE_STATUS_ORDER.indexOf(s);
 const keyNumber = (key: string | null) =>

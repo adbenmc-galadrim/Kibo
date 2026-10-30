@@ -8,7 +8,7 @@ export type ProjectMenuActions = {
   files: (() => void) | null;
   remove(): void;
 };
-export type ProjectMenuTexts = {
+type ProjectMenuTexts = {
   newPage: string;
   planning: string;
   edit: string;

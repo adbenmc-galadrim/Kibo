@@ -2,8 +2,8 @@ import { type ProjectAsset, type ProjectAssetMime, UPLOAD_CHUNK_BYTES } from "@k
 import type { KiboClient } from "@kibo/sdk";
 import { bytesToBase64 } from "@kibo/sdk/lib/base64";
 
-export type UploadRpc = Pick<KiboClient, "rpc">;
-export type Chunk = { index: number; start: number; end: number };
+type UploadRpc = Pick<KiboClient, "rpc">;
+type Chunk = { index: number; start: number; end: number };
 
 export const chunksOf = (size: number): Chunk[] =>
   Array.from({ length: Math.ceil(size / UPLOAD_CHUNK_BYTES) }, (_, index) => ({

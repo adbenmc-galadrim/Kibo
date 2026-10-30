@@ -1,7 +1,7 @@
 import type { Link, ProjectSnapshot, TicketView } from "@kibo/schema";
 
 export type LinkedTicket = { link: Link; ticket: TicketView };
-export type TicketLinks = { blockedBy: LinkedTicket[]; blocks: LinkedTicket[]; related: LinkedTicket[] };
+type TicketLinks = { blockedBy: LinkedTicket[]; blocks: LinkedTicket[]; related: LinkedTicket[] };
 
 const MAX_CANDIDATES = 8;
 

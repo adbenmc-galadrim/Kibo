@@ -129,7 +129,7 @@ function Status({
   }
 }
 
-export type UpdatePanelProps = {
+type UpdatePanelProps = {
   snapshot: UpdateSnapshot;
   activeRuns: number;
   desktop: boolean;

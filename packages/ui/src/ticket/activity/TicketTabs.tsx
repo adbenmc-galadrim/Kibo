@@ -4,7 +4,7 @@ import { frMoments } from "../../i18n/fr-moments";
 import { readSessionPref, writeSessionPref } from "../../lib/session-pref";
 
 export const TICKET_TAB_KEY = "kibo.ticket.tab";
-export type TicketTabId = "details" | "activity";
+type TicketTabId = "details" | "activity";
 
 const TRIGGER = "flex-none px-3 text-sm";
 

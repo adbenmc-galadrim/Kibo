@@ -2,7 +2,7 @@ import type { Page } from "@kibo/schema";
 import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ArrowDown, ArrowUp, ExternalLink, FolderInput, Pencil, Plus, Trash2 } from "lucide-react";
 
-export type PageMenuTexts = {
+type PageMenuTexts = {
   openNewTab: string;
   newSubPage: string;
   rename: string;

@@ -17,7 +17,7 @@ import type { StepFeature } from "@kibo/sdk";
 import { compareMine, isMine } from "./my-tickets";
 
 export type WorkGroup = "toFix" | "inProgress" | "startable" | "waiting";
-export const WORK_GROUPS: readonly WorkGroup[] = ["toFix", "inProgress", "startable", "waiting"];
+const WORK_GROUPS: readonly WorkGroup[] = ["toFix", "inProgress", "startable", "waiting"];
 
 export type WorkItem = {
   project: ProjectMeta;
@@ -68,7 +68,7 @@ function itemOf(
   };
 }
 
-export function groupOf(item: WorkItem): WorkGroup {
+function groupOf(item: WorkItem): WorkGroup {
   if (item.ticket.onHold !== null) return "waiting";
   if (item.changes || item.ci === "error") return "toFix";
   if (ACTIVE.has(item.ticket.statusId)) return "inProgress";

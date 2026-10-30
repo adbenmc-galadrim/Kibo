@@ -1,7 +1,6 @@
 import { type AgentsState, KiboError, type WorkspaceConfig } from "@kibo/schema";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { client } from "../api";
-import { useRunLog as runLogOf } from "./use-run-log";
 
 function unlessUnauthorized(e: unknown): void {
   if (!(e instanceof KiboError && e.code === "UNAUTHORIZED")) throw e;
@@ -38,9 +37,6 @@ export function useConfig(): WorkspaceConfig | null {
   }, []);
   return config;
 }
-
-export type { RunLog } from "./use-run-log";
-export const useRunLog = runLogOf;
 
 export function useNow(intervalMs = 15_000): number {
   const [now, setNow] = useState(() => Date.now());

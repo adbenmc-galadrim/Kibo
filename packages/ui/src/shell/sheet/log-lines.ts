@@ -1,6 +1,6 @@
 import type { CiLog } from "@kibo/schema";
 
-export type LogLine = { n: number; text: string; error: boolean };
+type LogLine = { n: number; text: string; error: boolean };
 
 const GITHUB_STAMP = /^\uFEFF?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d+Z/;
 const shortStamp = (line: string) => line.replace(GITHUB_STAMP, "$1Z");

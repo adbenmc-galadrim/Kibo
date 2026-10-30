@@ -4,7 +4,7 @@ import { failureText } from "../../lib/remote-error";
 import { useProjectAgent } from "../../project-agent/use-project-agent";
 import { type SprintProposal, sprintApplyRequest, sprintProposal } from "./sprint-proposal";
 
-export type SprintProposalState = { proposal: SprintProposal | null; apply(): void; error: string | null };
+type SprintProposalState = { proposal: SprintProposal | null; apply(): void; error: string | null };
 
 export function useSprintProposal(projectId: string, featureKey: string | null): SprintProposalState {
   const { view, reload } = useProjectAgent(projectId);

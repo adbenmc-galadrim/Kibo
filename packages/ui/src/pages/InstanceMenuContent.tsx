@@ -8,7 +8,7 @@ import { configSchemaOf } from "../lib/config-form";
 import { errorMessage } from "../lib/error-message";
 import { ConfirmDialog, InstanceSettingsDialog } from "../shell/lazy-dialogs";
 
-export type InstanceMenuContentProps = {
+type InstanceMenuContentProps = {
   projectId: string;
   instance: Instance;
   title: string;

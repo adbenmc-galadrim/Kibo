@@ -12,7 +12,7 @@ type Props = {
 
 const UNPLANNED = "none";
 
-export const hasSprintField = (ticket: Pick<TicketView, "parentId" | "progress">): boolean =>
+const hasSprintField = (ticket: Pick<TicketView, "parentId" | "progress">): boolean =>
   ticket.parentId === null && ticket.progress.total === 0;
 
 export function SprintField({ ticket, sprints, editable, command }: Props) {

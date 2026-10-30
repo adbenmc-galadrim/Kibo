@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 
-export const NARROW_QUERY = "(max-width: 1179px)";
+const NARROW_QUERY = "(max-width: 1179px)";
 const NARROW_OPEN_KEY = "kibo.sidebar.narrow-open";
 
 const media = (): MediaQueryList | null =>

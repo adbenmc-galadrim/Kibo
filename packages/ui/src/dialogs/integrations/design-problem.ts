@@ -6,7 +6,7 @@ import { frIntegrations } from "../../i18n/fr-integrations";
 const t = frDesign.connect;
 const LACKS_TOOLS = /lacks tools: (.+)$/;
 
-export type ConnectMode = "figma-token" | "figma-mcp" | "penpot";
+type ConnectMode = "figma-token" | "figma-mcp" | "penpot";
 export type ConnectProblem = {
   tone: "error" | "warning";
   title: string;

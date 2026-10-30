@@ -2,7 +2,7 @@ import { type CiRun, KiboError, type ProjectEvent, type TicketView } from "@kibo
 import { useEffect, useState } from "react";
 import { client } from "../api";
 
-export const JOURNAL_LIMIT = 50;
+const JOURNAL_LIMIT = 50;
 
 const quiet = (what: string) => (e: unknown) => {
   if (!(e instanceof KiboError && e.code === "NOT_CONNECTED")) console.warn(`[kibo] ${what} unavailable`, e);

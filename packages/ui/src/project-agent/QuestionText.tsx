@@ -2,7 +2,7 @@ import type { ProjectSnapshot, Question, QuestionRecipient, TicketView } from "@
 import { QuestionPreview } from "@kibo/sdk";
 import { createContext, useContext } from "react";
 
-export type QuestionLinks = {
+type QuestionLinks = {
   questions: readonly Question[];
   recipients: readonly QuestionRecipient[];
   ticketOf(question: Question): Pick<TicketView, "id" | "keyLabel" | "title">;

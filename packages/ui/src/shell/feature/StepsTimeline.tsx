@@ -4,7 +4,7 @@ import type { StepModel } from "./feature-model";
 import { HeldSteps } from "./HeldSteps";
 import { StepRow } from "./StepRow";
 
-export type HeldPart = { steps: readonly StepModel[]; projectId: string; editable: boolean };
+type HeldPart = { steps: readonly StepModel[]; projectId: string; editable: boolean };
 
 type Props = {
   steps: readonly StepModel[];

@@ -22,7 +22,7 @@ import { SCREENS } from "./screens";
 import { findTicket } from "./target-hash";
 
 export type TabDescription = { title: string; icon: LucideIcon; color: string | null; missing: boolean };
-export type DescribeContext = {
+type DescribeContext = {
   projects: ProjectSummary[];
   snapshots: Map<string, ProjectSnapshot>;
   runs?: readonly RunView[];

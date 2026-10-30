@@ -29,7 +29,7 @@ import { displayName } from "../lib/inbox";
 import { type Host, useOptionalHost } from "../shell/Host";
 import { FeatureSelect, NO_FEATURE, placementOf } from "./FeatureSelect";
 
-export type NewTicketDialogProps = {
+type NewTicketDialogProps = {
   projects: readonly ProjectMeta[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
   initialProjectId: string;

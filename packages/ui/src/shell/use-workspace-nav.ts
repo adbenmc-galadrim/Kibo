@@ -4,7 +4,7 @@ import type { TabsApi } from "../tabs/use-tabs";
 
 type Deps = { tabs: TabsApi; forget(projectId: string): void };
 
-export type WorkspaceNav = {
+type WorkspaceNav = {
   go(target: TabTarget | null, newTab?: boolean, keep?: boolean): void;
   goHome(): void;
   closeProject(projectId: string): void;

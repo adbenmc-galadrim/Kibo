@@ -2,7 +2,7 @@ import { type IntegrationStatus, KiboError } from "@kibo/schema";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 
-export type IntegrationsState = {
+type IntegrationsState = {
   statuses: IntegrationStatus[];
   error: KiboError | null;
   loading: boolean;

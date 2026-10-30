@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { frNewTicket } from "../i18n/fr-new-ticket";
 
 export const NO_FEATURE = "none";
-export const NEW_FEATURE = "new";
+const NEW_FEATURE = "new";
 
 type Props = { id: string; tickets: readonly TicketView[]; value: string; onChange(value: string): void };
 
@@ -18,7 +18,7 @@ export function placementOf(parentId: string | null | undefined, feature: string
 
 const order = (t: TicketView): number => Number(featureLabel(t).slice(1)) || 0;
 
-export const featureChoices = (tickets: readonly TicketView[]): TicketView[] =>
+const featureChoices = (tickets: readonly TicketView[]): TicketView[] =>
   tickets.filter((t) => t.parentId === null && t.shortKey !== null).sort((a, b) => order(a) - order(b));
 
 export function FeatureSelect({ id, tickets, value, onChange }: Props) {

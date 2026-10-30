@@ -32,7 +32,7 @@ export function mainPr(refs: readonly ExternalRef[]): GithubPrRef | null {
 }
 
 type HeaderProject = Pick<ProjectSnapshot, "tickets" | "sprints">;
-export type HeaderContext = {
+type HeaderContext = {
   feature: string | null;
   sprint: string | null;
   pr: GithubPrRef | null;
@@ -48,8 +48,8 @@ export function headerContext(ticket: TicketView, project: HeaderProject): Heade
   return { feature, sprint, pr, text };
 }
 
-export type AlertPart = { text: string; tone: "amber" | "red" };
-export type TrackingAlert = {
+type AlertPart = { text: string; tone: "amber" | "red" };
+type TrackingAlert = {
   pr: GithubPrRef;
   tone: "amber" | "red";
   parts: AlertPart[];
@@ -64,7 +64,7 @@ export const failedJobOf = (run: Pick<CiRun, "jobs">): CiJobSummary | null =>
 export const jobUrl = (run: Pick<CiRun, "url">, job: Pick<CiJobSummary, "jobId"> | null): string =>
   job !== null && RUN_URL.test(run.url) ? `${run.url}/job/${job.jobId}` : run.url;
 
-export const checksUrl = (pr: Pick<GithubPrRef, "url">): string => `${pr.url}/checks`;
+const checksUrl = (pr: Pick<GithubPrRef, "url">): string => `${pr.url}/checks`;
 
 function jobLinkOf(pr: GithubPrRef, run: CiRun | null): NonNullable<TrackingAlert["job"]> {
   if (run === null) return { name: pr.failedCheck ?? null, url: checksUrl(pr) };
@@ -75,7 +75,7 @@ function jobLinkOf(pr: GithubPrRef, run: CiRun | null): NonNullable<TrackingAler
 const runsOf = (pr: GithubPrRef, runs: readonly CiRun[]) =>
   latestCiRunPerWorkflow(runs.filter((r) => r.prNumber === pr.number));
 
-export function ciRunOf(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): CiRun | null {
+function ciRunOf(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): CiRun | null {
   return runsOf(pr, runs).find((r) => ciTone(r) === tone) ?? null;
 }
 
@@ -94,7 +94,7 @@ export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): Track
   return { pr, tone, parts, job };
 }
 
-export type CiDetail = { tone: CiTone; job: string | null; at: number | null; url: string | null };
+type CiDetail = { tone: CiTone; job: string | null; at: number | null; url: string | null };
 
 export function ciDetail(
   pr: GithubPrRef,

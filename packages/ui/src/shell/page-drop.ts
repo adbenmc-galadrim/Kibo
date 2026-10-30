@@ -2,7 +2,7 @@ import type { Page } from "@kibo/schema";
 import { descendantIds } from "./page-menu";
 
 export type DropZone = { kind: "root" } | { kind: "before" | "inside" | "after"; pageId: string };
-export type PageMove = { pageId: string; parentId: string | null; index?: number };
+type PageMove = { pageId: string; parentId: string | null; index?: number };
 
 const ROOT = "root";
 const KINDS = ["before", "inside", "after"] as const;

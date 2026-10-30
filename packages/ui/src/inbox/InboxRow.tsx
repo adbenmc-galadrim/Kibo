@@ -9,7 +9,7 @@ import { Ellipsis, FolderInput } from "lucide-react";
 import { frInbox as t } from "../i18n/fr-inbox";
 import { inboxMenuEntries } from "./inbox-menu";
 
-export type InboxRowProps = {
+type InboxRowProps = {
   ticket: TicketView;
   workflow: readonly Status[];
   onOpen(): void;

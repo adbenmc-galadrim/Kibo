@@ -61,7 +61,7 @@ export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][num
 };
 
 type Startability = Pick<TicketView, "id" | "startable" | "startReason">;
-export type NextStartable<S> = { step: S; reason: StartReason | null };
+type NextStartable<S> = { step: S; reason: StartReason | null };
 
 const isTouchUp = (s: Pick<FeatureStep, "statusId" | "pr">): boolean =>
   s.statusId === "in_review" && s.pr !== null && liveReview(s.pr) === "changes_requested";
@@ -85,7 +85,7 @@ export type SprintFacts = {
   warning: SprintWarning | null;
 };
 
-export type SprintClock = { today: string; steps: readonly FeatureStep[] };
+type SprintClock = { today: string; steps: readonly FeatureStep[] };
 
 function warningOf(sprint: SprintView, state: FeatureState | null, clock: SprintClock): SprintWarning | null {
   if (state === null || state.status === "delivered") return null;

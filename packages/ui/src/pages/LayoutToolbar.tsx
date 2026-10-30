@@ -1,7 +1,7 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { frLayout } from "../i18n/fr-layout";
 
-export type LayoutToolbarProps = {
+type LayoutToolbarProps = {
   changes: number;
   saving: boolean;
   failure: string | null;

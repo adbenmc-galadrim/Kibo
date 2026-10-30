@@ -6,7 +6,7 @@ import { componentRef, findBuiltin } from "../registry";
 import { OpenViewDialog } from "./lazy-dialogs";
 
 type Pending = { projectId: string; componentId: string; spotlight: Spotlight | null };
-export type OpenView = {
+type OpenView = {
   openView(componentId: string, projectId?: string, spotlight?: Spotlight): void;
   dialog: ReactNode;
 };

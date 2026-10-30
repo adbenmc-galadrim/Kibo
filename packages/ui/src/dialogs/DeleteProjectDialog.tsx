@@ -22,16 +22,16 @@ type Props = {
   onClose(): void;
   onDeleted(projectId: string): void;
 };
-export type DeleteVariant = "busy" | "delete";
+type DeleteVariant = "busy" | "delete";
 
 const t = frProject.remove;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
 
-export const deleteVariant = (activeRuns: number): DeleteVariant => (activeRuns > 0 ? "busy" : "delete");
+const deleteVariant = (activeRuns: number): DeleteVariant => (activeRuns > 0 ? "busy" : "delete");
 
-export const nameMatches = (typed: string, name: string): boolean => typed.trim() === name;
+const nameMatches = (typed: string, name: string): boolean => typed.trim() === name;
 
-export function deleteFailure(e: unknown): string {
+function deleteFailure(e: unknown): string {
   const known = e instanceof KiboError ? KNOWN[e.code] : undefined;
   if (!known) console.error(e);
   return `${t.failed} ${known ?? errorMessage(e)}`;

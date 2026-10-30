@@ -1,5 +1,5 @@
 export type MarkMode = "dark" | "light" | "auto";
-export type MarkCard = { x: number; y: number; w: number; h: number; fill: "ink" | "brand"; opacity: number };
+type MarkCard = { x: number; y: number; w: number; h: number; fill: "ink" | "brand"; opacity: number };
 
 export const BRAND = "#F97316";
 export const CARD_RADIUS = 4;

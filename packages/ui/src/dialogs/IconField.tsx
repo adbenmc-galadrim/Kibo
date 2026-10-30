@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { frFields } from "../i18n/fr-fields";
 import { IconFileError, iconDataUrl, readIconFile } from "./icon-file";
 
-export type IconFieldProps = {
+type IconFieldProps = {
   label: string;
   currentUrl: string | null;
   pending: IconInput | null;

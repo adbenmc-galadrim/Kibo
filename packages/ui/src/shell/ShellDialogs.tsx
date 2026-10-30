@@ -31,7 +31,7 @@ import { FilePreviewSheet } from "./lazy-screens";
 import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
-export { type DialogsState, type NewTicketRequest, NO_DIALOG, type SheetTicket } from "./dialogs-state";
+export { type DialogsState, NO_DIALOG } from "./dialogs-state";
 
 const SprintSheet = lazyPanel(() => import("./sprint/SprintSheet").then((m) => m.SprintSheet), fr.lazy, {
   fallback: "sr-only",

@@ -2,7 +2,7 @@ import { KiboError, type RunLogEntry } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { client } from "../api";
 
-export type RunLog = { log: RunLogEntry[] | null; missing: boolean; empty: boolean };
+type RunLog = { log: RunLogEntry[] | null; missing: boolean; empty: boolean };
 
 const NO_LOG: RunLog = { log: null, missing: false, empty: false };
 

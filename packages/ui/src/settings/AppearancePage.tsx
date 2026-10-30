@@ -9,7 +9,7 @@ const SEGMENT =
   "h-7 rounded-md px-3 text-xs text-muted-foreground hover:bg-transparent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm";
 const isPreference = (v: string): v is ThemePreference => THEME_PREFERENCES.some((p) => p === v);
 
-export function ThemeSegment() {
+function ThemeSegment() {
   const preference = useThemePreference();
   return (
     <ToggleGroup

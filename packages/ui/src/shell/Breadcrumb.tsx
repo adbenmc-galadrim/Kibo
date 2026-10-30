@@ -6,7 +6,7 @@ import { SCREENS } from "../tabs/screens";
 import { findTicket } from "../tabs/target-hash";
 import { featureOf, planningPageOf } from "./nav/planning-missing";
 
-export type Crumb = { label: string; target: TabTarget | null; color?: string };
+type Crumb = { label: string; target: TabTarget | null; color?: string };
 
 const text = (label: string): Crumb => ({ label, target: null });
 

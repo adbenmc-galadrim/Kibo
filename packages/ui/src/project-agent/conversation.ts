@@ -27,12 +27,12 @@ export type PanelStatus = "ready" | "queued" | "thinking";
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
 const t = frProjectAgent.conversation;
-export function wakeupText(text: string): string {
+function wakeupText(text: string): string {
   const count = wakeupCount(text);
   return count === null ? frWakeup.label : frWakeup.event(count);
 }
 
-export function readingTool(payload: HookPayload): string | null {
+function readingTool(payload: HookPayload): string | null {
   if (payload.event !== "PostToolUse" || !payload.tool?.startsWith(KIBO_PREFIX)) return null;
   const name = payload.tool.slice(KIBO_PREFIX.length);
   if (NOT_READS.has(name)) return null;

@@ -11,7 +11,7 @@ import { FormatMenu } from "./FormatMenu";
 import type { ArrowKey, ResizeEdge } from "./layout-resize";
 import { type Pointer, ResizeHandles } from "./ResizeHandles";
 
-export type EditorWidgetProps = {
+type EditorWidgetProps = {
   instance: Instance;
   title: string;
   layout: Layout;
