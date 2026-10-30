@@ -7,7 +7,7 @@ type Dates = Pick<Sprint, "start" | "end">;
 export const lingeringDates = (next: Pick<Sprint, "code" | "start">): string =>
   fr.sprint.nextStarts(next.code, weekdayDayMonth(next.start));
 
-export function phaseLabel(phase: SprintPhase, sprint: Dates): string {
+function phaseLabel(phase: SprintPhase, sprint: Dates): string {
   const t = fr.sprint.phase;
   if (phase === "ended") return t.ended(dayMonth(sprint.end));
   if (phase === "upcoming") return t.upcoming(dayMonth(sprint.start));

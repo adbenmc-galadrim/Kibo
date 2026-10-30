@@ -42,7 +42,7 @@ export function toFix(ticket: Pick<TicketView, "externalRefs">, ciRuns: readonly
   return liveReview(pr) === "changes_requested" || prCiTone(pr, ciRuns) === "error";
 }
 
-export type FilterFacts = { currentSprintId: string | null; ciRuns: readonly CiRun[] };
+type FilterFacts = { currentSprintId: string | null; ciRuns: readonly CiRun[] };
 
 function matches(ticket: TicketView, filter: KanbanFilterKey, facts: FilterFacts): boolean {
   if (filter === "sprint") return inCurrentSprint(ticket, facts.currentSprintId);

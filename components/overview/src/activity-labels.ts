@@ -1,7 +1,7 @@
 import { DELIVERY_STEP_LABELS, type ProjectEvent, type ProjectEventKind } from "@kibo/schema";
 import { phaseLabel } from "@kibo/sdk";
 
-export type ActivityContext = {
+type ActivityContext = {
   subject: string;
   statusName(statusId: string): string;
   questionRef(questionId: string): string | null;

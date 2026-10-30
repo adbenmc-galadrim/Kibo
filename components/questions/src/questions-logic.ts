@@ -82,7 +82,7 @@ export function lastExportedAt(q: Question): number | null {
   return exports.length > 0 ? Math.max(...exports) : q.sentAt;
 }
 
-export const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
+const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
 
 const byKey = (a: TicketView, b: TicketView): number =>
   a.keyLabel.localeCompare(b.keyLabel, "fr", { numeric: true });

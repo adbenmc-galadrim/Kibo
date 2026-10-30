@@ -96,7 +96,7 @@ export type SprintLanesInput = {
   today: string | null;
 };
 
-export const RESERVE_LANE = "reserve";
+const RESERVE_LANE = "reserve";
 
 type Feature = TicketView & { feature: FeatureState };
 type Facts = {

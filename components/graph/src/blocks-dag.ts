@@ -1,6 +1,6 @@
 import type { GraphEdge, GraphTicket } from "./critical-path";
 
-export type BlocksDag = { order: string[]; succ: Map<string, string[]>; pred: Map<string, string[]> };
+type BlocksDag = { order: string[]; succ: Map<string, string[]>; pred: Map<string, string[]> };
 
 export function compareKeys(a: string | null, b: string | null): number {
   if (a === null || b === null) return a === b ? 0 : a === null ? 1 : -1;

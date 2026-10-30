@@ -34,7 +34,7 @@ export type PrStack = {
 };
 export type PrCounts = { open: number; stacks: number; waiting: number; changes: number };
 export type PrStacksModel = { stacks: PrStack[]; rail: string | null; counts: PrCounts };
-export type PrStacksInput = { tickets: readonly TicketView[] };
+type PrStacksInput = { tickets: readonly TicketView[] };
 
 type LivePr = { pr: GithubPrRef; ticket: TicketView };
 type ById = ReadonlyMap<string, TicketView>;

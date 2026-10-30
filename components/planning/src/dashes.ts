@@ -15,7 +15,7 @@ export function dashStops(phase: number, color: string): string {
 
 type Box = { width: number; height: number; radius: number; color: string };
 
-export type DashedSides = {
+type DashedSides = {
   backgroundImage: string;
   backgroundPosition: string;
   backgroundSize: string;

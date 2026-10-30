@@ -11,7 +11,7 @@ import { fr } from "./fr";
 import { sizeOf } from "./frame-size";
 
 export type FullscreenFrame = { url: string; frame: DesignFrame };
-export type FrameFullscreenProps = {
+type FrameFullscreenProps = {
   open: boolean;
   onOpenChange(open: boolean): void;
   frames: readonly FullscreenFrame[];

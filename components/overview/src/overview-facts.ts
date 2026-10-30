@@ -45,7 +45,7 @@ export function featureFacts(tickets: readonly TicketView[], links: readonly Lin
   });
 }
 
-export function rootOf(ticketId: string, byId: ReadonlyMap<string, TicketView>): TicketView | null {
+function rootOf(ticketId: string, byId: ReadonlyMap<string, TicketView>): TicketView | null {
   const seen = new Set<string>();
   let current = byId.get(ticketId) ?? null;
   while (current !== null && current.parentId !== null && !seen.has(current.id)) {
@@ -60,7 +60,7 @@ export function featureKeyOf(ticketId: string | null, byId: ReadonlyMap<string, 
   return rootOf(ticketId, byId)?.shortKey ?? null;
 }
 
-export const questionRef = (q: Question): string => q.importRef?.id ?? q.title;
+const questionRef = (q: Question): string => q.importRef?.id ?? q.title;
 
 export function blockingRefs(questions: readonly Question[]): Map<string, string> {
   const refs = new Map<string, string>();

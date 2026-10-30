@@ -19,7 +19,7 @@ import {
 } from "@kibo/schema";
 import type { MarkedRow, RowMark, TimelineColumnInput } from "@kibo/sdk/tracking";
 
-export type BandsInput = {
+type BandsInput = {
   tickets: readonly TicketView[];
   links: readonly Link[];
   sprints: readonly SprintView[];

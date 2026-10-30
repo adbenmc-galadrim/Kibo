@@ -4,10 +4,10 @@ export const NODE_W = 364;
 export const NODE_H = 92;
 export const GAP_Y = 44;
 export const GAP_X = 24;
-export const COL_MIN = 388;
+const COL_MIN = 388;
 export const PAD = 16;
 export const RAIL_BOTTOM = 118;
-export const HEAD_H = 62;
+const HEAD_H = 62;
 export const STEM = 26;
 export const RAIL_LINE = 4;
 

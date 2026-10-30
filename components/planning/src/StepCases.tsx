@@ -5,7 +5,7 @@ import type { StepCase } from "./planning-model";
 const INNER_WIDTH = 170;
 const GAP = 3;
 
-export const caseWidth = (count: number): number =>
+const caseWidth = (count: number): number =>
   Math.max(2, Math.floor((INNER_WIDTH - GAP * (count - 1)) / Math.max(1, count)));
 
 export function StepCases({ steps }: { steps: readonly StepCase[] }) {

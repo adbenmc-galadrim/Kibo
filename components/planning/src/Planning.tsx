@@ -29,7 +29,7 @@ import { useNewFeatureIntent } from "./use-new-feature-intent";
 
 const COLUMN_STEP = 226;
 
-export const columnSteps: KeyboardCoordinateGetter = (event, { currentCoordinates }) => {
+const columnSteps: KeyboardCoordinateGetter = (event, { currentCoordinates }) => {
   const shift: Record<string, number> = { ArrowRight: COLUMN_STEP, ArrowLeft: -COLUMN_STEP };
   const dx = shift[event.code];
   if (dx === undefined) return undefined;

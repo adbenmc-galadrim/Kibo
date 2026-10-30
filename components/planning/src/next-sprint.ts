@@ -1,6 +1,6 @@
 import { addDays, dayNumber, nextMonday, type Sprint } from "@kibo/schema";
 
-export type ProposedSprint = { code: string; name: string; start: string; end: string };
+type ProposedSprint = { code: string; name: string; start: string; end: string };
 type SprintDates = Pick<Sprint, "code" | "start" | "end">;
 
 const DEFAULT_LENGTH = 4;

@@ -48,7 +48,7 @@ function EmptyPlanning({ onNewFeature }: { onNewFeature(): void }) {
   );
 }
 
-export type PlanningViewProps = Omit<HeldHandlers, "onOpen"> & {
+type PlanningViewProps = Omit<HeldHandlers, "onOpen"> & {
   model: PlanningModel;
   target: string | null;
   dragged: Card | null;

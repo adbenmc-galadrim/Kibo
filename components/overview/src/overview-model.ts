@@ -77,7 +77,7 @@ const segmentsOf = (step: number | null): Segment[] =>
     step === null || i > step ? "todo" : i < step ? "done" : "current",
   );
 
-export function nowRows(tickets: readonly TicketView[], now: number): NowRow[] {
+function nowRows(tickets: readonly TicketView[], now: number): NowRow[] {
   const byId = new Map(tickets.map((t) => [t.id, t]));
   return tickets
     .flatMap((t) => (t.session === null ? [] : [{ t, session: t.session }]))

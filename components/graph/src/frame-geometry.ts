@@ -14,12 +14,12 @@ export const FRAME_GAP = 6;
 export const FRAME_HEAD_H = 14;
 export const TITLE_LINE_H = 15;
 export const SEGMENT_H = 5;
-export const STEP_ROW_H = 24;
-export const FOOTER_H = 14;
+const STEP_ROW_H = 24;
+const FOOTER_H = 14;
 export const STACK_GAP = 30;
 export const FIRST_FRAME_Y = 70;
 export const LANE_MARGIN = 14;
-export const NARROW_LANE_MARGIN = 12;
+const NARROW_LANE_MARGIN = 12;
 
 const TITLE_PX = 12.5;
 const STEP_PX = 11.5;
@@ -32,9 +32,9 @@ const SNAP_OFFSET = 2;
 export const textWidth = (text: string, px: number): number =>
   [...text].reduce((sum, c) => sum + (GLYPHS.find(([r]) => r.test(c))?.[1] ?? DEFAULT_GLYPH), 0) * px;
 
-export const titleWidth = (title: string): number => textWidth(title, TITLE_PX);
+const titleWidth = (title: string): number => textWidth(title, TITLE_PX);
 
-export type SizedStep = { title: string; session: boolean };
+type SizedStep = { title: string; session: boolean };
 
 const rowWidth = (s: SizedStep): number =>
   textWidth(s.title, STEP_PX) + STEP_ROW_CHROME + (s.session ? SESSION_DOT : 0);
@@ -47,7 +47,7 @@ export function frameWidth(title: string, steps: readonly SizedStep[]): number {
 }
 
 export type TitleLines = 1 | 2 | 3;
-export const TITLE_MAX_LINES = 3;
+const TITLE_MAX_LINES = 3;
 
 export function wrapTitle(title: string, width: number): string[] {
   const inner = width - 2 * FRAME_PAD;

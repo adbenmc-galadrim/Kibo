@@ -54,7 +54,7 @@ export type NextCard = FeatureLine & {
   remaining: RemainingStep[];
   deliver: { ticketId: string; key: string; command: string } | null;
 };
-export type SprintInput = {
+type SprintInput = {
   tickets: readonly TicketView[];
   sprints: readonly SprintView[];
   features: readonly FeatureFacts[];

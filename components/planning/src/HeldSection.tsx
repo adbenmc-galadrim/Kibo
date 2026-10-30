@@ -11,7 +11,7 @@ export type HeldHandlers = {
 };
 type Props = HeldHandlers & { groups: readonly HeldGroup[] };
 
-export function heldEntries(step: HeldStep, handlers: HeldHandlers): MenuEntry[] {
+function heldEntries(step: HeldStep, handlers: HeldHandlers): MenuEntry[] {
   const resume: MenuEntry = { label: fr.held.resume, icon: Play, onSelect: () => handlers.onResume(step) };
   if (step.resumeTargets.length === 0) return [resume];
   const items = step.resumeTargets.map((s) => ({

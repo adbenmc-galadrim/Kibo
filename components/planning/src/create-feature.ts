@@ -1,7 +1,7 @@
 import type { Ticket } from "@kibo/schema";
 import type { KiboSdk } from "@kibo/sdk";
 
-export type FeatureDraft = {
+type FeatureDraft = {
   name: string;
   expected: string;
   sprintId: string | null;
@@ -11,7 +11,7 @@ export type FeatureDraft = {
 
 type FeatureSdk = Pick<KiboSdk, "run" | "sprints">;
 
-export type FeatureProgress = {
+type FeatureProgress = {
   rootId: string | null;
   stepIds: string[];
   optional: boolean;

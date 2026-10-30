@@ -25,7 +25,7 @@ export function QuestionAuthor({ actor }: { actor: Actor }) {
   return <HumanAuthor actor={actor} />;
 }
 
-export const answerValue = (q: Question): string =>
+const answerValue = (q: Question): string =>
   q.answer === null ? "" : q.answer.kind === "text" ? q.answer.text : (q.answer.option ?? "");
 
 export function QuestionAnswerLine({ question, now }: { question: Question; now: number }) {

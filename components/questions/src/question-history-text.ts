@@ -3,7 +3,7 @@ import { fr } from "./fr";
 import { actorName, recipientName, relativeAge } from "./questions-logic";
 
 type QuestionState = Required<QuestionEvent["previous"]>;
-export type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
+type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
 export type HistoryContext = {
   recipients: readonly QuestionRecipient[];
   ticketLabel(ticketId: string): string;

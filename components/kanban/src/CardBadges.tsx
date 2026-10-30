@@ -26,7 +26,7 @@ import {
 import { fr } from "./fr";
 import { ticketPr } from "./ticket-pr";
 
-export const BADGE_CLASS =
+const BADGE_CLASS =
   "inline-flex h-[18px] max-w-full items-center gap-1 rounded-[4px] px-1.5 text-[11px] font-medium leading-none";
 const OUTLINED = cn(BADGE_CLASS, "border border-(--tracking-border) text-(--tracking-mfg)");
 

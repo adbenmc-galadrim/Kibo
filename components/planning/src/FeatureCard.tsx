@@ -10,7 +10,7 @@ import { PenpotStroke } from "./PenpotStroke";
 import type { FeatureCard as Card } from "./planning-model";
 import { StepCases } from "./StepCases";
 
-export const CARD_CLASS =
+const CARD_CLASS =
   "flex w-full flex-col gap-2 rounded-[8px] border bg-(--tracking-card) px-[11px] py-[9px] text-left";
 
 function CardFooter({ card }: { card: Card }) {
@@ -60,7 +60,7 @@ function CardMenu({ card, entries }: { card: Card; entries: readonly MenuEntry[]
 
 const TITLE_CLASS = "line-clamp-2 text-left font-medium text-[13px] leading-[16px]";
 
-export function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyProps) {
+function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyProps) {
   const tone = card.muted ? "text-(--tracking-mfg)" : "text-(--tracking-fg)";
   return (
     <>
