@@ -15,6 +15,7 @@ export const DROPPED_KIBO_TABLES: readonly string[] = [
   "sync_outbox",
   "sync_config",
   "sync_projects",
+  "app_settings",
 ];
 
 type LegacyKiboResult = { droppedTables: string[]; removedRemoteSessions: number };

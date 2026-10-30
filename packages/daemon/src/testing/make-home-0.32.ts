@@ -85,6 +85,8 @@ const DEAD_KIBO = [
   "INSERT INTO sync_config VALUES (1, 'wss://sync.silo.test', NULL, 'u-adam', 'd-mac', 'Adam')",
   "CREATE TABLE sync_projects (projectId TEXT PRIMARY KEY, enabled INTEGER NOT NULL, role TEXT NOT NULL, lastServerVersion BLOB, lastSyncAt INTEGER, lastError TEXT, accessRevoked INTEGER NOT NULL)",
   `INSERT INTO sync_projects VALUES ('${FIXTURE_032.projectId}', 0, 'owner', NULL, NULL, NULL, 0)`,
+  "CREATE TABLE app_settings (key TEXT PRIMARY KEY, json TEXT NOT NULL, updated_at INTEGER NOT NULL)",
+  `INSERT INTO app_settings VALUES ('agentExecution', '"hidden"', 1)`,
   "CREATE TABLE component_events (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, project_id TEXT NOT NULL, instance_id TEXT NOT NULL, ref TEXT NOT NULL, kind TEXT NOT NULL, code TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 1)",
   "INSERT INTO component_events (at, project_id, instance_id, ref, kind, code) VALUES (1, 'x', 'i', 'notes', 'refusal', 'DENIED')",
   "CREATE TABLE project_events (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL, at INTEGER NOT NULL, kind TEXT NOT NULL, ticket_id TEXT, feature_id TEXT, source TEXT NOT NULL, data TEXT NOT NULL)",

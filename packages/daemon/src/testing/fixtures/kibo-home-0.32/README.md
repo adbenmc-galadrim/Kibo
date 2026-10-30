@@ -12,7 +12,7 @@ Contenu :
 - `kibo.db` : le doc de l'espace de travail, `project_events`, `component_events` (gardée),
   `remote_sessions` (une locale, une distante) et les tables mortes `agent_settings`,
   `file_versions`, `component_drafts`, `market_*`, `sync_items`, `sync_cursors`, `sync_outbox`
-  (liaisons GitHub Issues), `sync_config` et `sync_projects` (sync d'équipe).
+  (liaisons GitHub Issues), `sync_config` et `sync_projects` (sync d'équipe), `app_settings` (réglages retirés).
 - `runs/<id>/` : un dossier par run.
 
 Régénérer depuis `packages/daemon` :
