@@ -1,21 +1,31 @@
 import { expect, mock, spyOn, test } from "bun:test";
 import type { GithubPrRef, ProjectSnapshot, RpcRequest, TicketView } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { siloSnapshot, summaryOf, ticket } from "./today-fixtures";
 
+let getProjectCalls = 0;
+
 mock.module("../api", () =>
   apiMock({
     client: {
-      rpc: (req: RpcRequest) =>
-        Promise.resolve(req.method === "t3.status" ? { available: true, bin: "t3" } : null),
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getProject") {
+          getProjectCalls += 1;
+          return Promise.resolve(siloSnapshot());
+        }
+        return Promise.resolve(req.method === "t3.status" ? { available: true, bin: "t3" } : null);
+      },
       subscribe: () => () => {},
     },
   }),
 );
 
 const { TodayPage } = await import("./TodayPage");
+const snapshotsModule = "../state/use-snapshots?today";
+const { useSnapshots }: typeof import("../state/use-snapshots") = await import(snapshotsModule);
+const { projectStore } = await import("../state/project-store");
 
 const NOW = Date.parse("2026-10-16T12:00:00Z");
 
@@ -133,6 +143,39 @@ test("Nouveau projet opens the dialog", async () => {
   show(project([]), { onNewProject: () => created.push(true) });
   await userEvent.click(screen.getByRole("button", { name: "Nouveau projet" }));
   expect(created).toEqual([true]);
+});
+
+const SILO_IDS = ["silo"];
+
+function Pages({ today }: { today: boolean }) {
+  const snapshots = useSnapshots(SILO_IDS);
+  const silo = snapshots.get("silo");
+  if (!today || silo === undefined) return <p>Autre page</p>;
+  return (
+    <TodayPage
+      projects={[summaryOf(silo)]}
+      snapshots={snapshots}
+      now={NOW}
+      onNewProject={() => {}}
+      onOpenProject={() => {}}
+      onOpenTicket={() => {}}
+    />
+  );
+}
+
+test("0 getProject when coming back to a page already seen", async () => {
+  projectStore.reset();
+  getProjectCalls = 0;
+  const { rerender, unmount } = render(<Pages today />);
+  await screen.findByRole("heading", { level: 1, name: "Aujourd'hui" });
+  expect(getProjectCalls).toBe(1);
+  rerender(<Pages today={false} />);
+  rerender(<Pages today />);
+  await act(() => new Promise<void>((r) => setTimeout(r, 150)));
+  expect(screen.getByRole("heading", { level: 1, name: "Aujourd'hui" })).toBeTruthy();
+  expect(getProjectCalls).toBe(1);
+  unmount();
+  projectStore.reset();
 });
 
 function watchedSections(reduce: boolean): boolean {

@@ -76,7 +76,13 @@ const prRow = (number: number, state: TodayPr["state"]): TodayPr => ({
 test("a pull request says where it stands, requested changes in amber", () => {
   render(
     <PrsSection
-      rows={[prRow(20, "changes"), prRow(22, "ci-ok"), prRow(23, "ci-running"), prRow(24, "review")]}
+      rows={[
+        prRow(20, "changes"),
+        prRow(22, "ci-ok"),
+        prRow(23, "ci-running"),
+        prRow(24, "review"),
+        prRow(25, "ci-failed"),
+      ]}
       onOpenTicket={noop}
     />,
   );
@@ -85,6 +91,7 @@ test("a pull request says where it stands, requested changes in amber", () => {
   expect(screen.getByText("à relire · CI verte")).toBeTruthy();
   expect(screen.getByText("à relire · CI en cours")).toBeTruthy();
   expect(screen.getByText("à relire")).toBeTruthy();
+  expect(screen.getByText("à relire · CI rouge")).toBeTruthy();
 });
 
 const projectRow: TodayProject = {

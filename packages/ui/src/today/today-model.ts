@@ -25,7 +25,7 @@ type BlockReason =
   | { kind: "question"; label: string; feature: string | null; detail: string | null }
   | { kind: "status"; detail: string | null };
 export type TodayBlocked = TicketRow & { reason: BlockReason };
-export type TodayPrState = "changes" | "ci-ok" | "ci-running" | "review";
+export type TodayPrState = "changes" | "ci-failed" | "ci-ok" | "ci-running" | "review";
 export type TodayPr = TicketRow & { pr: GithubPrRef; state: TodayPrState };
 export type TodayStartable = TicketRow & {
   feature: { label: string; title: string } | null;
@@ -92,6 +92,7 @@ const prRank = (row: TodayPr): number => (row.state === "changes" ? 0 : 1);
 
 function prState(pr: GithubPrRef): TodayPrState {
   if (pr.review === "changes_requested") return "changes";
+  if (pr.checks === "error") return "ci-failed";
   if (pr.checks === "ok") return "ci-ok";
   return pr.checks === "running" ? "ci-running" : "review";
 }
@@ -180,7 +181,12 @@ export function todayModel(projects: readonly ProjectSnapshot[], today: string):
       ...blocked.filter((b) => b.reason.kind === "status"),
     ],
     blockingQuestions: projects.reduce((n, p) => n + p.questions.filter(isOpenBlockingQuestion).length, 0),
-    prsToReview: projects.flatMap(prRows).sort((a, b) => prRank(a) - prRank(b) || a.pr.number - b.pr.number),
+    prsToReview: projects
+      .flatMap(prRows)
+      .sort(
+        (a, b) =>
+          prRank(a) - prRank(b) || a.projectKey.localeCompare(b.projectKey) || a.pr.number - b.pr.number,
+      ),
     startable: [...startable.filter((s) => s.current), ...startable.filter((s) => !s.current)],
     projects: rows,
   };

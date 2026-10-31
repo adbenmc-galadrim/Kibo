@@ -82,7 +82,43 @@ test("prsToReview puts requested changes first then oldest", () => {
     [30, "changes"],
     [22, "ci-ok"],
     [23, "ci-running"],
-    [24, "review"],
+    [24, "ci-failed"],
+  ]);
+});
+
+test("pull requests of several projects sort by project key, then number", () => {
+  const atlas = project("ATL", [
+    ticket({ id: "a", key: "ATL-1", title: "A", externalRefs: [pr(30)] }),
+    ticket({ id: "b", key: "ATL-2", title: "B", externalRefs: [pr(31, { review: "changes_requested" })] }),
+  ]);
+  const silo = project("SILO", [
+    ticket({ id: "c", key: "SILO-1", title: "C", externalRefs: [pr(5)] }),
+    ticket({ id: "d", key: "SILO-2", title: "D", externalRefs: [pr(4, { review: "changes_requested" })] }),
+  ]);
+  const { prsToReview } = todayModel([silo, atlas], TODAY);
+  expect(prsToReview.map((p) => [p.projectKey, p.pr.number])).toEqual([
+    ["ATL", 31],
+    ["SILO", 4],
+    ["ATL", 30],
+    ["SILO", 5],
+  ]);
+});
+
+test("a failing CI stays visible, an approved pull request stays to review", () => {
+  const silo = project("SILO", [
+    ticket({ id: "a", key: "SILO-1", title: "A", externalRefs: [pr(1, { review: "approved" })] }),
+    ticket({ id: "b", key: "SILO-2", title: "B", externalRefs: [pr(2, { checks: "error" })] }),
+    ticket({
+      id: "c",
+      key: "SILO-3",
+      title: "C",
+      externalRefs: [pr(3, { review: "approved", checks: "error" })],
+    }),
+  ]);
+  expect(todayModel([silo], TODAY).prsToReview.map((p) => p.state)).toEqual([
+    "review",
+    "ci-failed",
+    "ci-failed",
   ]);
 });
 

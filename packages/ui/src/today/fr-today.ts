@@ -28,6 +28,7 @@ export const frToday = {
     title: "PR à relire",
     state: {
       changes: "changements demandés",
+      "ci-failed": "à relire · CI rouge",
       "ci-ok": "à relire · CI verte",
       "ci-running": "à relire · CI en cours",
       review: "à relire",
