@@ -1,6 +1,7 @@
 import type { SprintRecap } from "@kibo/schema";
 import { ArrowRight, CalendarRange, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../lib/utils";
 import { Button } from "../ui/button";
 import { shortRange, trackingFr } from "./fr";
@@ -21,10 +22,10 @@ function Line({ dot, strong, children }: { dot: string; strong: string; children
 
 export function SprintRecapCard({ recap, onOpenPlanning, onClose }: Props) {
   const title = t.title(recap.code);
-  return (
+  return createPortal(
     <section
       aria-label={title}
-      className="fixed right-[16px] bottom-[16px] z-40 flex w-[440px] flex-col gap-[10px] rounded-[10px] border border-(--tracking-border) bg-(--tracking-card) px-[16px] py-[14px] shadow-lg"
+      className="fixed right-[16px] bottom-[16px] z-50 flex w-[440px] flex-col gap-[10px] rounded-[10px] border border-(--tracking-border) bg-(--tracking-card) px-[16px] py-[14px] shadow-lg"
     >
       <header className="flex items-center gap-[8px]">
         <CalendarRange absoluteStrokeWidth size={15} aria-hidden className="text-(--tracking-mfg)" />
@@ -67,6 +68,7 @@ export function SprintRecapCard({ recap, onOpenPlanning, onClose }: Props) {
           <ArrowRight absoluteStrokeWidth size={13} aria-hidden />
         </Button>
       </footer>
-    </section>
+    </section>,
+    document.body,
   );
 }

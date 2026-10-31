@@ -29,6 +29,7 @@ type SprintRecapNext = { sprint: SprintDates; features: readonly SprintEndFeatur
 
 export const STEPS_PER_WEEK = 5;
 const WEEK_DAYS = 7;
+const RECAP_DAYS = 3;
 
 export const sprintWeeks = (sprint: Pick<Sprint, "start" | "end">): number =>
   Math.max(1, Math.round((dayNumber(sprint.end) - dayNumber(sprint.start) + 1) / WEEK_DAYS));
@@ -101,11 +102,11 @@ export function sprintEndFeatures(project: ProjectLinks, sprintId: string): Spri
 }
 
 export function endedSprint<S extends Sprint>(sprints: readonly S[], today: string): S | null {
-  return (
-    sortSprints(sprints)
-      .filter((s) => s.end < today)
-      .at(-1) ?? null
-  );
+  const last = sortSprints(sprints)
+    .filter((s) => s.end < today)
+    .at(-1);
+  if (last === undefined) return null;
+  return dayNumber(today) - dayNumber(last.end) <= RECAP_DAYS ? last : null;
 }
 
 export function endedSprintRecap(

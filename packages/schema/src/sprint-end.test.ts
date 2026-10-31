@@ -84,5 +84,7 @@ test("endedSprint takes the latest sprint over, and nothing before the day after
   if (S42 === undefined || S43 === undefined) throw new Error("sprints");
   expect(endedSprint([S42, S43], S42.end)).toBeNull();
   expect(endedSprint([S42, S43], "2026-10-17")?.code).toBe(S42.code);
+  expect(endedSprint([S42, S43], "2026-10-19")?.code).toBe(S42.code);
+  expect(endedSprint([S42, S43], "2026-10-20")).toBeNull();
   expect(endedSprint([], "2026-10-17")).toBeNull();
 });

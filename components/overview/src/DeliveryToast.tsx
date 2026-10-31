@@ -1,5 +1,6 @@
 import { CircleCheck, X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { DeliverySegments } from "./delivery-segments";
 import { fr } from "./fr";
 import { MONO_KEY } from "./parts";
@@ -41,11 +42,12 @@ type Props = { toasts: readonly DeliveryToastRow[]; onClose(id: string): void };
 
 export function DeliveryToasts({ toasts, onClose }: Props) {
   if (toasts.length === 0) return null;
-  return (
-    <div className="fixed right-[16px] bottom-[16px] z-40 flex flex-col gap-[8px]">
+  return createPortal(
+    <div className="fixed right-[16px] bottom-[16px] z-50 flex flex-col gap-[8px]">
       {toasts.map((toast) => (
         <DeliveryToast key={toast.id} toast={toast} onClose={onClose} />
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }

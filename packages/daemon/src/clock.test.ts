@@ -39,3 +39,13 @@ test("an invalid fixed instant is refused, an absent one leaves the clock free",
   expect(() => parseFixedNow("demain")).toThrow("INVALID_INPUT");
   expect(() => parseFixedNow("2026-10-16")).toThrow("INVALID_INPUT");
 });
+
+test("a fixed clock keeps its day but its ticks stay ordered, for the journal", () => {
+  let system = 1_000;
+  const clock = createClock("2026-10-16T14:52:00+02:00", () => system);
+  const first = clock.ticking();
+  system += 5;
+  expect(clock.ticking()).toBe(first + 5);
+  expect(first).toBe(Date.parse("2026-10-16T14:52:00+02:00"));
+  expect(clock.now()).toBe(first);
+});

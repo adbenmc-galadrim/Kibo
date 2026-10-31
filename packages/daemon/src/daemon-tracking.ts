@@ -60,7 +60,7 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   const { store, service, clock } = input;
   const settings = createProjectSettings(store.db);
   migrateTracking({ docs: service.docs, settings, log: console.error, now: clock.now });
-  const events = startProjectEvents({ store, service, now: Date.now });
+  const events = startProjectEvents({ store, service, now: clock.ticking });
   closers.push(() => events.stop());
   restoreLocalKeys({ docs: service.docs, settings, sink: events.sink, now: clock.now });
   const emit: Service["docs"]["emit"] = (message) => service.docs.emit(message);
