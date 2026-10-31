@@ -7,6 +7,7 @@ import {
   PIXEL_DAEMONS,
   PRS_DAEMONS,
   SCENARIO_DAEMONS,
+  T3_DAEMONS,
 } from "./pixel-projects";
 import { schemeOf } from "./pixel-screen";
 import {
@@ -243,6 +244,7 @@ test("every scenario daemon is in the port check", () => {
     ...PRS_DAEMONS,
     ...APERCU_DAEMONS,
     ...GRAPHE_DAEMONS,
+    ...T3_DAEMONS,
   ]);
 });
 
