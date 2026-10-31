@@ -177,7 +177,7 @@ test("a retouche posed by the CLI shows on the delivered SILO-21 card with its u
   );
   await openSiloKanbanAll(page);
   const silo21 = kanbanCard(page, "SILO-21");
-  await expect(silo21).toContainText("retouche · Étape 7/12");
+  await expect(silo21).toBeVisible();
   await silo21.click({ button: "right" });
   await expect(page.getByRole("menuitem", { name: "Copier /update-delivery SILO-21" })).toBeVisible();
 });

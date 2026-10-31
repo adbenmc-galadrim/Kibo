@@ -38,6 +38,7 @@ const percent = (ratio: number): string => `${(ratio * 100).toFixed(3)} %`;
 
 export async function openPixelPage(page: Page, url: string, height: number): Promise<void> {
   await preparePixelPage(page, { scheme: schemeOf(test.info().project.name), height });
+  if (page.url() !== "about:blank") await page.reload();
   await page.goto(url);
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   await expect(sidebar.getByText("Galadrim", { exact: true })).toBeVisible();

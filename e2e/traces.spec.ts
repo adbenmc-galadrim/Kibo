@@ -84,7 +84,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban and the pa
     await expect.soft(menu.getByRole("menuitem", { name: /^Livrer|Assigner/ })).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    await card.getByRole("button", { name: await ticketTitle(page), exact: true }).click();
+    await card.getByText(await ticketTitle(page), { exact: true }).click();
     const sheet = page.getByRole("dialog");
     await expect(sheet.getByRole("combobox", { name: "Assigné" })).toBeVisible();
     await capture(page, info, "fiche");

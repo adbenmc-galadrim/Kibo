@@ -43,7 +43,10 @@ test("onglets épinglés persistés, raccourcis et palette", async ({ page }, in
   await expect(mine).toBeVisible();
 
   await page.keyboard.press("ControlOrMeta+1");
-  await expect(bar.getByRole("tab", { name: "Aujourd'hui" })).toHaveAttribute("aria-selected", "true");
+  await expect(bar.getByRole("tab", { name: "Aujourd'hui", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await mine.click();
   await page.keyboard.press("ControlOrMeta+w");
   await expect(mine).toHaveCount(0);

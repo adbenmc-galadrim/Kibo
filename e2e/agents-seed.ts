@@ -124,7 +124,7 @@ export function list(value: unknown, key: string): unknown[] {
 
 export async function pairBrowser(page: Page): Promise<void> {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
 }
 
 export async function rpc(page: Page, body: Body): Promise<unknown> {

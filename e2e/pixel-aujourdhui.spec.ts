@@ -20,7 +20,8 @@ const field = (value: unknown, key: string): unknown =>
 async function openToday(page: Page): Promise<void> {
   await pairBrowser(page);
   await openPixelPage(page, "/#/", HEIGHT);
-  await expect(page.getByRole("heading", { level: 1, name: "Aujourd'hui" })).toBeVisible();
+  await page.getByRole("button", { name: "Aujourd'hui", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Aujourd'hui", exact: true })).toBeVisible();
   await expect(page.getByRole("main").getByText("Nimbus")).toBeVisible();
 }
 

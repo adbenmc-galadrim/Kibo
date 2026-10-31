@@ -17,7 +17,7 @@ let seeded: Seeded | null = null;
 
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   await page.goto("/#/");
 }
 

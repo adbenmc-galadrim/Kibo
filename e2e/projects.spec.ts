@@ -219,7 +219,6 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   await expect(again).toBeHidden();
 
   await page.goto("/#/");
-  const card = page.getByRole("article").filter({ has: page.getByRole("button", { name: "Centre test" }) });
-  await expect(card.getByText("CT", { exact: true })).toBeVisible();
-  await expect(card.getByText("client ACME", { exact: true })).toBeVisible();
+  const line = page.getByRole("listitem").filter({ has: page.getByRole("button", { name: "Centre test" }) });
+  await expect(line.getByText("client ACME", { exact: true })).toBeVisible();
 });

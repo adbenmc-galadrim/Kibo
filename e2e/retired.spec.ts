@@ -62,7 +62,7 @@ const RETIRED_URLS = [
 
 test("les anciennes URL des écrans retirés ramènent à Aujourd'hui", async ({ page }) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   for (const url of RETIRED_URLS) {
     await page.goto("about:blank");
     await page.goto(url);

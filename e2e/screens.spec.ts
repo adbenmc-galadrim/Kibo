@@ -109,7 +109,7 @@ test.beforeAll(async ({ browser }, info) => {
   page = await openPage(browser, info);
   mockup = createMockupRepo();
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   seeded = await seedWorkspace(page, mockup.repo);
   await rpc(page, {
     method: "command",

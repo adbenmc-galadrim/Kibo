@@ -39,7 +39,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 }
 
 export async function openEmptyProject(page: Page, name: string, key: string, folder: string | null) {
-  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   const created = await rpc(page, { method: "createProject", name, key, folder, color: "#F97316" });
   await page.goto(`/#/p/${encodeURIComponent(text(created, "id"))}/`);
   await expect(page.getByText(`Projet créé : ${name}`)).toBeVisible();

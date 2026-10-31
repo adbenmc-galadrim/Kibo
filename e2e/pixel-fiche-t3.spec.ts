@@ -57,7 +57,6 @@ test("the Kanban reveals Lancer dans T3 on hover and shows the T3 badge as in th
 }) => {
   await pairBrowser(page);
   await openPixelPage(page, await siloPageUrl(page, "Kanban"), HEIGHT);
-  await page.reload();
   await expect(page.getByText("T3 · en cours depuis 12 min")).toBeVisible();
   await measureHover(page, "p34-kanban-survol-t3", page.getByRole("article", { name: /^SILO-46 / }));
 });
@@ -67,7 +66,6 @@ test("the Graphe reveals Lancer dans T3 on hover and shows the T3 pill as in the
 }) => {
   await pairBrowser(page);
   await openPixelPage(page, await siloPageUrl(page, "Graphe"), PIXEL_HEIGHTS.graphe);
-  await page.reload();
   await expect(page.getByRole("img", { name: "T3 · en cours depuis 12 min" })).toBeVisible();
   await measureHover(page, "p34-graphe-survol-t3", page.locator('li[data-startable="true"]').first());
 });
