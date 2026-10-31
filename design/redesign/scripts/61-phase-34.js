@@ -569,6 +569,13 @@ S.INPLACE34 = {
   "P9c · Supprimer la question": async (b) => { const r = await S.p34Questions(b); for (const n of ["veil", "dialog"]) { const d = b.children.find(c => c.name === n); if (d) d.bringToFront(); } return r; },
   "P9d · Questions, répondues": (b) => S.p34Questions(b, { qs: [S.Q34[1]], state: "répondue", openCount: 2, summary: "1 répondue" }),
 };
+S.vueAttente34 = async (b) => { S.setMode(S.modeOf(b)); const ech = S.card34(b, "Échéances"), first = S.card34(b, "Livrée aujourd'hui"), main = S.parentOf(b, first);
+  for (const c of ech.children.filter(c => c.name === "legend-bar" || c.name === "legend-line")) c.remove();
+  if (!penpotUtils.findShapes(s => s.type === "text" && s.characters === "F4", main).some(t => S.parentOf(main, t).name.replace(/\s/g, "").startsWith("card/Livrée"))) {
+    const r = S.showAfter(main, first, S.livreeRow({ total: S.texts34(first).find(t => /livrées sur/.test(t)) })); r.layoutChild.horizontalSizing = "fill";
+    const set = (from, to) => { const t = S.byText(r, from); t.characters = to; S.refont(t); };
+    set("F3", "F4"); set("Réaffecter un box", "Saisir un constat hors ligne"); set("4/4 étapes · dernière fusion #18 à 14:36", "4/4 étapes · dernière fusion #16 à 14:36"); }
+  return S.p34Fit(b); };
 S.FIX34 = { vue: (b) => S.p34Legend(b), planning: (b) => S.p34PlanLegend(b), graph: (b) => ({ edges: S.noEdges34(b), legend: S.graphLegend34(b) }), waiting: (b) => S.waiting34(b) };
 S.fix34 = async (name, kind) => { await S.page("Proposition"); const b = penpot.currentPage.root.children.find(c => c.name === name); if (!b) throw new Error("missing board: " + name);
   S.setMode(S.modeOf(b)); S.placed = []; const r = S.FIX34[kind](b); await S.wait(600); const relaid = await S.relayout34(b); return { r, relaid, bottom: S.bottom34(b) }; };
