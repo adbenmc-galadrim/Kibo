@@ -210,3 +210,32 @@
 :root:not(.dark) :is([data-slot="dialog-overlay"], [data-slot="sheet-overlay"]) {
   background-color: rgb(255 255 255 / 0.6);
 }
+
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation: none;
+}
+
+.kibo-content {
+  view-transition-name: kibo-content;
+}
+
+::view-transition-old(kibo-content) {
+  animation: 250ms ease-out both kibo-fade-out;
+}
+
+::view-transition-new(kibo-content) {
+  animation: 250ms ease-out both kibo-fade-in;
+}
+
+@keyframes kibo-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes kibo-fade-in {
+  from {
+    opacity: 0;
+  }
+}

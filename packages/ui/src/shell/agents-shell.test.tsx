@@ -220,6 +220,14 @@ test("the sidebar leads to the settings, never to the agents", async () => {
   expect(screen.getByRole("button", { name: "Paramètres" }).getAttribute("data-active")).toBe("true");
 });
 
+test("only the content zone carries the page transition name", async () => {
+  const { container } = render(<Shell viewer="adam" notifications="native" />);
+  await go("#/");
+  const zone = container.querySelector(".kibo-content");
+  expect(zone?.querySelector("h1")).toBeTruthy();
+  expect(zone?.querySelector("[data-slot='sidebar']")).toBeNull();
+});
+
 test("the workspace header leads to the workspace settings", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
