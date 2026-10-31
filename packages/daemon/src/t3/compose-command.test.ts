@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { composeThreadStart, shellQuote } from "./compose-command";
+import { composeThreadStart, displayFolder, displayThreadStart } from "./compose-command";
 
 test("composeThreadStart builds the exact argv with the folder, /full-delivery KEY, the title and --json", () => {
   expect(composeThreadStart({ bin: "t3", folder: "/w/silo", key: "SILO-45", title: "Photos" })).toEqual([
@@ -14,10 +14,24 @@ test("composeThreadStart builds the exact argv with the folder, /full-delivery K
   ]);
 });
 
-test("shellQuote quotes arguments containing spaces only", () => {
-  expect(shellQuote(["t3", "/full-delivery SILO-45", "--json"])).toBe('t3 "/full-delivery SILO-45" --json');
+test("displayThreadStart shows t3, the folder from home and the brief, as in the confirmation", () => {
+  const input = { key: "SILO-45", home: "/Users/adam" };
+  expect(displayThreadStart({ ...input, folder: "/Users/adam/Documents/silo" })).toBe(
+    't3 thread start ~/Documents/silo "/full-delivery SILO-45"',
+  );
+  expect(displayThreadStart({ ...input, folder: "/w/silo" })).toBe(
+    't3 thread start /w/silo "/full-delivery SILO-45"',
+  );
+  expect(displayThreadStart({ ...input, folder: '/w/a "b" $c' })).toBe(
+    't3 thread start "/w/a \\"b\\" \\$c" "/full-delivery SILO-45"',
+  );
+  expect(displayThreadStart({ ...input, folder: "/Users/adam/Mes docs/silo" })).toBe(
+    't3 thread start ~/"Mes docs/silo" "/full-delivery SILO-45"',
+  );
 });
 
-test("shellQuote keeps a quoted argument faithful to what is passed", () => {
-  expect(shellQuote(['a "b" $c'])).toBe('"a \\"b\\" \\$c"');
+test("displayFolder only shortens the home folder itself or what it contains", () => {
+  expect(displayFolder("/Users/adam", "/Users/adam")).toBe("~");
+  expect(displayFolder("/Users/adam/silo", "/Users/adam")).toBe("~/silo");
+  expect(displayFolder("/Users/adamant/silo", "/Users/adam")).toBe("/Users/adamant/silo");
 });

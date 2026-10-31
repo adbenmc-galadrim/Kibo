@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { homedir } from "node:os";
 import type { ChangeMessage, ProjectEventSink, T3Thread } from "@kibo/schema";
 import type { RpcExtension } from "../rpc-extensions";
 import { call, type Service } from "../service";
@@ -14,6 +15,7 @@ type T3Input = {
   sink?: ProjectEventSink;
   emit(message: ChangeMessage): void;
   bin: string;
+  home?: string;
   run?: T3Runner;
 };
 
@@ -45,7 +47,17 @@ export function startT3(input: T3Input): StartedT3 {
     log: (what, e) => console.error(`[kibo-daemon] ${what} failed`, e),
     timers: { set: (fn, ms) => setInterval(fn, ms), clear: (handle) => clearInterval(handle) },
   });
-  const api = createT3Api({ bin: input.bin, run, store, poll, project, now, emit, ...sink });
+  const api = createT3Api({
+    bin: input.bin,
+    home: input.home ?? homedir(),
+    run,
+    store,
+    poll,
+    project,
+    now,
+    emit,
+    ...sink,
+  });
   poll.start();
   return { rpc: t3Rpc(api), api, activity: store.latest, stop: poll.stop };
 }

@@ -13,7 +13,7 @@ import {
 } from "@kibo/schema";
 import { z } from "zod";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
-import { composeThreadStart, shellQuote } from "./compose-command";
+import { composeThreadStart, displayFolder, displayThreadStart } from "./compose-command";
 import { type T3Runner, T3Timeout } from "./t3-cli";
 import { threadEvent } from "./thread-events";
 import { parseThreadList, type ThreadPoll } from "./thread-poll";
@@ -34,6 +34,7 @@ const Started = z.object({
 
 type T3RpcDeps = {
   bin: string;
+  home: string;
   run: T3Runner;
   store: ThreadStore;
   poll: ThreadPoll;
@@ -140,7 +141,8 @@ export function createT3Api(deps: T3RpcDeps): T3Api {
     const ticket = ticketOf(tickets, ticketKey);
     const resolved = requireFolder(folder, projectId);
     const argv = composeThreadStart({ bin: deps.bin, folder: resolved, key: ticketKey, title: ticket.title });
-    return { argv, command: shellQuote(argv), folder: resolved, ticket, tickets };
+    const command = displayThreadStart({ folder: resolved, key: ticketKey, home: deps.home });
+    return { argv, command, folder: resolved, ticket, tickets };
   };
   const launchOnce = async (projectId: string, ticketKey: string): Promise<T3Launch> => {
     const { argv, command, folder, ticket, tickets } = compose(projectId, ticketKey);
@@ -182,7 +184,7 @@ export function createT3Api(deps: T3RpcDeps): T3Api {
     preview(projectId, ticketKey) {
       const { argv, command, folder, ticket } = compose(projectId, ticketKey);
       const warning = ticket.startReason === null ? null : startReasonText(ticket.startReason);
-      return { argv, command, folder, warning };
+      return { argv, command, folder: displayFolder(folder, deps.home), warning };
     },
     async launch(projectId, ticketKey) {
       const slot = `${projectId}/${ticketKey}`;

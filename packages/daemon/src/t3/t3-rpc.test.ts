@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { KiboError, type ProjectEventInput, ProjectMeta, Ticket } from "@kibo/schema";
+import { KiboError, type ProjectEventInput, ProjectMeta, type T3Preview, Ticket } from "@kibo/schema";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { createService } from "../service";
 import { openStore } from "../store";
@@ -20,7 +20,7 @@ afterEach(() => {
 
 const T0 = 1_760_000_000_000;
 
-function setup(opts: { folder?: string | null; bin?: string; run?: T3Runner } = {}) {
+function setup(opts: { folder?: string | null; bin?: string; home?: string; run?: T3Runner } = {}) {
   const service = createService(openStore(tmp()), { user: "adam" });
   const folder = opts.folder === undefined ? "/w/silo" : opts.folder;
   const project = ProjectMeta.parse(
@@ -51,6 +51,7 @@ function setup(opts: { folder?: string | null; bin?: string; run?: T3Runner } = 
     sink: { record: (_p, event) => events.push(event) },
     emit: (message) => emitted.push(message),
     bin: opts.bin ?? fake.bin,
+    ...(opts.home && { home: opts.home }),
     ...(opts.run && { run: opts.run }),
   });
   const key = ticket.key ?? "";
@@ -81,10 +82,19 @@ test("preview returns the command and the startability warning without calling t
       `${s.key} · Envoyer les photos`,
       "--json",
     ],
-    command: `${fake.bin} thread start /w/silo "/full-delivery ${s.key}" --title "${s.key} · Envoyer les photos" --json`,
+    command: `t3 thread start /w/silo "/full-delivery ${s.key}"`,
   });
   expect((preview as { warning: string }).warning).toContain("attend");
   expect(fake.calls()).toEqual([]);
+});
+
+test("the folder under home is shown with a tilde while argv keeps the full path", async () => {
+  const s = setup({ folder: "/Users/adam/silo", home: "/Users/adam" });
+  const preview = (await s.rpc({ method: "t3.preview", ...s.onTicket })) as T3Preview;
+  expect(preview.folder).toBe("~/silo");
+  expect(preview.command).toBe(`t3 thread start ~/silo "/full-delivery ${s.key}"`);
+  expect(preview.argv[0]).toBe(fake.bin);
+  expect(preview.argv[3]).toBe("/Users/adam/silo");
 });
 
 test("launch runs thread start with the project folder and stores the thread", async () => {
