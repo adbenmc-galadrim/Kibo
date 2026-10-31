@@ -16,7 +16,8 @@
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./markdown": "./src/markdown/index.ts",
-    "./tracking": "./src/tracking/index.ts"
+    "./tracking": "./src/tracking/index.ts",
+    "./t3": "./src/t3/index.ts"
   },
   "dependencies": {
     "@formkit/auto-animate": "0.8.4",

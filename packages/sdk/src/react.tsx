@@ -16,6 +16,8 @@ export function SdkProvider({ sdk, children }: { sdk: KiboSdk; children: ReactNo
   return <SdkContext.Provider value={sdk}>{children}</SdkContext.Provider>;
 }
 
+export const useOptionalSdk = (): KiboSdk | null => useContext(SdkContext);
+
 export function useSdk(): KiboSdk {
   const sdk = useContext(SdkContext);
   if (!sdk) throw new Error("useSdk must be used inside <SdkProvider>");

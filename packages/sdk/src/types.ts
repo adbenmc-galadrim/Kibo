@@ -30,6 +30,10 @@ import type {
   StatusId,
   StorybookOrigin,
   Surface,
+  T3Launch,
+  T3Preview,
+  T3Status,
+  T3Thread,
   TicketRun,
   TicketView,
 } from "@kibo/schema";
@@ -104,6 +108,13 @@ export type SettingsApi = {
 };
 export type OpenViewOptions = { question?: string; intent?: Spotlight };
 
+export type T3Api = {
+  status(): Promise<T3Status>;
+  preview(ticketKey: string): Promise<T3Preview>;
+  launch(ticketKey: string): Promise<T3Launch>;
+  threadOf(ticketKey: string): Promise<T3Thread | null>;
+};
+
 export type KiboSdk = {
   instanceId: string;
   config: Record<string, unknown>;
@@ -128,6 +139,7 @@ export type KiboSdk = {
   design: DesignApi;
   questions: QuestionsApi;
   sprints: SprintsApi;
+  t3: T3Api;
   settings: SettingsApi;
   project: ProjectApi;
   focus: FocusApi;

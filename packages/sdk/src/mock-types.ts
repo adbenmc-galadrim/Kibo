@@ -15,6 +15,7 @@ import type {
 import type { MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import type { MockHold } from "./mock-holds";
+import type { MockT3 } from "./mock-t3";
 import type { FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type MockSdk = {
@@ -58,6 +59,7 @@ export type MockSdkOptions = {
   client?: string | null;
   folder?: string | null;
   assets?: ProjectAsset[];
+  t3?: MockT3;
   frames?: MockFrame[];
   storybooks?: StorybookOrigin[];
   visible?: boolean;

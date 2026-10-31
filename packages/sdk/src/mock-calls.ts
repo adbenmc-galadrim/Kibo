@@ -18,6 +18,7 @@ import {
 } from "@kibo/schema";
 import { mockAssetUrl } from "./mock-assets";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
+import { type MockT3, mockT3Call } from "./mock-t3";
 import type { EntityMap } from "./types";
 
 export type MockFetch = (url: string, init: FetchInit) => FetchResponse | Promise<FetchResponse>;
@@ -35,6 +36,7 @@ type MockCallDeps = {
   assets?: ProjectAsset[];
   frames?: MockFrame[];
   storybooks?: StorybookOrigin[];
+  t3?: MockT3;
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
@@ -90,14 +92,11 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
       case "questions.recipients":
         return listQuestionRecipients(deps.doc);
       case "t3.status":
-        return { available: false, reason: "missing", bin: "t3" };
       case "t3.threadOf":
-        return null;
       case "t3.refresh":
-        return [];
       case "t3.preview":
       case "t3.launch":
-        throw new KiboError("NOT_CONNECTED", "t3 is not available in the simulated SDK");
+        return mockT3Call(deps.t3, c);
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));
