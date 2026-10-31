@@ -78,30 +78,38 @@ function parseStarted(stdout: string): StartedThread | null {
   return started.success ? started.data : null;
 }
 
-async function findBack(deps: T3RpcDeps, target: LaunchTarget): Promise<StartedThread> {
+const listThreads = async (deps: T3RpcDeps, folder: string) =>
+  parseThreadList((await deps.run(["thread", "list", "--project", folder, "--json"], {})).stdout);
+
+async function findBack(
+  deps: T3RpcDeps,
+  target: LaunchTarget,
+  before: ReadonlySet<string>,
+): Promise<StartedThread> {
   const failed = new KiboError(
     "T3_FAILED",
     `no answer from t3 thread start, a thread may have been created in T3: ${target.title}`,
   );
   const known = new Set(deps.store.all(target.projectId).map((t) => t.threadId));
-  const listed = await deps
-    .run(["thread", "list", "--project", target.folder, "--json"], {})
-    .then((r) => parseThreadList(r.stdout))
-    .catch((e: unknown) => {
-      if (e instanceof KiboError) throw failed;
-      throw e;
-    });
-  const found = listed.find((t) => t.title === target.title && !known.has(t.threadId));
-  if (!found) throw failed;
+  const listed = await listThreads(deps, target.folder).catch((e: unknown) => {
+    if (e instanceof KiboError) throw failed;
+    throw e;
+  });
+  const candidates = listed.filter(
+    (t) => t.title === target.title && !known.has(t.threadId) && !before.has(t.threadId),
+  );
+  const [found] = candidates;
+  if (!found || candidates.length > 1) throw failed;
   return { threadId: found.threadId, title: target.title, ...(found.link && { link: found.link }) };
 }
 
 async function startThread(deps: T3RpcDeps, target: LaunchTarget): Promise<StartedThread> {
+  const before = new Set((await listThreads(deps, target.folder)).map((t) => t.threadId));
   try {
     const { stdout } = await deps.run(target.argv.slice(1), { timeoutMs: LAUNCH_TIMEOUT_MS });
-    return parseStarted(stdout) ?? (await findBack(deps, target));
+    return parseStarted(stdout) ?? (await findBack(deps, target, before));
   } catch (e) {
-    if (e instanceof T3Timeout) return findBack(deps, target);
+    if (e instanceof T3Timeout) return findBack(deps, target, before);
     if (e instanceof KiboError && e.code === "T3_UNAVAILABLE") throw new KiboError("T3_FAILED", e.detail);
     throw e;
   }

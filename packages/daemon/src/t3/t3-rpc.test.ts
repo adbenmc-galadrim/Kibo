@@ -59,6 +59,8 @@ function setup(opts: { folder?: string | null; bin?: string; run?: T3Runner } = 
   return { project, ticket, blocker, key, onTicket, events, emitted, clock, t3, rpc };
 }
 
+const starts = () => fake.calls().filter((args) => args[1] === "start");
+
 const refusal = async (work: Promise<unknown>): Promise<string> => {
   const error = await work.catch((e: unknown) => e);
   return error instanceof KiboError ? error.code : `not refused: ${String(error)}`;
@@ -88,7 +90,7 @@ test("preview returns the command and the startability warning without calling t
 test("launch runs thread start with the project folder and stores the thread", async () => {
   const s = setup();
   const launched = await s.rpc({ method: "t3.launch", ...s.onTicket });
-  expect(fake.calls()).toEqual([
+  expect(starts()).toEqual([
     [
       "thread",
       "start",
@@ -112,7 +114,7 @@ test("launch on a ticket with an active thread raises T3_THREAD_ACTIVE", async (
   const s = setup();
   await s.rpc({ method: "t3.launch", ...s.onTicket });
   expect(await refusal(s.rpc({ method: "t3.launch", ...s.onTicket }))).toBe("T3_THREAD_ACTIVE");
-  expect(fake.calls()).toHaveLength(1);
+  expect(starts()).toHaveLength(1);
   s.t3.stop();
 });
 
@@ -123,7 +125,7 @@ test("two simultaneous launches start a single thread", async () => {
     s.rpc({ method: "t3.launch", ...s.onTicket }),
   ]);
   expect(outcomes.map((o) => o.status).sort()).toEqual(["fulfilled", "rejected"]);
-  expect(fake.calls()).toHaveLength(1);
+  expect(starts()).toHaveLength(1);
   s.t3.stop();
 });
 
@@ -133,12 +135,71 @@ test("launch without project folder raises PROJECT_FOLDER_MISSING", async () => 
   expect(fake.calls()).toEqual([]);
 });
 
-test("a failing launch raises T3_FAILED and records nothing", async () => {
-  const s = setup();
-  fake.set({ mode: "server-down" });
+test("a failing start raises T3_FAILED and records nothing", async () => {
+  const real = createT3Runner(fake.bin);
+  const run: T3Runner = async (args, opts) => {
+    if (args[1] === "start") fake.set({ mode: "server-down" });
+    return real(args, opts);
+  };
+  const s = setup({ run });
   expect(await refusal(s.rpc({ method: "t3.launch", ...s.onTicket }))).toBe("T3_FAILED");
   expect(await s.rpc({ method: "t3.threadOf", ...s.onTicket })).toBeNull();
   expect(s.events).toEqual([]);
+});
+
+test("a failing snapshot raises T3_UNAVAILABLE and starts nothing", async () => {
+  const s = setup();
+  fake.set({ mode: "server-down" });
+  expect(await refusal(s.rpc({ method: "t3.launch", ...s.onTicket }))).toBe("T3_UNAVAILABLE");
+  expect(starts()).toEqual([]);
+});
+
+const orphanOf = (s: { key: string }, threadId: string) => ({
+  threadId,
+  title: `${s.key} · Envoyer les photos`,
+  status: "completed",
+  link: `t3-thread://${threadId}`,
+  project: "/w/silo",
+});
+
+test("an orphan of the same title present before the launch is not adopted", async () => {
+  const s = setup();
+  fake.set({ threads: [orphanOf(s, "orphan")], startOutput: "not json", startDropsThread: true });
+  const error = await s.rpc({ method: "t3.launch", ...s.onTicket }).catch((e: unknown) => e);
+  expect(error).toMatchObject({
+    code: "T3_FAILED",
+    detail: expect.stringContaining("may have been created"),
+  });
+  expect(await s.rpc({ method: "t3.threadOf", ...s.onTicket })).toBeNull();
+  expect(s.events).toEqual([]);
+});
+
+test("beside an orphan, the thread created by the launch is the one found back", async () => {
+  const s = setup();
+  fake.set({ threads: [orphanOf(s, "orphan")], nextId: "thr_new", startOutput: "not json" });
+  expect(await s.rpc({ method: "t3.launch", ...s.onTicket })).toMatchObject({
+    thread: { threadId: "thr_new" },
+  });
+  s.t3.stop();
+});
+
+test("two candidates of the same title adopt none and raise T3_FAILED", async () => {
+  const real = createT3Runner(fake.bin);
+  const s0: { key: string } = { key: "" };
+  const run: T3Runner = async (args, opts) => {
+    const result = await real(args, opts);
+    if (args[1] === "start") fake.set({ threads: [orphanOf(s0, "one"), orphanOf(s0, "two")] });
+    return result;
+  };
+  const s = setup({ run });
+  s0.key = s.key;
+  fake.set({ startOutput: "not json", startDropsThread: true });
+  const error = await s.rpc({ method: "t3.launch", ...s.onTicket }).catch((e: unknown) => e);
+  expect(error).toMatchObject({
+    code: "T3_FAILED",
+    detail: expect.stringContaining("a thread may have been created in T3"),
+  });
+  expect(await s.rpc({ method: "t3.threadOf", ...s.onTicket })).toBeNull();
 });
 
 test("status reports missing and server-down, cached 30 s", async () => {
@@ -172,7 +233,7 @@ test("an unreadable start output finds the thread back by its title and stores i
   fake.set({ startOutput: "not json" });
   const launched = await s.rpc({ method: "t3.launch", ...s.onTicket });
   expect(launched).toMatchObject({ thread: { threadId: "thr_1", link: "t3-thread://v2/fake/thr_1" } });
-  expect(fake.calls()[1]).toEqual(["thread", "list", "--project", "/w/silo", "--json"]);
+  expect(fake.calls().map((args) => args[1])).toEqual(["list", "start", "list"]);
   expect(s.events.map((e) => e.kind)).toEqual(["t3_started"]);
   s.t3.stop();
 });

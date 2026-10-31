@@ -164,3 +164,17 @@ test("a changed updatedAt restarts the 24 h", async () => {
   await s.poll.refresh("p");
   expect(s.store.threadOf("p", "t1")?.status).toBe("waiting");
 });
+
+test("a waiting thread unchanged for 24 h becomes done and polling stops", async () => {
+  const s = setup();
+  s.add("a");
+  s.poll.watch("p");
+  s.listed.value = [{ threadId: "a", status: "waiting", updatedAt: "u1" }];
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("waiting");
+  s.clock.now += DAY;
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("done");
+  expect(s.events.map((e) => e.kind)).toEqual(["t3_finished"]);
+  expect(s.timers.size).toBe(0);
+});
