@@ -2,7 +2,7 @@ import { afterEach, expect, mock, test } from "bun:test";
 import { EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { apiMock } from "../api-mock";
-import { configFixture, projectsFixture } from "../lib/fixtures";
+import { configFixture } from "../lib/fixtures";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
   getTabs: EMPTY_TABS,
@@ -22,21 +22,8 @@ mock.module("../api", () =>
 const { ScreenView } = await import("./ScreenView");
 
 afterEach(cleanup);
-const noop = () => undefined;
 
-const screenView = (current: Screen) =>
-  render(
-    <ScreenView
-      screen={current}
-      viewer="adam"
-      projects={projectsFixture}
-      snapshots={new Map()}
-      config={configFixture()}
-      onOpenTicket={noop}
-      onFile={noop}
-      onNewTicket={noop}
-    />,
-  );
+const screenView = (current: Screen) => render(<ScreenView screen={current} config={configFixture()} />);
 
 const RETIRED = ["components", "sources", "domains"] as const;
 

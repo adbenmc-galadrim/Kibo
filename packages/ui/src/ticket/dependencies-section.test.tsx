@@ -52,6 +52,7 @@ const ticket = (n: number, title: string): TicketView => ({
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 });

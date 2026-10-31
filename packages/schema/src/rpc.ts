@@ -22,6 +22,8 @@ import { SESSION_RPC, type SessionRpcResult } from "./session-rpc";
 import type { SprintView } from "./sprint";
 import type { StartReason } from "./startability";
 import type { Status, StatusId } from "./status";
+import { T3_RPC, type T3RpcResult } from "./t3-rpc";
+import type { T3Thread } from "./t3-thread";
 import type { Ticket } from "./ticket";
 import type { TicketSession } from "./ticket-session";
 import { TRACKING_RPC, type TrackingRpcResult } from "./tracking-rpc";
@@ -37,6 +39,7 @@ export type TicketView = Ticket & {
   effectiveSprintId: string | null;
   feature: FeatureState | null;
   session: TicketSession | null;
+  thread: T3Thread | null;
   updatedAt: number | null;
   onHold: OnHold | null;
 };
@@ -79,6 +82,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...PROJECT_AGENT_RPC,
   ...TRACKING_RPC,
   ...PLAN_RPC,
+  ...T3_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -88,7 +92,8 @@ export type RpcResult = CoreRpcResult &
   AppRpcResult &
   ProjectAgentRpcResult &
   TrackingRpcResult &
-  PlanRpcResult;
+  PlanRpcResult &
+  T3RpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

@@ -50,6 +50,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 });
@@ -199,7 +200,7 @@ test("routes name the settings screens, and no longer the agent ones", () => {
 test("the sidebar leads to the settings, never to the agents", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  expect(await screen.findAllByRole("button", { name: /^Boîte de réception/ })).not.toHaveLength(0);
+  expect(await screen.findAllByRole("button", { name: /^Aujourd'hui/ })).not.toHaveLength(0);
   for (const name of [/^Agents/, /^Files d'attente/, /^Skills/])
     expect(screen.queryByRole("button", { name })).toBeNull();
   const user = userEvent.setup();
@@ -218,6 +219,14 @@ test("the sidebar leads to the settings, never to the agents", async () => {
   expect(await screen.findByText("Branches, commits, worktrees, diff")).toBeTruthy();
   expect(crumbs.getByText("Intégrations").getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("button", { name: "Paramètres" }).getAttribute("data-active")).toBe("true");
+});
+
+test("only the content zone carries the page transition name", async () => {
+  const { container } = render(<Shell viewer="adam" notifications="native" />);
+  await go("#/");
+  const zone = container.querySelector(".kibo-content");
+  expect(zone?.querySelector("h1")).toBeTruthy();
+  expect(zone?.querySelector("[data-slot='sidebar']")).toBeNull();
 });
 
 test("the workspace header leads to the workspace settings", async () => {

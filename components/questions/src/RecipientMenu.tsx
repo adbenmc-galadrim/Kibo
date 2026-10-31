@@ -54,7 +54,7 @@ export function RecipientMenu({ question, recipients, client, readOnly }: Props)
             variant="outline"
             size="sm"
             aria-label={fr.recipients.menu(name)}
-            className="h-6 gap-1 rounded-full px-2 text-2xs font-normal"
+            className="h-5.5 gap-1 rounded-md px-2 text-xs font-medium"
           >
             <UserRound aria-hidden className="size-3" />
             {fr.recipients.shown(name)}

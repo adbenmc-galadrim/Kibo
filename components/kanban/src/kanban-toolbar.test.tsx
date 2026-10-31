@@ -28,7 +28,7 @@ const pressed = (name: string) => toggle(name).getAttribute("aria-pressed");
 
 test("« Tous » by default: every card, other people's too, each filter with its count", async () => {
   setup();
-  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("8 tickets")).toBeTruthy();
   expect(screen.getByRole("group", { name: "Tickets affichés" })).toBeTruthy();
   expect(pressed("Tous")).toBe("true");
   expect(within(toggle("Tous")).getByText("8")).toBeTruthy();
@@ -43,14 +43,14 @@ test("« Sprint courant » keeps the steps of S42, still current the day after i
   setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
-  expect(await screen.findByText("4 tickets · Sprint courant · S42")).toBeTruthy();
+  expect(await screen.findByText("4 tickets · sprint courant")).toBeTruthy();
   expect(pressed("Tous")).toBe("false");
   expect(screen.getByText("Conflits de saisie")).toBeTruthy();
   expect(screen.getByText("Lecture du fichier Excel")).toBeTruthy();
   expect(screen.queryByText("Écran d'import")).toBeNull();
   expect(screen.queryByText("Hors filtre")).toBeNull();
   await user.click(screen.getByRole("button", { name: "4 masqués · Tout afficher" }));
-  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("8 tickets")).toBeTruthy();
   expect(pressed("Sprint courant · S42")).toBe("false");
 });
 
@@ -73,7 +73,7 @@ test("the filters add up, « Tous » clears them", async () => {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
   await user.click(toggle("Démarrable"));
-  expect(await screen.findByText("1 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
+  expect(await screen.findByText("1 ticket · sprint courant + Démarrable")).toBeTruthy();
   expect(pressed("Sprint courant · S42")).toBe("true");
   expect(pressed("Démarrable")).toBe("true");
   expect(screen.getByText("Démo · F1")).toBeTruthy();
@@ -83,7 +83,7 @@ test("the filters add up, « Tous » clears them", async () => {
   expect(await screen.findByText("2 tickets · Démarrable")).toBeTruthy();
   expect(screen.getByText("Hors filtre")).toBeTruthy();
   await user.click(toggle("Tous"));
-  expect(await screen.findByText("9 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("9 tickets")).toBeTruthy();
   expect(pressed("Démarrable")).toBe("false");
 });
 
@@ -91,7 +91,7 @@ test("« Sprint courant » follows the date: on Monday the 19th it is S43", asyn
   setup({}, trackingSeed, "2026-10-19");
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S43" }));
-  expect(await screen.findByText("2 tickets · Sprint courant · S43")).toBeTruthy();
+  expect(await screen.findByText("2 tickets · sprint courant")).toBeTruthy();
   expect(screen.getByText("Écran d'import")).toBeTruthy();
 });
 
@@ -99,11 +99,11 @@ test("when the current sprint goes away, « Sprint courant » falls back to « T
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
-  expect(await screen.findByText("4 tickets · Sprint courant · S42")).toBeTruthy();
+  expect(await screen.findByText("4 tickets · sprint courant")).toBeTruthy();
   act(() => {
     for (const s of m.snapshot().sprints) m.run({ method: "deleteSprint", sprintId: s.id });
   });
-  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("8 tickets")).toBeTruthy();
   expect(pressed("Tous")).toBe("true");
   expect(toggle("Sprint courant").hasAttribute("disabled")).toBe(true);
 });
@@ -119,7 +119,7 @@ test("« À reprendre » keeps the tickets whose PR has changes requested or a b
 
 test("without any sprint, « Sprint courant » is offered but disabled", async () => {
   setup({}, (run) => run({ method: "createTicket", title: "Seul" }));
-  expect(await screen.findByText("1 ticket · Tous")).toBeTruthy();
+  expect(await screen.findByText("1 ticket")).toBeTruthy();
   const sprint = toggle("Sprint courant");
   expect(sprint.hasAttribute("disabled")).toBe(true);
   expect(within(sprint).getByText("0")).toBeTruthy();
@@ -127,14 +127,14 @@ test("without any sprint, « Sprint courant » is offered but disabled", async (
 
 test("an instance set to « mine » keeps narrowing the board and says so", async () => {
   setup({ filter: "mine-and-agents" }, seed);
-  expect(await screen.findByText("5 tickets · Tous · Moi")).toBeTruthy();
+  expect(await screen.findByText("5 tickets · Moi")).toBeTruthy();
   expect(screen.queryByText("Hors filtre")).toBeNull();
 });
 
 test("the counter gives way in a narrow widget: it truncates and keeps its full text as a title", async () => {
   setup();
-  const counter = await screen.findByText("8 tickets · Tous");
-  expect(counter.getAttribute("title")).toBe("8 tickets · Tous");
+  const counter = await screen.findByText("8 tickets");
+  expect(counter.getAttribute("title")).toBe("8 tickets");
   expect(counter.className).toContain("truncate");
   expect(counter.className).toContain("min-w-0");
   expect(counter.className).not.toContain("shrink-0");
@@ -147,4 +147,22 @@ test("in a narrow widget the toolbar drops the counts, then the label text, neve
   expect(within(all).getByText("8").className).toContain("@max-[36rem]/toolbar:hidden");
   const label = screen.getByRole("button", { name: "Étiquette : toutes" });
   expect(within(label).getByText("Étiquette : toutes").className).toContain("@max-[48rem]/toolbar:sr-only");
+});
+
+test("the counter reads 80 tickets and 18 tickets · sprint courant", async () => {
+  setup();
+  const user = userEvent.setup();
+  expect(await screen.findByText("8 tickets")).toBeTruthy();
+  await user.click(toggle("Sprint courant · S42"));
+  expect(await screen.findByText("4 tickets · sprint courant")).toBeTruthy();
+});
+
+test("a column whose tickets are all hidden by a filter stays open, without « 0 ticket »", async () => {
+  setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Démarrable" }));
+  const review = await screen.findByRole("region", { name: "En review" });
+  expect(within(review).queryByRole("article")).toBeNull();
+  expect(review.getAttribute("data-collapsed")).toBeNull();
+  expect(within(review).queryByText("0 ticket")).toBeNull();
 });

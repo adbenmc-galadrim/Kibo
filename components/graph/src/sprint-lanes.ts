@@ -12,6 +12,7 @@ import {
   type SprintView,
   sortSprints,
   sprintState,
+  type T3Thread,
   type TicketView,
 } from "@kibo/schema";
 import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
@@ -43,6 +44,7 @@ export type LaneStep = {
   session: boolean;
   hold: OnHold | null;
   startable: boolean;
+  thread: T3Thread | null;
 };
 export type FrameSegment = { ticketId: string; tone: StepTone };
 export type FrameFooter =
@@ -58,6 +60,7 @@ export type LaneFrame = {
   held: number;
   late: boolean;
   collapsed: boolean;
+  folded: boolean;
   segments: FrameSegment[];
   steps: LaneStep[];
   footer: FrameFooter | null;
@@ -104,7 +107,7 @@ type Facts = {
   blocking: ReadonlyMap<string, string | null>;
   byId: ReadonlyMap<string, TicketView>;
 };
-type Draft = Omit<LaneFrame, "x" | "y" | "width" | "height" | "titleLines">;
+type Draft = Omit<LaneFrame, "x" | "y" | "width" | "height" | "titleLines" | "folded">;
 
 function blockingQuestions(questions: readonly Question[]): Map<string, string | null> {
   const blocking = new Map<string, string | null>();
@@ -159,6 +162,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[], waitin
       session: byId.get(s.ticketId)?.session != null,
       hold: s.onHold,
       startable: !waiting && unblocked(byId.get(s.ticketId), blocking),
+      thread: byId.get(s.ticketId)?.thread ?? null,
     })),
     footer: footerOf(f, facts, sorted),
   };
@@ -178,6 +182,7 @@ function placeLane(seed: LaneSeed, index: number, x: number): Lane {
     const height = frameHeight({ lines, steps: d.steps.length, footer: d.footer !== null });
     const frame = {
       ...d,
+      folded: false,
       titleLines: lines,
       x: x + margin,
       y,

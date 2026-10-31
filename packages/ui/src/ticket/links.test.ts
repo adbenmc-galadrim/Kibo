@@ -35,6 +35,7 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 });

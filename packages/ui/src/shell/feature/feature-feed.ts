@@ -79,6 +79,8 @@ const LINES: Record<ProjectEventKind, LineOf> = {
   step_set: asTicket("step"),
   session_started: asTicket("session"),
   session_stopped: asTicket("session"),
+  t3_started: asTicket("session"),
+  t3_finished: asTicket("session"),
   sprint_created: (d) => ({ kind: "sprint", text: e.sprintCreated(str(d, "code") ?? "") }),
   sprint_set: (d, ev, p) => {
     const feature = p.tickets.find((x) => x.id === ev.ticketId);

@@ -80,7 +80,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
   expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
-  expect(within(indicators).getByText("limite · bloquée : F6")).toBeTruthy();
+  expect(within(indicators).getByText("limite 2")).toBeTruthy();
   expect(within(indicators).getByText("2 à risque")).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
   expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
@@ -146,7 +146,7 @@ test("the activity shows four events, filters by source and unfolds on fifty", a
   const activity = await card("Activité");
   const items = () => within(activity).queryAllByRole("listitem");
   await waitFor(() => expect(items().length).toBe(4));
-  expect(items()[0]?.textContent).toContain("Phase 7/12 · Porte qualité");
+  expect(items()[0]?.textContent).toContain("Étape 7/12 · Porte qualité");
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
   expect(items().every((li) => li.textContent?.includes("PR #"))).toBe(true);
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
@@ -202,9 +202,10 @@ test("the in-progress box explains what it counts and where its limit is set", a
   setup();
   const indicators = await card("Indicateurs du projet");
   const label = within(indicators).getByRole("button", { name: "En cours" });
-  expect(within(indicators).getByText("/ 2")).toBeTruthy();
+  expect(within(indicators).getByText("fonctionnalités ouvertes")).toBeTruthy();
   await userEvent.hover(label);
-  const hint = "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet";
+  const hint =
+    "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet · bloquée : F6";
   expect((await screen.findByRole("tooltip")).textContent).toBe(hint);
 });
 

@@ -67,6 +67,11 @@ export function permissionOfCall(call: ComponentCall): string | null {
       return `net:${call.url}`;
     case "action":
     case "config.set":
+    case "t3.status":
+    case "t3.preview":
+    case "t3.launch":
+    case "t3.threadOf":
+    case "t3.refresh":
       return null;
     case "settings.get":
     case "project.get":

@@ -27,16 +27,16 @@ const card = async (title: string) => {
 
 const column = (name: string) => screen.getByRole("region", { name });
 
-test("a step on hold keeps its column and carries ⏸ with its short reason, the whole one on hover", async () => {
+test("a step on hold keeps its column and carries ⏸ with its short reason, unless changes are requested", async () => {
   setup();
   const conflicts = await card("Conflits de saisie");
   expect(within(column("En review")).getByText("Conflits de saisie")).toBeTruthy();
-  const badge = within(conflicts).getByRole("note", { name: `En attente : ${HOLD_REASONS.merge}` });
-  expect(badge.textContent).toBe("Règle de fusion à valide…");
-  expect(badge.getAttribute("title")).toBe(HOLD_REASONS.merge);
-  expect(badge.querySelector("svg")).toBeTruthy();
+  expect(within(conflicts).queryByRole("note", { name: /^En attente/ })).toBeNull();
   const sending = await card("Écran d'envoi hors ligne");
-  expect(within(sending).getByRole("note").textContent).toBe("Serveur MinIO de recette…");
+  const badge = within(sending).getByRole("note");
+  expect(badge.textContent).toBe("Serveur MinIO de recette…");
+  expect(badge.getAttribute("title")).toBe("Serveur MinIO de recette indisponible");
+  expect(badge.querySelector("svg")).toBeTruthy();
 });
 
 test("a step on hold by dependency says which step it waits for, instead of its own « attend » badges", async () => {
@@ -94,7 +94,7 @@ test("the filter goes away with the last hold, and the board shows every card ag
       m.run({ method: "setHold", ticketId: step?.id ?? "", reason: null });
     });
   }
-  expect(await screen.findByText("5 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("5 tickets")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "En attente" })).toBeNull();
 });
 
@@ -110,11 +110,11 @@ test("a new hold after the filter went away shows the button again, not pressed"
       m.run({ method: "setHold", ticketId, reason: null });
     });
   }
-  expect(await screen.findByText("5 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("5 tickets")).toBeTruthy();
   act(() => {
     m.run({ method: "setHold", ticketId: steps[0] ?? "", reason: HOLD_REASONS.merge, since: "2026-10-16" });
   });
   const button = await screen.findByRole("button", { name: "En attente" });
   expect(button.getAttribute("aria-pressed")).toBe("false");
-  expect(screen.getByText("5 tickets · Tous")).toBeTruthy();
+  expect(screen.getByText("5 tickets")).toBeTruthy();
 });

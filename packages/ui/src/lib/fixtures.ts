@@ -344,6 +344,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
   hold: null,

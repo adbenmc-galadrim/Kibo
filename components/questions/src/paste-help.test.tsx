@@ -3,9 +3,10 @@ import type { ProjectCommand } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { seedDemo, seedQuestions } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
+import { openRow } from "./question-fixtures.test-helper";
 
 afterEach(cleanup);
 
@@ -20,7 +21,7 @@ test("the paste help says the answer is saved as yours", async () => {
       <Component />
     </SdkProvider>,
   );
-  const card = await screen.findByRole("article", { name: /Garder l'ordre/ });
+  const card = await openRow(/Garder l'ordre/);
   await userEvent.setup().click(within(card).getByRole("button", { name: "Coller la réponse" }));
   expect(within(card).getByText(/^Enregistrée comme ta réponse/).textContent).toBe(
     "Enregistrée comme ta réponse.",

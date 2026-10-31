@@ -40,6 +40,10 @@ export const OTHER_PROJECTS: readonly ProjectSpec[] = [
   { name: "Atlas", key: "ATL", color: "#84CC16" },
   { name: "Nimbus", key: "NIM", color: "#EC4899" },
 ];
+export const OTHER_PROJECT_TICKETS: Readonly<Record<string, { done: number; open: number }>> = {
+  KIB: { done: 19, open: 5 },
+  ATL: { done: 4, open: 3 },
+};
 export const INBOX_TITLES: readonly string[] = [
   "Relire le compte rendu de la réunion client",
   "Idée : export CSV des contrats",

@@ -18,6 +18,8 @@ const RETIRED_ROUTES: readonly string[] = [
   "/settings/sync",
   "/settings/security",
   "/code",
+  "/mine",
+  "/inbox",
 ];
 
 const RETIRED_PROJECT_ROUTE = /^\/p\/[^/]+\/changes$/;

@@ -37,6 +37,7 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     onHold: null,
     effectiveSprintId: null,
     session: null,
+    thread: null,
     updatedAt: null,
     feature: null,
     progress: { done: 0, total: 0 },

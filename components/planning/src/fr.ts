@@ -9,8 +9,7 @@ export const fr = {
   openMenu: "Fonctionnalités en cours",
   openNone: "Aucune fonctionnalité en cours",
   openHelp: "La limite est un avertissement : rien n'est bloqué.",
-  overLimit: (open: number, limit: number) =>
-    `${open} fonctionnalités en cours pour une limite de ${limit} : finis-en une avant d'en démarrer une autre.`,
+  overLimit: (open: number, limit: number) => `${open} en cours pour une limite de ${limit}`,
   layout: { label: "Disposition", columns: "Colonnes", bands: "Bandes" },
   bands: {
     hint: "Glisse en Colonnes pour planifier",
@@ -29,6 +28,7 @@ export const fr = {
   },
   backlog: "À planifier",
   backlogHint: "Glisse une fonctionnalité vers un sprint",
+  backlogEmpty: "Aucune fonctionnalité à planifier.",
   backlogNote:
     "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours.",
   badge: {
@@ -43,6 +43,10 @@ export const fr = {
   },
   held: {
     title: (n: number) => `En attente (${n})`,
+    label: "En attente",
+    hint: (n: number) => `${plural(n, "étape mise de côté", "étapes mises de côté")}, hors sprint`,
+    fold: "Replier",
+    unfold: "Déplier",
     resume: "Reprendre",
     resumeIn: "Reprendre dans",
     target: (code: string, name: string) => `${code} · ${name}`,
@@ -55,20 +59,11 @@ export const fr = {
   slipped: (code: string) => `glissée de ${code}`,
   session: (key: string) => `${key} en cours de livraison`,
   wontHold: (shortKey: string, remaining: number) =>
-    `${shortKey} ne tiendra pas : ${remaining} ${plural(remaining, "étape restante", "étapes restantes")}`,
+    `${shortKey} ne tiendra pas (${remaining} ${plural(remaining, "étape restante", "étapes restantes")})`,
   lateBy: (shortKey: string, remaining: number) =>
-    `${shortKey} en retard : ${remaining} ${plural(remaining, "étape restante", "étapes restantes")}`,
+    `${shortKey} en retard (${remaining} ${plural(remaining, "étape restante", "étapes restantes")})`,
   dropIn: (code: string) => `Déposer pour planifier en ${code}`,
   dropBacklog: "Déposer pour retirer du sprint",
-  legend: {
-    done: "étape livrée",
-    review: "en review",
-    progress: "en cours",
-    blocked: "bloquée",
-    hold: "en attente",
-    todo: "à faire",
-    hint: "une case par étape, dans l'ordre des dépendances",
-  },
   addFeature: "Fonctionnalité",
   addSprint: "Sprint",
   planIn: "Planifier dans",

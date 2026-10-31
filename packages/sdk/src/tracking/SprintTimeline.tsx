@@ -2,11 +2,10 @@ import type { DeadlineRow } from "@kibo/schema";
 import { ClockAlert, Lock } from "lucide-react";
 import { useState } from "react";
 import { trackingFr as t } from "./fr";
-import { type LegendEntry, LegendToggle } from "./LegendToggle";
-import { CASE_BG, SLIPPED_CASE, StepCases } from "./StepCases";
+import { StepCases } from "./StepCases";
 import { TimelineHeader } from "./TimelineHeader";
+import { TimelineTipProvider } from "./TimelineTooltip";
 import {
-  type CaseTone,
   TIMELINE_GEOMETRY,
   type TimelineColumnInput,
   type TimelineGeometry,
@@ -22,7 +21,6 @@ type Props = Omit<TimelineInput<TimelineColumnInput>, "rows" | "collapsed"> & {
   rows: MarkedRow[];
   collapsed?: { label: string; rows: MarkedRow[] };
   onOpen?(featureId: string): void;
-  legend?: boolean;
   todayLabel?: string;
 };
 type Marks = ReadonlyMap<string, RowMark>;
@@ -31,6 +29,7 @@ type RowProps = {
   mark: RowMark | undefined;
   last: boolean;
   width: number;
+  sprint: string | null;
   onOpen?(featureId: string): void;
 };
 
@@ -40,7 +39,6 @@ const MARK_TEXT: Record<NonNullable<RowMark["tone"]>, string> = {
 };
 
 const LABEL_X = 16;
-const LEGEND: readonly Exclude<CaseTone, "hold">[] = ["done", "review", "progress", "blocked", "todo"];
 
 function RowLabel({ row, mark, onOpen }: Pick<RowProps, "row" | "mark" | "onOpen">) {
   const tone = mark?.tone === undefined ? null : MARK_TEXT[mark.tone];
@@ -75,11 +73,11 @@ function RowLabel({ row, mark, onOpen }: Pick<RowProps, "row" | "mark" | "onOpen
   );
 }
 
-function Row({ row, mark, last, width, onOpen }: RowProps) {
+function Row({ row, mark, last, width, sprint, onOpen }: RowProps) {
   return (
     <div data-feature={row.row.shortKey} data-mark={mark?.tone}>
       <RowLabel row={row} mark={mark} onOpen={onOpen} />
-      <StepCases cases={row.cases} y={row.y} />
+      <StepCases row={row} sprint={sprint} />
       {row.slip && (
         <span
           className="absolute flex items-center gap-[4px] whitespace-nowrap font-medium text-(--tracking-red) text-[12px] leading-[15px]"
@@ -191,6 +189,7 @@ function Grid({
           mark={marks.get(row.row.featureId)}
           last={i === layout.rows.length - 1}
           width={layout.width}
+          sprint={layout.columns[row.row.column]?.code ?? null}
           onOpen={onOpen}
         />
       ))}
@@ -199,24 +198,8 @@ function Grid({
   );
 }
 
-const swatch = (bg: string) => <span className={`h-[10px] w-[12px] rounded-[2px] ${bg}`} />;
-
-const LEGEND_ENTRIES: readonly LegendEntry[] = [
-  ...LEGEND.map((tone) => ({ key: tone, label: t.legend[tone], mark: swatch(CASE_BG[tone]) })),
-  { key: "slipped", label: t.legend.slipped, mark: swatch(SLIPPED_CASE) },
-];
-
-function Legend() {
-  return (
-    <LegendToggle
-      items={LEGEND_ENTRIES}
-      className="h-[35px] border-(--tracking-soft) border-t bg-(--tracking-panel) px-[14px]"
-    />
-  );
-}
-
 export function SprintTimeline(props: Props) {
-  const { columns, rows, today, collapsed, onOpen, legend = false, todayLabel } = props;
+  const { columns, rows, today, collapsed, onOpen, todayLabel } = props;
   const marks: Marks = new Map(
     [...rows, ...(collapsed?.rows ?? [])].map((r) => [r.featureId, { tone: r.tone, note: r.note }]),
   );
@@ -228,21 +211,22 @@ export function SprintTimeline(props: Props) {
     collapsed && open ? timelineLayout({ columns, rows: collapsed.rows, today: null }, folded) : null;
   return (
     <section aria-label={t.timeline} className="flex min-w-0 flex-col">
-      <div className="overflow-x-auto">
-        <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} marks={marks} />
-        {collapsed && collapsed.rows.length > 0 && (
-          <button
-            type="button"
-            aria-expanded={open}
-            className="flex h-[30px] w-full items-center border-(--tracking-soft) border-t px-[16px] text-left text-(--tracking-mfg) text-[12px]"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {collapsed.label}
-          </button>
-        )}
-        {extra && <Grid layout={extra} g={folded} onOpen={onOpen} marks={marks} />}
-      </div>
-      {legend && <Legend />}
+      <TimelineTipProvider>
+        <div className="overflow-x-auto">
+          <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} marks={marks} />
+          {collapsed && collapsed.rows.length > 0 && (
+            <button
+              type="button"
+              aria-expanded={open}
+              className="flex h-[30px] w-full items-center border-(--tracking-soft) border-t px-[16px] text-left text-(--tracking-mfg) text-[12px]"
+              onClick={() => setOpen((v) => !v)}
+            >
+              {collapsed.label}
+            </button>
+          )}
+          {extra && <Grid layout={extra} g={folded} onOpen={onOpen} marks={marks} />}
+        </div>
+      </TimelineTipProvider>
     </section>
   );
 }

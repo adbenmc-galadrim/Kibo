@@ -97,7 +97,6 @@ test("ProjectHome names the created project and its folder", () => {
 });
 
 const contentProps = {
-  inboxCount: 0,
   snapshots: new Map([["p1", empty]]),
   target: null,
   viewer: "adam",
@@ -110,6 +109,7 @@ const contentProps = {
   onOpen: () => {},
   onOpenFile: () => {},
   onOpenTicket: () => {},
+  onOpenPlanning: () => {},
 };
 
 test("ContentView welcomes a workspace without any project", async () => {
@@ -119,17 +119,8 @@ test("ContentView welcomes a workspace without any project", async () => {
 
 test("ContentView keeps the overview once a project exists", async () => {
   render(<ContentView {...contentProps} projects={[kibo]} />);
-  await screen.findByRole("progressbar");
-  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Bonjour Adam");
+  expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Aujourd'hui");
   expect(screen.queryByText("Bienvenue dans Kibo")).toBeNull();
-});
-
-test("ContentView leads from the overview inbox card to the inbox screen", async () => {
-  const opened: unknown[] = [];
-  render(<ContentView {...contentProps} projects={[kibo]} inboxCount={2} onOpen={(t) => opened.push(t)} />);
-  await screen.findByRole("progressbar");
-  screen.getByRole("button", { name: "Boîte de réception · 2 tickets sans projet" }).click();
-  expect(opened).toEqual([{ kind: "screen", screen: "inbox" }]);
 });
 
 test("the empty project home no longer proposes starter pages", () => {

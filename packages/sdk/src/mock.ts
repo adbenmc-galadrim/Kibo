@@ -27,6 +27,7 @@ import { createSpotlightStore } from "./spotlight";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFrame } from "./mock-design";
+export type { MockT3 } from "./mock-t3";
 export type { MockSdk, MockSdkOptions } from "./mock-types";
 
 const PROJECT_KEY = "KIB";

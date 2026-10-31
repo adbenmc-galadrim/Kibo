@@ -24,14 +24,12 @@ S.sidebar = (p, active, o = {}) => { const C = S.C;
   const ws = S.row(sb, { fx: true, h: 34, pad: [0, 6], gap: 8 }); S.logo(ws, 22); S.txt(ws, "Galadrim", { size: 13, weight: 600 }); S.icon(ws, "chevDown", 13, C.dim); S.spacer(ws); S.icon(ws, "panelRight", 15, C.dim);
   const se = S.row(sb, { fx: true, h: 30, pad: [0, 8], gap: 8, radius: 6, stroke: C.border, fill: C.bg }); S.icon(se, "search", 14, C.dim); S.txt(se, "Rechercher", { size: 12.5, color: C.dim }); S.spacer(se); S.kbd(se, "⌘K");
   S.box(sb, { w: 4, h: 8 });
-  S.navItem(sb, "home", "Accueil", { active: active === "Accueil" });
-  S.navItem(sb, "ticket", "Mes tickets", { count: "6" });
-  S.navItem(sb, "inbox", "Boîte de réception", { count: "2" });
+  S.navItem(sb, "home", "Aujourd'hui", { active: active === "Aujourd'hui" });
   S.box(sb, { w: 4, h: 12 });
   const h = S.row(sb, { fx: true, h: 24, pad: [0, 8] }); S.txt(h, "Projets", { size: 11, weight: 500, color: C.dim, ls: 0.4, upper: true }); S.spacer(h); S.icon(h, "plus", 13, C.dim);
-  S.navItem(sb, null, "Silo", { chev: "chevDown", dot: S.D.project.color });
+  S.navItem(sb, null, "Silo", { chev: o.folded ? "chevRight" : "chevDown", dot: S.D.project.color });
   const counts = o.counts || { "Questions": "3" };
-  for (const pg of (o.pages || ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]))
+  for (const pg of (o.folded ? [] : o.pages || ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]))
     S.navItem(sb, S.NAV_ICON[pg], pg, { indent: 18, active: active === pg, count: counts[pg] || null });
   for (const [n, c] of S.D.projects.slice(1)) S.navItem(sb, null, n, { chev: "chevRight", dot: c });
   S.box(sb, { w: 4, h: 4, fy: true });
@@ -64,7 +62,7 @@ S.rail = (p, active) => { const C = S.C;
   S.logo(r, 28); S.box(r, { w: 4, h: 10 });
   const item = (icon, on, badge) => { const b = S.box(r, { w: 38, h: 38, radius: 8, fill: on ? C.hover : null, dir: "row", align: "center", justify: "center" });
     S.icon(b, icon, 18, on ? C.fg : C.dim); if (badge) S.abs(S.dot(b, badge, 7)); return b; };
-  item("search"); item("home", active === "Accueil");
+  item("search"); item("home", active === "Aujourd'hui");
   S.hline(r, C.soft, { w: 28 });
   for (const pg of ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"]) item(S.NAV_ICON[pg], active === pg);
   S.box(r, { w: 4, h: 4, fy: true }); item("bell"); item("settings"); S.avatar(r, "AB", 28);

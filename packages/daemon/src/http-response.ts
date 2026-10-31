@@ -50,6 +50,10 @@ export const STATUS: Partial<Record<KiboErrorCode, number>> = {
   DAEMON_RUNNING: 409,
   PROJECT_FOLDER_MISSING: 409,
   PROJECT_FOLDER_NOT_FOUND: 404,
+  T3_MISSING: 503,
+  T3_UNAVAILABLE: 502,
+  T3_THREAD_ACTIVE: 409,
+  T3_FAILED: 502,
 };
 const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 

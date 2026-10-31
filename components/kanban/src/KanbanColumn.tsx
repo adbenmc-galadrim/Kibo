@@ -3,22 +3,29 @@ import { SortableContext } from "@dnd-kit/sortable";
 import type { Status } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
+import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
+import { CollapsedColumn } from "./CollapsedColumn";
 import { fr } from "./fr";
 
 type Props = {
   status: Status;
   ids: string[];
   targeted: boolean;
+  collapsed: boolean;
   forbidden?: boolean;
   children: ReactNode;
   onAdd?: () => void;
 };
 
-export function KanbanColumn({ status, ids, targeted, forbidden = false, children, onAdd }: Props) {
+export function KanbanColumn(props: Props) {
+  const { status, ids, targeted, collapsed, forbidden = false, children, onAdd } = props;
   const { setNodeRef } = useDroppable({ id: status.id });
+  const [cards] = useAutoAnimate<HTMLDivElement>();
+  if (collapsed)
+    return <CollapsedColumn ref={setNodeRef} status={status} forbidden={forbidden} onAdd={onAdd} />;
   return (
     <section
       ref={setNodeRef}
@@ -35,7 +42,9 @@ export function KanbanColumn({ status, ids, targeted, forbidden = false, childre
         <StatusDot statusId={status.id} />
         <span className="font-medium">{status.label}</span>
         <span className="flex-1" />
-        <span className="font-mono text-2xs text-muted-foreground">{ids.length}</span>
+        <span title={fr.tickets(ids.length)} className="font-mono text-2xs text-muted-foreground">
+          {ids.length}
+        </span>
         {onAdd ? (
           <Button
             size="icon"
@@ -51,6 +60,7 @@ export function KanbanColumn({ status, ids, targeted, forbidden = false, childre
         )}
       </header>
       <div
+        ref={cards}
         data-slot="kanban-cards"
         className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto pt-2"
       >

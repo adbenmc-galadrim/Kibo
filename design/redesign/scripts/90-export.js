@@ -74,4 +74,5 @@ S.exportA3 = async (only) => { await S.page("Proposition"); await S.wait(800); c
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y; await S.wait(10000);
     try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
+S.exportP34 = (only) => S.export34(only);
 return "export ok";

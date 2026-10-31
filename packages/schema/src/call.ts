@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
 import { DESIGN_URL_MAX } from "./design";
-import { Base64 } from "./ids";
+import { Base64, TicketKey } from "./ids";
 import { DataKey } from "./instance";
 import { BuiltinEntityType } from "./manifest";
 import { AssetMime, AssetName, AssetPath, MAX_ASSET_BASE64, NotePath } from "./note";
@@ -62,5 +62,10 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("design.storybooks") }),
   z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
   z.object({ kind: z.literal("questions.recipients") }),
+  z.object({ kind: z.literal("t3.status") }),
+  z.object({ kind: z.literal("t3.preview"), ticketKey: TicketKey }),
+  z.object({ kind: z.literal("t3.launch"), ticketKey: TicketKey }),
+  z.object({ kind: z.literal("t3.threadOf"), ticketKey: TicketKey }),
+  z.object({ kind: z.literal("t3.refresh") }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

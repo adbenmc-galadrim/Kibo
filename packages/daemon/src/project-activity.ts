@@ -3,6 +3,7 @@ import {
   NO_ACTIVITY,
   type ProjectActivity,
   type RunView,
+  type T3Thread,
   type TicketSession,
 } from "@kibo/schema";
 
@@ -10,6 +11,7 @@ type BusyTicket = { projectId: string; ticketId: string };
 
 export type ActivitySources = {
   sessions?(projectId: string): ReadonlyMap<string, TicketSession>;
+  threads?(projectId: string): ReadonlyMap<string, T3Thread>;
   lastEventAt?(projectId: string): ReadonlyMap<string, number>;
 };
 
@@ -40,9 +42,10 @@ export function createActivityTracker(
       const running = [...busy.values()].filter((b) => b.projectId === projectId).map((b) => b.ticketId);
       const sessions = sources.sessions?.(projectId) ?? NO_ACTIVITY.sessions;
       const lastEventAt = sources.lastEventAt?.(projectId) ?? NO_ACTIVITY.lastEventAt;
+      const threads = sources.threads?.(projectId) ?? NO_ACTIVITY.threads;
       const busyTickets = new Set([...running, ...sessions.keys()]);
-      if (busyTickets.size === 0 && lastEventAt.size === 0) return NO_ACTIVITY;
-      return { busyTickets, sessions, lastEventAt };
+      if (busyTickets.size === 0 && lastEventAt.size === 0 && threads.size === 0) return NO_ACTIVITY;
+      return { busyTickets, sessions, threads, lastEventAt };
     },
   };
 }

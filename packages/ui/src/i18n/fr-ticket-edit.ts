@@ -17,6 +17,8 @@ export const frTicketEdit = {
   actions: (key: string) => `Actions ${key}`,
   openInTab: "Ouvrir dans un onglet",
   copyKey: "Copier la clé",
+  copyKeyOf: (key: string) => `Copier ${key}`,
+  keyCopied: "Copiée",
   copied: "Clé copiée",
   copyFailed: "Impossible de copier la clé.",
   remove: "Supprimer…",

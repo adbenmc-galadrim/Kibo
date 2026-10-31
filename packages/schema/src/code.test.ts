@@ -166,8 +166,9 @@ describe("tabs contracts", () => {
   });
 
   test("a screen outside any project is a target", () => {
-    expect(TabTarget.safeParse({ kind: "screen", screen: "inbox" }).success).toBe(true);
+    expect(TabTarget.safeParse({ kind: "screen", screen: "general" }).success).toBe(true);
     expect(TabTarget.safeParse({ kind: "screen", screen: "elsewhere" }).success).toBe(false);
+    expect(TabTarget.safeParse({ kind: "screen", screen: "inbox" }).success).toBe(false);
   });
 
   test("salvaging a stored state drops the unknown targets and keeps the others", () => {
@@ -186,6 +187,22 @@ describe("tabs contracts", () => {
       recents: [{ kind: "project", projectId: "p" }],
     });
     expect(salvageTabsState({ tabs: "nope" })).toBeNull();
+    const retired = {
+      tabs: [
+        { id: "m", target: { kind: "screen", screen: "mine" }, pinned: false, preview: false },
+        { id: "a", target: { kind: "project", projectId: "p" }, pinned: false, preview: false },
+      ],
+      activeId: "m",
+      recents: [
+        { kind: "screen", screen: "inbox" },
+        { kind: "project", projectId: "p" },
+      ],
+    };
+    expect(salvageTabsState(retired)).toEqual({
+      tabs: [{ id: "a", target: { kind: "project", projectId: "p" }, pinned: false, preview: false }],
+      activeId: null,
+      recents: [{ kind: "project", projectId: "p" }],
+    });
   });
 
   test("the empty state is valid and the tab count is bounded", () => {

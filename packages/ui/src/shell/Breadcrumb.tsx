@@ -11,9 +11,7 @@ type Crumb = { label: string; target: TabTarget | null; color?: string };
 const text = (label: string): Crumb => ({ label, target: null });
 
 function projectCrumb(p: ProjectSnapshot): Crumb {
-  const target: TabTarget = isInbox(p.meta.id)
-    ? { kind: "screen", screen: "inbox" }
-    : { kind: "project", projectId: p.meta.id };
+  const target: TabTarget | null = isInbox(p.meta.id) ? null : { kind: "project", projectId: p.meta.id };
   return { label: displayName(p.meta), target, color: p.meta.color };
 }
 
@@ -74,12 +72,10 @@ type ItemProps = {
   crumb: Crumb;
   current: boolean;
   first: boolean;
-  heading: boolean;
   onOpen(t: TabTarget, keep?: boolean): void;
 };
 
-function CrumbItem({ crumb, current, first, heading, onOpen }: ItemProps) {
-  const Label = current && heading ? "h1" : "span";
+function CrumbItem({ crumb, current, first, onOpen }: ItemProps) {
   const { label, target } = crumb;
   return (
     <li>
@@ -99,17 +95,17 @@ function CrumbItem({ crumb, current, first, heading, onOpen }: ItemProps) {
           {label}
         </button>
       ) : (
-        <Label aria-current={current ? "page" : undefined} className="truncate">
+        <span aria-current={current ? "page" : undefined} className="truncate">
           {label}
-        </Label>
+        </span>
       )}
     </li>
   );
 }
 
-type Props = { crumbs: Crumb[]; heading?: boolean; onOpen(target: TabTarget, keep?: boolean): void };
+type Props = { crumbs: Crumb[]; onOpen(target: TabTarget, keep?: boolean): void };
 
-export function Breadcrumb({ crumbs, heading = false, onOpen }: Props) {
+export function Breadcrumb({ crumbs, onOpen }: Props) {
   return (
     <nav aria-label={fr.nav.breadcrumb} className="min-w-0">
       <ol className="k-crumbs">
@@ -119,7 +115,6 @@ export function Breadcrumb({ crumbs, heading = false, onOpen }: Props) {
             crumb={crumb}
             current={i === crumbs.length - 1}
             first={i === 0}
-            heading={heading}
             onOpen={onOpen}
           />
         ))}

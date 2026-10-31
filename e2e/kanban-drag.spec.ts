@@ -79,7 +79,9 @@ async function dragToInProgress(page: Page, root: Locator, title: string) {
   expect(await previewAt(page, to)).toBe(true);
   expect(await card.evaluate((el) => el.style.transform)).toBe("");
   await expect(card).toHaveClass(/opacity-40/);
-  expect(await scrollers(board)).toEqual([boardGap, ...columnGaps]);
+  const [draggedBoardGap, ...draggedColumnGaps] = await scrollers(board);
+  expect(draggedBoardGap).toEqual(boardGap);
+  for (const gap of draggedColumnGaps) expect(gap).toEqual(FLAT);
   expect(await scrollLeftOf(board)).toBe(scrolled);
   return {
     board: boardGap,
@@ -100,13 +102,12 @@ async function previewFollowsAutoScroll(page: Page, root: Locator, title: string
   const from = await pointIn(card);
   const edge = await pointIn(board, 1);
   edge.x -= 8;
+  const scrolled = await scrollLeftOf(board);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
   await page.mouse.move(edge.x, edge.y, { steps: 12 });
-  await expect
-    .poll(() => board.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft))
-    .toBeLessThanOrEqual(1);
+  await expect.poll(() => scrollLeftOf(board)).toBeGreaterThan(scrolled);
   await expect.poll(() => previewAt(page, edge)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(page.locator(PREVIEW)).toHaveCount(0);
@@ -256,8 +257,10 @@ test("textes longs : rien ne sort des cartes, aucune barre de défilement", asyn
   expect(boardGap).toEqual(FLAT);
   for (const gap of columnGaps) expect(gap?.x).toBe(0);
   for (const name of ["Backlog", "En cours", "En review", "Bloqué", "Terminé"]) {
-    const cards = main.getByRole("region", { name }).locator('[data-slot="kanban-cards"]');
-    expect(await cards.evaluate(overflowOf)).toEqual(FLAT);
+    const column = main.getByRole("region", { name });
+    const cards = column.locator('[data-slot="kanban-cards"]');
+    const box = (await cards.count()) === 0 ? column : cards;
+    expect(await box.evaluate(overflowOf)).toEqual(FLAT);
   }
   expect(await page.locator("[data-viewer]").evaluate(overflowOf)).toEqual(FLAT);
 
@@ -360,5 +363,7 @@ test("une carte bloquée par une question ne quitte pas Bloqué par glisser", as
   await refusal.getByRole("button", { name: "Répondre" }).click();
   const create = page.getByRole("dialog", { name: "Créer une page Questions ?" });
   await create.getByRole("button", { name: "Créer la page" }).click();
-  await expect(page.getByRole("main").getByText("Quel format pour l'import ?")).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("article", { name: "Quel format pour l'import ?" }),
+  ).toBeVisible();
 });

@@ -32,6 +32,7 @@ export type DaemonOptions = {
   clock?: Clock;
   code?: CodeTrackingOptions;
   answerWakeGraceMs?: number;
+  t3Bin?: string;
 } & Partial<Pick<ComponentsDeps, "net" | "installCli" | "cliStatus">>;
 
 export function clockFromEnv(env: Record<string, string | undefined>, log: (line: string) => void): Clock {

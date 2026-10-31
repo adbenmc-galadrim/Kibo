@@ -22,3 +22,6 @@ export function heldBy(
   if (question === null) return null;
   return heldByQuestion(column, target, questionLabel(question)) === null ? null : question;
 }
+
+export const isFolded = (columnTotal: number, targeted: boolean, loading: boolean): boolean =>
+  columnTotal === 0 && !targeted && !loading;

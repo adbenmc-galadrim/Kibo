@@ -28,6 +28,18 @@ GlobalRegistrator.register({
 });
 Object.assign(globalThis, native);
 
+function fakeAnimate(): Animation {
+  const animation = new EventTarget();
+  setTimeout(() => animation.dispatchEvent(new Event("finish")), 0);
+  return Object.assign(animation, { cancel() {}, finished: Promise.resolve() }) as unknown as Animation;
+}
+
+// happy-dom has no Web Animations API, which auto-animate calls on every list change.
+Element.prototype.animate = fakeAnimate;
+
 const { cleanup, configure } = await import("@testing-library/react");
 configure({ asyncUtilTimeout: 4_000 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  document.body.replaceChildren();
+});

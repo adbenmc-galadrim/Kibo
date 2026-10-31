@@ -4,19 +4,24 @@ import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 const context: PaletteContext = {
   projects: [],
   snapshots: new Map(),
-  recents: [{ kind: "screen", screen: "inbox" }],
+  recents: [{ kind: "screen", screen: "general" }],
   activeProjectId: null,
   activeTicketId: null,
 };
 
 test("the tracking screens are pages of the palette and open as targets", () => {
-  const pages = searchItems(buildItems(context), "boite", "all").find((s) => s.group === "pages");
+  const pages = searchItems(buildItems(context), "apparence", "all").find((s) => s.group === "pages");
   expect(pages?.items.map((i) => [i.label, i.run])).toEqual([
-    ["Boîte de réception", { kind: "target", target: { kind: "screen", screen: "inbox" } }],
+    ["Apparence", { kind: "target", target: { kind: "screen", screen: "appearance" } }],
   ]);
   expect(searchItems(buildItems(context), "parametres general", "pages")[0]?.items[0]?.label).toBe("Général");
   expect(searchItems(buildItems(context), "integrations", "pages")[0]?.items[0]?.label).toBe("Intégrations");
-  expect(searchItems(buildItems(context), "mes tickets", "pages")[0]?.items[0]?.label).toBe("Mes tickets");
+});
+
+test("Mes tickets and the inbox screen left the palette", () => {
+  const labels = buildItems(context).map((i) => i.label);
+  expect(labels).not.toContain("Mes tickets");
+  expect(labels).not.toContain("Boîte de réception");
 });
 
 test("the agent-era screens are gone from the palette, even when execution was shown", () => {
@@ -42,6 +47,6 @@ test("an opened screen comes back among the recents, a retired one does not", ()
     searchItems(buildItems(ctx), "", "all")
       .find((s) => s.group === "recents")
       ?.items.map((i) => i.label);
-  expect(recents(context)).toEqual(["Boîte de réception"]);
+  expect(recents(context)).toEqual(["Général"]);
   expect(recents({ ...context, recents: [{ kind: "screen", screen: "domains" }] })).toBeUndefined();
 });

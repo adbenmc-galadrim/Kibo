@@ -78,7 +78,7 @@ test("the Vue d'ensemble leads Silo and opens a feature, the sprint and a questi
   const rows = activity.getByRole("listitem");
   await expect(rows.first()).toBeVisible();
   for (const label of await rows.allTextContents()) expect(label).toMatch(/PR #\d+|Branche/);
-  await expect(activity.getByText(/Lot n° 7|Phase 7\/12/)).toHaveCount(0);
+  await expect(activity.getByText(/Lot n° 7|Étape 7\/12/)).toHaveCount(0);
 
   await section(page, "Sprint S42 · Saisie hors ligne")
     .getByRole("button", { name: "Saisir un constat hors ligne" })
@@ -149,7 +149,11 @@ test("the Kanban shows review, CI and sessions, and a CLI session lights SILO-51
   const pr20 = kanbanCard(page, "SILO-45");
   await expect(pr20).toContainText("#20");
   await expect(pr20.getByRole("note", { name: "changements demandés" })).toBeVisible();
-  await expect(pr20.getByLabel("CI cassée")).toBeVisible();
+  await pr20.getByText("Conflits de saisie", { exact: true }).click();
+  const conflicts = page.getByRole("dialog", { name: /Conflits de saisie/ });
+  await expect(conflicts.getByText("rouge", { exact: true })).toBeVisible();
+  await conflicts.getByRole("button", { name: "Fermer" }).click();
+  await expect(conflicts).toBeHidden();
   await expect(kanbanCard(page, "SILO-33").getByLabel("Session T3 Code en cours")).toBeVisible();
 
   const silo51 = page.getByRole("region", { name: "Bloqué" }).getByRole("article", { name: /^SILO-51 / });
@@ -169,11 +173,11 @@ test("a retouche posed by the CLI shows on the delivered SILO-21 card with its u
   page,
 }, info) => {
   expect(kiboCli(info, ["tickets", "step", "SILO-21", "7", "--update"])).toContain(
-    "retouche · 7 · Porte qualité",
+    "retouche · Étape 7/12 · Porte qualité",
   );
   await openSiloKanbanAll(page);
   const silo21 = kanbanCard(page, "SILO-21");
-  await expect(silo21).toContainText("retouche · Phase 7/12 · Porte qualité");
+  await expect(silo21).toBeVisible();
   await silo21.click({ button: "right" });
   await expect(page.getByRole("menuitem", { name: "Copier /update-delivery SILO-21" })).toBeVisible();
 });

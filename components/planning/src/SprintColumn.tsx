@@ -1,16 +1,20 @@
 import { useDroppable } from "@dnd-kit/core";
 import type { SprintPhase } from "@kibo/schema";
+import { STEPS_PER_WEEK } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
+import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 import { dashedBorder } from "./dashes";
 import { fr } from "./fr";
 import { PenpotStroke } from "./PenpotStroke";
 import type { SprintColumn as Column } from "./planning-model";
-import { STEPS_PER_WEEK } from "./sprint-load";
+import { mergeSprintAlerts, type SprintAlerts } from "./sprint-alerts";
 
 export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";
+
+export const CARD_LIST_CLASS = "flex flex-col gap-2.5 empty:hidden";
 
 const BAR_WIDTH = 104;
 
@@ -50,14 +54,14 @@ function StateChip({ phase }: { phase: SprintPhase }) {
   );
 }
 
-function SprintLoadLine({ load }: { load: Column["load"] }) {
+function SprintLoadLine({ load, tone }: { load: Column["load"]; tone: Column["capacityTone"] }) {
   return (
     <span
       data-over={load.over}
       title={fr.loadHint(STEPS_PER_WEEK)}
       className={cn(
         "text-[11px] leading-[14px]",
-        load.over ? "text-(--tracking-amber)" : "text-(--tracking-dim)",
+        tone === "amber" ? "text-(--tracking-amber)" : "text-(--tracking-dim)",
       )}
     >
       {fr.load(load.steps, load.capacity)}
@@ -105,7 +109,7 @@ function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
         )}
       </div>
       {started && <SprintProgress delivered={sprint.delivered} total={sprint.total} />}
-      <SprintLoadLine load={column.load} />
+      <SprintLoadLine load={column.load} tone={column.capacityTone} />
     </header>
   );
 }
@@ -124,21 +128,22 @@ export function DropZone({ label, dates }: { label: string; dates: string | null
   );
 }
 
-export function Warning({ children, tone = "red" }: { children: ReactNode; tone?: "red" | "amber" }) {
+export function Warning({ children }: { children: ReactNode }) {
   return (
     <p
       role="note"
-      className={cn(
-        "flex items-center gap-1.5 rounded-[6px] px-2 py-1.5 text-[11.5px] leading-[14px]",
-        tone === "red"
-          ? "bg-(--tracking-red-soft) text-(--tracking-red)"
-          : "bg-(--tracking-amber-soft) text-(--tracking-amber)",
-      )}
+      className="flex items-center gap-1.5 rounded-[6px] bg-(--tracking-amber-soft) px-2 py-1.5 text-(--tracking-amber) text-[11.5px] leading-[14px]"
     >
       <ClockAlert absoluteStrokeWidth size={13} aria-hidden className="shrink-0" />
       <span>{children}</span>
     </p>
   );
+}
+
+function alertsOf(warnings: Column["warnings"], limit: string | null): SprintAlerts {
+  const texts = (tone: "red" | "amber", text: (key: string, remaining: number) => string) =>
+    warnings.filter((w) => w.tone === tone).map((w) => text(w.shortKey, w.remaining));
+  return { wontHold: texts("amber", fr.wontHold), lateBy: texts("red", fr.lateBy), limit };
 }
 
 type Props = {
@@ -147,12 +152,14 @@ type Props = {
   onOpen(): void;
   onEdit?: (() => void) | undefined;
   children: ReactNode;
-  footer?: ReactNode;
+  limit: string | null;
 };
 
-export function SprintColumn({ column, dropping, onOpen, onEdit, children, footer }: Props) {
+export function SprintColumn({ column, dropping, onOpen, onEdit, children, limit }: Props) {
   const { setNodeRef } = useDroppable({ id: column.sprint.id });
+  const [cards] = useAutoAnimate<HTMLDivElement>();
   const current = column.sprint.state === "current";
+  const alert = mergeSprintAlerts(alertsOf(column.warnings, limit));
   return (
     <section
       ref={setNodeRef}
@@ -170,14 +177,11 @@ export function SprintColumn({ column, dropping, onOpen, onEdit, children, foote
         )}
       >
         <SprintHeader column={column} onOpen={onOpen} onEdit={onEdit} />
-        {children}
+        <div ref={cards} data-slot="planning-cards" className={CARD_LIST_CLASS}>
+          {children}
+        </div>
         {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}
-        {column.warnings.map((w) => (
-          <Warning key={w.shortKey} tone={w.tone}>
-            {w.tone === "red" ? fr.lateBy(w.shortKey, w.remaining) : fr.wontHold(w.shortKey, w.remaining)}
-          </Warning>
-        ))}
-        {footer}
+        {alert !== null && <Warning>{alert}</Warning>}
       </div>
       {current && <PenpotStroke color={CURRENT_STROKE} radius={10} border={0} />}
     </section>

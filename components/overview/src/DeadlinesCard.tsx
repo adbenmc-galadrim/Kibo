@@ -24,7 +24,7 @@ export function DeadlinesCard({ deadlines, onOpenTicket }: Props) {
         {deadlines.columns.length === 0 ? (
           <p className="px-[16px] py-[12px] text-(--tracking-mfg) text-[12.5px]">{fr.deadlines.empty}</p>
         ) : (
-          <SprintTimeline {...deadlines} legend onOpen={onOpenTicket} />
+          <SprintTimeline {...deadlines} onOpen={onOpenTicket} />
         )}
       </div>
     </section>

@@ -1,4 +1,12 @@
-import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import {
+  type Domain,
+  type FileRef,
+  isFeature,
+  isGroup,
+  isInbox,
+  type ProjectSnapshot,
+  type Question,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import {
@@ -10,6 +18,7 @@ import {
   SheetTitle,
 } from "@kibo/sdk/ui/sheet";
 import { X } from "lucide-react";
+import { useRef } from "react";
 import { frFeature, frGroup } from "../i18n/fr-group";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
 import { findTicket } from "../tabs/target-hash";
@@ -53,11 +62,13 @@ export function TicketSheet({
   const t = findTicket(project.tickets, ticketId);
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
+  const stepContent = useRef<HTMLDivElement>(null);
   if (!t) return null;
   const inbox = isInbox(project.meta.id);
-  const actionsMenu = (extra?: MenuEntry[]) => (
+  const actionsMenu = (extra?: MenuEntry[], questions?: readonly Question[]) => (
     <TicketActionsMenu
       extra={extra}
+      questions={questions}
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
@@ -113,19 +124,28 @@ export function TicketSheet({
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent
+        ref={stepContent}
         showCloseButton={false}
-        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-x-hidden overflow-y-auto"
+        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-x-hidden overflow-y-auto outline-none"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          stepContent.current?.focus();
+        }}
       >
         <SheetDescription className="sr-only">{`${t.keyLabel} · ${t.title}`}</SheetDescription>
         <TicketTopBar
           projectId={project.meta.id}
           ticket={t}
-          questions={project.questions}
-          copy={!inbox}
-          actions={actionsMenu()}
+          folder={project.meta.folder}
+          launch={!inbox}
+          actions={actionsMenu(undefined, inbox ? undefined : project.questions)}
           close={
             <SheetClose asChild>
-              <Button variant="ghost" size="sm" className="h-[25px] text-xs text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-[25px] gap-1.5 px-2.5 text-xs text-muted-foreground [&_svg]:size-[13px]"
+              >
                 <X />
                 {frTicketTracking.close}
               </Button>

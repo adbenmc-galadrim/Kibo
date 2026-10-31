@@ -37,6 +37,16 @@ async function get(ident: string, flags: Flags = {}) {
 }
 
 describe("kibo tickets get", () => {
+  test("the CLI prints Étape", async () => {
+    const stepped = {
+      ...fakeTicket({ id: "stepped", key: "SILO-72" }),
+      delivery: { step: 9, note: "", at: 1, runId: null, kind: "delivery" as const },
+    };
+    const d = fakeDaemon([...TICKETS, stepped]);
+    await runTicketsCommand(["get", "SILO-72"], {}, d.io, d.connect, "/nowhere");
+    expect(d.out).toContain("Étape 9/12 · Review");
+  });
+
   test("says there is no dependency", async () => {
     const d = await get("SILO-50");
     expect(d.code).toBe(0);

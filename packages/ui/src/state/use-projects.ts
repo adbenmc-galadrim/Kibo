@@ -1,6 +1,7 @@
 import { KiboError, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { client } from "../api";
+import { projectStore } from "./project-store";
 
 const isUnauthorized = (e: unknown) => e instanceof KiboError && e.code === "UNAUTHORIZED";
 
@@ -42,23 +43,14 @@ export function useProjects(): ProjectsState {
 }
 
 export function useProject(projectId: string | null): ProjectSnapshot | null {
-  const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
+  const snapshot = useSyncExternalStore(projectStore.subscribe, () =>
+    projectId ? projectStore.peek(projectId) : null,
+  );
   useEffect(() => {
-    setSnapshot(null);
     if (!projectId) return;
-    let current = true;
-    const load = () =>
-      client
-        .rpc({ method: "getProject", projectId })
-        .then((s) => current && setSnapshot(s), unlessUnauthorized);
-    void load();
-    const unsubscribe = client.subscribe((id) => {
-      if (id === projectId) void load();
-    });
-    return () => {
-      current = false;
-      unsubscribe();
-    };
+    const release = projectStore.watch(projectId);
+    projectStore.ensure(projectId).catch(unlessUnauthorized);
+    return release;
   }, [projectId]);
-  return snapshot?.meta.id === projectId ? snapshot : null;
+  return snapshot;
 }

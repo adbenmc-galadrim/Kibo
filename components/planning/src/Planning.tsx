@@ -67,12 +67,14 @@ function usePlanningData(): PlanningData | null {
 }
 
 export function Planning() {
-  const today = useProject()?.today;
+  const project = useProject();
   const data = usePlanningData();
-  return today === undefined || data === null ? null : <PlanningBoard today={today} data={data} />;
+  return project === null || data === null ? null : (
+    <PlanningBoard today={project.today} projectId={project.id} data={data} />
+  );
 }
 
-function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
+function PlanningBoard({ today, projectId, data }: { today: string; projectId: string; data: PlanningData }) {
   const sdk = useSdk();
   const { tickets, links, sprints, questions, events } = data;
   const { tracking } = useComponentSettings();
@@ -172,6 +174,7 @@ function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
     >
       <PlanningView
         model={model}
+        projectId={projectId}
         target={target}
         dragged={dragged}
         error={error}

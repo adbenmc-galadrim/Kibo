@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { FeatureState } from "./feature-state";
 import { SPRINT_VIEWS } from "./overview-test-kit";
-import { sprintEndDigest } from "./sprint-end";
+import { endedSprint, sprintEndDigest, sprintRecap } from "./sprint-end";
 
 const S42 = SPRINT_VIEWS[1];
 const state = (status: FeatureState["status"], remaining: number): FeatureState => ({
@@ -48,4 +48,43 @@ test("a sprint without anything left needs no digest", () => {
   if (S42 === undefined) throw new Error("fixture");
   expect(sprintEndDigest(S42, [f4])).toBeNull();
   expect(sprintEndDigest(S42, [])).toBeNull();
+});
+
+const withSteps = (f: typeof f5, done: number, total: number) => ({
+  ...f,
+  state: { ...f.state, steps: { ...f.state.steps, done, total } },
+});
+const S43 = SPRINT_VIEWS[2];
+
+test("sprintRecap lists delivered features, merged/planned steps, capacity, slipped features and the next sprint", () => {
+  if (S42 === undefined || S43 === undefined) throw new Error("sprints");
+  const next = { sprint: S43, features: [withSteps(f5, 0, 3), withSteps(f5, 0, 5)] };
+  expect(sprintRecap(S42, [withSteps(f4, 4, 4), withSteps(f5, 1, 4)], next)).toEqual({
+    code: S42.code,
+    name: S42.name,
+    start: S42.start,
+    end: S42.end,
+    delivered: [{ label: "F4", title: "Saisir un constat hors ligne" }],
+    mergedSteps: 5,
+    plannedSteps: 8,
+    capacity: 5,
+    slipped: [{ label: "F5", remaining: 3, keys: ["SILO-32", "SILO-34", "SILO-35"], to: S43.code }],
+    next: { code: S43.code, start: S43.start, end: S43.end, plannedSteps: 8 },
+  });
+});
+
+test("a sprint without a next one slips nowhere and an empty sprint has no recap", () => {
+  if (S42 === undefined) throw new Error("S42");
+  expect(sprintRecap(S42, [f5], null)?.slipped[0]?.to).toBeNull();
+  expect(sprintRecap(S42, [f5], null)?.next).toBeNull();
+  expect(sprintRecap(S42, [], null)).toBeNull();
+});
+
+test("endedSprint takes the latest sprint over, and nothing before the day after its end", () => {
+  if (S42 === undefined || S43 === undefined) throw new Error("sprints");
+  expect(endedSprint([S42, S43], S42.end)).toBeNull();
+  expect(endedSprint([S42, S43], "2026-10-17")?.code).toBe(S42.code);
+  expect(endedSprint([S42, S43], "2026-10-19")?.code).toBe(S42.code);
+  expect(endedSprint([S42, S43], "2026-10-20")).toBeNull();
+  expect(endedSprint([], "2026-10-17")).toBeNull();
 });

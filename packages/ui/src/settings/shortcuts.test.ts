@@ -10,7 +10,7 @@ test("groups follow screen 77, with platform labels", () => {
     ["Fermer l'onglet", ["⌘W"], false],
     ["Rouvrir le dernier onglet fermé", ["⌘⇧T"], false],
     ["Épingler ou détacher l'onglet", ["⌘⇧P"], false],
-    ["Aller à l'Accueil", ["⌘1"], false],
+    ["Aller à Aujourd'hui", ["⌘1"], false],
     ["Aller à un onglet", ["⌘2", "⌘8"], true],
     ["Dernier onglet", ["⌘9"], false],
     ["Aide des raccourcis", ["⌘/"], false],

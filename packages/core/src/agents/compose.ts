@@ -99,6 +99,7 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
     shortKey: null,
     effectiveSprintId: null,
     session: null,
+    thread: null,
     updatedAt: null,
     feature: null,
     progress: { done: 0, total: 0 },

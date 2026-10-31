@@ -5,7 +5,7 @@ const s = (n: number) => (n > 1 ? "s" : "");
 export const frCode = {
   tabs: {
     bar: "Onglets",
-    home: "Accueil",
+    home: "Aujourd'hui",
     newTab: "Nouvel onglet",
     close: (title: string) => `Fermer ${title}`,
     pin: "Épingler l'onglet",

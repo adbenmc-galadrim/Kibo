@@ -33,6 +33,26 @@ export type StartReason =
   | { kind: "unplanned" }
   | { kind: "limit"; limit: number; count: number };
 type StartFeatureSprint = NonNullable<StartFacts["feature"]>["sprint"];
+export function startReasonText(reason: StartReason): string | null {
+  switch (reason.kind) {
+    case "dependency":
+      return `attend ${reason.keys.join(", ")}`;
+    case "question":
+      return `bloqué par ${reason.label}`;
+    case "sprint":
+      return `sprint ${reason.code}`;
+    case "unplanned":
+      return "sans sprint";
+    case "limit":
+      return `limite ${reason.count}/${reason.limit} atteinte`;
+    case "onHold":
+      return reason.hold.source === "own"
+        ? `en attente : ${reason.hold.reason}`
+        : `en attente de ${reason.hold.key}`;
+    case "status":
+      return null;
+  }
+}
 export type Startability = { startable: true } | { startable: false; reason: StartReason };
 
 const START: Startability = { startable: true };

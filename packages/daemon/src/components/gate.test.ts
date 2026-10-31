@@ -19,6 +19,14 @@ describe("componentCall checks, in order", () => {
       ["evil@0.1.0", "data.keys", "NOT_FOUND"],
     ]);
   });
+  test("t3 calls are allowed to built-ins only", async () => {
+    const { gate: g, handled } = testGate();
+    await refused(g.call("p1", "thirdparty", { kind: "t3.status" }), "NOT_FOUND");
+    expect(handled).toEqual([]);
+    await g.call("p1", "builtin", { kind: "t3.status" });
+    await g.call("p1", "builtin", { kind: "t3.launch", ticketKey: "SILO-1" });
+    expect(handled).toEqual(["t3.status:p1", "t3.launch:p1"]);
+  });
   test("reserved commands are refused for every built-in", async () => {
     const { gate: g, handled } = testGate();
     const reserved: ComponentCall[] = [

@@ -11,12 +11,10 @@ import { TicketTimeline } from "./activity/TicketTimeline";
 import { BlockedBanner } from "./BlockedBanner";
 import { HoldBanner } from "./HoldBanner";
 import { LabelsField } from "./LabelsField";
-import { OptionalToggle } from "./OptionalToggle";
 import { SprintField } from "./SprintField";
 import { StatusSelect } from "./StatusSelect";
 import { TicketHeader } from "./TicketHeader";
 import { TicketTitle } from "./TicketTitle";
-import { TrackingBanner } from "./TrackingBanner";
 import { useTicketCommand } from "./use-ticket-command";
 import { useTicketCiRuns, useTicketJournal } from "./use-ticket-tracking";
 
@@ -71,7 +69,6 @@ export function TicketBody({
         <StatusSelect ticket={t} workflow={project.workflow} editable command={fieldCommand} />
         <AssigneeSelect ticket={t} viewer={viewer} editable command={fieldCommand} />
         <SprintField ticket={t} sprints={project.sprints} editable command={fieldCommand} />
-        <OptionalToggle ticket={t} editable command={fieldCommand} />
       </div>
       {fieldCommand.error && (
         <p role="alert" className="text-sm text-destructive">
@@ -93,7 +90,6 @@ export function TicketBody({
         editable
         onOpenTicket={onOpenTicket}
       />
-      <TrackingBanner ticket={t} ciRuns={ciRuns} />
       <TicketTabs
         tab={tab}
         onTab={setTab}

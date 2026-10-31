@@ -39,8 +39,13 @@ const isFilter = (value: string): value is KanbanFilterKey => KANBAN_FILTERS.som
 const filterLabel = (filter: KanbanFilterKey, sprintCode: string | null): string =>
   filter === "sprint" ? fr.mode.sprint(sprintCode) : fr.mode[filter];
 
-const shownLabel = (filters: readonly KanbanFilterKey[], sprintCode: string | null): string =>
-  filters.length === 0 ? fr.mode.all : filters.map((f) => filterLabel(f, sprintCode)).join(" + ");
+const counterLabel = (filter: KanbanFilterKey): string =>
+  filter === "sprint" ? fr.mode.sprintCounter : fr.mode[filter];
+
+function counterText(shown: number, filters: readonly KanbanFilterKey[], mine: string | null): string {
+  const mode = filters.map(counterLabel).join(" + ");
+  return [fr.tickets(shown), mode, mine].filter(Boolean).join(" · ");
+}
 
 const SEGMENT =
   "h-[23px] gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
@@ -129,8 +134,8 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
 }
 
 export function KanbanToolbar(props: Props) {
-  const { filters, sprintCode, label, onShowAll, shown, hidden, children } = props;
-  const counter = fr.counter(shown, shownLabel(filters, sprintCode), props.mine);
+  const { filters, label, onShowAll, shown, hidden, children } = props;
+  const counter = counterText(shown, filters, props.mine);
   return (
     <header className="@container/toolbar flex h-12 items-center gap-2 border-b px-4 text-sm">
       <BoardFilters {...props} />

@@ -5,11 +5,12 @@ import type { TicketCommand } from "./use-ticket-command";
 
 type Props = {
   ticket: Pick<TicketView, "id" | "parentId" | "optional">;
+  feature: string | null;
   editable: boolean;
   command: TicketCommand;
 };
 
-export function OptionalToggle({ ticket, editable, command }: Props) {
+export function OptionalToggle({ ticket, feature, editable, command }: Props) {
   if (ticket.parentId === null) return null;
   return (
     <span className="flex items-center gap-2">
@@ -21,7 +22,7 @@ export function OptionalToggle({ ticket, editable, command }: Props) {
           void command.run({ method: "setTicketOptional", ticketId: ticket.id, optional: !required })
         }
       />
-      <span className="text-muted-foreground">{t.requiredToggle}</span>
+      <span>{ticket.optional ? t.optional : t.requiredFor(feature)}</span>
     </span>
   );
 }

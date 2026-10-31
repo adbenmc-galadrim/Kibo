@@ -84,8 +84,20 @@ export const fr = {
   openTicket: (key: string, title: string) => `${key} · ${title}`,
   questions: (n: number) => `${n} ${plural(n, "question", "questions")}`,
   scope: { label: "État", open: "Ouvertes", answered: "Répondues", all: "Toutes", archived: "Archivées" },
+  toolbar: "Filtres des questions",
+  columns: { number: "N°", question: "Question", recipient: "Pour", ticket: "Ticket", age: "Âge" },
+  state: { answered: "répondue", archived: "archivée" },
+  historyEmpty: "Historique",
+  edit: {
+    open: "Modifier",
+    title: "Modifier la question",
+    description: "Le texte de la question, visible de tout le projet.",
+    failed: "Impossible de modifier la question.",
+  },
   ticketFilter: {
     label: "Ticket",
+    shownAll: "Ticket : tous",
+    shown: (key: string) => `Ticket : ${key}`,
     all: "Tous les tickets",
     search: "Rechercher une clé",
     none: "Aucun ticket",
@@ -94,6 +106,7 @@ export const fr = {
   recipients: {
     label: "Destinataire",
     all: "Tous",
+    shownAll: "Pour : tous",
     filter: (name: string, n: number) => `${name} (${n})`,
     add: "Destinataire",
     addLabel: "Nouveau destinataire",
@@ -105,7 +118,7 @@ export const fr = {
   },
   askedBy: "posée par",
   exporting: {
-    one: "Exporter",
+    single: "Exporter cette question",
     forClient: (n: number) => `Exporter pour le client (${n})`,
     forRecipient: (name: string, n: number) => `Exporter pour ${name} (${n})`,
     clientCount: (n: number) => `${n} ${plural(n, "question", "questions")} client`,
@@ -122,6 +135,7 @@ export const fr = {
   blocking: "bloquante",
   blockingSummary: (blocking: number, open: number) =>
     `${blocking} ${plural(blocking, "bloquante", "bloquantes")} en tête · ${open} ${plural(open, "ouverte", "ouvertes")}`,
+  answeredSummary: (n: number) => `${n} ${plural(n, "répondue", "répondues")}`,
   unblocked: (label: string) => `${label} débloquée`,
   unblockedMany: (label: string, others: number) =>
     `${label} et ${others} ${plural(others, "autre", "autres")} débloquées`,
@@ -146,6 +160,12 @@ export const fr = {
     minutes: (n: number) => `il y a ${n} min`,
     hours: (n: number) => `il y a ${n} h`,
     days: (n: number) => `il y a ${n} j`,
+    yesterday: "hier",
+    short: {
+      minutes: (n: number) => `${n} min`,
+      hours: (n: number) => `${n} h`,
+      days: (n: number) => `${n} j`,
+    },
   },
   dialog: {
     title: "Nouvelle question",

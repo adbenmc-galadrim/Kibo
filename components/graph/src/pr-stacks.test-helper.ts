@@ -30,6 +30,7 @@ export const prTicket = (n: number, over: Partial<TicketView> = {}): TicketView 
   effectiveSprintId: null,
   feature: null,
   session: null,
+  thread: null,
   updatedAt: null,
   ...over,
 });

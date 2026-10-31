@@ -10,7 +10,14 @@ export type IndicatorFacts = OverviewIndicators & {
   remaining: number;
   held: number;
 };
-export type IndicatorText = { value: string; unit: string; sub?: string; dot?: Dot };
+export type IndicatorText = {
+  value: string;
+  unit: string;
+  sub?: string;
+  dot?: Dot;
+  subTone?: "amber";
+  hint?: string;
+};
 export type IndicatorTexts = {
   features: {
     value: string;
@@ -57,31 +64,23 @@ function sprintText(sprint: OverviewIndicators["sprint"], remaining: number): In
   };
 }
 
-function levelText(
-  open: OverviewIndicators["open"],
-  ahead: readonly string[],
-  short: boolean,
-): string | null {
-  if (open.count === 0) return short ? null : t.noneOpen;
-  if (open.level === "over" && ahead.length > 0) return t.ahead(ahead);
-  return short ? t.levelShort[open.level] : t.level[open.level];
-}
-
-function openSub(open: OverviewIndicators["open"], blocked: readonly string[], ahead: readonly string[]) {
-  if (blocked.length === 0) return levelText(open, ahead, false) ?? t.noneOpen;
-  const level = levelText(open, ahead, true);
-  return level === null ? t.blocked(blocked) : `${level} · ${t.blocked(blocked)}`;
+function openHint(open: OverviewIndicators["open"], blocked: readonly string[], ahead: readonly string[]) {
+  return [
+    t.openHint,
+    ...(open.level === "over" && ahead.length > 0 ? [t.ahead(ahead)] : []),
+    ...(blocked.length > 0 ? [t.blocked(blocked)] : []),
+  ].join(" · ");
 }
 
 function openText(ind: IndicatorFacts): IndicatorText {
-  const { open, blockedFeatures: blocked } = ind;
-  const level = open.level === "reached" ? "amber" : open.level === "over" ? "red" : undefined;
-  const dot: Dot | undefined = blocked.length > 0 ? "red" : level;
+  const { open } = ind;
+  const atLimit = open.level !== "under" && open.count > 0;
   return {
     value: String(open.count),
-    unit: t.openOf(open.limit),
-    sub: openSub(open, blocked, ind.ahead),
-    ...(dot ? { dot } : {}),
+    unit: t.openUnit(open.count),
+    sub: t.openLimit(open.limit),
+    ...(atLimit ? { dot: "amber" as const, subTone: "amber" as const } : {}),
+    hint: openHint(open, ind.blockedFeatures, ind.ahead),
   };
 }
 

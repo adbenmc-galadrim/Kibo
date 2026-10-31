@@ -37,6 +37,8 @@ const ICONS: Record<ProjectEventKind, [LucideIcon, string]> = {
   step_set: [Flag, "text-(--tracking-mfg)"],
   session_started: [Timer, "text-(--tracking-brand)"],
   session_stopped: [Timer, "text-(--tracking-mfg)"],
+  t3_started: [Timer, "text-(--tracking-brand)"],
+  t3_finished: [Timer, "text-(--tracking-mfg)"],
   sprint_created: [CalendarRange, "text-(--tracking-mfg)"],
   sprint_set: [CalendarRange, "text-(--tracking-mfg)"],
   batch_proposed: [Bot, "text-(--tracking-brand)"],

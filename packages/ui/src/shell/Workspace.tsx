@@ -33,6 +33,7 @@ import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { sidebarHandlers } from "./sidebar-handlers";
+import { usePageTransition } from "./transitions/use-page-transition";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
@@ -66,7 +67,7 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   const activeProjectId = active ? targetProjectId(active) : null;
   const { ticketProject, project, currentProject, forget } = useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
-  const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
+  const snapshots = useWorkspaceSnapshots(projects);
   const config = useConfig();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
   const agentPanel = useProjectAgentPanel(project);
@@ -105,6 +106,30 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   });
   sheetTickets.current = sheetProject?.tickets ?? null;
 
+  const pageContent = usePageTransition(
+    screen ? (
+      <ScreenView key={`${screen}-${screenVisit.visit}`} screen={screen} config={config} />
+    ) : (
+      <ContentView
+        target={active}
+        viewer={viewer}
+        projects={projects}
+        snapshots={snapshots}
+        project={project}
+        domains={projectDomainsOf(project, config)}
+        startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
+        onNewProject={() => set({ newProject: true })}
+        onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
+        onNewPage={() => set({ newPageParent: null })}
+        onOpen={(t, newTab) => go(t, newTab)}
+        onOpenFile={(ref) => set({ preview: ref })}
+        onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+        onOpenPlanning={() => host.openView("planning")}
+      />
+    ),
+    targetToHash(active),
+  );
+
   return (
     <HostProvider host={host}>
       <PageActionsProvider>
@@ -115,8 +140,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
             active={project}
             activeTarget={active}
             screen={screen}
-            mineCount={mineCount}
-            inboxCount={inboxCount}
             workspaceName={config?.workspaceName ?? null}
             workspaceIcon={
               config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
@@ -129,7 +152,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
           <SidebarInset className="min-h-0 min-w-0 mr-(--project-agent-w)">
             <ShellHeader
               active={active}
-              screen={screen}
               project={project}
               gitError={project ? git.error : null}
               agents={agents}
@@ -137,37 +159,8 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
               onOpen={(t, keep) => go(t, false, keep)}
             />
             <RetiredRedirect target={active} onHome={goHome} />
-            <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
-              {screen ? (
-                <ScreenView
-                  key={`${screen}-${screenVisit.visit}`}
-                  screen={screen}
-                  viewer={viewer}
-                  projects={projects}
-                  snapshots={snapshots}
-                  config={config}
-                  onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-                  onFile={(ticketId) => set({ fileTicket: { ticketId } })}
-                  onNewTicket={() => set({ newTicket: {} })}
-                />
-              ) : (
-                <ContentView
-                  target={active}
-                  viewer={viewer}
-                  projects={projects}
-                  snapshots={snapshots}
-                  inboxCount={inboxCount}
-                  project={project}
-                  domains={projectDomainsOf(project, config)}
-                  startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
-                  onNewProject={() => set({ newProject: true })}
-                  onImportProject={() => set({ newProject: true, newProjectFocus: "folder" })}
-                  onNewPage={() => set({ newPageParent: null })}
-                  onOpen={(t, newTab) => go(t, newTab)}
-                  onOpenFile={(ref) => set({ preview: ref })}
-                  onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-                />
-              )}
+            <div className="kibo-content min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
+              {pageContent}
             </div>
           </SidebarInset>
           {agentPanel.opened && project && (

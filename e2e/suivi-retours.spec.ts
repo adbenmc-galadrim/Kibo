@@ -18,9 +18,9 @@ test("la fiche SILO-45 s'ouvre par sa clé : puces, bandeau review et CI, chrono
   const main = page.getByRole("main");
   await expect(main.getByText("F4", { exact: true }).first()).toBeVisible();
   await expect(main.getByText("S42", { exact: true }).first()).toBeVisible();
-  const banner = main.getByRole("status").filter({ hasText: "changements demandés" });
-  await expect(banner).toContainText("PR #20 · changements demandés · CI cassée");
-  await main.getByRole("button", { name: "Copier /full-delivery SILO-45" }).click();
+  await expect(main.getByText("changements demandés", { exact: true })).toHaveCount(1);
+  await main.getByRole("button", { name: "Actions SILO-45" }).click();
+  await page.getByRole("menuitem", { name: "Copier /full-delivery SILO-45" }).click();
   await expect(page.getByText(/^Copié/).first()).toBeVisible();
   expect(await clipboardText(page)).toBe("/full-delivery SILO-45");
   await main.getByRole("tab", { name: "Activité" }).click();

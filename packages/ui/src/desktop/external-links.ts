@@ -1,5 +1,7 @@
 type OutgoingLink = { url: string | null };
 
+const OPENABLE_PROTOCOLS: ReadonlySet<string> = new Set(["https:", "t3-thread:"]);
+
 const parse = (href: string): URL | null => {
   try {
     return new URL(href);
@@ -18,7 +20,7 @@ export function externalLinkOf(target: EventTarget | null, origin: string): Outg
   if (url === null) return { url: null };
   const newTab = anchor.target.toLowerCase() === "_blank";
   if (!newTab && isSameOrigin(url, origin)) return null;
-  return { url: url.protocol === "https:" ? url.href : null };
+  return { url: OPENABLE_PROTOCOLS.has(url.protocol) ? url.href : null };
 }
 
 export function installExternalLinks(root: Document, open: (url: string) => Promise<void>): () => void {

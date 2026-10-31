@@ -42,6 +42,7 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   shortKey: null,
   effectiveSprintId: "s42",
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
   ...patch,

@@ -1,7 +1,7 @@
 import { KiboError } from "@kibo/schema";
 import { z } from "zod";
 
-export type Clock = { now(): number; today(): string; fixedNow: string | null };
+export type Clock = { now(): number; ticking(): number; today(): string; fixedNow: string | null };
 
 const FixedNow = z.string().datetime({ offset: true });
 
@@ -23,5 +23,7 @@ export function parseFixedNow(value: string | undefined): string | null {
 export function createClock(fixedNow: string | null, systemNow: () => number = Date.now): Clock {
   const frozen = fixedNow === null ? null : Date.parse(fixedNow);
   const now = frozen === null ? systemNow : () => frozen;
-  return { now, today: () => localDate(now()), fixedNow };
+  const startedAt = systemNow();
+  const ticking = frozen === null ? systemNow : () => frozen + systemNow() - startedAt;
+  return { now, ticking, today: () => localDate(now()), fixedNow };
 }

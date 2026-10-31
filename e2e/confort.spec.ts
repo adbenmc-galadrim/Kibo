@@ -17,7 +17,7 @@ let seeded: Seeded | null = null;
 
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   await page.goto("/#/");
 }
 
@@ -55,7 +55,7 @@ test("Kanban filtré et réordonné", async ({ page }, info) => {
     "aria-pressed",
     "true",
   );
-  await expect(page.getByText("17 tickets · Tous", { exact: true })).toBeVisible();
+  await expect(page.getByText("17 tickets", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Nouveau ticket dans Bloqué" }).click();
   const create = page.getByRole("dialog", { name: "Nouveau ticket" });

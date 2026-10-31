@@ -8,7 +8,7 @@ import {
 } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Sidebar, SidebarMenu, SidebarMenuItem, useSidebar } from "@kibo/sdk/ui/sidebar";
-import { House, Inbox, Search, Settings2, Ticket } from "lucide-react";
+import { House, Search, Settings2 } from "lucide-react";
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
@@ -30,8 +30,6 @@ type Props = {
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
   activeTarget: TabTarget | null;
   screen: Screen | null;
-  mineCount: number | null;
-  inboxCount: number | null;
   workspaceName: string | null;
   workspaceIcon: string | null;
   viewer: string;
@@ -47,7 +45,6 @@ type Props = {
 };
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
-const count = (n: number | null): string | null => (n !== null && n > 0 ? String(n) : null);
 
 const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen });
 const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
@@ -109,24 +106,6 @@ export function AppSidebar(p: Props) {
         <ul className="k-list mt-2.5 shrink-0">
           <li>
             <NavRow icon={House} label={fr.nav.overview} active={activeTarget === null} {...link(null)} />
-          </li>
-          <li>
-            <NavRow
-              icon={Ticket}
-              label={fr.nav.mine}
-              active={screen === "mine"}
-              count={count(p.mineCount)}
-              {...link(screenTarget("mine"))}
-            />
-          </li>
-          <li>
-            <NavRow
-              icon={Inbox}
-              label={fr.nav.inbox}
-              active={screen === "inbox"}
-              count={count(p.inboxCount)}
-              {...link(screenTarget("inbox"))}
-            />
           </li>
         </ul>
         <ProjectsHeader onNewProject={p.onNewProject} />

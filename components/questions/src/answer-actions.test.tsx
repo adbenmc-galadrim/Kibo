@@ -6,6 +6,7 @@ import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
+import { openRow } from "./question-fixtures.test-helper";
 
 const OPEN = "Garder l'ordre des sous-tickets par index fractionnaire ?";
 const ANSWERED = "Refuser les hooks d'un processus mort ?";
@@ -41,7 +42,7 @@ const confirmIn = async (label: string) =>
 test("an answer not yet delivered is edited from a prefilled form", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: ANSWERED });
+  const card = await openRow(ANSWERED);
   expect(within(card).getByRole("button", { name: "Retirer la réponse" })).toBeTruthy();
   await user.click(within(card).getByRole("button", { name: "Modifier la réponse" }));
   const form = within(card).getByRole("form", { name: `Modifier la réponse à ${ANSWERED}` });
@@ -67,7 +68,7 @@ test("an answer not yet delivered is edited from a prefilled form", async () => 
 test("a free text answer is edited with its current text", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: OPEN });
+  const card = await openRow(OPEN);
   await user.type(within(card).getByRole("textbox", { name: "Autre réponse…" }), "Racine{Enter}");
   await user.click(await within(card).findByRole("button", { name: "Modifier la réponse" }));
   const text = within(card).getByRole("textbox", { name: "Autre réponse…" }) as HTMLInputElement;
@@ -80,7 +81,7 @@ test("a free text answer is edited with its current text", async () => {
 test("« Retirer la réponse » asks first, then reopens the question", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: ANSWERED });
+  const card = await openRow(ANSWERED);
   await user.click(within(card).getByRole("button", { name: "Retirer la réponse" }));
   await confirmIn("Retirer la réponse");
   await waitFor(() => expect(named(m, ANSWERED)?.answer).toBeNull());
@@ -107,7 +108,7 @@ test("an answer marked delivered before stays editable and removable", async () 
   const m = mount();
   markDelivered(m, ANSWERED);
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: ANSWERED });
+  const card = await openRow(ANSWERED);
   expect(within(card).queryByText(/figée/)).toBeNull();
   expect(within(card).queryByRole("button", { name: "Rouvrir" })).toBeNull();
   await user.click(within(card).getByRole("button", { name: "Modifier la réponse" }));
@@ -119,32 +120,26 @@ test("an answer marked delivered before stays editable and removable", async () 
   await waitFor(() => expect(named(m, ANSWERED)?.answer).toBeNull());
 });
 
-const headerOf = (card: HTMLElement) => {
-  const header = card.querySelector("header");
-  if (header === null) throw new Error("card without header");
-  return within(header);
-};
+const ACTIONS = ["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)];
+const metaActions = (card: HTMLElement) =>
+  within(card)
+    .getAllByRole("button")
+    .map((b) => b.getAttribute("aria-label") ?? b.textContent)
+    .filter((name) =>
+      ACTIONS.some((a) => (typeof a === "string" ? a === name : /^Actions de /.test(name ?? ""))),
+    );
 
-test("answer actions sit in the card header, next to the card menu", async () => {
+test("answer actions sit next to the row menu", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: ANSWERED });
-  const header = headerOf(card);
-  const names = header.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
-  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]);
-  await user.click(header.getByRole("button", { name: "Modifier la réponse" }));
+  const card = await openRow(ANSWERED);
+  expect(metaActions(card)).toEqual(ACTIONS);
+  await user.click(within(card).getByRole("button", { name: "Modifier la réponse" }));
   const form = within(card).getByRole("form", { name: `Modifier la réponse à ${ANSWERED}` });
-  expect(form.closest("header")).toBeNull();
-  expect(header.queryByRole("button", { name: "Modifier la réponse" })).toBeNull();
+  expect(within(card).queryByRole("button", { name: "Modifier la réponse" })).toBeNull();
   await user.click(within(form).getByRole("button", { name: "Annuler" }));
   markDelivered(m, ANSWERED);
-  await waitFor(() =>
-    expect(
-      headerOf(card)
-        .getAllByRole("button")
-        .map((b) => b.getAttribute("aria-label") ?? b.textContent),
-    ).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]),
-  );
+  await waitFor(() => expect(metaActions(card)).toEqual(ACTIONS));
 });
 
 test("an imported answer stays editable", async () => {
@@ -166,19 +161,19 @@ test("an imported answer stays editable", async () => {
     });
   };
   mount({ seed: seedImported });
-  const card = await screen.findByRole("article", { name: "Arbitrage importé ?" });
+  const card = await openRow("Arbitrage importé ?");
   expect(within(card).getByRole("button", { name: "Modifier la réponse" })).toBeTruthy();
 });
 
 test("« Archiver » hides the question, « Archivées » shows it with « Restaurer »", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const open = await screen.findByRole("article", { name: OPEN });
+  const open = await openRow(OPEN);
   await user.click(within(open).getByRole("button", { name: /^Actions de / }));
   expect(screen.queryByRole("menuitem", { name: "Archiver" })).toBeNull();
   expect(screen.getByRole("menuitem", { name: "Supprimer" })).toBeTruthy();
   await user.keyboard("{Escape}");
-  const card = screen.getByRole("article", { name: ANSWERED });
+  const card = await openRow(ANSWERED);
   await user.click(within(card).getByRole("button", { name: /^Actions de / }));
   await user.click(await screen.findByRole("menuitem", { name: "Archiver" }));
   const dialog = await screen.findByRole("alertdialog");
@@ -191,7 +186,7 @@ test("« Archiver » hides the question, « Archivées » shows it with « Resta
   await waitFor(() => expect(screen.queryByRole("article", { name: ANSWERED })).toBeNull());
   expect(named(m, ANSWERED)?.archivedBy).toEqual({ kind: "human", ref: "adam" });
   await user.click(screen.getByRole("radio", { name: "Archivées" }));
-  const archived = await screen.findByRole("article", { name: ANSWERED });
+  const archived = await openRow(ANSWERED);
   expect(screen.queryByRole("article", { name: OPEN })).toBeNull();
   expect(within(archived).getByText("Archivée par adam · à l'instant")).toBeTruthy();
   expect(within(archived).queryByRole("form")).toBeNull();
@@ -201,14 +196,14 @@ test("« Archiver » hides the question, « Archivées » shows it with « Resta
   await user.click(within(archived).getByRole("button", { name: "Restaurer" }));
   await waitFor(() => expect(named(m, ANSWERED)?.archivedAt).toBeNull());
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
-  expect(await screen.findByRole("article", { name: ANSWERED })).toBeTruthy();
+  expect(await openRow(ANSWERED)).toBeTruthy();
 });
 
 test("the history lists events newest first, folded under its count", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: ANSWERED });
-  expect(within(card).queryByText(/^Historique/)).toBeNull();
+  const card = await openRow(ANSWERED);
+  expect(within(card).queryByRole("button", { name: /^Historique/ })).toBeNull();
   await user.click(within(card).getByRole("button", { name: "Destinataire : Moi (technique)" }));
   await user.click(await screen.findByRole("menuitemradio", { name: "Client" }));
   await waitFor(() => expect(named(m, ANSWERED)?.recipient).toBe("client"));

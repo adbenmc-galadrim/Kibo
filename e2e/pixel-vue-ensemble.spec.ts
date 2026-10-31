@@ -14,11 +14,12 @@ test("the Vue d'ensemble of Silo with the tracking panel open matches the mockup
   await settlePointer(page, HEIGHT);
   await measureScreen(page, {
     screen: "vue-ensemble",
+    reference: "p34-vue-ensemble-livree",
     height: HEIGHT,
     masks: PIXEL_MASKS["vue-ensemble"],
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
-    outDir: screensDir("2026-10-18-p27-t20"),
+    outDir: screensDir("2026-10-31-p34-t8"),
     contentInformative: true,
   });
 });

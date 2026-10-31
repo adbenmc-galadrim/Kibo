@@ -3,9 +3,10 @@ import type { ProjectCommand, Question } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
+import { openRow } from "./question-fixtures.test-helper";
 
 const TITLE = "Valider l'écran 1.2 ?";
 const IMAGES = [
@@ -57,7 +58,7 @@ const answerOf = (m: ReturnType<typeof mount>) =>
 
 test("an open screen validation offers two primary buttons instead of the free form", async () => {
   mount();
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   const actions = within(card).getByRole("group", { name: "Validation de l'écran" });
   expect(
     within(actions)
@@ -71,7 +72,7 @@ test("an open screen validation offers two primary buttons instead of the free f
 test("« Valider » answers with the Valider option", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   await user.click(within(card).getByRole("button", { name: "Valider" }));
   await waitFor(() =>
     expect(answerOf(m)).toMatchObject({
@@ -85,7 +86,7 @@ test("« Valider » answers with the Valider option", async () => {
 test("« Demander une correction » needs a text and sends it prefixed", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   await user.click(within(card).getByRole("button", { name: "Demander une correction" }));
   const field = within(card).getByRole("textbox", { name: "Ta correction" });
   const send = within(card).getByRole("button", { name: "Envoyer la correction" });
@@ -104,7 +105,7 @@ test("« Demander une correction » needs a text and sends it prefixed", async (
 test("cancelling the correction folds the field back", async () => {
   mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   await user.click(within(card).getByRole("button", { name: "Demander une correction" }));
   await user.click(within(card).getByRole("button", { name: "Annuler" }));
   expect(within(card).queryByRole("textbox", { name: "Ta correction" })).toBeNull();
@@ -113,14 +114,14 @@ test("cancelling the correction folds the field back", async () => {
 
 test("an answered validation shows its answer without the buttons", async () => {
   mount(IMAGES, true);
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   expect(within(card).getByText("Réponse : Valider")).toBeTruthy();
   expect(within(card).queryByRole("group", { name: "Validation de l'écran" })).toBeNull();
 });
 
 test("a validation without a valid image is an ordinary question with its two options", async () => {
   mount([]);
-  const card = await screen.findByRole("article", { name: TITLE });
+  const card = await openRow(TITLE);
   expect(within(card).queryByRole("group", { name: "Validation de l'écran" })).toBeNull();
   expect(within(card).getByRole("textbox", { name: "Autre réponse…" })).toBeTruthy();
   expect(within(card).getByRole("button", { name: "Demander une correction" })).toBeTruthy();

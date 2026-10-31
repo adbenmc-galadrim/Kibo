@@ -11,13 +11,16 @@
     "./fixtures": "./src/fixtures.ts",
     "./key-guard": "./src/key-guard.ts",
     "./theme.css": "./src/theme.css",
+    "./ui/auto-animate": "./src/ui/auto-animate.ts",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./markdown": "./src/markdown/index.ts",
-    "./tracking": "./src/tracking/index.ts"
+    "./tracking": "./src/tracking/index.ts",
+    "./t3": "./src/t3/index.ts"
   },
   "dependencies": {
+    "@formkit/auto-animate": "0.8.4",
     "@kibo/core": "workspace:*",
     "@kibo/schema": "workspace:*",
     "class-variance-authority": "0.7.1",

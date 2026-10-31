@@ -17,15 +17,13 @@ export const fr = {
     late: (n: number) => `${n} en retard`,
     atRisk: (n: number) => `${n} à risque`,
     held: (n: number) => `${n} en attente`,
-    noneOpen: "aucune en cours",
     blocked: (keys: readonly string[]) =>
       `${plural(keys.length, "bloquée", "bloquées")} : ${keys.join(", ")}`,
     noQuestion: "aucune question",
     open: "En cours",
     openHint: "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet",
-    openOf: (limit: number) => `/ ${limit}`,
-    level: { under: "sous la limite", reached: "limite atteinte", over: "dépassée" },
-    levelShort: { under: null, reached: "limite", over: "dépassée" },
+    openUnit: (n: number) => plural(n, "fonctionnalité ouverte", "fonctionnalités ouvertes"),
+    openLimit: (limit: number) => `limite ${limit}`,
     ahead: (keys: readonly string[]) =>
       `dépassée : ${keys.join(", ")} ${plural(keys.length, "démarrée avant son sprint", "démarrées avant leur sprint")}`,
     review: "En review",
@@ -118,9 +116,20 @@ export const fr = {
     changes: "changements demandés",
     none: "Aucune PR en review.",
   },
+  delivered: {
+    title: "Livrée aujourd'hui",
+    steps: (n: number) => `${n}/${n} étapes`,
+    merged: (pr: number | null, time: string) =>
+      pr === null ? `terminée à ${time}` : `dernière fusion #${pr} à ${time}`,
+    total: (delivered: number, total: number) =>
+      `${delivered} ${plural(delivered, "livrée", "livrées")} sur ${total}`,
+    toast: "· livrée",
+    close: "Fermer",
+  },
   questions: {
     title: "Questions",
     blocking: "bloquante",
+    blockingCount: (n: number) => `${n} ${plural(n, "bloquante", "bloquantes")}`,
     none: "Aucune question ouverte.",
     more: (n: number) => `Afficher plus (${n})`,
     all: (n: number) => `Toutes les questions (${n})`,

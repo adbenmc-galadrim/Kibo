@@ -40,7 +40,7 @@ test("the breadcrumb names the inbox in French", () => {
   const labels = (target: TabTarget, project: ProjectSnapshot | null) =>
     crumbsFor(target, { project }).map((c) => c.label);
   expect(labels(inboxTicket, inbox)).toEqual(["Boîte de réception", "INB-3"]);
-  expect(labels({ kind: "screen", screen: "inbox" }, null)).toEqual(["Boîte de réception"]);
+  expect(labels({ kind: "screen", screen: "general" }, null)).toEqual(["Paramètres", "Général"]);
 });
 
 test("a sprint tab is titled after its code and its crumbs lead back to the Planning", async () => {

@@ -28,7 +28,7 @@ test("after an upgrade, what's new opens once by itself", async ({ page }, info)
   await expect(dialog).toBeHidden();
   expect(await page.evaluate((key) => localStorage.getItem(key), SEEN_KEY)).toBe(APP_VERSION);
   await page.reload();
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   await page.waitForTimeout(1_000);
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });

@@ -8,25 +8,11 @@ import { PrStack } from "./PrStack";
 import { PrsEmpty } from "./PrsEmpty";
 import { layoutStacks } from "./prs-layout";
 import { PRS_LEGEND } from "./prs-legend-items";
+import { useElementSize } from "./use-element-size";
 import { usePrStacks } from "./use-pr-stacks";
 import { usePrsKeys } from "./use-prs-keys";
 
-type Size = { width: number; height: number };
 const HELP_ID = "kibo-graph-prs-help";
-
-function useSize(element: HTMLElement | null): Size {
-  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
-  useLayoutEffect(() => {
-    if (element === null) return;
-    const measure = () => setSize({ width: element.clientWidth, height: element.clientHeight });
-    measure();
-    if (typeof ResizeObserver !== "function") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [element]);
-  return size;
-}
 
 type Props = { onCounter?(counter: string): void };
 
@@ -34,7 +20,7 @@ export function PrsView({ onCounter }: Props) {
   const sdk = useSdk();
   const { model, loading, failed } = usePrStacks();
   const [section, setSection] = useState<HTMLElement | null>(null);
-  const size = useSize(section);
+  const size = useElementSize(section);
   const layout = useMemo(() => layoutStacks(model, size), [model, size]);
   const onKeyDown = usePrsKeys(layout);
   const empty = model.counts.open === 0;

@@ -42,7 +42,7 @@ S.sidebarIcons = (p, active) => { const C = S.C;
   const item = (icon, on, o = {}) => { const b = S.box(sb, { name: "nav-icon/" + (o.name || icon), w: 32, h: 32, radius: 6, fill: on ? C.hover : null, stroke: o.stroke ? C.border : null, dir: "row", align: "center", justify: "center" });
     S.icon(b, icon, 16, on ? C.fg : C.mfg); return b; };
   item("panelLeft", false, { name: "Déplier" }); item("search", false, { stroke: true }); S.box(sb, { w: 4, h: 6 });
-  item("home"); item("ticket"); item("inbox"); S.box(sb, { w: 4, h: 6 });
+  item("home"); S.box(sb, { w: 4, h: 6 });
   const proj = (n, c, on) => { const b = S.box(sb, { name: "project/" + n, w: 32, h: 32, radius: 6, fill: on ? C.hover : null, dir: "row", align: "center", justify: "center" });
     const t = S.box(b, { w: 22, h: 22, radius: 5, fill: c, dir: "row", align: "center", justify: "center" }); S.txt(t, n[0], { size: 11, weight: 600, color: "#FFFFFF" }); return b; };
   proj("Silo", S.D.project.color, true); for (const [n, c] of S.D.projects.slice(1)) proj(n, c, false);
@@ -247,7 +247,7 @@ S.draw["p-kanban"] = async (x, y) => {
   const { main } = S.shell27(f, "Kanban"); S.kanban27(main, { W: 1440 - 241, H: 1000 }); return f; };
 S.draw["p-barre"] = async (x, y) => {
   const f = S.screen("Barre repliée · Kanban à 1 180 px", x, y, 1180, 1000);
-  const { main } = S.shell27(f, "Kanban", { collapsed: true }); S.kanban27(main, { cw: 200, W: 1180 - 49, H: 1000 }); S.pagesMenu(f, 50, 188, "Kanban"); return f; };
+  const { main } = S.shell27(f, "Kanban", { collapsed: true }); S.kanban27(main, { cw: 200, W: 1180 - 49, H: 1000 }); S.pagesMenu(f, 50, 116, "Kanban"); return f; };
 
 // ---------- P8 · Fiche ticket : Sheet de 560 px sur le Kanban ----------
 S.sec27 = (p, title, o = {}) => { const C = S.C; const c = S.col(p, { name: "section/" + title, fx: true, gap: o.gap ?? 10 });

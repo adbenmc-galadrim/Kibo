@@ -1,12 +1,5 @@
 import { readProject } from "@kibo/core";
-import {
-  FINAL_STATUSES,
-  featureSteps,
-  type ProjectSnapshot,
-  type SprintEndFeature,
-  type SprintView,
-  sprintEndDigest,
-} from "@kibo/schema";
+import { sprintEndDigest, sprintEndFeatures } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { projectKnown } from "../project-agent/wakeup/bootstrap";
 import type { SprintEndStore } from "./sprint-end-store";
@@ -29,17 +22,6 @@ function daysBefore(day: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function featuresOf(snapshot: ProjectSnapshot, sprint: SprintView): SprintEndFeature[] {
-  return snapshot.tickets.flatMap((t) => {
-    if (t.feature === null || t.sprintId !== sprint.id) return [];
-    const steps = featureSteps({ feature: t.id, tickets: snapshot.tickets, links: snapshot.links });
-    const remainingKeys = steps
-      .filter((s) => !s.optional && !FINAL_STATUSES.includes(s.statusId))
-      .map((s) => s.key);
-    return [{ shortKey: t.shortKey ?? t.keyLabel, title: t.title, state: t.feature, remainingKeys }];
-  });
-}
-
 export function startSprintEndWatch(deps: SprintEndDeps): SprintEndWatch {
   const known = projectKnown(deps.docs);
 
@@ -60,7 +42,7 @@ export function startSprintEndWatch(deps: SprintEndDeps): SprintEndWatch {
     if (!known(projectId)) return;
     const { snapshot, ended } = endedSprints(projectId, today);
     for (const sprint of ended) {
-      const digest = sprintEndDigest(sprint, featuresOf(snapshot, sprint));
+      const digest = sprintEndDigest(sprint, sprintEndFeatures(snapshot, sprint.id));
       if (digest !== null) deps.agent().send(projectId, digest);
       deps.store.mark(projectId, sprint.id);
     }

@@ -54,7 +54,7 @@ const status: Status = { id: "in_progress", label: "En cours", order: 2 };
 const column = (forbidden: boolean) =>
   render(
     <DndContext>
-      <KanbanColumn status={status} ids={[]} targeted={false} forbidden={forbidden}>
+      <KanbanColumn status={status} ids={[]} targeted={false} collapsed={false} forbidden={forbidden}>
         {null}
       </KanbanColumn>
     </DndContext>,
@@ -81,15 +81,7 @@ const preview = (refused: boolean) => {
   if (!ticket) throw new Error("no seeded ticket");
   render(
     <SdkProvider sdk={m.sdk}>
-      <KanbanCardPreview
-        ticket={ticket}
-        group={null}
-        ciRuns={[]}
-        blocked
-        blocking={question}
-        questions={{ questions: [], recipients: [], onOpen: () => {} }}
-        refused={refused}
-      />
+      <KanbanCardPreview ticket={ticket} group={null} blocked blocking={question} refused={refused} />
     </SdkProvider>,
   );
   const found = document.querySelector('[data-slot="kanban-drag-preview"]');

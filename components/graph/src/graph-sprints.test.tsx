@@ -85,9 +85,9 @@ test("the bar holds the « Vue » switch and the counter only, « Fonctionnalit�
     ["PRs", "false"],
   ]);
   const toolbar = bar.parentElement;
-  expect(toolbar?.querySelectorAll("button")).toHaveLength(2);
+  expect(toolbar?.querySelectorAll("button")).toHaveLength(3);
   expect(toolbar?.textContent).toBe(
-    "FonctionnalitésPRs9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités",
+    "FonctionnalitésPRs9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalitésTout voir",
   );
 });
 
@@ -187,7 +187,7 @@ test("clicking a frame title or a step opens the ticket", async () => {
   const opened: string[] = [];
   render(<SprintLanes model={kitModel()} onOpen={(id) => opened.push(id)} onNewFeature={() => undefined} />);
   await userEvent.click(screen.getByRole("button", { name: "Saisir un constat hors ligne" }));
-  await userEvent.click(screen.getByRole("button", { name: "Conflits de saisie" }));
+  await userEvent.click(screen.getByRole("button", { name: /^Conflits de saisie/ }));
   expect(opened).toEqual(["SILO-40", "SILO-45"]);
 });
 
@@ -212,7 +212,9 @@ test("a long title is clamped to its reserved lines inside the button", () => {
 test("a T3 Code session always lights the step, without any run", () => {
   render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
   const f5 = screen.getByRole("article", { name: /^F5 / });
-  const row = within(f5).getByRole("button", { name: "Écran d'envoi hors ligne" }).closest("li");
+  const row = within(f5)
+    .getByRole("button", { name: /^Écran d'envoi hors ligne/ })
+    .closest("li");
   expect(row?.getAttribute("data-session")).toBe("true");
 });
 
@@ -246,7 +248,8 @@ const hold = (ticketId: string, reason = MINIO): MockHold => ({ ticketId, reason
 test("a held step shows a cyan dot and a pause icon with its reason, the dependency says which step it waits for", async () => {
   setup(seedSprintGraph, { holds: [hold("KIB-26")] });
   const region = await lanes();
-  const f5 = within(region).getByRole("article", { name: /^F5 / });
+  const f5 = await within(region).findByRole("article", { name: /^F5 / });
+  await within(f5).findAllByRole("img", { name: /^En attente de KIB-26$/ });
   const segments = f5.querySelector('[data-slot="frame-segments"]');
   expect(segments?.querySelectorAll('[data-tone="hold"]')).toHaveLength(3);
   const rows = within(f5).getAllByRole("listitem");
@@ -285,7 +288,7 @@ test("a delivered feature with a held step lists it under its header", async () 
   const f4 = within(region).getByRole("article", { name: /^F4 / });
   const rows = within(f4).getAllByRole("listitem");
   expect(rows.map((r) => within(r).getByRole("button").textContent)).toEqual([
-    "Saisir un constat hors ligne · étape 4",
+    "Saisir un constat hors ligne · étape 4En attente : Règle de fusion à valider par le client",
   ]);
   expect(within(f4).getByRole("img", { name: "1 en attente" })).toBeTruthy();
   expect(within(f4).getByLabelText("Livrée")).toBeTruthy();

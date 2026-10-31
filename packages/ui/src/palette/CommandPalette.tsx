@@ -66,8 +66,6 @@ const ICONS = {
   general: SCREENS.general.icon,
   domains: SCREENS.domains.icon,
   components: SCREENS.components.icon,
-  mine: SCREENS.mine.icon,
-  inbox: SCREENS.inbox.icon,
   integrations: SCREENS.integrations.icon,
   appearance: SCREENS.appearance.icon,
   sources: SCREENS.sources.icon,

@@ -184,6 +184,7 @@ export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "tit
     effectiveSprintId: null,
     feature: null,
     session: null,
+    thread: null,
     updatedAt: null,
     ...over,
   };

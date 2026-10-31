@@ -21,8 +21,7 @@ export const fr = {
   },
   nav: {
     breadcrumb: "Fil d'Ariane",
-    overview: "Accueil",
-    mine: "Mes tickets",
+    overview: "Aujourd'hui",
     inbox: "Boîte de réception",
     projects: "Projets",
     newProject: "Nouveau projet",
@@ -76,14 +75,6 @@ export const fr = {
     helpWhatsNew: "Quoi de neuf",
     helpReport: "Signaler un problème",
     helpAbout: "À propos de Kibo",
-  },
-  overview: {
-    greeting: (user: string) => `Bonjour ${user}`,
-    summary: (projects: number, open: number) =>
-      `${projects} projet${projects > 1 ? "s" : ""} · ${open} ticket${open > 1 ? "s" : ""} ouvert${open > 1 ? "s" : ""}`,
-    empty: "Aucun projet pour l'instant.",
-    progress: (done: number, total: number) => `${done} terminé${done > 1 ? "s" : ""} sur ${total}`,
-    inbox: (n: number) => `Boîte de réception · ${n} ticket${n > 1 ? "s" : ""} sans projet`,
   },
   newPage: {
     title: "Nouvelle page",

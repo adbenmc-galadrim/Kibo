@@ -28,7 +28,7 @@ test("an old URL that no tab understands sends back home", () => {
 
 test("the tracking screens stay where they are", () => {
   expect(homes(null)).toBe(0);
-  expect(homes({ kind: "screen", screen: "inbox" }, "#/inbox")).toBe(0);
+  expect(homes({ kind: "screen", screen: "general" }, "#/settings/general")).toBe(0);
   expect(homes({ kind: "ticket", projectId: "p1", ticketId: "t1" }, "#/p/p1/t/t1")).toBe(0);
 });
 
@@ -47,7 +47,7 @@ test("an old agents, run, skill or changes URL sends back home", () => {
 });
 
 test("an old URL typed once the shell is shown sends back home too", () => {
-  history.replaceState(null, "", "#/inbox");
+  history.replaceState(null, "", "#/settings/general");
   let count = 0;
   render(<RetiredRedirect target={null} onHome={() => count++} />);
   expect(count).toBe(0);

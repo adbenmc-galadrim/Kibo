@@ -28,7 +28,7 @@ async function seedGraph(page: Page): Promise<{ seeded: Seeded; pageId: string }
 
 async function openGraph(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   graph ??= await seedGraph(page);
   await page.goto(`/#/p/${graph.seeded.projectId}/${encodeURIComponent(graph.pageId)}`);
   const lanes = page.getByRole("region", { name: "Fonctionnalités par sprint" });
@@ -47,7 +47,7 @@ test("sans sprint : une seule colonne « À planifier » et la barre « Vue »",
     await expect(lanes.getByRole("article", { name: new RegExp(`${title}$`) })).toBeVisible();
   await expect(views(page).getByRole("radio")).toHaveText(["Fonctionnalités", "PRs"]);
   await expect(views(page).getByRole("radio", { name: "Fonctionnalités" })).toBeChecked();
-  for (const name of ["Options", "Livrées repliées", "Tout voir"])
+  for (const name of ["Options", "Livrées repliées"])
     await expect(page.getByRole("button", { name })).toHaveCount(0);
   await shot(page, info, "graphe-sans-sprint");
 

@@ -22,7 +22,6 @@ type Props = {
   viewer: string;
   projects: ProjectSummary[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
-  inboxCount: number;
   project: ProjectSnapshot | null;
   domains: Domain[] | undefined;
   startEditing: boolean;
@@ -32,7 +31,14 @@ type Props = {
   onOpen(target: TabTarget | null, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(projectId: string, ticketId: string): void;
+  onOpenPlanning(): void;
 };
+
+const ProjectSprintRecap = lazyPanel(
+  () => import("./SprintRecap").then((m) => m.ProjectSprintRecap),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 
 const SprintTab = lazyPanel(() => import("./sprint/SprintTab").then((m) => m.SprintTab), fr.lazy);
 
@@ -51,7 +57,12 @@ const knownTicket = (project: ProjectSnapshot, ref: string): boolean =>
   findTicket(project.tickets, ref) !== undefined;
 
 export function ContentView(p: Props) {
-  return <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>;
+  return (
+    <>
+      <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>
+      {p.project !== null && <ProjectSprintRecap project={p.project} onOpenPlanning={p.onOpenPlanning} />}
+    </>
+  );
 }
 
 function content(p: Props): ReactNode {
@@ -68,12 +79,11 @@ function content(p: Props): ReactNode {
   if (!t)
     return (
       <Overview
-        viewer={p.viewer}
         projects={p.projects}
         snapshots={p.snapshots}
-        inboxCount={p.inboxCount}
         onNewProject={p.onNewProject}
-        onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
+        onOpenProject={(projectId) => p.onOpen({ kind: "project", projectId })}
+        onOpenTicket={p.onOpenTicket}
       />
     );
   if (!p.project) return unknownProject(p, t) ? <NotFound what="project" onHome={home} /> : null;

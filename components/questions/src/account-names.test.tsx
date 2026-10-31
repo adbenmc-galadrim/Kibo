@@ -5,7 +5,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { Q16 } from "./question-fixtures.test-helper";
+import { openRow, Q16 } from "./question-fixtures.test-helper";
 
 afterEach(cleanup);
 
@@ -57,9 +57,9 @@ test("an answer is signed with the local name, an old account id with a readable
   const container = mount("view");
   const user = userEvent.setup();
   await user.click(await screen.findByRole("radio", { name: "Toutes" }));
-  const card = await screen.findByRole("article", { name: Q16 });
+  const card = await openRow(Q16);
   expect(await within(card).findByText(/^Répondu par adam · /)).toBeTruthy();
-  expect(within(card).getByText("un membre")).toBeTruthy();
+  expect(within(card).getByText(/^posée par un membre/)).toBeTruthy();
   await user.click(within(card).getByRole("button", { name: /^Historique/ }));
   expect(within(card).getByText(/· adam · Réponse modifiée/)).toBeTruthy();
   expect(within(card).getByText(/· un membre · /)).toBeTruthy();

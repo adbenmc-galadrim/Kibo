@@ -29,6 +29,7 @@ const { values } = parseArgs({
     "test-origins": { type: "string" },
     "memory-secrets": { type: "boolean", default: false },
     "answer-wake-grace-ms": { type: "string" },
+    "t3-bin": { type: "string" },
   },
 });
 const port = Number(values.port);
@@ -90,6 +91,7 @@ const daemon = await Promise.resolve()
       redactor,
       logBuffer,
       answerWakeGraceMs: answerWakeGraceFromArg(values["answer-wake-grace-ms"]),
+      ...(values["t3-bin"] !== undefined && { t3Bin: values["t3-bin"] }),
     }),
   )
   .catch(failStart);

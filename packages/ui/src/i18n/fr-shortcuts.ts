@@ -10,7 +10,7 @@ export const frShortcuts = {
     newTab: "Nouvel onglet (palette)",
     closeTab: "Fermer l'onglet",
     reopenTab: "Rouvrir le dernier onglet fermé",
-    home: "Aller à l'Accueil",
+    home: "Aller à Aujourd'hui",
     goToTab: "Aller à un onglet",
     lastTab: "Dernier onglet",
     togglePin: "Épingler ou détacher l'onglet",

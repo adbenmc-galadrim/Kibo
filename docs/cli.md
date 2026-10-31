@@ -54,7 +54,7 @@ kibo plan export [--md] --project <p>
   - `--feature F5` : la fonctionnalité et ses étapes (une clé d'étape est refusée : donnez la fonctionnalité) ;
   - `--label area:web,area:api` : les tickets qui portent au moins une de ces étiquettes ;
   - `--fields key,title,status,sprint` : seulement ces champs, dans cet ordre (tous les champs de `list`, plus `sprint` = code du sprint et `feature` = clé de la fonctionnalité). Sans `--json`, un en-tête puis une ligne par ticket, colonnes séparées par des tabulations.
-- **`tickets get`** : les champs de `list`, plus la description complète, les questions ouvertes, les notes qui citent le ticket et le brief.
+- **`tickets get`** : les champs de `list`, plus l'étape de livraison (`Étape 9/12 · Review`, ou `Retouche · Étape 7/12 · Porte qualité`), la description complète, les questions ouvertes, les notes qui citent le ticket et le brief.
 - **`questions list`** : les questions non archivées du ticket (`--all` ajoute les archivées) : `#n [état] titre → destinataire`, puis les options.
 - **`plan export`** : le plan du projet en Markdown, sans date, sur la sortie standard. Une section par sprint, une sous-section par fonctionnalité, une case par étape (`[x]` terminée, `[~]` en cours ou en review, `[⏸]` en attente, `[ ]` sinon), avec ce qu'elle attend. Pour tenir un `plan.md` à jour : `kibo plan export --project SILO > plan.md`.
 

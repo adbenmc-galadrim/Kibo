@@ -26,6 +26,7 @@ export type ComponentsDeps = {
   net?: NetProxyOptions;
   integrations?: () => ComponentIntegrationHooks | null;
   projectEvents?: GateHandlersDeps["projectEvents"];
+  t3?: GateHandlersDeps["t3"];
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   drainMs?: number;

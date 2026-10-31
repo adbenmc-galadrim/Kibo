@@ -14,6 +14,10 @@ import {
   type ProjectEvent,
   type ProjectInfo,
   ruleCovers,
+  type T3Launch,
+  type T3Preview,
+  type T3Status,
+  type T3Thread,
 } from "@kibo/schema";
 import { assetsApi, designApi } from "./capability-apis";
 import { questionsApi } from "./questions-api";
@@ -153,6 +157,12 @@ export function createSdk(
       run: (cmd) => sdk.run(cmd),
       open: openSprintOf(ctx),
     }),
+    t3: {
+      status: () => call<T3Status>({ kind: "t3.status" }),
+      preview: (ticketKey) => call<T3Preview>({ kind: "t3.preview", ticketKey }),
+      launch: (ticketKey) => call<T3Launch>({ kind: "t3.launch", ticketKey }),
+      threadOf: (ticketKey) => call<T3Thread | null>({ kind: "t3.threadOf", ticketKey }),
+    },
     project: {
       async get() {
         guard.needRead("ticket");

@@ -3,7 +3,7 @@ import { type CiRun, KiboError, type ProjectCommand, type Ticket } from "@kibo/s
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
 import { seed } from "./test-seed";
@@ -43,7 +43,7 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   expect(within(todo).getByText("3")).toBeTruthy();
   expect(within(todo).getAllByRole("article")[0]?.getAttribute("tabindex")).toBe("0");
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
-  expect(screen.getByText("6 tickets · Tous")).toBeTruthy();
+  expect(screen.getByText("6 tickets")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
 });
 
@@ -226,61 +226,7 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
   expect(screen.getByRole("button", { name: "Ouvrir l'ensemble F1 · Issue synchronisée" })).toBeTruthy();
   expect(screen.queryByText("Issue synchronisée")).toBeNull();
   expect(screen.queryByText("Ticket local")).toBeNull();
-  expect(screen.getByText("2 tickets · Tous")).toBeTruthy();
-  const chip = await screen.findByLabelText("CI cassée");
-  expect(chip.closest("[data-ci]")?.textContent).toBe("CI cassée");
-  expect(chip.closest("article")?.querySelector("[data-pr]")?.textContent).toBe("#12");
-  expect(screen.queryByLabelText("CI réussie")).toBeNull();
-});
-
-test("the CI chip follows the tones of the ticket sheet", async () => {
-  const m = createMockSdk(manifest, {
-    seed: syncedSeed,
-    config: { filter: "all" },
-    ciRuns: [
-      ciRun({ ticketKey: "KIB-2", prNumber: 3, status: "in_progress", conclusion: null }),
-      ciRun({ ticketKey: "KIB-3", prNumber: 4, conclusion: "success" }),
-      ciRun({ ticketKey: "KIB-4", prNumber: null, conclusion: "cancelled" }),
-    ],
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  const prOf = (label: string) => screen.getByLabelText(label).closest("article")?.querySelector("[data-pr]");
-  expect((await screen.findByLabelText("CI en cours")).closest("[data-ci]")?.textContent).toBe("CI en cours");
-  expect(prOf("CI en cours")?.textContent).toBe("#3");
-  expect(screen.getByLabelText("CI réussie").closest("[data-ci]")?.textContent).toBe("CI");
-  expect(prOf("CI réussie")?.textContent).toBe("#4");
-  expect(screen.getByLabelText("CI sans verdict").closest("[data-ci]")?.textContent).toBe("CI");
-  expect(prOf("CI sans verdict")?.textContent).toBe("#12");
-});
-
-test("the CI chip shows the worst latest run of each workflow", async () => {
-  const m = createMockSdk(manifest, {
-    seed: syncedSeed,
-    config: { source: { bindingId: "b1" } },
-    ciRuns: [
-      ciRun({ runId: 1, workflow: "CI", conclusion: "failure", updatedAt: "2026-09-26T10:00:00Z" }),
-      ciRun({
-        runId: 2,
-        workflow: "E2E",
-        status: "in_progress",
-        conclusion: null,
-        updatedAt: "2026-09-26T10:01:00Z",
-      }),
-      ciRun({ runId: 3, workflow: "Lint", conclusion: "success", updatedAt: "2026-09-26T10:02:00Z" }),
-    ],
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  const broken = await screen.findByLabelText("CI cassée");
-  expect(broken.closest("article")?.querySelector("[data-pr]")?.textContent).toBe("#12");
-  expect(screen.queryByLabelText("CI réussie")).toBeNull();
+  expect(screen.getByText("2 tickets")).toBeTruthy();
 });
 
 test("an unavailable CI is stated, a missing GitHub account is not", async () => {
@@ -341,7 +287,7 @@ test("without a selection: no chip and no fading", async () => {
   setup();
   const card = await screen.findByRole("article", { name: /Sync/ });
   expect(card.getAttribute("data-selected")).toBe("false");
-  expect(document.querySelector(".opacity-50")).toBeNull();
+  expect(document.querySelector("article.opacity-50")).toBeNull();
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
 });
 
@@ -352,7 +298,7 @@ const labelled = (run: (cmd: ProjectCommand) => unknown) => {
   run({ method: "createTicket", title: "Nue", assignee: mine });
 };
 
-test("labels: cards show two chips then +n, the label menu narrows the board and is read back", async () => {
+test("labels: cards hide them, the label menu narrows the board and is read back", async () => {
   const m = createMockSdk(manifest, { seed: labelled, viewer: "adam" });
   const mount = () =>
     render(
@@ -363,10 +309,7 @@ test("labels: cards show two chips then +n, the label menu narrows the board and
   mount();
   const user = userEvent.setup();
   const card = within(await screen.findByRole("article", { name: "KIB-1 API" }));
-  expect(card.getByText("area:api")).toBeTruthy();
-  expect(card.getByText("phase:p1")).toBeTruthy();
-  expect(card.queryByText("urgent")).toBeNull();
-  expect(card.getByText("+1")).toBeTruthy();
+  expect(card.queryByText("area:api")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Étiquette : toutes" }));
   const menu = await screen.findByRole("menu");
   expect(
@@ -390,63 +333,38 @@ test("labels: cards show two chips then +n, the label menu narrows the board and
   expect(await m.sdk.data.get<string>("labelFilter")).toBe("*");
 });
 
-test("a card shows its open questions, never a zero", async () => {
-  const m = setup();
-  const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
-  const ask = (title: string) =>
-    m.run({ method: "createQuestion", ticketId: sync, title, createdBy: { kind: "agent", ref: "opus-dev" } });
-  const todo = await screen.findByRole("region", { name: "À faire" });
-  expect(within(todo).queryByText(/question/)).toBeNull();
-  act(() => {
-    ask("Un admin non affecté accède-t-il aux fichiers ?");
-    ask("Bloquer le dépôt sur un client archivé ?");
-  });
-  const card = await within(todo).findByRole("article", { name: /Sync/ });
-  const chip = await within(card).findByRole("button", { name: "2 questions, ouvrir" });
-  expect(chip.textContent).toBe("2 questions");
-  expect(chip.className).toContain("text-orange-600");
-  expect(within(todo).getAllByText(/questions?$/)).toHaveLength(1);
-});
-
-test("the questions chip previews them on hover and opens the first one", async () => {
-  const m = setup();
-  const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
-  const ask = (title: string) =>
-    m.run({ method: "createQuestion", ticketId: sync, title, createdBy: { kind: "agent", ref: "opus-dev" } });
-  const todo = await screen.findByRole("region", { name: "À faire" });
-  act(() => {
-    ask("Un admin non affecté accède-t-il aux fichiers ?");
-    ask("Bloquer le dépôt sur un client archivé ?");
-  });
-  const chip = await within(todo).findByRole("button", { name: "2 questions, ouvrir" });
-  fireEvent.focus(chip);
-  expect(await screen.findByText("Bloquer le dépôt sur un client archivé ?")).toBeTruthy();
-  fireEvent.click(chip);
-  const first = m.snapshot().questions.find((q) => q.title.startsWith("Un admin"))?.id;
-  expect(m.viewRequests).toEqual([{ componentId: "questions", question: first ?? "" }]);
-  expect(m.opened).toEqual([]);
-});
-
 const openMenu = async (key: string) => {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: `Actions ${key}` }));
   return user;
 };
 
-test("a card shows its delivery step next to the agent, never once done", async () => {
+test("a card with a PR shows its delivery step next to the agent, never once done", async () => {
   const m = setup();
   const id = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
   const delivery = { step: 7, note: "gates verts", at: 1, runId: null, kind: "delivery" as const };
+  const ref = {
+    kind: "github_pr" as const,
+    url: "https://github.com/o/r/pull/7",
+    number: 7,
+    state: "open" as const,
+    base: null,
+    head: null,
+    review: "none" as const,
+    checks: null,
+  };
   act(() => {
+    m.run({ method: "upsertExternalRef", ticketId: id("KIB-4"), ref });
+    m.run({ method: "upsertExternalRef", ticketId: id("KIB-1"), ref });
     m.run({ method: "setTicketDelivery", ticketId: id("KIB-4"), delivery });
     m.run({ method: "setTicketDelivery", ticketId: id("KIB-1"), delivery });
     m.run({ method: "setStatus", ticketId: id("KIB-1"), statusId: "done" });
   });
   const progress = await screen.findByRole("region", { name: "En cours" });
   const card = within(progress).getByRole("article", { name: /Récepteur/ });
-  expect(within(card).getByText("Phase 7/12 · Porte qualité")).toBeTruthy();
+  expect(within(card).getByText("Étape 7/12")).toBeTruthy();
   const done = screen.getByRole("region", { name: "Terminé" });
-  expect(within(done).queryByText("Phase 7/12 · Porte qualité")).toBeNull();
+  expect(within(done).queryByText("Étape 7/12")).toBeNull();
 });
 
 test("with agent execution hidden, the card menu copies the full-delivery command instead of Livrer", async () => {

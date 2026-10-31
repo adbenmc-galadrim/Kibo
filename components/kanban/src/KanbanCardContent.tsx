@@ -1,21 +1,17 @@
-import type { CiRun, Question, TicketView } from "@kibo/schema";
-import { DELIVERY_STEP_LABELS, FINAL_STATUSES } from "@kibo/schema";
+import type { Question, TicketView } from "@kibo/schema";
 import {
   DELIVERY_STEP_CHIP,
   GroupChip,
   type GroupRef,
-  phaseLabel,
-  QuestionsChip,
-  type QuestionsChipData,
+  stepLabelShort,
   TicketKeyLabel,
   useSdk,
 } from "@kibo/sdk";
-import { Badge } from "@kibo/sdk/ui/badge";
+import { ThreadBadge, useMinuteClock } from "@kibo/sdk/t3";
 import type { ReactNode } from "react";
-import { BlockedBadge, CardBadges, HeldBadge, OptionalBadge } from "./CardBadges";
+import { PrBadge, SignalBadge } from "./CardBadges";
+import { cardProgress, cardSignal } from "./card-signal";
 import { fr } from "./fr";
-import { LabelChips } from "./LabelChips";
-import { startReasonText } from "./start-reason";
 
 export const CARD_TITLE_CLASS = "w-fit max-w-full text-left text-[13px] font-medium wrap-anywhere";
 
@@ -35,32 +31,30 @@ const featureChipRef = (group: CardGroup): GroupRef => ({
 export type CardFacts = {
   ticket: TicketView;
   group: CardGroup | null;
-  ciRuns: CiRun[];
   blocked: boolean;
-  blocking: Question | null;
-  questions: QuestionsChipData;
+  blocking: Pick<Question, "number" | "importRef"> | null;
 };
 
-type Props = CardFacts & { menu: ReactNode; title: ReactNode };
+type Props = CardFacts & { menu: ReactNode; title: ReactNode; launch?: ReactNode };
 
-function StepChip({ ticket }: { ticket: TicketView }) {
-  const delivery = ticket.delivery;
-  if (delivery === null) return null;
-  const update = delivery.kind === "update";
-  if (!update && FINAL_STATUSES.includes(ticket.statusId)) return null;
-  const phase = phaseLabel(delivery.step, DELIVERY_STEP_LABELS[delivery.step] ?? "");
+function CardThread({ thread }: { thread: NonNullable<TicketView["thread"]> }) {
+  return <ThreadBadge thread={thread} now={useMinuteClock()} compact />;
+}
+
+function StepChip({ delivery }: { delivery: NonNullable<TicketView["delivery"]> }) {
+  const step = stepLabelShort(delivery.step);
   return (
     <span data-delivery-step="" title={fr.phaseHint(delivery.step)} className={DELIVERY_STEP_CHIP}>
-      <span className="truncate">{update ? fr.retouch(phase) : phase}</span>
+      <span className="truncate">{delivery.kind === "update" ? fr.retouch(step) : step}</span>
     </span>
   );
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, ciRuns, blocked, blocking, questions, menu, title } = props;
-  const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
+  const { ticket: t, group, blocked, blocking, menu, title, launch } = props;
   const sdk = useSdk();
-  const reason = startReasonText(t.startReason, t.waitingOn);
+  const signal = cardSignal(t, blocked, blocking);
+  const progress = cardProgress(t);
   return (
     <>
       <div className="flex h-3.5 items-center gap-1.5">
@@ -83,37 +77,20 @@ export function KanbanCardContent(props: Props) {
         {menu}
       </div>
       {title}
-      <LabelChips labels={t.labels} />
+      {launch}
       {t.blockedReason && (
-        <p className="text-2xs text-red-600 wrap-anywhere dark:text-red-400">
+        <p title={t.blockedReason} className="truncate text-2xs text-muted-foreground">
           {fr.blockedReason(t.blockedReason)}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-[5px]">
-        {t.optional && <OptionalBadge />}
-        {blocked && <BlockedBadge question={blocking} />}
-        {t.onHold !== null && <HeldBadge hold={t.onHold} />}
-        {(t.onHold === null ? t.waitingOn : []).map((k) => (
-          <Badge key={k} variant="outline" className="max-w-full text-3xs">
-            <span className="truncate">{fr.waitingOn(k)}</span>
-          </Badge>
-        ))}
-        <CardBadges ticket={t} ciRuns={ciRuns} />
-        {reason !== null && (
-          <Badge variant="outline" className="max-w-full text-3xs">
-            <span className="truncate">{reason}</span>
-          </Badge>
-        )}
-        <StepChip ticket={t} />
-        {otherQuestions > 0 && (
-          <QuestionsChip
-            {...questions}
-            ticket={t}
-            text={fr.questions(t.openQuestions)}
-            label={fr.questionsOpen(t.openQuestions)}
-          />
-        )}
-      </div>
+      {(signal !== null || progress !== null) && (
+        <div className="flex flex-wrap items-center gap-[5px]">
+          {signal !== null && <SignalBadge signal={signal} />}
+          {progress !== null && <PrBadge pr={progress.pr} />}
+          {progress?.delivery && <StepChip delivery={progress.delivery} />}
+        </div>
+      )}
+      {t.thread && <CardThread thread={t.thread} />}
     </>
   );
 }

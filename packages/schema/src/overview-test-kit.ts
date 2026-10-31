@@ -107,6 +107,7 @@ export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "titl
     effectiveSprintId: null,
     feature: null,
     session: null,
+    thread: null,
     updatedAt: null,
     onHold: null,
     ...over,

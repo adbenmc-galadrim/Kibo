@@ -52,9 +52,6 @@ export function withInbox<T extends ProjectMeta>(
   return inbox ? [inboxSummary(inbox), ...projects] : [...projects];
 }
 
-export const openInboxCount = (snapshot: ProjectSnapshot | undefined): number =>
-  snapshot ? snapshot.tickets.filter((t) => t.statusId !== "done").length : 0;
-
 export function newTicketProjects(
   projects: readonly ProjectMeta[],
   snapshots: ReadonlyMap<string, ProjectSnapshot>,

@@ -6,6 +6,7 @@ import {
   Ticket,
   type TicketView,
 } from "@kibo/schema";
+import { fireEvent, screen } from "@testing-library/react";
 
 export const question = (over: Partial<Question>): Question => ({
   kind: "question",
@@ -68,6 +69,7 @@ export const ticket = (id: string, keyLabel: string, over: Partial<TicketView> =
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
   ...over,
@@ -99,3 +101,10 @@ export const seedSilo = (run: (cmd: ProjectCommand) => unknown) => {
     createdBy: ADAM,
   });
 };
+
+export async function openRow(name: string | RegExp): Promise<HTMLElement> {
+  const row = await screen.findByRole("article", { name });
+  const toggle = row.querySelector("button[aria-expanded]");
+  if (toggle?.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
+  return row;
+}

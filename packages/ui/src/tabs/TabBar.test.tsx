@@ -100,7 +100,7 @@ function renderBar(onOpenWindow: ((t: TabTarget) => void) | null = null) {
 test("titles follow « Projet · Page », pinned tabs are compact, missing targets are named", () => {
   renderBar();
   const bar = screen.getByRole("tablist", { name: "Onglets" });
-  expect(within(bar).getByRole("tab", { name: "Accueil" }).getAttribute("aria-selected")).toBe("false");
+  expect(within(bar).getByRole("tab", { name: "Aujourd'hui" }).getAttribute("aria-selected")).toBe("false");
   expect(within(bar).getByRole("tab", { name: "Kibo · Kanban" }).getAttribute("aria-selected")).toBe("true");
   expect(within(bar).getByRole("tab", { name: "Kibo" }).textContent).toBe("");
   expect(within(bar).getByRole("tab", { name: "Page introuvable" })).toBeTruthy();
@@ -153,8 +153,8 @@ test("a permanent tab has a straight title and no « Garder ouvert »", async ()
 });
 
 test("a screen tab is named after the screen, outside any project", () => {
-  expect(describeTarget({ kind: "screen", screen: "inbox" }, ctx)).toMatchObject({
-    title: "Boîte de réception",
+  expect(describeTarget({ kind: "screen", screen: "general" }, ctx)).toMatchObject({
+    title: "Général",
     color: null,
     missing: false,
   });
@@ -317,9 +317,9 @@ test("reopen activates the tab that already holds the closed target and pops it"
 test("closing a project drops its targets from the closed pile", async () => {
   const api = await mountTabs();
   act(() => api().open(pageTarget("1"), { newTab: true }));
-  act(() => api().open({ kind: "screen", screen: "inbox" }, { newTab: true }));
+  act(() => api().open({ kind: "screen", screen: "general" }, { newTab: true }));
   act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
   act(() => api().dispatch({ type: "close", id: api().state.tabs[0]?.id ?? "" }));
   act(() => api().dispatch({ type: "closeProject", projectId: "p1" }));
-  expect(api().closed).toEqual([{ kind: "screen", screen: "inbox" }]);
+  expect(api().closed).toEqual([{ kind: "screen", screen: "general" }]);
 });

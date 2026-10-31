@@ -20,7 +20,7 @@ type HeaderProps = {
 };
 
 export function CardHeader({ icon: Icon, title, aside, count, alert, onTitle }: HeaderProps) {
-  const heading = "font-semibold text-(--tracking-fg) text-[14px] leading-[17px]";
+  const heading = "whitespace-nowrap font-semibold text-(--tracking-fg) text-[14px] leading-[17px]";
   return (
     <div className="flex h-[43px] shrink-0 items-center gap-[8px] px-[16px]">
       <Icon
@@ -48,7 +48,7 @@ export function CardHeader({ icon: Icon, title, aside, count, alert, onTitle }: 
           {count}
         </span>
       )}
-      {aside && <div className="ml-auto flex items-center gap-[8px]">{aside}</div>}
+      {aside && <div className="ml-auto flex min-w-0 items-center gap-[8px]">{aside}</div>}
     </div>
   );
 }

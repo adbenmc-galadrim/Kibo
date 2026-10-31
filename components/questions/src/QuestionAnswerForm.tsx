@@ -2,19 +2,17 @@ import type { AnswerInput, Question, QuestionAnswer } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Check } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { fr } from "./fr";
 import { type AnswerForm, answerFrom } from "./questions-logic";
 import { useAnswer } from "./use-questions";
-
-export const AGENT_ACCENT =
-  "border-orange-500/40 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400";
 
 type Props = {
   question: Question;
   initial?: QuestionAnswer;
   onSubmit?(input: AnswerInput): Promise<void>;
   onCancel?(): void;
+  inlineAction?: ReactNode;
 };
 
 const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
@@ -26,7 +24,7 @@ const formOf = (a: QuestionAnswer | undefined): AnswerForm => {
   return { ...EMPTY, text: a.text };
 };
 
-export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Props) {
+export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inlineAction }: Props) {
   const answer = useAnswer();
   const editing = initial !== undefined;
   const [choice, setChoice] = useState<AnswerForm>(() => formOf(initial));
@@ -68,7 +66,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
               variant="outline"
               size="sm"
               aria-pressed={pressed(choice.confirm)}
-              className={`h-7 text-xs ${AGENT_ACCENT} aria-pressed:border-orange-500 aria-pressed:bg-orange-500/15`}
+              className="h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent"
               disabled={busy}
               onClick={() => pick({ ...EMPTY, confirm: true })}
             >
@@ -96,7 +94,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
         <Input
           aria-label={freeLabel}
           placeholder={freeLabel}
-          className="h-9 text-[13px] md:text-[13px]"
+          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
@@ -106,11 +104,11 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
             {fr.cancel}
           </Button>
         )}
+        {inlineAction}
         <Button
           type="submit"
-          variant="secondary"
           size="sm"
-          className="h-6.25 px-2.5 text-xs disabled:opacity-100"
+          className="h-6.5 px-2.5 text-xs font-medium disabled:opacity-100"
           disabled={busy || !ready}
         >
           {editing ? fr.save : fr.reply}

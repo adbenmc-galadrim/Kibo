@@ -5,7 +5,7 @@ import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { ADAM, Q14, Q16, Q17, seedSilo } from "./question-fixtures.test-helper";
+import { ADAM, openRow, Q14, Q16, Q17, seedSilo } from "./question-fixtures.test-helper";
 
 const seed = seedSilo;
 
@@ -38,7 +38,7 @@ const named = (m: ReturnType<typeof mount>, title: string): Question | undefined
 
 test("cards carry Qn, the blocking badge and come blocking first", async () => {
   mount();
-  const blocking = await screen.findByRole("article", { name: Q14 });
+  const blocking = await openRow(Q14);
   expect(within(blocking).getByText("Q3")).toBeTruthy();
   expect(within(screen.getByRole("article", { name: Q17 })).getByText("Q1")).toBeTruthy();
   expect(within(blocking).getByText("bloquante")).toBeTruthy();
@@ -48,10 +48,11 @@ test("cards carry Qn, the blocking badge and come blocking first", async () => {
   expect(screen.getByText("1 bloquante en tête · 3 ouvertes")).toBeTruthy();
 });
 
-test("the client recipient shows the client of the project", async () => {
+test("the row and its detail both show the real name of the client", async () => {
   mount();
-  const card = await screen.findByRole("article", { name: Q14 });
+  const card = await openRow(Q14);
   expect(within(card).getByText("Pour : Silo SA")).toBeTruthy();
+  expect(within(card).getByText("Silo SA")).toBeTruthy();
 });
 
 test("« Exporter » copies the text, marks the questions sent and can be undone", async () => {
@@ -80,7 +81,7 @@ test("« Exporter » copies the text, marks the questions sent and can be undone
 
 test("a card exported earlier reads « envoyée le 18 oct. »", async () => {
   const m = mount();
-  await screen.findByRole("article", { name: Q14 });
+  await openRow(Q14);
   m.run({
     method: "markQuestionsExported",
     questionIds: [named(m, Q14)?.id ?? ""],
@@ -95,7 +96,7 @@ test("a card exported earlier reads « envoyée le 18 oct. »", async () => {
 test("the export lists blocking questions first, then by increasing Qn", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const rapport = await screen.findByRole("article", { name: Q17 });
+  const rapport = await openRow(Q17);
   expect(rapport).toBeTruthy();
   const ticketId = named(m, Q17)?.ticketId ?? "";
   m.run({
@@ -114,7 +115,7 @@ test("the export lists blocking questions first, then by increasing Qn", async (
 test("answering the blocking question toasts « F1 débloquée » with « Voir F1 »", async () => {
   const m = mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: Q14 });
+  const card = await openRow(Q14);
   await user.type(within(card).getByRole("textbox", { name: "Votre réponse…" }), "Oui");
   await user.click(within(card).getByRole("button", { name: "Répondre" }));
   const toast = await screen.findByRole("status", { name: "F1 débloquée" });
@@ -135,7 +136,7 @@ test("options are shown once, as buttons, and the free field says « Autre répo
     recipient: "client",
     createdBy: ADAM,
   });
-  const card = await screen.findByRole("article", { name: "PDF ou Excel ?" });
+  const card = await openRow("PDF ou Excel ?");
   expect(within(card).getByRole("button", { name: "PDF" })).toBeTruthy();
   expect(within(card).queryByText(/Options :/)).toBeNull();
   expect(within(card).getByRole("textbox", { name: "Autre réponse…" })).toBeTruthy();

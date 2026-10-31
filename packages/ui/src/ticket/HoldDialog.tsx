@@ -95,7 +95,7 @@ export function HoldDialog(p: Props) {
             <Button type="button" variant="outline" className={FOOTER_BUTTON} onClick={p.onCancel}>
               {t.cancel}
             </Button>
-            <Button type="submit" variant="agent" className={FOOTER_BUTTON} disabled={!valid || p.busy}>
+            <Button type="submit" className={FOOTER_BUTTON} disabled={!valid || p.busy}>
               {t.confirm}
             </Button>
           </div>

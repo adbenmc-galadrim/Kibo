@@ -3,6 +3,7 @@ import type { Screen } from "@kibo/schema";
 import { SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { House } from "lucide-react";
 import { apiMock } from "../api-mock";
 import { kiboProject, projectsFixture } from "../lib/fixtures";
 
@@ -19,6 +20,7 @@ mock.module("../api", () =>
 );
 
 const { AppSidebar } = await import("./AppSidebar");
+const { NavRow } = await import("./nav/NavRow");
 
 const realMatchMedia = window.matchMedia;
 afterEach(() => {
@@ -64,8 +66,6 @@ function sidebar(
         snapshots={new Map([["kibo", withPages()]])}
         activeTarget={current ? { kind: "screen", screen: current } : null}
         screen={current}
-        mineCount={2}
-        inboxCount={3}
         workspaceName="Galadrim"
         workspaceIcon={null}
         viewer="adam"
@@ -86,12 +86,22 @@ function sidebar(
 test("the sidebar keeps the tracking entries only, even on a retired screen", async () => {
   viewport(1440);
   sidebar("domains");
-  expect(await screen.findByRole("button", { name: /Boîte de réception/ })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: /^Aujourd'hui/ })).toBeTruthy();
   await act(() => Bun.sleep(150));
-  expect(screen.getByRole("button", { name: /^Accueil/ })).toBeTruthy();
-  expect(screen.getByRole("button", { name: /^Mes tickets/ })).toBeTruthy();
   for (const name of [/^Agents/, /^Files d'attente/, /^Skills/, /^Créations/, /^Composants/, /^Changements/])
     expect(screen.queryByRole("button", { name })).toBeNull();
+});
+
+test("the sidebar has Aujourd'hui, Projets, Paramètres and no counters", async () => {
+  viewport(1440);
+  sidebar();
+  const today = await screen.findByRole("button", { name: "Aujourd'hui" });
+  expect(today.getAttribute("data-active")).toBe("true");
+  expect(today.querySelector(".k-count")).toBeNull();
+  expect(screen.getByText("Projets")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Paramètres" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /^Mes tickets/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Boîte de réception/ })).toBeNull();
 });
 
 test("the workspace menu no longer offers Composants nor Changements", async () => {
@@ -115,9 +125,8 @@ test("from 1180 px the closed sidebar slides off as before", () => {
 });
 
 test("counts and sprint codes never wrap", async () => {
-  viewport(1440);
-  sidebar();
-  const count = (await screen.findByRole("button", { name: /^Mes tickets/ })).querySelector(".k-count");
+  render(<NavRow icon={House} label="Questions" count="12" />);
+  const count = (await screen.findByRole("button", { name: /^Questions/ })).querySelector(".k-count");
   expect(count?.className).toContain("whitespace-nowrap");
 });
 

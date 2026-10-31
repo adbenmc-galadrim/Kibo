@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
-import type { DeadlineCell, DeadlineColumn, DeadlineRow } from "@kibo/schema";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import type { DeadlineCell, DeadlineCellStep, DeadlineColumn, DeadlineRow } from "@kibo/schema";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SprintTimeline } from "./SprintTimeline";
 
@@ -24,15 +24,13 @@ const row = (featureId: string, extra: Partial<DeadlineRow> = {}): DeadlineRow =
   ...extra,
 });
 
-test("the timeline shows the week headers, the rows, today, the slip and the legend", () => {
+test("the timeline shows the week headers, the rows, today and the slip", () => {
   const late = row("f5", {
     cells: [todo, { ...todo, slipped: true }],
     slipTo: { id: "s43", code: "S43" },
   });
   const blocked = row("f6", { blockedBy: "Q14", cells: [{ ...todo, blocked: true }] });
-  const { container } = render(
-    <SprintTimeline columns={COLUMNS} rows={[late, blocked]} today={4 / 21} legend />,
-  );
+  const { container } = render(<SprintTimeline columns={COLUMNS} rows={[late, blocked]} today={4 / 21} />);
   expect(screen.getByText("S42")).toBeTruthy();
   expect(screen.getByText("12 oct.")).toBeTruthy();
   expect(screen.getByText("26 oct.")).toBeTruthy();
@@ -134,19 +132,54 @@ test("over an empty end of the last row, the today label keeps its place and the
   expect(top(label)).toBe(30 + 2 * 30 + 6 - 24);
 });
 
-test("the legend stays folded until its button is clicked", async () => {
-  render(<SprintTimeline columns={COLUMNS} rows={[row("f5")]} today={4 / 21} legend />);
-  const toggle = screen.getByRole("button", { name: "Légende" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("false");
-  expect(screen.queryByText("glissement prévu")).toBeNull();
-  await userEvent.click(toggle);
-  const items = within(screen.getByRole("list", { name: "Légende" })).getAllByRole("listitem");
-  expect(items.map((i) => i.textContent)).toEqual([
-    "étape livrée",
-    "en review",
-    "en cours",
-    "bloquée",
-    "à faire",
-    "glissement prévu",
-  ]);
+test("no legend toggle", () => {
+  render(<SprintTimeline columns={COLUMNS} rows={[row("f5")]} today={4 / 21} />);
+  expect(screen.queryByRole("button", { name: "Légende" })).toBeNull();
+});
+
+const step = (key: string, extra: Partial<DeadlineCellStep> = {}): DeadlineCellStep => ({
+  key,
+  title: `Étape ${key}`,
+  blockRef: null,
+  pr: null,
+  hold: null,
+  ...extra,
+});
+
+async function tipOf(cell: DeadlineCell, index = 0, cells: DeadlineCell[] = [cell]) {
+  const { container } = render(
+    <SprintTimeline
+      columns={COLUMNS}
+      rows={[row("f5", { title: "Envoyer les photos", cells })]}
+      today={null}
+    />,
+  );
+  const square = container.querySelectorAll("[data-tone]")[index];
+  if (square === undefined) throw new Error("square");
+  await userEvent.hover(square);
+  return (await screen.findByRole("tooltip")).textContent;
+}
+
+test("each square has a tooltip with key, title, mark and step n of m · sprint", async () => {
+  const done = { statusId: "done", blocked: false, slipped: false, step: step("SILO-31") } as const;
+  const review = {
+    statusId: "in_review",
+    blocked: false,
+    slipped: false,
+    step: step("SILO-33", { pr: 22 }),
+  } as const;
+  expect(await tipOf(review, 1, [done, review, { ...todo, step: step("SILO-34") }])).toBe(
+    "SILO-33 Étape SILO-33en review · PR #22F5 Envoyer les photos · étape 2 sur 3 · sprint S42",
+  );
+});
+
+test.each([
+  [{ ...todo, blocked: true, step: step("A", { blockRef: "Q14" }) }, "bloqué · Q14"],
+  [{ ...todo, blocked: true, step: step("A") }, "bloqué"],
+  [{ ...todo, statusId: "done" as const, step: step("A") }, "livrée"],
+  [{ ...todo, statusId: "in_progress" as const, step: step("A") }, "en cours"],
+  [{ ...todo, step: step("A", { hold: "Serveur MinIO" }) }, "en attente · Serveur MinIO"],
+  [{ ...todo, step: step("A") }, "à faire"],
+])("the mark of a square reads its state", async (cell, mark) => {
+  expect(await tipOf(cell)).toContain(mark);
 });

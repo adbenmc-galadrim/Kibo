@@ -41,7 +41,7 @@ export const MASK_AREA_LIMIT = 0.04;
 const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   planning: 1000,
   fonctionnalite: 1000,
-  "vue-ensemble": 1260,
+  "vue-ensemble": 1440,
   graphe: 1000,
   "graphe-prs": 1000,
   "apercu-maquette": 1000,
@@ -93,6 +93,14 @@ const clockTime = (x: number, y: number, w: number, h: number, what: string): Pi
   why: `${what} : heure réelle d'un fait semé sous l'horloge figée (§37.15 point 13)`,
 });
 
+const grapheCounterMask = (x: number): PixelMask => ({
+  x,
+  y: 64,
+  w: 291,
+  h: 16,
+  why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
+});
+
 const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   planning: [USER],
   fonctionnalite: [
@@ -107,34 +115,25 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
     clockTime(1376, 558, 24, 15, "« hier » de l'activité"),
   ],
   "vue-ensemble": [
-    user(1216),
-    clockTime(1018, 251, 42, 16, "« 42 min », durée en cours de SILO-33"),
-    clockTime(1021, 288, 38, 16, "« 18 min », durée en cours de SILO-45"),
-    clockTime(279, 1074, 40, 16, "« 15:04 » de l'activité"),
-    clockTime(279, 1113, 40, 16, "« 14:51 » de l'activité"),
-    clockTime(279, 1152, 40, 16, "« 14:40 » de l'activité"),
-    clockTime(279, 1191, 40, 16, "« 14:36 » de l'activité"),
-    clockTime(906, 983, 137, 21, "« il y a 3 j » de Q14 et la puce « bloquante » que sa largeur déplace"),
-    clockTime(912, 1045, 62, 17, "« hier » de Q16"),
-    clockTime(903, 1124, 63, 17, "« il y a 2 h » de Q17"),
+    user(1396),
+    clockTime(1018, 1120, 42, 16, "« 42 min », durée en cours de SILO-33"),
+    clockTime(1021, 1157, 38, 16, "« 18 min », durée en cours de SILO-45"),
+    clockTime(279, 1260, 40, 16, "« 15:04 » de l'activité"),
+    clockTime(279, 1299, 40, 16, "« 14:51 » de l'activité"),
+    clockTime(279, 1338, 40, 16, "« 14:40 » de l'activité"),
+    clockTime(279, 1377, 40, 16, "« 14:36 » de l'activité"),
+    clockTime(906, 373, 137, 21, "« il y a 3 j » de Q14 et la puce « bloquante » que sa largeur déplace"),
+    clockTime(912, 435, 62, 17, "« hier » de Q16"),
+    clockTime(903, 496, 63, 17, "« il y a 2 h » de Q17"),
     {
       x: 938,
-      y: 389,
+      y: 877,
       w: 66,
       h: 16,
       why: "« S45 2 nov. » : la maquette nomme la quatrième semaine d'un sprint que la fixture ne sème pas",
     },
   ],
-  graphe: [
-    USER,
-    {
-      x: 1134,
-      y: 64,
-      w: 291,
-      h: 16,
-      why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
-    },
-  ],
+  graphe: [USER, grapheCounterMask(1037)],
   "graphe-prs": [USER],
   "apercu-maquette": [],
   "nouveau-projet": [],
@@ -177,6 +176,8 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   "attente-graphe": ORIGIN_MASKS.graphe,
   "agent-agrandi": AGENT_WIDE_MASKS,
 };
+
+export const GRAPHE_FOLDED_MASKS: readonly PixelMask[] = [USER, grapheCounterMask(1019)];
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);
 

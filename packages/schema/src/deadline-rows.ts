@@ -10,7 +10,19 @@ export const DEADLINE_MAX_WEEKS = 12;
 const WEEK_DAYS = 7;
 
 export type DeadlineColumn = { start: string; sprint: Pick<Sprint, "id" | "code"> | null };
-export type DeadlineCell = { statusId: StatusId; blocked: boolean; slipped: boolean };
+export type DeadlineCellStep = {
+  key: string;
+  title: string;
+  blockRef: string | null;
+  pr: number | null;
+  hold: string | null;
+};
+export type DeadlineCell = {
+  statusId: StatusId;
+  blocked: boolean;
+  slipped: boolean;
+  step?: DeadlineCellStep;
+};
 export type DeadlineRow = {
   featureId: string;
   shortKey: string;
@@ -74,6 +86,13 @@ function cellsOf(f: DeadlineFeature, blocking: ReadonlyMap<string, string>, slip
     statusId: s.statusId,
     blocked: s.statusId === "blocked" || blocking.has(s.ticketId),
     slipped,
+    step: {
+      key: s.key,
+      title: s.title,
+      blockRef: blocking.get(s.ticketId) ?? null,
+      pr: s.pr?.number ?? null,
+      hold: s.onHold?.reason ?? null,
+    },
   });
   const remaining = f.steps.filter((s) => !FINAL_STATUSES.includes(s.statusId));
   return [...f.steps.map((s) => cell(s, false)), ...(slips ? remaining.map((s) => cell(s, true)) : [])];

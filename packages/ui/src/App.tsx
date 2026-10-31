@@ -34,6 +34,13 @@ type Props = { now?: () => number; retryMs?: number };
 
 const COUNTDOWN_TICK_MS = 250;
 
+function startDevelopmentTiming(): void {
+  if (localStorage.getItem("kiboPerf") !== "1") return;
+  import("./perf/route-timing")
+    .then(({ startRouteTiming }) => startRouteTiming())
+    .catch((e: unknown) => console.error("[kibo] route timing failed to load", e));
+}
+
 export function App({ now = Date.now, retryMs = 3000 }: Props) {
   const [boot, setBoot] = useState<Boot>({ kind: "loading" });
   const [, setTick] = useState(0);
@@ -49,6 +56,7 @@ export function App({ now = Date.now, retryMs = 3000 }: Props) {
     preloadDaemonUnreachable().catch((e: unknown) =>
       console.error("[kibo] startup screen failed to load", e),
     );
+    startDevelopmentTiming();
     void start(0);
     return onUnauthorized(() => setBoot({ kind: "unpaired" }));
   }, [start]);

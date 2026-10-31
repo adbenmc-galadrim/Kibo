@@ -31,6 +31,7 @@ const ticket = {
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 } satisfies TicketView;

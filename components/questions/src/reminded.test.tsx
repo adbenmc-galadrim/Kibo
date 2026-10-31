@@ -5,6 +5,7 @@ import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { render, screen, within } from "@testing-library/react";
 import { Component, manifest } from "./index";
+import { openRow } from "./question-fixtures.test-helper";
 import { lastReminder } from "./questions-logic";
 
 const NOW = new Date("2026-10-16T14:52:00").getTime();
@@ -49,7 +50,7 @@ test("lastReminder gives the last reminder of an unanswered question only", () =
 
 test("the question card says when it was last reminded while unanswered", async () => {
   mount("view");
-  const card = within(await screen.findByRole("article", { name: REMINDED }));
+  const card = within(await openRow(REMINDED));
   expect(card.getByText("relancée · il y a 2 h")).toBeTruthy();
   expect(screen.queryAllByText(/^relancée ·/)).toHaveLength(1);
 });

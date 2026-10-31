@@ -9,6 +9,7 @@ import {
   SILO_GRAPHE,
   SILO_MAQUETTES,
   SILO_PRS,
+  SILO_T3,
 } from "./pixel-settings";
 
 const PIXEL_DARK_PORT = 4477;
@@ -21,11 +22,15 @@ const APERCU_DARK_PORT = 4487;
 const APERCU_LIGHT_PORT = 4488;
 const GRAPHE_DARK_PORT = 4489;
 const GRAPHE_LIGHT_PORT = 4490;
+const T3_DARK_PORT = 4491;
+const T3_LIGHT_PORT = 4492;
+const T3_PIXEL_SPEC = /pixel-fiche-t3\.spec\.ts$/;
+const T3_SPEC = /\/t3\.spec\.ts$/;
 const APERCU_PIXEL_SPEC = /pixel-apercu\.spec\.ts$/;
 const GRAPHE_PIXEL_SPEC = /pixel-graphe-attente\.spec\.ts$/;
 const PRS_PIXEL_SPEC = /pixel-prs\.spec\.ts$/;
 const PRS_SPEC = /\/prs\.spec\.ts$/;
-const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
+const ATTENTE_PIXEL_SPEC = /pixel-(attente|aujourdhui)\.spec\.ts$/;
 const ATTENTE_SPEC = /\/attente\.spec\.ts$/;
 const PIXEL_SPECS =
   /pixel-(planning|fonctionnalite|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket|agent)\.spec\.ts/;
@@ -103,11 +108,17 @@ export const GRAPHE_DAEMONS = [
   },
 ] as const;
 
+export const T3_DAEMONS = [
+  { name: "t3-dark", scheme: "dark", port: T3_DARK_PORT, scenario: SILO_T3, integrations: true },
+  { name: "t3-light", scheme: "light", port: T3_LIGHT_PORT, scenario: SILO_T3, integrations: true },
+] as const;
+
 export const SCENARIO_DAEMONS = [
   ...ATTENTE_DAEMONS,
   ...PRS_DAEMONS,
   ...APERCU_DAEMONS,
   ...GRAPHE_DAEMONS,
+  ...T3_DAEMONS,
 ] as const;
 
 const screenshotOptions = (sources: string): Partial<Project> => ({
@@ -198,9 +209,13 @@ export const apercuProjects = (scheme: Scheme): Project[] =>
 export const grapheProjects = (scheme: Scheme): Project[] =>
   scenarioProjects(GRAPHE_DAEMONS, { prefix: "graphe", pixel: GRAPHE_PIXEL_SPEC }, scheme);
 
+export const t3Projects = (scheme: Scheme): Project[] =>
+  scenarioProjects(T3_DAEMONS, { prefix: "t3", pixel: T3_PIXEL_SPEC, journey: T3_SPEC }, scheme);
+
 export const scenarioProjectsOf = (scheme: Scheme): Project[] => [
   ...attenteProjects(scheme),
   ...prsProjects(scheme),
   ...apercuProjects(scheme),
   ...grapheProjects(scheme),
+  ...t3Projects(scheme),
 ];

@@ -13,12 +13,13 @@ const tones = (card: HTMLElement) =>
     s.getAttribute("data-tone"),
   );
 
-const heldSection = async () =>
-  within(await column("À planifier")).findByRole("region", { name: /^En attente/ });
+beforeEach(() => localStorage.clear());
 
-test("À planifier ends with the steps on hold, and feature cards show them in cyan", async () => {
+const heldBand = () => screen.findByRole("region", { name: /^En attente/ });
+
+test("The band holds the steps on hold, and feature cards show them in cyan", async () => {
   setupPlanning(TODAY, { seedWith: seedPlanningHeld });
-  expect((await heldSection()).getAttribute("aria-label")).toBe("En attente (3)");
+  expect((await heldBand()).getAttribute("aria-label")).toBe("En attente (3)");
   const f4 = await cardIn(/^S42 /, "F4");
   expect(within(f4).getByText("livrée · 1 en attente")).toBeTruthy();
   expect(tones(f4)).toEqual(["done", "done", "done", "hold", "todo"]);
@@ -31,11 +32,10 @@ test("À planifier ends with the steps on hold, and feature cards show them in c
   expect(tones(await cardIn(/^S44 /, "F7"))).toEqual(["todo", "hold", "todo", "todo", "todo"]);
 });
 
-test("without a step on hold, À planifier has no section En attente", async () => {
+test("without a step on hold, there is no band En attente", async () => {
   setupPlanning();
-  const backlog = await column("À planifier");
-  expect(within(backlog).queryByRole("region")).toBeNull();
-  expect(within(backlog).queryByText(/En attente/)).toBeNull();
+  await column("À planifier");
+  expect(screen.queryByRole("region", { name: /^En attente/ })).toBeNull();
 });
 
 test("Reprendre lifts the hold of the step", async () => {
@@ -64,7 +64,7 @@ test("Reprendre dans ▸ S43 lifts the hold, then plans its feature from an ende
   });
   const sent = spyOn(m.backend, "run");
   const user = userEvent.setup();
-  const card = within(await heldSection()).getByRole("article");
+  const card = within(await heldBand()).getByRole("article");
   await user.click(within(card).getByRole("button", { name: /^Actions de / }));
   await user.click(await screen.findByRole("menuitem", { name: "Reprendre dans" }));
   const item = await screen.findByRole("menuitem", { name: "S43 · Import et contrats" });
@@ -77,22 +77,11 @@ test("Reprendre dans ▸ S43 lifts the hold, then plans its feature from an ende
     { method: "setTicketSprint", ticketId: seeded.features.f2.root.id, sprintId: seeded.sprints.s43.id },
   ]);
   expect(await cardIn(/^S43 /, "F2")).toBeTruthy();
-  await waitFor(() =>
-    expect(within(screen.getByRole("region", { name: "À planifier" })).queryByRole("region")).toBeNull(),
-  );
+  await waitFor(() => expect(screen.queryByRole("region", { name: /^En attente/ })).toBeNull());
 });
 
-test("the legend is folded until clicked, then names the held case in cyan right after the blocked one", async () => {
+test("the planning has no legend toggle", async () => {
   setupPlanning();
-  const toggle = await screen.findByRole("button", { name: "Légende" });
-  expect(screen.queryByText("étape livrée")).toBeNull();
-  await userEvent.click(toggle);
-  const legend = screen.getByRole("list", { name: "Légende" });
-  const entries = within(legend)
-    .getAllByRole("listitem")
-    .map((item) => [item.textContent, item.querySelector(".bg-\\(--tracking-hold\\)") !== null]);
-  expect(entries.slice(3, 5)).toEqual([
-    ["bloquée", false],
-    ["en attente", true],
-  ]);
+  await screen.findByRole("region", { name: /^S42/ });
+  expect(screen.queryByRole("button", { name: "Légende" })).toBeNull();
 });

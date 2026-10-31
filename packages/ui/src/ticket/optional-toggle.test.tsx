@@ -27,29 +27,32 @@ const find = (id: string) => {
 
 test("a required step is checked and unchecking makes it optional", async () => {
   sent.length = 0;
-  render(<OptionalToggle ticket={find("e35")} editable command={command} />);
+  render(<OptionalToggle ticket={find("e35")} feature="F5" editable command={command} />);
   const toggle = screen.getByRole("switch", { name: "Requise pour livrer" });
   expect(toggle.getAttribute("aria-checked")).toBe("true");
-  expect(screen.getByText("Requise pour livrer")).toBeTruthy();
+  expect(screen.getByText("requise pour livrer F5")).toBeTruthy();
   await userEvent.setup().click(toggle);
   expect(sent).toEqual([{ method: "setTicketOptional", ticketId: "e35", optional: true }]);
 });
 
 test("an optional step is unchecked and checking makes it required again", async () => {
   sent.length = 0;
-  render(<OptionalToggle ticket={{ ...find("e35"), optional: true }} editable command={command} />);
+  render(
+    <OptionalToggle ticket={{ ...find("e35"), optional: true }} feature="F5" editable command={command} />,
+  );
   const toggle = screen.getByRole("switch", { name: "Requise pour livrer" });
   expect(toggle.getAttribute("aria-checked")).toBe("false");
+  expect(screen.getByText("facultative")).toBeTruthy();
   await userEvent.setup().click(toggle);
   expect(sent).toEqual([{ method: "setTicketOptional", ticketId: "e35", optional: false }]);
 });
 
 test("a root ticket has no optional toggle", () => {
-  render(<OptionalToggle ticket={find("f5")} editable command={command} />);
+  render(<OptionalToggle ticket={find("f5")} feature={null} editable command={command} />);
   expect(screen.queryByRole("switch")).toBeNull();
 });
 
 test("a reader sees the toggle disabled", () => {
-  render(<OptionalToggle ticket={find("e35")} editable={false} command={command} />);
+  render(<OptionalToggle ticket={find("e35")} feature="F5" editable={false} command={command} />);
   expect(screen.getByRole("switch", { name: "Requise pour livrer" }).hasAttribute("disabled")).toBe(true);
 });

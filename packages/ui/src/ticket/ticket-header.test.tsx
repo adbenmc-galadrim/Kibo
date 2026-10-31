@@ -21,22 +21,12 @@ const pr = (number: number, state: "open" | "merged" | "closed"): ExternalRef =>
 });
 const withRefs = (refs: ExternalRef[]): TicketView => ({ ...e33, externalRefs: refs });
 
-test("a step names its feature, its sprint and its pull request: « F5 · S42 · PR #20 »", () => {
+test("a step names its feature and its sprint, never its pull request: « F5 · S42 »", () => {
   expect(headerContext(withRefs([pr(20, "open")]), project)).toMatchObject({
     feature: "F5",
     sprint: "S42",
-    text: "F5 · S42 · PR #20",
+    text: "F5 · S42",
   });
-  expect(headerContext(withRefs([pr(12, "closed"), pr(20, "open"), pr(18, "merged")]), project).text).toBe(
-    "F5 · S42 · PR #20",
-  );
-  expect(headerContext(withRefs([pr(12, "closed"), pr(18, "merged")]), project).text).toBe(
-    "F5 · S42 · PR #18",
-  );
-});
-
-test("without a pull request the header stops at the sprint", () => {
-  expect(headerContext(e33, project).text).toBe("F5 · S42");
 });
 
 const lone: TicketView = {
@@ -51,15 +41,13 @@ const lone: TicketView = {
 
 test("a ticket outside any feature has no feature chip", () => {
   expect(headerContext(lone, project)).toMatchObject({ feature: null, text: "" });
-  expect(headerContext({ ...lone, externalRefs: [pr(7, "open")] }, project).text).toBe("PR #7");
+  expect(headerContext({ ...lone, externalRefs: [pr(7, "open")] }, project).text).toBe("");
 });
 
-test("the chip line links the pull request", () => {
+test("the chip line does not mention the pull request", () => {
   const { container } = render(<TicketHeader project={project} ticket={withRefs([pr(20, "open")])} />);
-  expect(container.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42 · PR #20");
-  expect(screen.getByRole("link", { name: "PR #20" }).getAttribute("href")).toBe(
-    "https://github.com/silo-labs/silo-location/pull/20",
-  );
+  expect(container.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42");
+  expect(screen.queryByRole("link")).toBeNull();
 });
 
 test("a lone ticket without sprint nor PR has no chip line", () => {

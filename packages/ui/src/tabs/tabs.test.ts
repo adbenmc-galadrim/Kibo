@@ -29,7 +29,7 @@ describe("hash codec", () => {
     { kind: "screen", screen: "sources" },
     { kind: "screen", screen: "shortcuts" },
     { kind: "screen", screen: "workspace" },
-    { kind: "screen", screen: "inbox" },
+    { kind: "screen", screen: "general" },
   ];
   test("round-trips every target kind", () => {
     for (const t of targets) expect(hashToTarget(targetToHash(t))).toEqual(t);
@@ -53,9 +53,10 @@ describe("hash codec", () => {
     expect(hashToTarget("#/settings/appearance")).toEqual({ kind: "screen", screen: "appearance" });
     expect(hashToTarget("#/settings/components")).toEqual({ kind: "screen", screen: "sources" });
     expect(targetToHash({ kind: "screen", screen: "components" })).toBe("#/components");
-    expect(hashToTarget("#/mine")).toEqual({ kind: "screen", screen: "mine" });
-    expect(targetToHash({ kind: "screen", screen: "inbox" })).toBe("#/inbox");
-    expect(hashToTarget("#/inbox")).toEqual({ kind: "screen", screen: "inbox" });
+    expect(hashToTarget("#/settings/appearance")).toEqual({ kind: "screen", screen: "appearance" });
+    expect(targetToHash({ kind: "screen", screen: "general" })).toBe("#/settings/general");
+    expect(hashToTarget("#/mine")).toBeNull();
+    expect(hashToTarget("#/inbox")).toBeNull();
     expect(hashToTarget("#/elsewhere")).toBeNull();
   });
   test("the shortcuts screen has its settings hash", () => {
@@ -71,7 +72,7 @@ describe("tabsReducer", () => {
     s = open(s, { kind: "ticket", projectId: "p1", ticketId: "x" }, "t2", true);
     s = tabsReducer(s, { type: "pin", id: "t2", pinned: true });
     s = open(s, { kind: "project", projectId: "p2" }, "t3", true);
-    s = open(s, { kind: "screen", screen: "inbox" }, "t4", true);
+    s = open(s, { kind: "screen", screen: "general" }, "t4", true);
     s = tabsReducer(s, { type: "activate", id: "t2" });
     const out = tabsReducer(s, { type: "closeProject", projectId: "p1" });
     expect(out.tabs.map((t) => t.id)).toEqual(["t3", "t4"]);
@@ -299,7 +300,7 @@ test("retarget swaps a tab's target in place, or falls back to the tab already s
 test("a page tab is not doubled by a question, it is aimed at it", () => {
   const page = { kind: "page", projectId: "p1", pageId: "pg" } as const;
   let s = tabsReducer(EMPTY_TABS, { type: "open", target: page, newTab: true, id: "t1" });
-  s = tabsReducer(s, { type: "open", target: { kind: "screen", screen: "inbox" }, newTab: true, id: "t2" });
+  s = tabsReducer(s, { type: "open", target: { kind: "screen", screen: "general" }, newTab: true, id: "t2" });
   s = tabsReducer(s, { type: "open", target: { ...page, question: "q1" }, newTab: true, id: "t3" });
   expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t2"]);
   expect(s.activeId).toBe("t1");

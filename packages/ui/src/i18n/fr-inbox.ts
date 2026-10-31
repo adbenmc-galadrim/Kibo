@@ -1,19 +1,7 @@
 import type { KiboErrorCode } from "@kibo/schema";
-import { fr } from "./fr";
 
 export const frInbox = {
-  title: fr.nav.inbox,
-  subtitle: "Les tickets qui n'ont pas encore de projet. Rattache-les quand tu sais où ils vont.",
-  empty: "Rien en attente.",
-  emptyHelp: "Les tickets créés sans projet arrivent ici.",
-  newTicket: "Nouveau ticket",
-  columns: { key: "Clé", title: "Titre", status: "Statut", assignee: "Assigné", actions: "Actions" },
-  nobody: "—",
-  actions: (key: string) => `Actions pour ${key}`,
-  file: "Rattacher…",
   fileTo: "Rattacher à un projet…",
-  open: "Ouvrir",
-  remove: "Supprimer…",
   dialog: {
     title: (key: string) => `Rattacher ${key} à un projet`,
     project: "Projet",

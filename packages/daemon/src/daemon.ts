@@ -25,6 +25,8 @@ import { createService } from "./service";
 import { ready } from "./service-ports";
 import { openSessionStore } from "./sessions/session-store";
 import { DaemonRunning, findRunningDaemon } from "./single-instance";
+import { startT3 } from "./t3/bootstrap";
+import { resolveT3Bin } from "./t3/t3-cli";
 import { startCodeTracking } from "./tracking/bootstrap";
 import { deliveryStepRpc } from "./tracking/delivery-step";
 
@@ -68,6 +70,20 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   );
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
   const tracking = startDaemonTracking({ store, service, clock, activity }, closers);
+  const t3 = startT3({
+    db: store.db,
+    service,
+    clock,
+    sink: tracking.sink,
+    emit: (message) => service.docs.emit(message),
+    bin: resolveT3Bin({
+      ...(opts.t3Bin !== undefined && { flag: opts.t3Bin }),
+      env: process.env,
+      home: opts.userHome ?? homedir(),
+    }),
+  });
+  closers.push(t3.stop);
+  activity.bindThreads(t3.activity);
   const notes = await startNotes({ db: store.db, home: opts.home, docs: service.docs });
   closers.push(() => notes.stop());
   const components = startDaemonComponents(
@@ -80,6 +96,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       runs: () => [],
       integrations: () => integrations.hooks,
       projectEvents: tracking.projectEvents,
+      t3: t3.api,
     },
     closers,
   );
@@ -134,6 +151,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       backupsRpc(local.backups),
       app.rpc,
       ...tracking.rpc,
+      t3.rpc,
       declareRefRpc(service),
       deliveryStepRpc({
         docs: service.docs,

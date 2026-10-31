@@ -42,8 +42,8 @@ test("each step has a French label", () => {
   expect(DELIVERY_STEP_LABELS).toHaveLength(12);
   expect(DELIVERY_STEP_LABELS[0]).toBe("Lecture");
   expect(DELIVERY_STEP_LABELS[11]).toBe("Livré");
-  expect(deliveryStepLabel(7)).toBe("7 · Porte qualité");
-  expect(deliveryStepLabel(4)).toBe("4 · Worktree");
+  expect(deliveryStepLabel(7)).toBe("Étape 7/12 · Porte qualité");
+  expect(deliveryStepLabel(4)).toBe("Étape 4/12 · Worktree");
 });
 
 const agent = (ref: string, enabled = true) => {

@@ -38,7 +38,6 @@ test("the project agent button toggles the panel and carries a dot while a batch
     <SidebarProvider>
       <ShellHeader
         active={{ kind: "project", projectId: "kibo" }}
-        screen={null}
         project={kiboProject()}
         gitError={null}
         agents={state}
@@ -68,7 +67,6 @@ test("the header keeps the breadcrumb and the actions, without any sync state wh
     <SidebarProvider>
       <ShellHeader
         active={{ kind: "project", projectId: "kibo" }}
-        screen={null}
         project={project}
         gitError={null}
         agents={agents()}
@@ -102,7 +100,6 @@ const closedHeader = (matches: boolean) => {
     <SidebarProvider defaultOpen={false}>
       <ShellHeader
         active={null}
-        screen={null}
         project={null}
         gitError={null}
         agents={null}

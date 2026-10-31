@@ -3,7 +3,7 @@ import { INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/sch
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { fileSnapshots, fileTargets, inboxSnapshot } from "../inbox/fixtures";
+import { fileSnapshots, fileTargets, inboxSnapshot } from "./fixtures-file-ticket";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve({ ticketId: "new-id", key: "KIB-25" });

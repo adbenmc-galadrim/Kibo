@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { capture, questionArticle } from "./questions-kit";
+import { capture, expandQuestion, questionArticle } from "./questions-kit";
 import { openProjectAgent, openSilo, openSiloPage, userBubbles } from "./suivi-kit";
 
 const QUOTA = "Quota par client : 2 Go ou 5 Go ?";
@@ -9,7 +9,7 @@ const BATCH = "Lot n° 8";
 
 async function answerQuota(page: Page): Promise<void> {
   await openSiloPage(page, "Questions");
-  const card = questionArticle(page.getByRole("main"), QUOTA);
+  const card = await expandQuestion(questionArticle(page.getByRole("main"), QUOTA));
   const form = card.getByRole("form", { name: `Répondre à ${QUOTA}` });
   await form.getByRole("textbox", { name: "Votre réponse…" }).fill("5 Go");
   await form.getByRole("button", { name: "Répondre" }).click();

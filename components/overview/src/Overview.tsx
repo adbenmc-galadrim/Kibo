@@ -3,9 +3,12 @@ import { copyDeliveryCommand, type KiboSdk, useEntities, useQuestionRecipients, 
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useEffect, useState } from "react";
+import { DeliveryToasts } from "./DeliveryToast";
 import { gettingStarted } from "./getting-started-model";
 import { type OverviewHandlers, OverviewView } from "./OverviewView";
+import { featureFacts } from "./overview-facts";
 import { overviewModel } from "./overview-model";
+import { useDeliveryToast } from "./use-delivery-toast";
 
 const MINUTE = 60_000;
 function useNow(): number {
@@ -49,6 +52,8 @@ export function Overview() {
   const { data: questions } = useEntities("question");
   const { data: events } = useEntities("project_event");
   const { data: ciRuns } = useEntities("ci_run");
+  const features = featureFacts(tickets, links);
+  const delivery = useDeliveryToast(features, project !== null);
   if (project === null) return null;
   const input = {
     tickets,
@@ -64,12 +69,15 @@ export function Overview() {
     now,
   };
   return (
-    <OverviewView
-      project={project}
-      model={overviewModel(input)}
-      activity={input}
-      start={gettingStarted(project, tickets, copied)}
-      handlers={handlersOf(sdk, tickets, () => setCopied(true))}
-    />
+    <>
+      <OverviewView
+        project={project}
+        model={overviewModel(input)}
+        activity={input}
+        start={gettingStarted(project, tickets, copied)}
+        handlers={handlersOf(sdk, tickets, () => setCopied(true))}
+      />
+      <DeliveryToasts toasts={delivery.toasts} onClose={delivery.close} />
+    </>
   );
 }

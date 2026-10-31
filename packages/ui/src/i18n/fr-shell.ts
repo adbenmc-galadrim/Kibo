@@ -11,7 +11,7 @@ export const frShell = {
     title: "Introuvable",
     project: "Ce projet n'existe pas ou a été supprimé.",
     ticket: "Ce ticket n'existe pas ou a été supprimé.",
-    home: "Retour à l'Accueil",
+    home: "Retour à Aujourd'hui",
   },
   pageError: {
     title: "Cette page a rencontré une erreur",

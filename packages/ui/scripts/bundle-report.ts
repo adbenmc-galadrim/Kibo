@@ -28,7 +28,7 @@ export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(mine\/MyTicketsPage|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|Unpaired))\.tsx$/,
+  /\/packages\/ui\/src\/(today\/TodayPage|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|Unpaired))\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|shell\/TicketSheet|palette\/CommandPalette)\.tsx$/,
   /\/components\/(graph\/src\/(GraphView|PrsView)|kanban\/src\/Kanban|mockup\/src\/(Mockup|FrameFullscreen))\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/TicketDetail)\.tsx$/,
@@ -57,7 +57,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(files\/(FileToolbar|WrapSwitch)\.tsx|i18n\/fr-file-tools\.ts)$/,
   /\/packages\/ui\/src\/(files\/(ProjectFilesDialog|FilesDirDialog|FilesList)\.tsx|files\/(use-project-files|upload|slug)\.ts|i18n\/fr-files\.ts)$/,
   /\/packages\/ui\/src\/settings\/SettingsLayout\.tsx$/,
-  /\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
+  /\/packages\/ui\/src\/(today\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
   /\/packages\/sdk\/src\/(mock|mock-calls|fixtures|fixtures-glb)\.tsx?$/,
   /\/packages\/ui\/src\/(dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|WorkspaceMenuItems\.tsx)|i18n\/fr-tracking\.ts)$/,
