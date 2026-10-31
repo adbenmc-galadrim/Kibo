@@ -1,5 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import type { SprintPhase } from "@kibo/schema";
+import { STEPS_PER_WEEK } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
@@ -9,7 +10,6 @@ import { fr } from "./fr";
 import { PenpotStroke } from "./PenpotStroke";
 import type { SprintColumn as Column } from "./planning-model";
 import { mergeSprintAlerts, type SprintAlerts } from "./sprint-alerts";
-import { STEPS_PER_WEEK } from "./sprint-load";
 
 export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";

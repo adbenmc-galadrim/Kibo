@@ -53,6 +53,8 @@ export function build(today: string = TODAY, held = false) {
     source,
     data,
   });
+  const f3Demo =
+    s.tickets.find((t) => t.title === "Démo client" && t.parentId === f3.id) ?? byTitle("Démo client");
   const f5 = byTitle("Envoyer les photos d'un constat");
   const events: ProjectEvent[] = [
     event(1, "13:10", "pr_checks", byTitle("Passage à Expo SDK 54"), null, "git", {
@@ -63,7 +65,7 @@ export function build(today: string = TODAY, held = false) {
       number: 20,
       review: "changes_requested",
     }),
-    event(3, "14:36", "pr_merged", byTitle("Démo client"), f3, "git", { number: 18, delivered: "F3" }),
+    event(3, "14:36", "pr_merged", f3Demo, f3, "git", { number: 18, delivered: "F3" }),
     { ...event(4, "14:40", "batch_proposed", f5, null, "project-agent", { seq: 7 }), ticketId: null },
     event(5, "14:51", "step_set", byTitle("Écran d'envoi hors ligne"), f5, "full-delivery", { step: 7 }),
     event(6, "15:04", "pr_opened", byTitle("Route d'envoi des photos"), f5, "git", { number: 22 }),
