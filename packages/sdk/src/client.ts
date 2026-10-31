@@ -116,8 +116,11 @@ export function createClient(opts: ClientOptions): KiboClient {
         opts.onUnauthorized?.();
         return;
       }
-      if (active() > 0) setTimeout(connect, 1000);
+      if (active() > 0) setTimeout(reconnect, 1000);
     };
+  };
+  const reconnect = () => {
+    if (active() > 0 && !socket) connect();
   };
   const release = () => {
     if (active() === 0) socket?.close();

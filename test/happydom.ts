@@ -39,4 +39,7 @@ Element.prototype.animate = fakeAnimate;
 
 const { cleanup, configure } = await import("@testing-library/react");
 configure({ asyncUtilTimeout: 4_000 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  document.body.replaceChildren();
+});

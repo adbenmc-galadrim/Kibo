@@ -242,8 +242,9 @@ test("a revoked session (close 4401) stops the reconnection and reports it", asy
     hostname: "127.0.0.1",
     port: 0,
     fetch: (req, srv) => {
+      if (!srv.upgrade(req)) return new Response("upgrade required", { status: 400 });
       upgrades += 1;
-      return srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 });
+      return undefined;
     },
     websocket: {
       open(ws) {
@@ -309,4 +310,40 @@ test("projectBackend.snapshot uses snapshotSource when given", async () => {
   expect(bodies).toEqual([]);
   await projectBackend(client, "p1", "i1").snapshot();
   expect(bodies).toEqual([{ method: "getProject", projectId: "p1" }]);
+});
+
+test("no reconnection is left pending once the last listener is gone", async () => {
+  const serve = (port: number, onUpgrade: () => void) =>
+    Bun.serve({
+      hostname: "127.0.0.1",
+      port,
+      fetch: (req, srv) => {
+        if (!srv.upgrade(req)) return new Response("upgrade required", { status: 400 });
+        onUpgrade();
+        return undefined;
+      },
+      websocket: { message() {} },
+    });
+  const first = serve(0, () => {});
+  const port = first.port;
+  if (port === undefined) throw new Error("the server has no port");
+  const client = createClient({ baseUrl: `http://127.0.0.1:${port}` });
+  const opened = Promise.withResolvers<void>();
+  const closed = Promise.withResolvers<void>();
+  const offConnection = client.onConnection(() => {
+    (client.online() ? opened : closed).resolve();
+  });
+  const off = client.subscribeEvents(() => {});
+  await opened.promise;
+  first.stop(true);
+  await closed.promise;
+  off();
+  offConnection();
+  let upgrades = 0;
+  const second = serve(port, () => {
+    upgrades += 1;
+  });
+  await Bun.sleep(1200);
+  expect(upgrades).toBe(0);
+  second.stop(true);
 });
