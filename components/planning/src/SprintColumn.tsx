@@ -177,7 +177,7 @@ export function SprintColumn({ column, dropping, onOpen, onEdit, children, limit
         )}
       >
         <SprintHeader column={column} onOpen={onOpen} onEdit={onEdit} />
-        <div ref={cards} className={CARD_LIST_CLASS}>
+        <div ref={cards} data-slot="planning-cards" className={CARD_LIST_CLASS}>
           {children}
         </div>
         {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}

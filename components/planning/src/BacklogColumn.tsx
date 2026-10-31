@@ -30,7 +30,7 @@ export function BacklogColumn({ dropping, empty, children, footer }: Props) {
           {fr.backlogHint}
         </span>
       </header>
-      <div ref={cards} className={CARD_LIST_CLASS}>
+      <div ref={cards} data-slot="planning-cards" className={CARD_LIST_CLASS}>
         {children}
       </div>
       {dropping && <DropZone label={fr.dropBacklog} dates={null} />}

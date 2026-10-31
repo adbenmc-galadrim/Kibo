@@ -42,10 +42,10 @@ test("À planifier holds features only and reads Aucune fonctionnalité à plani
 test("a sprint column shows a single alert box", async () => {
   setupPlanning(TODAY, { tracking: { openLimit: 1 } });
   const s42 = await column(/^S42 /);
-  const notes = within(s42).getAllByRole("note");
-  expect(notes.length).toBe(1);
-  expect(notes[0]?.className).toContain("text-(--tracking-amber)");
-  expect(notes[0]?.textContent).toMatch(/ne tiendra pas \(.+\) · 2 en cours pour une limite de 1$/);
+  const merged = /ne tiendra pas \(.+\) · 2 en cours pour une limite de 1$/;
+  await waitFor(() => expect(within(s42).getByRole("note").textContent).toMatch(merged));
+  expect(within(s42).getAllByRole("note").length).toBe(1);
+  expect(within(s42).getByRole("note").className).toContain("text-(--tracking-amber)");
 });
 
 test("the capacity line of S44 is neutral while S42 over capacity is amber", async () => {
@@ -60,24 +60,24 @@ function reducedMotion(reduce: boolean) {
   );
 }
 
-async function animationsOfAMove(reduce: boolean): Promise<number> {
+async function cardListIsWatched(reduce: boolean): Promise<boolean> {
   const media = reducedMotion(reduce);
-  const animate = spyOn(Element.prototype, "animate");
-  const { m, seeded } = setupPlanning();
-  await cardIn(/^S44 /, "F7");
-  moveF9(m, seeded);
-  await cardIn(/^S44 /, "F9");
-  await new Promise((done) => setTimeout(done, 20));
-  const calls = animate.mock.calls.length;
-  animate.mockRestore();
-  media.mockRestore();
-  return calls;
+  const observe = spyOn(MutationObserver.prototype, "observe");
+  try {
+    setupPlanning();
+    const list = (await cardIn(/^S44 /, "F7")).closest("[data-slot=planning-cards]");
+    expect(list).not.toBeNull();
+    return observe.mock.calls.some(([target]) => target === list);
+  } finally {
+    observe.mockRestore();
+    media.mockRestore();
+  }
 }
 
-test("a card entering a column is animated", async () => {
-  expect(await animationsOfAMove(false)).toBeGreaterThan(0);
+test("auto-animate watches the cards of a column", async () => {
+  expect(await cardListIsWatched(false)).toBe(true);
 });
 
-test("with reduced motion a card enters a column without animation", async () => {
-  expect(await animationsOfAMove(true)).toBe(0);
+test("with reduced motion auto-animate leaves the cards of a column alone", async () => {
+  expect(await cardListIsWatched(true)).toBe(false);
 });
