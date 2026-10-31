@@ -50,6 +50,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 });

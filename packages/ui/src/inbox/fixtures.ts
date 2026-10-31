@@ -38,6 +38,7 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     shortKey: null,
     effectiveSprintId: null,
     session: null,
+    thread: null,
     updatedAt: null,
     feature: null,
   };

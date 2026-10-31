@@ -78,6 +78,8 @@ const LABELS: Record<ProjectEventKind, Labeler> = {
   step_set: stepSet,
   session_started: () => "Session démarrée",
   session_stopped: sessionStopped,
+  t3_started: () => "Fil T3 lancé",
+  t3_finished: () => "Fil T3 terminé",
   sprint_created: (d) => `Sprint${spaced(text(d, "code"))} créé`,
   sprint_set: sprintSet,
   batch_proposed: (d) => `Agent de projet · ${lot(d)} proposé`,

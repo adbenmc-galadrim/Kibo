@@ -105,6 +105,8 @@ export * from "./status";
 export * from "./status-projection";
 export * from "./storybook";
 export * from "./surface";
+export * from "./t3-rpc";
+export * from "./t3-thread";
 export * from "./tabs";
 export * from "./ticket";
 export * from "./ticket-group";

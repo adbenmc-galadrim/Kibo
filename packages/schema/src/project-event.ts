@@ -24,6 +24,8 @@ export const ProjectEventKind = z.enum([
   "held",
   "resumed",
   "keys_assigned",
+  "t3_started",
+  "t3_finished",
 ]);
 export type ProjectEventKind = z.infer<typeof ProjectEventKind>;
 

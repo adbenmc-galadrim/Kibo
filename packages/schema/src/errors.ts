@@ -66,6 +66,10 @@ export const KIBO_ERROR_CODES = [
   "TICKET_HAS_CHILDREN",
   "BACKUP_FAILED",
   "VACUUM_FAILED",
+  "T3_MISSING",
+  "T3_UNAVAILABLE",
+  "T3_THREAD_ACTIVE",
+  "T3_FAILED",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

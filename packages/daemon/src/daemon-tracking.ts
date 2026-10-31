@@ -1,4 +1,10 @@
-import type { ListProjectEventsInput, ProjectEventPage, ProjectEventSink, TicketSession } from "@kibo/schema";
+import type {
+  ListProjectEventsInput,
+  ProjectEventPage,
+  ProjectEventSink,
+  T3Thread,
+  TicketSession,
+} from "@kibo/schema";
 import { startTicketSessions } from "./activity/bootstrap";
 import type { Clock } from "./clock";
 import type { PollPass } from "./code/pr-poller";
@@ -21,17 +27,27 @@ type DaemonTracking = {
   passes(agent: SprintEndDeps["agent"]): PollPass[];
 };
 
-type LateActivity = Required<ActivitySources> & { bind(sources: Required<ActivitySources>): void };
+type TrackingSources = Omit<Required<ActivitySources>, "threads">;
+type LateActivity = Required<ActivitySources> & {
+  bind(sources: TrackingSources): void;
+  bindThreads(threads: Required<ActivitySources>["threads"]): void;
+};
 
 type DaemonTrackingInput = { store: Store; service: Service; clock: Clock; activity: LateActivity };
 
 const NO_SESSIONS: ReadonlyMap<string, TicketSession> = new Map();
+const NO_THREADS: ReadonlyMap<string, T3Thread> = new Map();
 const NO_EVENTS: ReadonlyMap<string, number> = new Map();
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what} failed`, e);
 
 export function lateActivity(): LateActivity {
-  let bound: Required<ActivitySources> | null = null;
+  let bound: TrackingSources | null = null;
+  let boundThreads: Required<ActivitySources>["threads"] | null = null;
   return {
+    threads: (projectId) => boundThreads?.(projectId) ?? NO_THREADS,
+    bindThreads(threads) {
+      boundThreads = threads;
+    },
     sessions: (projectId) => bound?.sessions(projectId) ?? NO_SESSIONS,
     lastEventAt: (projectId) => bound?.lastEventAt(projectId) ?? NO_EVENTS,
     bind(sources) {

@@ -163,6 +163,23 @@ const viewWith = (d: ReturnType<typeof newDoc>, activity: ProjectActivity, id: s
   return t;
 };
 
+test("TicketView.thread carries the active thread", () => {
+  const d = newDoc();
+  const a = create(d, "A");
+  const b = create(d, "B");
+  const thread = {
+    threadId: "thr_1",
+    link: "t3-thread://v2/env/thr_1",
+    title: "SILO-1 · A",
+    status: "running" as const,
+    startedAt: 1_000,
+    checkedAt: 2_000,
+  };
+  const activity = activityOf({ threads: new Map([[a.id, thread]]) });
+  expect(viewWith(d, activity, a.id).thread).toEqual(thread);
+  expect(viewWith(d, activity, b.id).thread).toBeNull();
+});
+
 test("a ticket in a session carries it and is busy, the others have none", () => {
   const d = newDoc();
   const a = create(d, "A");

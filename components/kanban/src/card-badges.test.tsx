@@ -44,6 +44,7 @@ const ticket = (refs: GithubPrRef[], over: Partial<TicketView> = {}): TicketView
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
   ...over,

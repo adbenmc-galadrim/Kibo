@@ -92,6 +92,8 @@ export const frTicketTracking = {
     stepUpdated: "Étape de livraison mise à jour",
     sessionStarted: (tool: string | null) => (tool ? `Session ${tool} ouverte` : "Session ouverte"),
     sessionStopped: (tool: string | null) => (tool ? `Session ${tool} fermée` : "Session fermée"),
+    t3Started: "Fil T3 lancé",
+    t3Finished: "Fil T3 terminé",
     sprint: (code: string | null) => (code ? `Planifié en ${code}` : "Retiré du planning"),
     questionCreated: "Question posée",
     questionAnswered: "Question répondue",

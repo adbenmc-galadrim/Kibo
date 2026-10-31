@@ -88,6 +88,8 @@ const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelinePro
   step_set: (d, ev) => ({ kind: "step", text: stepText(d, ev) }),
   session_started: (d) => ({ kind: "session", text: e.sessionStarted(str(d, "tool")) }),
   session_stopped: (d) => ({ kind: "session", text: e.sessionStopped(str(d, "tool")) }),
+  t3_started: () => ({ kind: "session", text: e.t3Started }),
+  t3_finished: () => ({ kind: "session", text: e.t3Finished }),
   sprint_set: (d) => ({ kind: "sprint", text: e.sprint(str(d, "to")) }),
   question_created: () => ({ kind: "question", text: e.questionCreated }),
   question_answered: () => ({ kind: "question", text: e.questionAnswered }),

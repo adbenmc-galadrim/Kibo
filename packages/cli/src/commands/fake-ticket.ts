@@ -50,6 +50,7 @@ export function fakeTicket(input: TicketInput): TicketView {
     shortKey: input.shortKey ?? null,
     effectiveSprintId: input.effectiveSprintId ?? input.sprintId ?? null,
     session: null,
+    thread: null,
     updatedAt: null,
     feature: null,
     progress: { done: 0, total: input.children ?? 0 },

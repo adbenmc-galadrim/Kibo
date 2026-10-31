@@ -45,6 +45,7 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
 });

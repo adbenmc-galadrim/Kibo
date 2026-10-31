@@ -38,6 +38,7 @@ export function mineTicket(
     shortKey: null,
     effectiveSprintId: null,
     session: null,
+    thread: null,
     updatedAt: null,
     feature: null,
   };

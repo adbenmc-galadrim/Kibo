@@ -135,6 +135,7 @@ export function ticketViews(facts: ViewFacts): TicketView[] {
       effectiveSprintId: effectiveSprintId(t.id, byId),
       feature: features.get(t.id) ?? null,
       session: activity.sessions.get(t.id) ?? null,
+      thread: activity.threads.get(t.id) ?? null,
       updatedAt: activity.lastEventAt.get(t.id) ?? t.delivery?.at ?? null,
       startable: start.startable,
       startReason: start.startable ? null : start.reason,

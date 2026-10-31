@@ -75,6 +75,7 @@ const project: ProjectSnapshot = {
       shortKey: null,
       effectiveSprintId: null,
       session: null,
+      thread: null,
       updatedAt: null,
       feature: null,
     },
@@ -216,7 +217,14 @@ mock.module("../api", () =>
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
         if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
         if (req.method === "getProjectAgent")
-          return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
+          return Promise.resolve({
+            session: null,
+            thread: null,
+            run: null,
+            batches: [],
+            past: [],
+            memoryPath: "m.md",
+          });
         saved.push(req);
         if (req.method === "command" && req.command.method === "addPage")
           return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });

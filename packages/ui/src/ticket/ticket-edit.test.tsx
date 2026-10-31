@@ -57,6 +57,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   shortKey: null,
   effectiveSprintId: null,
   session: null,
+  thread: null,
   updatedAt: null,
   feature: null,
   ...patch,
