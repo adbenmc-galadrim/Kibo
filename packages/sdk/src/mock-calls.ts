@@ -89,6 +89,15 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.storybooks ?? [];
       case "questions.recipients":
         return listQuestionRecipients(deps.doc);
+      case "t3.status":
+        return { available: false, reason: "missing", bin: "t3" };
+      case "t3.threadOf":
+        return null;
+      case "t3.refresh":
+        return [];
+      case "t3.preview":
+      case "t3.launch":
+        throw new KiboError("NOT_CONNECTED", "t3 is not available in the simulated SDK");
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));

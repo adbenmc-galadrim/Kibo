@@ -9,7 +9,7 @@ import type { Service } from "./service";
 
 type DaemonComponentsInput = Pick<
   ComponentsDeps,
-  "db" | "notes" | "sandboxOrigin" | "runs" | "integrations" | "projectEvents"
+  "db" | "notes" | "sandboxOrigin" | "runs" | "integrations" | "projectEvents" | "t3"
 >;
 
 export function startDaemonComponents(

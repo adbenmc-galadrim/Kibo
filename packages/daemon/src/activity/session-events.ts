@@ -4,7 +4,7 @@ import type { ClosedSession } from "./session-store";
 export type SessionTicket = Pick<TicketView, "id" | "key" | "keyLabel" | "parentId" | "delivery">;
 type SessionEnd = "stop" | "timeout";
 
-function rootIdOf(ticket: SessionTicket, tickets: readonly SessionTicket[]): string {
+export function rootIdOf(ticket: SessionTicket, tickets: readonly SessionTicket[]): string {
   const byId = new Map(tickets.map((t) => [t.id, t]));
   const seen = new Set<string>();
   let current = ticket;

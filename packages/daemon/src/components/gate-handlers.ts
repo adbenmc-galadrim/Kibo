@@ -11,6 +11,7 @@ import {
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
+import type { T3Api } from "../t3/t3-rpc";
 import type { DataCall, GateHandlers } from "./gate";
 import { type NetProxyOptions, proxyFetch } from "./net-proxy";
 
@@ -22,6 +23,7 @@ export type GateHandlersDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   projectEvents?: (input: ListProjectEventsInput) => ProjectEventPage;
   hasFolder?: (projectId: string) => boolean;
+  t3?: T3Api;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
@@ -106,5 +108,21 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     },
     settings: async (projectId) => ({ tracking: docs.projectMeta(projectId).tracking }),
     recipients: async (projectId) => listQuestionRecipients(docs.project(projectId)),
+    async t3(projectId, call) {
+      const t3 = deps.t3;
+      if (!t3) throw new KiboError("NOT_CONNECTED", "t3 not started");
+      switch (call.kind) {
+        case "t3.status":
+          return t3.status();
+        case "t3.preview":
+          return t3.preview(projectId, call.ticketKey);
+        case "t3.launch":
+          return t3.launch(projectId, call.ticketKey);
+        case "t3.threadOf":
+          return t3.threadOf(projectId, call.ticketKey);
+        case "t3.refresh":
+          return t3.refresh(projectId);
+      }
+    },
   };
 }

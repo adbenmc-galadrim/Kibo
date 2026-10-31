@@ -22,6 +22,7 @@ export type DataCall = Extract<
   { kind: "data.get" | "data.set" | "data.delete" | "data.keys" }
 >;
 export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
+export type T3Call = Extract<ComponentCall, { kind: `t3.${string}` }>;
 export type DesignCall = Extract<ComponentCall, { kind: "design.frame" | "design.storybooks" }>;
 
 export type GateHandlers = {
@@ -35,6 +36,7 @@ export type GateHandlers = {
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
+  t3(projectId: string, call: T3Call): Promise<unknown>;
 };
 type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -81,6 +83,12 @@ function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: Comp
       return h.config(projectId, inst, call.patch);
     case "questions.recipients":
       return h.recipients(projectId);
+    case "t3.status":
+    case "t3.preview":
+    case "t3.launch":
+    case "t3.threadOf":
+    case "t3.refresh":
+      return h.t3(projectId, call);
   }
 }
 
