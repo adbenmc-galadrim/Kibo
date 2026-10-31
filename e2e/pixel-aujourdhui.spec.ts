@@ -84,8 +84,8 @@ test("Aujourd'hui, the whole of a long section and the calm line", async ({ page
   await capture(page, "tout-voir");
   await page.unroute("**/api/rpc");
   await patchRpc(page, onlyNimbus);
-  await page.goto("/#/");
   await page.reload();
+  await page.getByRole("button", { name: "Aujourd'hui", exact: true }).click();
   await expect(page.getByText("Rien ne bloque, rien à relire, rien à démarrer.")).toBeVisible();
   await capture(page, "calme");
 });
