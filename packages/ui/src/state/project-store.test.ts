@@ -35,6 +35,7 @@ const GROUPING_WINDOW_MS = 130;
 let getProjectCalls: string[] = [];
 let names = new Map<string, string>();
 let failure: Error | null = null;
+let gate: Promise<void> | null = null;
 let projectListeners = new Set<(id: string | null) => void>();
 let connectionListeners = new Set<() => void>();
 let unauthorizedListeners = new Set<() => void>();
@@ -46,7 +47,8 @@ const fakeClient = {
     if (req.method !== "getProject") throw new Error(`unexpected ${req.method}`);
     getProjectCalls.push(req.projectId);
     if (failure) return Promise.reject(failure);
-    return Promise.resolve(snapshotOf(req.projectId, names.get(req.projectId)));
+    const answer = snapshotOf(req.projectId, names.get(req.projectId));
+    return gate ? gate.then(() => answer) : Promise.resolve(answer);
   },
   subscribe: (listener: (id: string | null) => void) => {
     projectListeners.add(listener);
@@ -88,6 +90,7 @@ beforeEach(() => {
   getProjectCalls = [];
   names = new Map();
   failure = null;
+  gate = null;
   projectListeners = new Set();
   connectionListeners = new Set();
   unauthorizedListeners = new Set();
@@ -145,6 +148,25 @@ test("an event landing during a load refreshes again", async () => {
   names.set("silo", "after");
   await wait(GROUPING_WINDOW_MS);
   expect(getProjectCalls).toEqual(["silo", "silo"]);
+  expect(store.peek("silo")?.meta.name).toBe("after");
+});
+
+test("once the grouping window ends, a read during an older load gets the reload", async () => {
+  const store = newStore();
+  store.connect();
+  let open = () => {};
+  gate = new Promise((r) => {
+    open = r;
+  });
+  const before = store.ensure("silo");
+  emit("silo");
+  await wait(GROUPING_WINDOW_MS);
+  gate = null;
+  names.set("silo", "after");
+  const read = store.ensure("silo");
+  open();
+  await before;
+  expect((await read).meta.name).toBe("after");
   expect(store.peek("silo")?.meta.name).toBe("after");
 });
 

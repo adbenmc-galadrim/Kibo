@@ -74,8 +74,10 @@ export function createProjectStore(deps: ProjectStoreDeps) {
     if (slot.refresh) return;
     const refresh = new Promise<ProjectSnapshot>((resolve, reject) => {
       setTimeout(() => {
-        slot.refresh = null;
-        const reload = () => load(projectId, slot);
+        const reload = () => {
+          slot.refresh = null;
+          return load(projectId, slot);
+        };
         (slot.loading ? slot.loading.then(reload, reload) : reload()).then(resolve, reject);
       }, REFRESH_GROUPING_MS);
     });
@@ -110,16 +112,18 @@ export function createProjectStore(deps: ProjectStoreDeps) {
     for (const id of watchers.keys()) ensure(id).catch(reportFailedRefresh);
   };
 
+  function reset(): void {
+    clear();
+    disconnect?.();
+  }
+
   function connect(): void {
     if (disconnect) return;
     const offs = [
       deps.subscribe(invalidate),
       deps.onWriteDone(invalidate),
       deps.onConnection(followConnection),
-      deps.onUnauthorized(() => {
-        clear();
-        disconnect?.();
-      }),
+      deps.onUnauthorized(reset),
     ];
     disconnect = () => {
       disconnect = null;
@@ -131,6 +135,7 @@ export function createProjectStore(deps: ProjectStoreDeps) {
     connect,
     ensure,
     clear,
+    reset,
     peek: (projectId: string): ProjectSnapshot | null => slots.get(projectId)?.view ?? null,
     subscribe(listener: () => void): Unsubscribe {
       listeners.add(listener);
