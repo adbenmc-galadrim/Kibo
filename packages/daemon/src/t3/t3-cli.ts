@@ -10,6 +10,12 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 const STDERR_EXCERPT = 300;
 const COMMAND_NOT_FOUND = 127;
 
+export class T3Timeout extends KiboError {
+  constructor(timeoutMs: number) {
+    super("T3_UNAVAILABLE", `t3 timed out after ${timeoutMs} ms`);
+  }
+}
+
 export function resolveT3Bin(opts: { flag?: string; env: NodeJS.ProcessEnv; home: string }): string {
   return opts.flag ?? opts.env.KIBO_T3 ?? join(opts.home, ".t3", "bin", "t3");
 }
@@ -45,7 +51,7 @@ export function createT3Runner(bin: string): T3Runner {
       new Response(child.stderr).text(),
       child.exited,
     ]).finally(() => clearTimeout(timer));
-    if (timedOut) throw new KiboError("T3_UNAVAILABLE", `t3 timed out after ${timeoutMs} ms`);
+    if (timedOut) throw new T3Timeout(timeoutMs);
     if (code === COMMAND_NOT_FOUND) throw new KiboError("T3_MISSING", `${bin} not found`);
     if (code !== 0) {
       throw new KiboError(

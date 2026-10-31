@@ -14,14 +14,17 @@ import {
 import { z } from "zod";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
 import { composeThreadStart, shellQuote } from "./compose-command";
-import type { T3Runner } from "./t3-cli";
+import { type T3Runner, T3Timeout } from "./t3-cli";
 import { threadEvent } from "./thread-events";
-import type { ThreadPoll } from "./thread-poll";
+import { parseThreadList, type ThreadPoll } from "./thread-poll";
 import type { ThreadStore } from "./thread-store";
 
 const T3_STATUS_CACHE_MS = 30_000;
+const T3_PROBE_ARGS = ["theme", "show"];
 const STATUS_TIMEOUT_MS = 5_000;
 const LAUNCH_TIMEOUT_MS = 30_000;
+
+type LaunchTarget = { projectId: string; folder: string; argv: readonly string[]; title: string };
 
 const Started = z.object({
   threadId: z.string().min(1),
@@ -59,18 +62,46 @@ function requireFolder(folder: string | null, projectId: string): string {
   return folder;
 }
 
-function parseStarted(stdout: string) {
+function safeJson(text: string): unknown {
   try {
-    return Started.parse(JSON.parse(stdout));
-  } catch (e) {
-    throw new KiboError("T3_FAILED", `unreadable t3 thread start output: ${String(e).slice(0, 200)}`);
+    return JSON.parse(text);
+  } catch {
+    return null;
   }
 }
 
-async function startThread(deps: T3RpcDeps, argv: readonly string[]) {
+type StartedThread = z.infer<typeof Started>;
+
+function parseStarted(stdout: string): StartedThread | null {
+  const parsed = safeJson(stdout);
+  const started = Started.safeParse(parsed);
+  return started.success ? started.data : null;
+}
+
+async function findBack(deps: T3RpcDeps, target: LaunchTarget): Promise<StartedThread> {
+  const failed = new KiboError(
+    "T3_FAILED",
+    `no answer from t3 thread start, a thread may have been created in T3: ${target.title}`,
+  );
+  const known = new Set(deps.store.all(target.projectId).map((t) => t.threadId));
+  const listed = await deps
+    .run(["thread", "list", "--project", target.folder, "--json"], {})
+    .then((r) => parseThreadList(r.stdout))
+    .catch((e: unknown) => {
+      if (e instanceof KiboError) throw failed;
+      throw e;
+    });
+  const found = listed.find((t) => t.title === target.title && !known.has(t.threadId));
+  if (!found) throw failed;
+  return { threadId: found.threadId, title: target.title, ...(found.link && { link: found.link }) };
+}
+
+async function startThread(deps: T3RpcDeps, target: LaunchTarget): Promise<StartedThread> {
   try {
-    return parseStarted((await deps.run(argv.slice(1), { timeoutMs: LAUNCH_TIMEOUT_MS })).stdout);
+    const { stdout } = await deps.run(target.argv.slice(1), { timeoutMs: LAUNCH_TIMEOUT_MS });
+    return parseStarted(stdout) ?? (await findBack(deps, target));
   } catch (e) {
+    if (e instanceof T3Timeout) return findBack(deps, target);
     if (e instanceof KiboError && e.code === "T3_UNAVAILABLE") throw new KiboError("T3_FAILED", e.detail);
     throw e;
   }
@@ -82,7 +113,7 @@ function createStatus(deps: Pick<T3RpcDeps, "bin" | "run" | "now">): () => Promi
   return async () => {
     if (deps.now() < downUntil) return down;
     try {
-      await deps.run(["thread", "list", "--json"], { timeoutMs: STATUS_TIMEOUT_MS });
+      await deps.run(T3_PROBE_ARGS, { timeoutMs: STATUS_TIMEOUT_MS });
       return { available: true, bin: deps.bin };
     } catch (e) {
       if (!(e instanceof KiboError)) throw e;
@@ -104,17 +135,18 @@ export function createT3Api(deps: T3RpcDeps): T3Api {
     return { argv, command: shellQuote(argv), folder: resolved, ticket, tickets };
   };
   const launchOnce = async (projectId: string, ticketKey: string): Promise<T3Launch> => {
-    const { argv, command, ticket, tickets } = compose(projectId, ticketKey);
+    const { argv, command, folder, ticket, tickets } = compose(projectId, ticketKey);
     const current = deps.store.threadOf(projectId, ticket.id);
     if (current && isActiveT3Status(current.status)) {
       throw new KiboError("T3_THREAD_ACTIVE", `${ticketKey} already has the thread ${current.threadId}`);
     }
-    const started = await startThread(deps, argv);
+    const title = `${ticketKey} · ${ticket.title}`;
+    const started = await startThread(deps, { projectId, folder, argv, title });
     const now = deps.now();
     const thread: T3Thread = {
       threadId: started.threadId,
       link: started.link ?? "",
-      title: started.title ?? `${ticketKey} · ${ticket.title}`,
+      title: started.title ?? title,
       status: "running",
       startedAt: now,
       checkedAt: now,

@@ -6,6 +6,7 @@ import { createService } from "../service";
 import { openStore } from "../store";
 import { cleanupTmp, tmp } from "../testing/git-test-kit";
 import { startT3 } from "./bootstrap";
+import { createT3Runner, type T3Runner, T3Timeout } from "./t3-cli";
 import { type FakeT3, installFakeT3 } from "./testing/t3-kit";
 
 let fake: FakeT3;
@@ -19,7 +20,7 @@ afterEach(() => {
 
 const T0 = 1_760_000_000_000;
 
-function setup(opts: { folder?: string | null; bin?: string } = {}) {
+function setup(opts: { folder?: string | null; bin?: string; run?: T3Runner } = {}) {
   const service = createService(openStore(tmp()), { user: "adam" });
   const folder = opts.folder === undefined ? "/w/silo" : opts.folder;
   const project = ProjectMeta.parse(
@@ -50,6 +51,7 @@ function setup(opts: { folder?: string | null; bin?: string } = {}) {
     sink: { record: (_p, event) => events.push(event) },
     emit: (message) => emitted.push(message),
     bin: opts.bin ?? fake.bin,
+    ...(opts.run && { run: opts.run }),
   });
   const key = ticket.key ?? "";
   const rpc = (req: Parameters<typeof t3.rpc.handle>[0], ctx = LOCAL_CONTEXT) => t3.rpc.handle(req, ctx);
@@ -157,6 +159,57 @@ test("status reports missing and server-down, cached 30 s", async () => {
   expect(fake.calls()).toHaveLength(before);
   s.clock.now += 2_000;
   expect(await s.rpc({ method: "t3.status" })).toEqual({ available: true, bin: fake.bin });
+});
+
+test("status probes with a command independent of the current folder", async () => {
+  const s = setup();
+  expect(await s.rpc({ method: "t3.status" })).toEqual({ available: true, bin: fake.bin });
+  expect(fake.calls()).toEqual([["theme", "show"]]);
+});
+
+test("an unreadable start output finds the thread back by its title and stores it", async () => {
+  const s = setup();
+  fake.set({ startOutput: "not json" });
+  const launched = await s.rpc({ method: "t3.launch", ...s.onTicket });
+  expect(launched).toMatchObject({ thread: { threadId: "thr_1", link: "t3-thread://v2/fake/thr_1" } });
+  expect(fake.calls()[1]).toEqual(["thread", "list", "--project", "/w/silo", "--json"]);
+  expect(s.events.map((e) => e.kind)).toEqual(["t3_started"]);
+  s.t3.stop();
+});
+
+test("a start over its timeout finds the thread back too", async () => {
+  const real = createT3Runner(fake.bin);
+  const run: T3Runner = async (args, opts) => {
+    const result = await real(args, opts);
+    if (args[1] === "start") throw new T3Timeout(1);
+    return result;
+  };
+  const s = setup({ run });
+  expect(await s.rpc({ method: "t3.launch", ...s.onTicket })).toMatchObject({
+    thread: { threadId: "thr_1" },
+  });
+  s.t3.stop();
+});
+
+test("a thread not found back raises T3_FAILED saying one may exist, and records nothing", async () => {
+  const s = setup();
+  fake.set({ startOutput: "not json", startDropsThread: true });
+  const error = await s.rpc({ method: "t3.launch", ...s.onTicket }).catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(KiboError);
+  expect(error).toMatchObject({
+    code: "T3_FAILED",
+    detail: expect.stringContaining("may have been created"),
+  });
+  expect(await s.rpc({ method: "t3.threadOf", ...s.onTicket })).toBeNull();
+});
+
+test("a finished thread of the same title is not taken for the new one", async () => {
+  const s = setup();
+  await s.rpc({ method: "t3.launch", ...s.onTicket });
+  fake.set({ threads: fake.state().threads.map((t) => ({ ...t, status: "completed" })) });
+  await s.rpc({ method: "t3.refresh", projectId: s.project.id });
+  fake.set({ startOutput: "not json", startDropsThread: true });
+  expect(await refusal(s.rpc({ method: "t3.launch", ...s.onTicket }))).toBe("T3_FAILED");
 });
 
 test("a launch writes a t3_started project event", async () => {

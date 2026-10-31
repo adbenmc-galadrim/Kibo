@@ -11,6 +11,11 @@ export type FakeT3 = {
   stop(): void;
 };
 
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
+}
+
 export function installFakeT3(): FakeT3 {
   const dir = mkdtempSync(join(tmpdir(), "kibo-t3-"));
   const bin = join(dir, "t3");
@@ -34,8 +39,8 @@ export function installFakeT3(): FakeT3 {
     state: () => readFakeT3State(statePath),
     set: (patch) => writeFakeT3State(statePath, { ...readFakeT3State(statePath), ...patch }),
     stop() {
-      process.env.FAKE_T3_STATE = previous.state;
-      process.env.FAKE_T3_LOG = previous.log;
+      restoreEnv("FAKE_T3_STATE", previous.state);
+      restoreEnv("FAKE_T3_LOG", previous.log);
       rmSync(dir, { recursive: true, force: true });
     },
   };

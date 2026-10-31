@@ -46,7 +46,7 @@ test("the daemon answers t3.status through the fake binary", async () => {
     ok: true,
     result: { available: true, bin: fake.bin },
   });
-  expect(fake.calls()).toEqual([["thread", "list", "--json"]]);
+  expect(fake.calls()).toEqual([["theme", "show"]]);
 });
 
 test("without KIBO_T3 and without t3 in the home folder, t3.status reports missing", async () => {

@@ -1,8 +1,19 @@
 import type { Database } from "bun:sqlite";
 import { KiboError, type T3Thread, type T3ThreadStatus } from "@kibo/schema";
 
-export type ProjectThread = T3Thread & { projectId: string; ticketId: string };
-type ThreadPatch = { status: T3ThreadStatus; checkedAt: number; link?: string };
+export type ProjectThread = T3Thread & {
+  projectId: string;
+  ticketId: string;
+  remoteUpdatedAt: string | null;
+  changedAt: number;
+};
+type ThreadPatch = {
+  status: T3ThreadStatus;
+  checkedAt: number;
+  link?: string;
+  remoteUpdatedAt?: string;
+  changedAt?: number;
+};
 
 export type ThreadStore = {
   add(projectId: string, ticketId: string, thread: T3Thread): void;
@@ -23,6 +34,8 @@ type DbRow = {
   status: T3ThreadStatus;
   started_at: number;
   checked_at: number;
+  remote_updated_at: string | null;
+  changed_at: number;
 };
 
 const ACTIVE = "status IN ('running', 'waiting')";
@@ -37,15 +50,24 @@ const toThread = (r: DbRow): ProjectThread => ({
   status: r.status,
   startedAt: r.started_at,
   checkedAt: r.checked_at,
+  remoteUpdatedAt: r.remote_updated_at,
+  changedAt: r.changed_at,
 });
 
-export const publicThread = ({ projectId: _p, ticketId: _t, ...thread }: ProjectThread): T3Thread => thread;
+export const publicThread = ({
+  projectId: _p,
+  ticketId: _t,
+  remoteUpdatedAt: _r,
+  changedAt: _c,
+  ...thread
+}: ProjectThread): T3Thread => thread;
 
 export function createThreadStore(db: Database): ThreadStore {
   db.exec(
     "CREATE TABLE IF NOT EXISTS ticket_threads (project_id TEXT NOT NULL, ticket_id TEXT NOT NULL, " +
       "thread_id TEXT PRIMARY KEY, link TEXT NOT NULL, title TEXT NOT NULL, status TEXT NOT NULL, " +
-      "started_at INTEGER NOT NULL, checked_at INTEGER NOT NULL)",
+      "started_at INTEGER NOT NULL, checked_at INTEGER NOT NULL, remote_updated_at TEXT, " +
+      "changed_at INTEGER NOT NULL)",
   );
   db.exec(
     "CREATE UNIQUE INDEX IF NOT EXISTS ticket_threads_active ON ticket_threads (project_id, ticket_id) " +
@@ -61,12 +83,24 @@ export function createThreadStore(db: Database): ThreadStore {
     `SELECT DISTINCT project_id FROM ticket_threads WHERE ${ACTIVE}`,
   );
   const insert = db.query<never, DbRow>(
-    "INSERT INTO ticket_threads (project_id, ticket_id, thread_id, link, title, status, started_at, checked_at) " +
-      "VALUES ($project_id, $ticket_id, $thread_id, $link, $title, $status, $started_at, $checked_at)",
+    "INSERT INTO ticket_threads (project_id, ticket_id, thread_id, link, title, status, started_at, checked_at, " +
+      "remote_updated_at, changed_at) VALUES ($project_id, $ticket_id, $thread_id, $link, $title, $status, " +
+      "$started_at, $checked_at, $remote_updated_at, $changed_at)",
   );
-  const patch = db.query<never, { threadId: string; status: string; checkedAt: number; link: string | null }>(
-    "UPDATE ticket_threads SET status = $status, checked_at = $checkedAt, link = COALESCE($link, link) " +
-      "WHERE thread_id = $threadId",
+  const patch = db.query<
+    never,
+    {
+      threadId: string;
+      status: string;
+      checkedAt: number;
+      link: string | null;
+      remoteUpdatedAt: string | null;
+      changedAt: number | null;
+    }
+  >(
+    "UPDATE ticket_threads SET status = $status, checked_at = $checkedAt, link = COALESCE($link, link), " +
+      "remote_updated_at = COALESCE($remoteUpdatedAt, remote_updated_at), " +
+      "changed_at = COALESCE($changedAt, changed_at) WHERE thread_id = $threadId",
   );
   const activeThreads = (projectId: string) => active.all({ projectId }).map(toThread);
   const latest = (projectId: string) =>
@@ -86,10 +120,19 @@ export function createThreadStore(db: Database): ThreadStore {
         status: thread.status,
         started_at: thread.startedAt,
         checked_at: thread.checkedAt,
+        remote_updated_at: null,
+        changed_at: thread.startedAt,
       });
     },
-    update(threadId, { status, checkedAt, link }) {
-      patch.run({ threadId, status, checkedAt, link: link ?? null });
+    update(threadId, { status, checkedAt, link, remoteUpdatedAt, changedAt }) {
+      patch.run({
+        threadId,
+        status,
+        checkedAt,
+        link: link ?? null,
+        remoteUpdatedAt: remoteUpdatedAt ?? null,
+        changedAt: changedAt ?? null,
+      });
     },
     threadOf: (projectId, ticketId) => latest(projectId).get(ticketId) ?? null,
     latest,

@@ -6,6 +6,7 @@ const KNOWN: Readonly<Record<string, T3ThreadStatus>> = {
   starting: "running",
   running: "running",
   waiting: "waiting",
+  idle: "waiting",
   completed: "done",
   failed: "failed",
   interrupted: "failed",
@@ -14,3 +15,5 @@ const KNOWN: Readonly<Record<string, T3ThreadStatus>> = {
 };
 
 export const mapT3Status = (raw: string): T3ThreadStatus => KNOWN[raw] ?? "running";
+
+export const isKnownT3Status = (raw: string): boolean => raw in KNOWN;

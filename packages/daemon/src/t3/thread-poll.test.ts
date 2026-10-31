@@ -5,16 +5,19 @@ import type { T3Runner } from "./t3-cli";
 import { createThreadPoll, T3_POLL_MS } from "./thread-poll";
 import { createThreadStore } from "./thread-store";
 
+const DAY = 24 * 3_600_000;
+
 function setup() {
   const store = createThreadStore(new Database(":memory:", { strict: true }));
   const listed = { value: [] as unknown[] };
   const failure: { value: KiboError | null } = { value: null };
   const calls: (readonly string[])[] = [];
+  const logged: string[] = [];
   const emitted: string[] = [];
   const events: ProjectEventInput[] = [];
   const timers = new Map<number, { fn: () => void; ms: number }>();
   let nextTimer = 1;
-  let now = 100;
+  const clock = { now: 100 };
   const run: T3Runner = async (args) => {
     calls.push(args);
     if (failure.value) throw failure.value;
@@ -25,10 +28,10 @@ function setup() {
     run,
     folderOf: () => "/w/silo",
     tickets: () => [{ id: "t1", key: "SILO-1", keyLabel: "SILO-1", parentId: null, delivery: null }],
-    now: () => now,
+    now: () => clock.now,
     emit: (id) => emitted.push(id),
     sink: { record: (_p, event) => events.push(event) },
-    log: () => {},
+    log: (what) => logged.push(what),
     timers: {
       set(fn, ms) {
         const id = nextTimer++;
@@ -50,9 +53,9 @@ function setup() {
   const tick = async () => {
     for (const timer of [...timers.values()]) timer.fn();
     await poll.settled();
-    now += T3_POLL_MS;
+    clock.now += T3_POLL_MS;
   };
-  return { store, listed, failure, calls, emitted, events, timers, poll, add, tick };
+  return { clock, logged, store, listed, failure, calls, emitted, events, timers, poll, add, tick };
 }
 
 test("polling every 30 s maps statuses, publishes changes on the project channel and stops when no thread is active", async () => {
@@ -119,4 +122,45 @@ test("start watches the projects that still have an active thread", () => {
   expect(s.timers.size).toBe(1);
   s.poll.stop();
   expect(s.timers.size).toBe(0);
+});
+
+test("an unknown status stays running and is logged once", async () => {
+  const s = setup();
+  s.add("a");
+  s.listed.value = [{ threadId: "a", status: "brand-new" }];
+  await s.poll.refresh("p");
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("running");
+  expect(s.logged.filter((line) => line.includes("brand-new"))).toHaveLength(1);
+});
+
+test("an active thread whose updatedAt stays the same for 24 h becomes done and polling stops", async () => {
+  const s = setup();
+  s.add("a");
+  s.poll.watch("p");
+  s.listed.value = [{ threadId: "a", status: "running", updatedAt: "u1" }];
+  await s.poll.refresh("p");
+  s.clock.now += DAY - 1;
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("running");
+  s.clock.now += 1;
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("done");
+  expect(s.events.map((e) => e.kind)).toEqual(["t3_finished"]);
+  expect(s.timers.size).toBe(0);
+  s.add("b");
+  expect(s.store.threadOf("p", "t1")?.threadId).toBe("b");
+});
+
+test("a changed updatedAt restarts the 24 h", async () => {
+  const s = setup();
+  s.add("a");
+  s.listed.value = [{ threadId: "a", status: "waiting", updatedAt: "u1" }];
+  await s.poll.refresh("p");
+  s.clock.now += DAY - 1;
+  s.listed.value = [{ threadId: "a", status: "waiting", updatedAt: "u2" }];
+  await s.poll.refresh("p");
+  s.clock.now += DAY - 1;
+  await s.poll.refresh("p");
+  expect(s.store.threadOf("p", "t1")?.status).toBe("waiting");
 });

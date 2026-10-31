@@ -27,13 +27,13 @@ test("exit code 127 raises T3_MISSING", async () => {
 
 test("a non-zero exit raises T3_UNAVAILABLE with the stderr excerpt", async () => {
   fake.set({ mode: "server-down" });
-  const error = await failure(createT3Runner(fake.bin)(["thread", "list", "--json"], {}));
+  const error = await failure(createT3Runner(fake.bin)(["theme", "show"], {}));
   expect(error.code).toBe("T3_UNAVAILABLE");
   expect(error.detail).toContain("T3 Code server is not running");
 });
 
 test("stdout JSON is returned on success", async () => {
-  const result = await createT3Runner(fake.bin)(["thread", "list", "--json"], {});
+  const result = await createT3Runner(fake.bin)(["thread", "list", "--project", "/w", "--json"], {});
   expect(result.code).toBe(0);
   expect(JSON.parse(result.stdout)).toEqual([]);
 });
