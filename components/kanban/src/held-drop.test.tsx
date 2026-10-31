@@ -54,7 +54,7 @@ const status: Status = { id: "in_progress", label: "En cours", order: 2 };
 const column = (forbidden: boolean) =>
   render(
     <DndContext>
-      <KanbanColumn status={status} ids={[]} targeted={false} forbidden={forbidden}>
+      <KanbanColumn status={status} ids={[]} targeted={false} collapsed={false} forbidden={forbidden}>
         {null}
       </KanbanColumn>
     </DndContext>,

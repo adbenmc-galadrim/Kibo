@@ -157,3 +157,10 @@ test("the orange session border stays", () => {
   const c = renderCard({ session: { tool: "T3 Code", startedAt: 0 } });
   expect(c.querySelector("article")?.className).toContain("border-(--tracking-brand-line)");
 });
+
+test("the reason shows for any block, without a question too", () => {
+  const c = renderContent({ statusId: "blocked", blockedReason: "Attente du client" }, { blocked: true });
+  expect(screen.getByText("bloqué")).toBeTruthy();
+  expect(screen.getByText("Motif : Attente du client").className).toContain("truncate");
+  expect(c.querySelector("[data-card-signal]")?.getAttribute("data-card-signal")).toBe("blocked");
+});

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { Question, type StatusId } from "@kibo/schema";
-import { boardColumn, heldBy, heldByQuestion } from "./board-column";
+import { boardColumn, heldBy, heldByQuestion, isFolded } from "./board-column";
 import { fr } from "./fr";
 
 const WITH_BLOCKED = new Set<StatusId>(["backlog", "todo", "in_progress", "blocked", "done"]);
@@ -55,4 +55,11 @@ test("the hold comes from the open blocking question of the ticket", () => {
   expect(heldBy({ id: "2@1" }, "blocked", "in_progress", [question])).toBe(question);
   expect(heldBy({ id: "2@1" }, "blocked", "blocked", [question])).toBeNull();
   expect(heldBy({ id: "3@1" }, "blocked", "in_progress", [question])).toBeNull();
+});
+
+test("a column folds only when it has no ticket at all, outside a drag over it and once loaded", () => {
+  expect(isFolded(0, false, false)).toBe(true);
+  expect(isFolded(0, true, false)).toBe(false);
+  expect(isFolded(0, false, true)).toBe(false);
+  expect(isFolded(2, false, false)).toBe(false);
 });

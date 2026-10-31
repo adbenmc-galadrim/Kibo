@@ -109,11 +109,15 @@ test("Ouvrir from the menu opens the ticket in the host", async () => {
   expect(m.opened).toEqual([id]);
 });
 
-test("the column '+' asks the host for a new ticket in that status", async () => {
+test("the column '+' asks the host for a new ticket in that status, Bloqué included", async () => {
   const m = setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Nouveau ticket dans En cours" }));
-  expect(m.newTicketRequests).toEqual([{ statusId: "in_progress", instanceId: "mock-instance" }]);
+  await user.click(screen.getByRole("button", { name: "Nouveau ticket dans Bloqué" }));
+  expect(m.newTicketRequests).toEqual([
+    { statusId: "in_progress", instanceId: "mock-instance" },
+    { statusId: "blocked", instanceId: "mock-instance" },
+  ]);
 });
 
 const setupFailing = () => {

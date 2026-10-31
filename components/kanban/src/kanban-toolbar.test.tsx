@@ -156,3 +156,13 @@ test("the counter reads 80 tickets and 18 tickets · sprint courant", async () =
   await user.click(toggle("Sprint courant · S42"));
   expect(await screen.findByText("4 tickets · sprint courant")).toBeTruthy();
 });
+
+test("a column whose tickets are all hidden by a filter stays open, without « 0 ticket »", async () => {
+  setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Démarrable" }));
+  const review = await screen.findByRole("region", { name: "En review" });
+  expect(within(review).queryByRole("article")).toBeNull();
+  expect(review.getAttribute("data-collapsed")).toBeNull();
+  expect(within(review).queryByText("0 ticket")).toBeNull();
+});

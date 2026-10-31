@@ -12,7 +12,7 @@ const ids = (n: number) => Array.from({ length: n }, (_, i) => `t${i}`);
 const column = (count: number) =>
   render(
     <DndContext>
-      <KanbanColumn status={STATUS} ids={ids(count)} targeted={false}>
+      <KanbanColumn status={STATUS} ids={ids(count)} targeted={false} collapsed={false}>
         <div>carte</div>
       </KanbanColumn>
     </DndContext>,

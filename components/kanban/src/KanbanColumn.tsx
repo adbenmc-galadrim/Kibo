@@ -14,18 +14,18 @@ type Props = {
   status: Status;
   ids: string[];
   targeted: boolean;
+  collapsed: boolean;
   forbidden?: boolean;
-  loading?: boolean;
   children: ReactNode;
   onAdd?: () => void;
 };
 
 export function KanbanColumn(props: Props) {
-  const { status, ids, targeted, forbidden = false, loading = false, children, onAdd } = props;
+  const { status, ids, targeted, collapsed, forbidden = false, children, onAdd } = props;
   const { setNodeRef } = useDroppable({ id: status.id });
   const [cards] = useAutoAnimate<HTMLDivElement>();
-  if (ids.length === 0 && !targeted && !loading)
-    return <CollapsedColumn ref={setNodeRef} status={status} forbidden={forbidden} />;
+  if (collapsed)
+    return <CollapsedColumn ref={setNodeRef} status={status} forbidden={forbidden} onAdd={onAdd} />;
   return (
     <section
       ref={setNodeRef}

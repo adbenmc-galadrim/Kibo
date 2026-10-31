@@ -37,3 +37,11 @@ test("elsewhere the card's overlap decides, as without a folded column", () => {
   expect(foldedFirst(["backlog"])(args({ x: 100, y: 120 }))[0]?.id).toBe("todo");
   expect(foldedFirst(["backlog"])(args(null))[0]?.id).toBe("todo");
 });
+
+test("on the keyboard the centre of the card stands for the pointer", () => {
+  const onBand = {
+    ...args(null),
+    collisionRect: { top: 100, left: -80, width: 200, height: 60, right: 120, bottom: 160 },
+  };
+  expect(foldedFirst(["backlog"])(onBand).map((c) => c.id)).toEqual(["backlog"]);
+});
