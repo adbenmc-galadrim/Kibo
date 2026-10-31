@@ -160,7 +160,7 @@ export function QuestionCard(props: Props) {
       tabIndex={-1}
       data-spotlight={spotlight.spotlit ?? undefined}
       aria-label={q.title}
-      className={`grid scroll-my-4 gap-2.5 rounded-[10px] border bg-card px-3.5 py-3 text-sm outline-none`}
+      className="grid scroll-my-4 gap-2.5 rounded-[10px] border bg-card px-3.5 py-3 text-sm outline-none"
     >
       <header className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-[12.5px] font-semibold text-muted-foreground">
