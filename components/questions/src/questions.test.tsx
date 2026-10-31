@@ -7,6 +7,7 @@ import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
+import { openRow } from "./question-fixtures.test-helper";
 
 const OPEN = "Garder l'ordre des sous-tickets par index fractionnaire ?";
 const ANSWERED = "Refuser les hooks d'un processus mort ?";
@@ -66,10 +67,10 @@ test("a saved answer is shown as given, with no delivery to do", async () => {
   mount("view");
   const user = userEvent.setup();
   await user.click(await screen.findByRole("radio", { name: "Toutes" }));
-  const group = await screen.findByRole("region", { name: /KIB-14/ });
-  expect(within(group).getByText(/^Répondu par adam/)).toBeTruthy();
-  expect(within(group).queryByText("à transmettre")).toBeNull();
-  expect(within(group).queryByText(/figée/)).toBeNull();
+  const row = await openRow(ANSWERED);
+  expect(within(row).getByText(/^Répondu par adam/)).toBeTruthy();
+  expect(within(row).queryByText("à transmettre")).toBeNull();
+  expect(within(row).queryByText(/figée/)).toBeNull();
   expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
@@ -105,10 +106,9 @@ test("an imported answer is shown like any other", async () => {
   const user = userEvent.setup();
   expect(await screen.findByText("Aucune question ouverte.")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
-  const group = await screen.findByRole("region", { name: /KIB-12/ });
-  expect(within(group).getByText("Arbitrage importé du plan ?")).toBeTruthy();
-  expect(within(group).getByText("Réponse : Tranché dans le plan")).toBeTruthy();
-  expect(within(group).queryByText("à transmettre")).toBeNull();
+  const row = await openRow("Arbitrage importé du plan ?");
+  expect(within(row).getByText("Réponse : Tranché dans le plan")).toBeTruthy();
+  expect(within(row).queryByText("à transmettre")).toBeNull();
   expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
@@ -121,14 +121,12 @@ test("the view filters by state and ticket", async () => {
   expect(screen.getByText(ANSWERED)).toBeTruthy();
   expect(screen.queryByText(OPEN)).toBeNull();
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
-  await user.click(screen.getByRole("button", { name: "Tous les tickets" }));
+  await user.click(screen.getByRole("button", { name: "Ticket : tous" }));
   await user.type(screen.getByRole("textbox", { name: "Rechercher une clé" }), "14");
   await user.click(await screen.findByRole("menuitem", { name: /KIB-14/ }));
   expect(screen.getByText(ANSWERED)).toBeTruthy();
   expect(screen.queryByText(OPEN)).toBeNull();
-  await user.click(
-    within(screen.getByRole("region", { name: /KIB-14/ })).getByRole("button", { name: /KIB-14/ }),
-  );
+  await user.click(screen.getByRole("button", { name: /^KIB-14 · / }));
   expect(m.opened).toEqual([questionNamed(m, ANSWERED)?.ticketId ?? ""]);
 });
 
@@ -177,7 +175,7 @@ test("the context is rendered without raw HTML", async () => {
       createdBy: { kind: "human", ref: "adam" },
     });
   });
-  const card = await screen.findByRole("article", { name: "Échapper le contexte ?" });
+  const card = await openRow("Échapper le contexte ?");
   expect(card.querySelector("script")).toBeNull();
   expect(within(card).getByText("<script>alert(1)</script>")).toBeTruthy();
   expect(card.querySelector("li code")?.textContent).toBe("code");
@@ -193,7 +191,7 @@ test("the widget links to the view", async () => {
 test("« Coller la réponse » records a text answer, shown at once as answered", async () => {
   const m = mount("view");
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: OPEN });
+  const card = await openRow(OPEN);
   await user.click(within(card).getByRole("button", { name: "Coller la réponse" }));
   const save = within(card).getByRole("button", { name: "Enregistrer" });
   expect(save.hasAttribute("disabled")).toBe(true);
@@ -210,7 +208,7 @@ test("« Coller la réponse » records a text answer, shown at once as answered"
     }),
   );
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
-  const group = await screen.findByRole("region", { name: /KIB-12/ });
-  expect(await within(group).findByText("Réponse : Oui, à la racine. — Claire")).toBeTruthy();
+  const row = await openRow(OPEN);
+  expect(await within(row).findByText("Réponse : Oui, à la racine. — Claire")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });

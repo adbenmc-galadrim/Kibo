@@ -16,14 +16,13 @@ import { recipientName } from "./questions-logic";
 type Props = {
   question: Question;
   recipients: readonly QuestionRecipient[];
-  client: string | null;
   readOnly: boolean;
 };
 
-export function RecipientMenu({ question, recipients, client, readOnly }: Props) {
+export function RecipientMenu({ question, recipients, readOnly }: Props) {
   const sdk = useSdk();
   const [failed, setFailed] = useState(false);
-  const name = recipientName(recipients, question.recipient, client);
+  const name = recipientName(recipients, question.recipient);
   if (readOnly)
     return (
       <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
@@ -54,7 +53,7 @@ export function RecipientMenu({ question, recipients, client, readOnly }: Props)
             variant="outline"
             size="sm"
             aria-label={fr.recipients.menu(name)}
-            className="h-6 gap-1 rounded-full px-2 text-2xs font-normal"
+            className="h-5.5 gap-1 rounded-md px-2 text-xs font-medium"
           >
             <UserRound aria-hidden className="size-3" />
             {fr.recipients.shown(name)}
@@ -65,7 +64,7 @@ export function RecipientMenu({ question, recipients, client, readOnly }: Props)
           <DropdownMenuRadioGroup value={question.recipient} onValueChange={(v) => void choose(v)}>
             {recipients.map((r) => (
               <DropdownMenuRadioItem key={r.id} value={r.id} className="text-xs">
-                {recipientName(recipients, r.id, client)}
+                {recipientName(recipients, r.id)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

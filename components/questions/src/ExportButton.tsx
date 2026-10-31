@@ -2,21 +2,13 @@ import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "@kibo/sdk/ui/popover";
 import { Copy, Upload } from "lucide-react";
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { ExportToast } from "./ExportToast";
 import { type ExportEntry, exportAll, exportDate } from "./export-text";
 import { fr } from "./fr";
 
-type Props = {
-  label: string;
-  recipient: string;
-  summary: string;
-  entries: readonly ExportEntry[];
-  variant?: "outline" | "ghost";
-  className?: string;
-};
-
-const TOOLBAR_BUTTON = "h-6.5 text-xs";
+export const PAGE_ACTION =
+  "h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px]";
 
 async function copy(text: string): Promise<void> {
   try {
@@ -26,32 +18,27 @@ async function copy(text: string): Promise<void> {
   }
 }
 
-export function ExportButton({ label, recipient, summary, entries, variant, className }: Props) {
+export function useExportFlow(recipient: string, entries: readonly ExportEntry[]) {
   const sdk = useSdk();
   const [text, setText] = useState<string | null>(null);
   const [marked, setMarked] = useState<string[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [undoFailed, setUndoFailed] = useState(false);
   const closeToast = useCallback(() => setMarked(null), []);
-  const run = async (command: () => Promise<unknown>) => {
+  const start = async () => {
+    const next = exportAll(recipient, exportDate(Date.now()), entries);
+    setText(next);
     setFailed(false);
+    await copy(next);
+    const questionIds = entries.map((e) => e.question.id);
     try {
-      await command();
-      return true;
+      const by = { kind: "human", ref: sdk.viewer } as const;
+      await sdk.run({ method: "markQuestionsExported", questionIds, by });
+      setMarked(questionIds);
     } catch (e) {
       console.error(e);
       setFailed(true);
-      return false;
     }
-  };
-  const exportNow = async () => {
-    const next = exportAll(recipient, exportDate(Date.now()), entries);
-    setText(next);
-    await copy(next);
-    const questionIds = entries.map((e) => e.question.id);
-    const by = { kind: "human", ref: sdk.viewer } as const;
-    if (await run(() => sdk.run({ method: "markQuestionsExported", questionIds, by })))
-      setMarked(questionIds);
   };
   const undo = async () => {
     setUndoFailed(false);
@@ -63,50 +50,77 @@ export function ExportButton({ label, recipient, summary, entries, variant, clas
       setUndoFailed(true);
     }
   };
+  return { text, marked, failed, undoFailed, closeToast, start, undo, close: () => setText(null) };
+}
+
+type Flow = ReturnType<typeof useExportFlow>;
+
+export function ExportSurface({
+  flow,
+  summary,
+  children,
+}: {
+  flow: Flow;
+  summary: string;
+  children: ReactNode;
+}) {
   return (
-    <Popover open={text !== null} onOpenChange={(open) => !open && setText(null)}>
-      <PopoverAnchor asChild>
-        <Button
-          type="button"
-          variant={variant ?? "outline"}
-          size="sm"
-          className={className ?? TOOLBAR_BUTTON}
-          disabled={entries.length === 0}
-          onClick={() => void exportNow()}
-        >
-          <Upload aria-hidden />
-          {label}
-        </Button>
-      </PopoverAnchor>
+    <Popover open={flow.text !== null} onOpenChange={(open) => !open && flow.close()}>
+      <PopoverAnchor asChild>{children}</PopoverAnchor>
       <PopoverContent align="end" className="grid w-105 gap-2.5 rounded-[10px] bg-card p-3.5">
         <header className="flex items-center gap-2">
           <h3 className="flex-1 text-sm font-semibold">{fr.exporting.preview}</h3>
           <span className="text-xs text-muted-foreground">{summary}</span>
         </header>
         <pre className="max-h-72 overflow-auto rounded-md bg-muted px-3 py-2.5 font-mono text-xs leading-[1.75] whitespace-pre-wrap select-all">
-          {text}
+          {flow.text}
         </pre>
         <footer className="flex items-center gap-2">
           <p className="flex-1 text-xs text-muted-foreground">{fr.exporting.help}</p>
-          <Button type="button" size="sm" className="h-6.5 text-xs" onClick={() => void copy(text ?? "")}>
+          <Button
+            type="button"
+            size="sm"
+            className="h-6.5 text-xs"
+            onClick={() => void copy(flow.text ?? "")}
+          >
             <Copy aria-hidden />
             {fr.exporting.copy}
           </Button>
         </footer>
       </PopoverContent>
-      {failed && (
+      {flow.failed && (
         <p role="alert" className="text-xs text-destructive">
           {fr.exporting.failed}
         </p>
       )}
-      {marked !== null && (
+      {flow.marked !== null && (
         <ExportToast
-          count={marked.length}
-          undoFailed={undoFailed}
-          onUndo={() => void undo()}
-          onClose={closeToast}
+          count={flow.marked.length}
+          undoFailed={flow.undoFailed}
+          onUndo={() => void flow.undo()}
+          onClose={flow.closeToast}
         />
       )}
     </Popover>
+  );
+}
+
+type Props = { label: string; recipient: string; summary: string; entries: readonly ExportEntry[] };
+
+export function ExportButton({ label, recipient, summary, entries }: Props) {
+  const flow = useExportFlow(recipient, entries);
+  return (
+    <ExportSurface flow={flow} summary={summary}>
+      <Button
+        type="button"
+        variant="outline"
+        className={PAGE_ACTION}
+        disabled={entries.length === 0}
+        onClick={() => void flow.start()}
+      >
+        <Upload aria-hidden />
+        {label}
+      </Button>
+    </ExportSurface>
   );
 }

@@ -7,15 +7,12 @@ import {
   openCountByRecipient,
   type Question,
   type QuestionRecipient,
-  type TicketView,
 } from "@kibo/schema";
 import { humanName } from "@kibo/sdk";
 import { fr } from "./fr";
 
 export type Scope = "open" | "answered" | "all" | "archived";
 export type AnswerForm = { option: string | null; text: string; confirm: boolean };
-export type TicketGroup = { ticket: TicketView; questions: Question[] };
-export type ViewGroup = TicketGroup;
 
 const SCOPE_TEST: Record<Scope, (q: Question) => boolean> = {
   open: isOpen,
@@ -84,40 +81,6 @@ export function lastExportedAt(q: Question): number | null {
 
 const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
 
-const byKey = (a: TicketView, b: TicketView): number =>
-  a.keyLabel.localeCompare(b.keyLabel, "fr", { numeric: true });
-
-export function groupByTicket(questions: readonly Question[], tickets: readonly TicketView[]): TicketGroup[] {
-  return [...tickets]
-    .sort(byKey)
-    .map((ticket) => ({
-      ticket,
-      questions: questions.filter((q) => q.ticketId === ticket.id).sort(byNewest),
-    }))
-    .filter((g) => g.questions.length > 0);
-}
-
-const leadsWithBlocking = (g: TicketGroup): number => Number(g.questions.some(isOpenBlocking));
-
-export function viewGroups(
-  questions: readonly Question[],
-  tickets: readonly TicketView[],
-  scope: Scope,
-  ticketId: string | null,
-  recipient: string | null = null,
-): ViewGroup[] {
-  const shown = filterQuestions(questions, scope, ticketId, recipient);
-  return [...tickets]
-    .filter((t) => ticketId === null || t.id === ticketId)
-    .sort(byKey)
-    .map((ticket) => ({
-      ticket,
-      questions: shown.filter((q) => q.ticketId === ticket.id).sort(blockingFirst),
-    }))
-    .filter((g) => g.questions.length > 0)
-    .sort((a, b) => leadsWithBlocking(b) - leadsWithBlocking(a));
-}
-
 export function answerFrom(form: AnswerForm): AnswerInput | null {
   if (form.confirm) return { kind: "confirm" };
   if (form.option !== null) return { kind: "option", option: form.option };
@@ -135,6 +98,18 @@ export function relativeAge(at: number, now: number): string {
   if (elapsed < HOUR) return fr.age.minutes(Math.floor(elapsed / MINUTE));
   if (elapsed < DAY) return fr.age.hours(Math.floor(elapsed / HOUR));
   return fr.age.days(Math.floor(elapsed / DAY));
+}
+
+export function shortAge(at: number, now: number): string {
+  const elapsed = Math.max(0, now - at);
+  if (elapsed < HOUR) return fr.age.short.minutes(Math.max(1, Math.floor(elapsed / MINUTE)));
+  if (elapsed < DAY) return fr.age.short.hours(Math.floor(elapsed / HOUR));
+  return fr.age.short.days(Math.floor(elapsed / DAY));
+}
+
+export function askedAge(at: number, now: number): string {
+  const days = Math.floor(Math.max(0, now - at) / DAY);
+  return days === 1 ? fr.age.yesterday : relativeAge(at, now);
 }
 
 export function lastReminder(q: Question): number | null {

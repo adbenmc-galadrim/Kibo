@@ -10,21 +10,24 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Input } from "@kibo/sdk/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Ticket } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { fr } from "./fr";
 import type { Scope } from "./questions-logic";
 
 const SCOPES: readonly Scope[] = ["open", "answered", "all", "archived"];
 
+export const FILTER_MENU = "h-6.5 gap-[7px] px-[11px] text-xs font-medium has-[>svg]:px-[11px]";
+
 type Props = {
   scope: Scope;
+  openCount: number;
   ticket: TicketView | null;
   tickets: readonly TicketView[];
   onScope(scope: Scope): void;
   onTicket(ticketId: string | null): void;
-  onNew(): void;
   filters: ReactNode;
+  summary: ReactNode;
   actions: ReactNode;
 };
 
@@ -35,8 +38,9 @@ function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "ticke
   return (
     <DropdownMenu onOpenChange={() => setSearch("")}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-5.75 gap-1 px-2.5 text-[12.5px] font-medium">
-          {ticket ? <TicketKeyLabel ticket={ticket} className="font-mono" /> : fr.ticketFilter.all}
+        <Button variant="outline" size="sm" className={FILTER_MENU}>
+          <Ticket aria-hidden className="size-3.25" />
+          {ticket ? fr.ticketFilter.shown(ticket.keyLabel) : fr.ticketFilter.shownAll}
           <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
@@ -68,12 +72,16 @@ function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "ticke
 }
 
 const SEGMENT =
-  "h-5.75 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
+  "h-5.75 gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
 
 export function QuestionsToolbar(props: Props) {
-  const { scope, ticket, tickets, onScope, onTicket, onNew, filters, actions } = props;
+  const { scope, openCount, ticket, tickets, onScope, onTicket, filters, summary, actions } = props;
   return (
-    <div className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5">
+    <div
+      role="toolbar"
+      aria-label={fr.toolbar}
+      className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5"
+    >
       <ToggleGroup
         type="single"
         size="sm"
@@ -88,17 +96,19 @@ export function QuestionsToolbar(props: Props) {
         {SCOPES.map((s) => (
           <ToggleGroupItem key={s} value={s} className={SEGMENT}>
             {fr.scope[s]}
+            {s === "open" && (
+              <span aria-hidden className="font-mono text-[10.5px] font-normal text-muted-foreground">
+                {openCount}
+              </span>
+            )}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
       {filters}
       <TicketMenu ticket={ticket} tickets={tickets} onTicket={onTicket} />
       <span className="flex-1" />
+      {summary}
       {actions}
-      <Button size="sm" className="h-6.5 text-xs" onClick={onNew}>
-        <Plus aria-hidden />
-        {fr.newQuestion}
-      </Button>
     </div>
   );
 }

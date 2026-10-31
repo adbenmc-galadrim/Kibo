@@ -56,6 +56,12 @@ export async function seedAnswered(
 export const questionArticle = (view: Locator, title: string): Locator =>
   view.getByRole("article", { name: title, exact: true });
 
+export async function expandQuestion(article: Locator): Promise<Locator> {
+  const toggle = article.locator("button[aria-expanded]").first();
+  if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+  return article;
+}
+
 export async function questionLabelOf(article: Locator): Promise<string> {
   const label = await article.getByText(/^Q\d+$/).textContent();
   if (label === null) throw new Error("question without a number");

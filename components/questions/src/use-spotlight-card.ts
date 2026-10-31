@@ -18,7 +18,10 @@ function playedOf(api: SpotlightApi): Set<string> {
 const reducedMotion = (): boolean =>
   typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function useSpotlightCard(questionId: string): {
+export function useSpotlightCard(
+  questionId: string,
+  onAimed: () => void,
+): {
   ref: RefObject<HTMLElement | null>;
   spotlit: SpotlightMotion | null;
 } {
@@ -26,12 +29,15 @@ export function useSpotlightCard(questionId: string): {
   const target = useSpotlight();
   const ref = useRef<HTMLElement | null>(null);
   const [spotlit, setSpotlit] = useState<SpotlightMotion | null>(null);
+  const latest = useRef(onAimed);
+  latest.current = onAimed;
   const aimed = target?.kind === "question" && target.id === questionId;
   useEffect(() => {
     const el = ref.current;
     const played = playedOf(api);
     if (!aimed || el === null || played.has(questionId)) return;
     played.add(questionId);
+    latest.current();
     const reduce = reducedMotion();
     el.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
     el.focus({ preventScroll: true });

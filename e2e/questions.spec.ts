@@ -3,6 +3,7 @@ import { rpc, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import {
   capture,
+  expandQuestion,
   hoverBadge,
   openCardMenu,
   projectIdOf,
@@ -82,12 +83,13 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await expect(view.getByRole("article", { name: ARCHIVE })).toHaveCount(0);
   await view.getByRole("radio", { name: "Répondues" }).click();
   const answered = view.getByRole("article", { name: ARCHIVE });
+  await expandQuestion(answered);
   await expect(answered.getByText(/^Répondu par /)).toBeVisible();
   await expect(answered.getByText("à transmettre")).toHaveCount(0);
   await view.getByRole("radio", { name: "Toutes" }).click();
   await shot(page, info, "ecran-171");
 
-  await view.getByRole("button", { name: "Nouvelle question" }).click();
+  await page.getByRole("button", { name: "Nouvelle question" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("combobox", { name: "Ticket" }).click();
   await page.getByRole("option", { name: /Stockage S3/ }).click();
@@ -135,6 +137,7 @@ async function answerBlockingQuestion(page: Page, view: Locator, projectId: stri
   await expect(port.getByText("bloquante", { exact: true })).toBeVisible();
   await expect(port.getByText(/^Q\d+$/)).toBeVisible();
   await expect(port.getByText(/Transmettre/)).toHaveCount(0);
+  await expandQuestion(port);
   await port.getByRole("textbox", { name: "Autre réponse…" }).fill("8080");
   await port.getByRole("textbox", { name: "Autre réponse…" }).press("Enter");
   await expect(page.getByText("F1 débloquée")).toBeVisible();
@@ -165,6 +168,7 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await view.getByRole("radio", { name: "Toutes" }).click();
 
   const answered = questionArticle(view, CIPHER);
+  await expandQuestion(answered);
   await answered.getByRole("button", { name: "Modifier la réponse" }).click();
   const form = answered.getByRole("form", { name: `Modifier la réponse à ${CIPHER}` });
   await expect(form.getByRole("button", { name: "Oui" })).toHaveAttribute("aria-pressed", "true");
@@ -182,6 +186,7 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await capture(page, info, "203b");
 
   await answerBlockingQuestion(page, view, projectId);
+  await expandQuestion(questionArticle(view, PURGE));
   await expect(questionArticle(view, PURGE).getByText(/^Répondu par /)).toBeVisible();
   await expect(questionArticle(view, PURGE).getByText("à transmettre")).toHaveCount(0);
   await questionArticle(view, PORT).scrollIntoViewIfNeeded();
@@ -194,6 +199,7 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await confirm(page, "Archiver");
   await expect(purge).toHaveCount(0);
   await view.getByRole("radio", { name: "Archivées" }).click();
+  await expandQuestion(purge);
   await expect(purge.getByRole("button", { name: "Restaurer" })).toBeVisible();
   await purge.getByText("Historique (1)").click();
   await expect(purge.getByText(/ · Archivée$/)).toBeVisible();
@@ -201,10 +207,11 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await purge.getByRole("button", { name: "Restaurer" }).click();
   await expect(purge).toHaveCount(0);
   await view.getByRole("radio", { name: "Toutes" }).click();
+  await expandQuestion(purge);
   await expect(purge.getByText("Réponse : Non")).toBeVisible();
 
   const menu = await openCardMenu(page, purge, purgeLabel);
-  await expect(menu.getByRole("menuitem")).toHaveText(["Archiver", "Supprimer"]);
+  await expect(menu.getByRole("menuitem")).toHaveText(["Modifier", "Archiver", "Supprimer"]);
   await capture(page, info, "202c");
   await menu.getByRole("menuitem", { name: "Supprimer" }).click();
   const removal = page.getByRole("alertdialog");
@@ -214,7 +221,7 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await confirm(page, "Supprimer");
   await expect(purge).toHaveCount(0);
 
-  await view.getByRole("button", { name: "Nouvelle question" }).click();
+  await page.getByRole("button", { name: "Nouvelle question" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("combobox", { name: "Ticket" }).click();
   await page.getByRole("option", { name: /Chiffrement/ }).click();
@@ -223,13 +230,19 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await page.getByRole("option", { name: "Client" }).click();
   await dialog.getByRole("button", { name: "Créer la question" }).click();
   await expect(dialog).toBeHidden();
+  await expandQuestion(questionArticle(view, LOGO));
   await expect(
     questionArticle(view, LOGO).getByRole("button", { name: "Destinataire : Client" }),
   ).toBeVisible();
   expect(questionNumber(await questionLabelOf(questionArticle(view, LOGO)))).toBeGreaterThan(
     questionNumber(purgeLabel),
   );
-  await questionArticle(view, LOGO).getByRole("button", { name: "Exporter", exact: true }).click();
+  const logoMenu = await openCardMenu(
+    page,
+    questionArticle(view, LOGO),
+    await questionLabelOf(questionArticle(view, LOGO)),
+  );
+  await logoMenu.getByRole("menuitem", { name: "Exporter cette question" }).click();
   await expect(page.getByText("1 question marquée envoyée")).toBeVisible();
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
   await page.keyboard.press("Escape");

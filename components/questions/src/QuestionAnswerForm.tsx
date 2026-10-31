@@ -2,7 +2,7 @@ import type { AnswerInput, Question, QuestionAnswer } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Check } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { fr } from "./fr";
 import { type AnswerForm, answerFrom } from "./questions-logic";
 import { useAnswer } from "./use-questions";
@@ -12,6 +12,7 @@ type Props = {
   initial?: QuestionAnswer;
   onSubmit?(input: AnswerInput): Promise<void>;
   onCancel?(): void;
+  inlineAction?: ReactNode;
 };
 
 const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
@@ -23,7 +24,7 @@ const formOf = (a: QuestionAnswer | undefined): AnswerForm => {
   return { ...EMPTY, text: a.text };
 };
 
-export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Props) {
+export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inlineAction }: Props) {
   const answer = useAnswer();
   const editing = initial !== undefined;
   const [choice, setChoice] = useState<AnswerForm>(() => formOf(initial));
@@ -93,7 +94,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
         <Input
           aria-label={freeLabel}
           placeholder={freeLabel}
-          className="h-9 text-[13px] md:text-[13px]"
+          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
@@ -103,11 +104,11 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
             {fr.cancel}
           </Button>
         )}
+        {inlineAction}
         <Button
           type="submit"
-          variant="secondary"
           size="sm"
-          className="h-6.25 px-2.5 text-xs disabled:opacity-100"
+          className="h-6.5 px-2.5 text-xs font-medium disabled:opacity-100"
           disabled={busy || !ready}
         >
           {editing ? fr.save : fr.reply}

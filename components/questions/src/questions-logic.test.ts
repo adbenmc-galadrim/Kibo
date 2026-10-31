@@ -1,29 +1,20 @@
 import { expect, test } from "bun:test";
-import {
-  DEFAULT_RECIPIENTS,
-  EMPTY_PROGRESS,
-  type Question,
-  QuestionAnswer,
-  resolveAnswer,
-  type TicketView,
-} from "@kibo/schema";
+import { DEFAULT_RECIPIENTS, type Question, QuestionAnswer, resolveAnswer } from "@kibo/schema";
 import fc from "fast-check";
 import {
   answerFrom,
   blockingSummary,
   canArchive,
   filterQuestions,
-  groupByTicket,
   recipientCounts,
   recipientName,
   relativeAge,
   scopeFor,
-  viewGroups,
 } from "./questions-logic";
 
 const T1 = "11111111-1111-4111-8111-111111111111";
 const T2 = "22222222-2222-4222-8222-222222222222";
-const T3 = "33333333-3333-4333-8333-333333333333";
+const _T3 = "33333333-3333-4333-8333-333333333333";
 
 const question = (over: Partial<Question>): Question => ({
   kind: "question",
@@ -62,38 +53,6 @@ const answered = (over: Partial<Question>): Question =>
     },
     ...over,
   });
-
-const ticket = (id: string, keyLabel: string): TicketView => ({
-  id,
-  key: keyLabel,
-  hold: null,
-  keyLabel,
-  title: `Ticket ${keyLabel}`,
-  description: "",
-  statusId: "todo",
-  parentId: null,
-  assignee: null,
-  domainId: null,
-  blockedReason: null,
-  labels: [],
-  externalRefs: [],
-  progress: { done: 0, total: 0 },
-  waitingOn: [],
-  openQuestions: 0,
-  startable: false,
-  startReason: null,
-  onHold: null,
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
-  shortKey: null,
-  effectiveSprintId: null,
-  session: null,
-  thread: null,
-  updatedAt: null,
-  feature: null,
-});
 
 test("filterQuestions keeps open, answered or all questions, optionally of one ticket", () => {
   const open = question({ id: "a" });
@@ -147,36 +106,6 @@ test("the client recipient reads as the client of the project when it is set", (
   expect(recipientName(DEFAULT_RECIPIENTS, "product", "Silo SA")).toBe("Produit");
 });
 
-test("groupByTicket follows ticket keys, newest question first, and skips empty tickets", () => {
-  const tickets = [ticket(T1, "KIB-10"), ticket(T2, "KIB-2"), ticket(T3, "KIB-3")];
-  const old = question({ id: "old", ticketId: T1, createdAt: 1 });
-  const fresh = question({ id: "fresh", ticketId: T1, createdAt: 9 });
-  const other = question({ id: "other", ticketId: T2, createdAt: 4 });
-  const orphan = question({ id: "orphan", ticketId: "44444444-4444-4444-8444-444444444444" });
-  const groups = groupByTicket([old, other, fresh, orphan], tickets);
-  expect(groups.map((g) => g.ticket.keyLabel)).toEqual(["KIB-2", "KIB-10"]);
-  expect(groups[1]?.questions.map((q) => q.id)).toEqual(["fresh", "old"]);
-});
-
-test("viewGroups puts open blocking questions first, then ticket keys, and renders no empty group", () => {
-  const tickets = [ticket(T1, "KIB-1"), ticket(T2, "KIB-2"), ticket(T3, "KIB-3")];
-  const plain = question({ id: "plain", ticketId: T1 });
-  const blocking = question({ id: "blocking", ticketId: T2, blocking: true, createdAt: 1 });
-  const newer = question({ id: "newer", ticketId: T2, createdAt: 9 });
-  const pending = answered({ id: "pending", ticketId: T3, blocking: true });
-  const groups = viewGroups([plain, blocking, newer, pending], tickets, "open", null);
-  expect(groups.map((g) => [g.ticket.keyLabel, g.questions.map((q) => q.id)])).toEqual([
-    ["KIB-2", ["blocking", "newer"]],
-    ["KIB-1", ["plain"]],
-  ]);
-  expect(viewGroups([plain, blocking], tickets, "open", T1).map((g) => g.ticket.id)).toEqual([T1]);
-});
-
-test("viewGroups carries a ticket and its questions, nothing to deliver", () => {
-  const [group] = viewGroups([answered({ id: "a", ticketId: T1 })], [ticket(T1, "KIB-1")], "all", null);
-  expect(Object.keys(group ?? {}).sort()).toEqual(["questions", "ticket"]);
-});
-
 test("blockingSummary counts the open blocking questions shown and the open ones", () => {
   const shown = [
     question({ id: "a", blocking: true }),
@@ -184,16 +113,6 @@ test("blockingSummary counts the open blocking questions shown and the open ones
     answered({ id: "c", blocking: true }),
   ];
   expect(blockingSummary(shown)).toEqual({ blocking: 1, open: 2 });
-});
-
-test("viewGroups filtered by recipient keeps only that recipient's questions", () => {
-  const tickets = [ticket(T1, "KIB-1"), ticket(T2, "KIB-2")];
-  const mine = question({ id: "mine", ticketId: T1 });
-  const theirs = question({ id: "theirs", ticketId: T2, recipient: "client" });
-  const groups = viewGroups([mine, theirs], tickets, "open", null, "client");
-  expect(groups.map((g) => [g.ticket.keyLabel, g.questions.map((q) => q.id)])).toEqual([
-    ["KIB-2", ["theirs"]],
-  ]);
 });
 
 test("answerFrom prefers the confirmation, then the option, then the trimmed text", () => {
@@ -241,9 +160,7 @@ test("« Archivées » keeps archived questions only, and no other scope shows t
   expect(ids("all")).toEqual(["o", "a"]);
   expect(ids("open")).toEqual(["o"]);
   expect(ids("answered")).toEqual(["a"]);
-  expect(viewGroups(qs, [ticket(T1, "KIB-1")], "archived", null)[0]?.questions.map((q) => q.id)).toEqual([
-    "x",
-  ]);
+  expect(ids("archived")).toEqual(["x"]);
 });
 
 test("scopeFor opens « Archivées » for an archived question, « Toutes » otherwise", () => {

@@ -5,7 +5,7 @@ import { createMockSdk, type MockSdk } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { ADAM, Q14, Q16, seedSilo } from "./question-fixtures.test-helper";
+import { ADAM, openRow, Q14, Q16, seedSilo } from "./question-fixtures.test-helper";
 
 afterEach(cleanup);
 
@@ -30,7 +30,7 @@ const named = (m: MockSdk, title: string) => m.snapshot().questions.find((q) => 
 
 async function askRemoval(title: string, label: string) {
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: title });
+  const card = await openRow(title);
   await user.click(within(card).getByRole("button", { name: `Actions de ${label}` }));
   await user.click(await screen.findByRole("menuitem", { name: "Supprimer" }));
   return within(await screen.findByRole("alertdialog"));

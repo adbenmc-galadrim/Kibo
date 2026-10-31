@@ -4,7 +4,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { Q14, Q16, seedSilo } from "./question-fixtures.test-helper";
+import { openRow, Q14, Q16, seedSilo } from "./question-fixtures.test-helper";
 
 afterEach(cleanup);
 
@@ -20,19 +20,19 @@ const mount = () => {
 
 const menuItems = () => screen.getAllByRole("menuitem").map((item) => item.textContent);
 
-test("« Actions de Q3 » opens a menu with « Archiver » then « Supprimer »", async () => {
+test("« Actions de Q3 » opens « Modifier », « Archiver », « Exporter cette question » then « Supprimer »", async () => {
   mount();
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: Q14 });
+  const card = await openRow(Q14);
   await user.click(within(card).getByRole("button", { name: "Actions de Q3" }));
-  expect(menuItems()).toEqual(["Archiver", "Supprimer"]);
+  expect(menuItems()).toEqual(["Modifier", "Archiver", "Exporter cette question", "Supprimer"]);
   expect(screen.getByRole("menuitem", { name: "Supprimer" }).getAttribute("data-variant")).toBe(
     "destructive",
   );
   expect(within(card).queryByRole("button", { name: "Archiver" })).toBeNull();
 });
 
-test("a question the viewer may not archive only offers « Supprimer »", async () => {
+test("a question the viewer may not archive offers no « Archiver »", async () => {
   const m = mount();
   const ticketId = m.snapshot().tickets.find((t) => t.title === "Modèle du rapport")?.id ?? "";
   act(() => {
@@ -44,9 +44,9 @@ test("a question the viewer may not archive only offers « Supprimer »", async 
     });
   });
   const user = userEvent.setup();
-  const card = await screen.findByRole("article", { name: "Signer le rapport ?" });
+  const card = await openRow("Signer le rapport ?");
   await user.click(within(card).getByRole("button", { name: "Actions de Q4" }));
-  expect(menuItems()).toEqual(["Supprimer"]);
+  expect(menuItems()).toEqual(["Modifier", "Exporter cette question", "Supprimer"]);
 });
 
 test("an archived card keeps « Restaurer » in line and its menu only offers « Supprimer »", async () => {
@@ -57,7 +57,7 @@ test("an archived card keeps « Restaurer » in line and its menu only offers «
   });
   const user = userEvent.setup();
   await user.click(await screen.findByRole("radio", { name: "Archivées" }));
-  const card = await screen.findByRole("article", { name: Q16 });
+  const card = await openRow(Q16);
   expect(within(card).getByRole("button", { name: "Restaurer" })).toBeTruthy();
   await user.click(within(card).getByRole("button", { name: "Actions de Q2" }));
   expect(menuItems()).toEqual(["Supprimer"]);
