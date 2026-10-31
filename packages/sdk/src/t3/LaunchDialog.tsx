@@ -90,7 +90,12 @@ export function LaunchDialog(props: Props) {
           </>
         )}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" className="h-[25px] text-xs" onClick={props.onClose}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]"
+            onClick={props.onClose}
+          >
             {t.cancel}
           </Button>
           {active?.link ? (
@@ -98,7 +103,7 @@ export function LaunchDialog(props: Props) {
           ) : (
             <Button
               size="sm"
-              className="h-[25px] text-xs"
+              className="h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]"
               disabled={busy || !preview}
               onClick={() => void launch()}
             >

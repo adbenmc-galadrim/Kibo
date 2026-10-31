@@ -10,7 +10,7 @@ import {
 } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { CircleX, FolderOpen, GitBranch, GitPullRequest } from "lucide-react";
+import { CircleX, ExternalLink, FolderOpen, GitBranch, GitPullRequest } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
@@ -36,6 +36,7 @@ type Props = {
   events: readonly ProjectEvent[];
   now: number;
   repo?: boolean;
+  requirement?: ReactNode;
 };
 
 const BADGE = "inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium";
@@ -115,7 +116,12 @@ function EmptyTracking({ ticketKey, repo }: { ticketKey: string | null; repo: bo
   );
 }
 
-function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { pr: GithubPrRef }) {
+function PrRows({
+  pr,
+  ciRuns,
+  events,
+  now,
+}: Omit<Props, "ticket" | "repo" | "requirement"> & { pr: GithubPrRef }) {
   const opened = lastEvent(events, "pr_opened", pr.number);
   const reviewed = lastEvent(events, "pr_review", pr.number);
   const shown = liveReview(pr);
@@ -137,6 +143,15 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { 
         <span className={DIM}>
           {t.prSince(fr.ticket.prState[pr.state], opened ? whenLabel(opened.at, now) : null)}
         </span>
+        <a
+          href={pr.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={cn("ml-auto inline-flex items-center gap-1.5", DIM, LINK)}
+        >
+          {t.prGithub}
+          <ExternalLink aria-hidden className="size-3" />
+        </a>
       </Row>
       {review && (
         <Row label={t.reviewRow}>
@@ -149,7 +164,7 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { 
           <>
             <span className={cn(BADGE, CI_BADGE[ci.tone])}>
               {ci.tone === "error" && <CircleX aria-hidden className="size-3" />}
-              {t.ci[ci.tone]}
+              {t.ciBadge[ci.tone]}
             </span>
             <span className={DIM}>
               {ci.url ? (
@@ -169,7 +184,7 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { 
   );
 }
 
-export function TrackingSection({ ticket, ciRuns, events, now, repo = true }: Props) {
+export function TrackingSection({ ticket, ciRuns, events, now, repo = true, requirement }: Props) {
   const branch = branchRefOf(ticket.externalRefs);
   const pr = mainPr(ticket.externalRefs);
   const issues = issuesOf(ticket);
@@ -184,9 +199,8 @@ export function TrackingSection({ ticket, ciRuns, events, now, repo = true }: Pr
         </span>
         <span className={DIM}>{t.sectionHint}</span>
       </p>
-      {empty ? (
-        <EmptyTracking ticketKey={ticket.key} repo={repo} />
-      ) : (
+      {empty && <EmptyTracking ticketKey={ticket.key} repo={repo} />}
+      {(!empty || requirement) && (
         <dl className="grid grid-cols-[106px_1fr] items-center gap-y-3">
           {branch && (
             <Row label={t.branch}>
@@ -222,11 +236,18 @@ export function TrackingSection({ ticket, ciRuns, events, now, repo = true }: Pr
               {next && <span className={DIM}>{t.next(next)}</span>}
             </Row>
           )}
+          {!delivery && !empty && (
+            <Row label={t.step}>
+              <StepBar step={-1} />
+              <span>{t.notStarted}</span>
+            </Row>
+          )}
           {issues.externalRefs.length > 0 && (
             <Row label={t.issues}>
               <GithubRefs ticket={issues} />
             </Row>
           )}
+          {requirement && <Row label={t.required}>{requirement}</Row>}
         </dl>
       )}
     </section>

@@ -1,32 +1,24 @@
 import type { TicketView } from "@kibo/schema";
 import { copyCommand, deliveryCommand, deliveryTexts } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
+import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Copy, Link } from "lucide-react";
 import { toast } from "sonner";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 import { targetToHash } from "../tabs/target-hash";
 
-type Props = {
-  ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
-  question: string | null;
-};
+type CopyTarget = Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
 
 const toaster = { toast: (message: string) => void toast(message) };
 
-export function CopyCommandButton({ ticket, question }: Props) {
+export function copyDeliveryEntry(ticket: CopyTarget, question: string | null): MenuEntry | null {
   const command = deliveryCommand(ticket);
   if (command === null) return null;
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="h-[25px] text-xs"
-      onClick={() => void copyCommand(toaster, command, { ...ticket, question })}
-    >
-      <Copy />
-      {deliveryTexts.copy(command)}
-    </Button>
-  );
+  return {
+    label: deliveryTexts.copy(command),
+    icon: Copy,
+    onSelect: () => void copyCommand(toaster, command, { ...ticket, question }),
+  };
 }
 
 async function copyText(text: string, done: string): Promise<void> {
@@ -71,7 +63,7 @@ export function CopyLinkButton({ projectId, ticketId }: { projectId: string; tic
     <Button
       variant="ghost"
       size="icon"
-      className="size-7 text-muted-foreground"
+      className="-mx-[6.5px] size-7 text-muted-foreground"
       aria-label={t.copyLink}
       title={t.copyLink}
       onClick={() => void copyLink(projectId, ticketId)}

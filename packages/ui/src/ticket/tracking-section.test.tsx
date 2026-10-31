@@ -98,9 +98,9 @@ test("the Suivi block names the branch, the PR, its review, the CI, the session 
   );
   expect(screen.getByText("remonté de git, des PR et de full-delivery")).toBeTruthy();
   expect(words("Branche")).toEqual(["feat/silo-45", "sur", "dev"]);
-  expect(words("PR")).toEqual(["#20", "ouverte hier à 16:52"]);
+  expect(words("PR")).toEqual(["#20", "ouverte hier à 16:52", "GitHub"]);
   expect(words("Review")).toEqual(["changements demandés", "13:47"]);
-  expect(words("CI")).toEqual(["CI cassée", "job e2e · 11:58"]);
+  expect(words("CI")).toEqual(["rouge", "job e2e · 11:58"]);
   expect(
     within(row("CI") as HTMLElement)
       .getByRole("link")
@@ -119,7 +119,7 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
       now={NOW}
     />,
   );
-  expect(words("CI")[0]).toBe("CI en cours");
+  expect(words("CI")[0]).toBe("en cours");
   view.unmount();
   const broken = render(
     <TrackingSection
@@ -134,7 +134,7 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
       .getByRole("link")
       .getAttribute("href"),
   ).toBe("https://github.com/silo-labs/silo-location/pull/20/checks");
-  expect(words("CI")).toEqual(["CI cassée", "voir les checks"]);
+  expect(words("CI")).toEqual(["rouge", "voir les checks"]);
   broken.unmount();
   render(
     <TrackingSection
@@ -240,7 +240,7 @@ test("without a CI run the CI row names the failing check of the PR, linked to i
       now={NOW}
     />,
   );
-  expect(words("CI")).toEqual(["CI cassée", "job lint"]);
+  expect(words("CI")).toEqual(["rouge", "job lint"]);
   expect(
     within(row("CI") as HTMLElement)
       .getByRole("link")
@@ -259,4 +259,38 @@ test("a merged PR shows no review row for its stale changes requested", () => {
   );
   expect(words("PR")[0]).toBe("#20");
   expect(row("Review")).toBeNull();
+});
+
+test("the PR line is the only PR mention, with its GitHub link", () => {
+  render(
+    <TrackingSection ticket={ticket({ externalRefs: [branch, pr()] })} ciRuns={[]} events={[]} now={NOW} />,
+  );
+  expect(screen.queryByText("PR #20")).toBeNull();
+  const github = within(row("PR") as HTMLElement).getByRole("link", { name: "GitHub" });
+  expect(github.getAttribute("href")).toBe(pr().url);
+});
+
+test("the Requise row shows what it is given, even on an empty block", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [], session: null, delivery: null })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+      requirement={<span>requise pour livrer F5</span>}
+    />,
+  );
+  expect(row("Requise")?.textContent).toBe("requise pour livrer F5");
+});
+
+test("a tracked step that has not started says so on the Livraison row", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [branch], delivery: null })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
+  );
+  expect(row("Livraison")?.textContent).toBe("pas encore commencée");
 });

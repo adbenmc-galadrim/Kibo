@@ -3,7 +3,7 @@ import { useOptionalSdk } from "../react";
 import type { T3Api } from "../types";
 
 export type T3Host = { api(projectId: string): T3Api; linkFolder(): void };
-export type T3Access = { api: T3Api; linkFolder(): void };
+type T3Access = { api: T3Api; linkFolder(): void };
 
 const T3HostContext = createContext<T3Host | null>(null);
 

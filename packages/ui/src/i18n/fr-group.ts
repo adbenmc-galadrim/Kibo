@@ -101,6 +101,9 @@ export const frFeature = {
   addDependencyTitle: "Ajouter une dépendance : cette fonctionnalité attend…",
   noCandidate: "Aucune autre fonctionnalité",
   requiredToggle: "Requise pour livrer",
+  requiredFor: (feature: string | null) =>
+    feature ? `requise pour livrer ${feature}` : "requise pour livrer",
+  optional: "facultative",
   ticketSprint: "Sprint",
   yesterday: "hier",
   today: "aujourd'hui",

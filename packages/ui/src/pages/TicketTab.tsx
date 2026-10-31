@@ -72,9 +72,19 @@ export function TicketTab({ project, ticketId, domains, viewer, onOpenFile, onOp
       <TicketTopBar
         projectId={project.meta.id}
         ticket={t}
-        questions={project.questions}
-        copy={!isInbox(project.meta.id)}
-        actions={actions}
+        folder={project.meta.folder}
+        launch={!isInbox(project.meta.id)}
+        actions={
+          <TicketActionsMenu
+            projectId={project.meta.id}
+            ticket={t}
+            childCount={descendantCount(project.tickets, t.id)}
+            editable
+            onOpenInTab={null}
+            onDeleted={() => undefined}
+            questions={isInbox(project.meta.id) ? undefined : project.questions}
+          />
+        }
       />
       <TicketBody
         project={project}

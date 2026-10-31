@@ -68,7 +68,7 @@ const sentCommands = () => calls.flatMap((c) => (c.method === "command" ? [c.com
 
 test("a step to do can be put on hold with a reason, sent without its day", async () => {
   const { user, items } = await openMenu(find("e32"));
-  expect(items).toEqual(["Copier la clé", "Mettre en attente…", "Supprimer…"]);
+  expect(items).toEqual(["Mettre en attente…", "Supprimer…"]);
   await user.click(screen.getByRole("menuitem", { name: "Mettre en attente…" }));
   const dialog = await screen.findByRole("dialog", { name: "Mettre SILO-32 en attente" });
   await waitFor(() => expect(within(dialog).getByRole("button", { name: MINIO })).toBeTruthy());
@@ -89,12 +89,12 @@ test("a feature, a delivered step and a reader have no hold entry", async () => 
   cleanup();
   expect((await openMenu(find("e31"))).items).not.toContain("Mettre en attente…");
   cleanup();
-  expect((await openMenu(find("e32"), false)).items).toEqual(["Copier la clé"]);
+  expect((await openMenu(find("f5"), false)).items).toEqual(["Copier la clé"]);
 });
 
 test("a step on hold offers « Reprendre » instead, which lifts the hold", async () => {
   const { user, items } = await openMenu(find("e33"));
-  expect(items).toEqual(["Copier la clé", "Reprendre", "Supprimer…"]);
+  expect(items).toEqual(["Reprendre", "Supprimer…"]);
   await user.click(screen.getByRole("menuitem", { name: "Reprendre" }));
   await waitFor(() => expect(sentCommands()).toEqual([{ method: "setHold", ticketId: "e33", reason: null }]));
 });

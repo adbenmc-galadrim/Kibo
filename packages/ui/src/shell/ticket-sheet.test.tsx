@@ -92,12 +92,14 @@ test("Domaine and Maquettes stay folded until asked for", async () => {
 test("copying /full-delivery writes the command and says what it waits for", async () => {
   render(<Toaster />);
   await open("e33", { startable: false, waitingOn: ["SILO-32"] });
-  await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery SILO-33" }));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions SILO-33" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery SILO-33" }));
   expect(await screen.findByText("Copié · attend SILO-32")).toBeTruthy();
   expect(await navigator.clipboard.readText()).toBe("/full-delivery SILO-33");
 });
 
-test("the banner warns of requested changes on the PR of the step", async () => {
+test("requested changes are told once, by the PR row of the tracking block", async () => {
   await open("e33", {
     externalRefs: [
       {
@@ -112,9 +114,9 @@ test("the banner warns of requested changes on the PR of the step", async () => 
       },
     ],
   });
-  expect(screen.getByRole("status", { name: "État de la review et de la CI" }).textContent).toContain(
-    "PR #20 · changements demandés · CI cassée",
-  );
+  expect(screen.queryByRole("status", { name: "État de la review et de la CI" })).toBeNull();
+  expect(screen.queryByText("PR #20")).toBeNull();
+  expect(screen.getAllByText("changements demandés")).toHaveLength(1);
 });
 
 test("the Activité tab reads the journal of the ticket", async () => {
@@ -137,13 +139,13 @@ test("status and assignee are pills under the title; a step toggles « facultati
   expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
 });
 
-test("the top bar names the key and holds Copier, the link and Fermer", async () => {
+test("the top bar names the key and holds Lancer dans T3, the link and Fermer", async () => {
   await open("e33");
   const close = screen.getByRole("button", { name: "Fermer" });
   expect(close.textContent).toBe("Fermer");
   const bar = close.parentElement?.parentElement;
   expect(bar?.textContent).toContain("SILO-33");
-  expect(bar?.textContent).toContain("Copier /full-delivery SILO-33");
+  expect(bar?.textContent).toContain("Lancer dans T3");
   expect(screen.getByRole("button", { name: "Copier le lien du ticket" })).toBeTruthy();
 });
 

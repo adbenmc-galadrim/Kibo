@@ -8,7 +8,7 @@ import { ThreadBadge } from "./ThreadBadge";
 import { useT3 } from "./t3-context";
 import { useT3Status } from "./use-t3-status";
 
-export type LaunchInT3Props = {
+type LaunchInT3Props = {
   projectId: string;
   ticketKey: string;
   done: boolean;
@@ -19,7 +19,7 @@ export type LaunchInT3Props = {
 };
 
 const BADGE_REFRESH_MS = 60_000;
-const SIZES = { sm: "h-[25px] text-xs", default: "" };
+const SIZES = { sm: "h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]", default: "" };
 
 function useMinuteClock(): number {
   const [now, setNow] = useState(() => Date.now());

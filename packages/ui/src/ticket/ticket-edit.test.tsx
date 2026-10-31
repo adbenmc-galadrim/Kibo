@@ -275,7 +275,7 @@ test("sub-tickets open in the sheet", async () => {
   expect(onOpenTicket).toHaveBeenCalledWith("20@1");
 });
 
-test("the menu opens in a tab, copies the key and deletes after confirmation", async () => {
+test("the menu opens in a tab, the key button copies and deletes after confirmation", async () => {
   answer = (req) => (command(req)?.method === "deleteTicket" ? ["12@1", "20@1", "21@1"] : null);
   const { user, onDeleted, onOpenInTab } = await show();
   const written: string[] = [];
@@ -285,16 +285,15 @@ test("the menu opens in a tab, copies the key and deletes after confirmation", a
   });
   await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
+    "Copier /full-delivery KIB-12",
     "Ouvrir dans un onglet",
-    "Copier la clé",
     "Supprimer…",
   ]);
   await user.click(screen.getByRole("menuitem", { name: "Ouvrir dans un onglet" }));
   expect(onOpenInTab).toHaveBeenCalledTimes(1);
-  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Copier la clé" }));
+  await user.click(screen.getByRole("button", { name: "Copier KIB-12" }));
   expect(written).toEqual(["KIB-12"]);
-  expect((await screen.findByRole("status")).textContent).toBe("Clé copiée");
+  expect(await screen.findByText("Copiée")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
   await user.click(await screen.findByRole("menuitem", { name: "Supprimer…" }));
   const dialog = await screen.findByRole("alertdialog", { name: "Supprimer KIB-12 ?" });

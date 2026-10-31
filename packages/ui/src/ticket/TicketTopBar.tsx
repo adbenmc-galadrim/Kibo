@@ -1,29 +1,35 @@
-import { blockingQuestion, type Question, questionLabel, type TicketView } from "@kibo/schema";
-import { TicketKeyLabel } from "@kibo/sdk";
-import { Ticket } from "lucide-react";
+import { FINAL_STATUSES, type TicketView } from "@kibo/schema";
+import { LaunchInT3Button } from "@kibo/sdk/t3";
 import type { ReactNode } from "react";
-import { CopyCommandButton, CopyLinkButton } from "./CopyCommandButton";
+import { ShellT3Provider } from "../shell/ShellT3Provider";
+import { CopyLinkButton } from "./CopyCommandButton";
+import { KeyCopyButton } from "./KeyCopyButton";
 
 type Props = {
   projectId: string;
   ticket: TicketView;
-  questions: readonly Question[];
-  copy: boolean;
+  folder: string | null;
+  launch: boolean;
   actions: ReactNode;
   close?: ReactNode;
 };
 
-export function TicketTopBar({ projectId, ticket, questions, copy, actions, close }: Props) {
-  const blocking = blockingQuestion(ticket, questions);
+export function TicketTopBar({ projectId, ticket, folder, launch, actions, close }: Props) {
   return (
     <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-(--tracking-soft) pr-4 pl-6">
-      <Ticket aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-      <TicketKeyLabel
-        ticket={ticket}
-        className="font-mono text-[12.5px] whitespace-nowrap text-muted-foreground"
-      />
-      <span className="ml-auto flex items-center gap-1">
-        {copy && <CopyCommandButton ticket={ticket} question={blocking ? questionLabel(blocking) : null} />}
+      <KeyCopyButton ticket={ticket} />
+      <span className="ml-auto flex items-center gap-2">
+        {launch && ticket.key !== null && (
+          <ShellT3Provider>
+            <LaunchInT3Button
+              projectId={projectId}
+              ticketKey={ticket.key}
+              done={FINAL_STATUSES.includes(ticket.statusId)}
+              thread={ticket.thread}
+              folderMissing={folder === null}
+            />
+          </ShellT3Provider>
+        )}
         <CopyLinkButton projectId={projectId} ticketId={ticket.id} />
         {actions}
         {close}

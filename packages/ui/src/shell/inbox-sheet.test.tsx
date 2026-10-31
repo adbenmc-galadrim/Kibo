@@ -52,7 +52,7 @@ test("an inbox ticket sheet offers filing instead of an agent", async () => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Actions INB-2" }));
   const items = screen.getAllByRole("menuitem").map((m) => m.textContent);
-  expect(items).toEqual(["Ouvrir dans un onglet", "Copier la clé", "Rattacher à un projet…", "Supprimer…"]);
+  expect(items).toEqual(["Ouvrir dans un onglet", "Rattacher à un projet…", "Supprimer…"]);
   await user.click(screen.getByRole("menuitem", { name: "Rattacher à un projet…" }));
   expect(filed).toEqual(["inb2"]);
 });

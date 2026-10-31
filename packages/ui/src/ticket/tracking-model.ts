@@ -35,7 +35,6 @@ type HeaderProject = Pick<ProjectSnapshot, "tickets" | "sprints">;
 type HeaderContext = {
   feature: string | null;
   sprint: string | null;
-  pr: GithubPrRef | null;
   text: string;
 };
 
@@ -43,18 +42,9 @@ export function headerContext(ticket: TicketView, project: HeaderProject): Heade
   const parent = project.tickets.find((x) => x.id === ticket.parentId);
   const feature = parent ? featureLabel(parent) || null : null;
   const sprint = project.sprints.find((s) => s.id === ticket.effectiveSprintId)?.code ?? null;
-  const pr = mainPr(ticket.externalRefs);
-  const text = [feature, sprint, pr ? t.pr(pr.number) : null].filter((p) => p !== null).join(" · ");
-  return { feature, sprint, pr, text };
+  const text = [feature, sprint].filter((p) => p !== null).join(" · ");
+  return { feature, sprint, text };
 }
-
-type AlertPart = { text: string; tone: "amber" | "red" };
-type TrackingAlert = {
-  pr: GithubPrRef;
-  tone: "amber" | "red";
-  parts: AlertPart[];
-  job: { name: string | null; url: string } | null;
-};
 
 const RUN_URL = /\/actions\/runs\/\d+$/;
 
@@ -66,32 +56,11 @@ export const jobUrl = (run: Pick<CiRun, "url">, job: Pick<CiJobSummary, "jobId">
 
 const checksUrl = (pr: Pick<GithubPrRef, "url">): string => `${pr.url}/checks`;
 
-function jobLinkOf(pr: GithubPrRef, run: CiRun | null): NonNullable<TrackingAlert["job"]> {
-  if (run === null) return { name: pr.failedCheck ?? null, url: checksUrl(pr) };
-  const job = failedJobOf(run);
-  return { name: job?.name ?? null, url: jobUrl(run, job) };
-}
-
 const runsOf = (pr: GithubPrRef, runs: readonly CiRun[]) =>
   latestCiRunPerWorkflow(runs.filter((r) => r.prNumber === pr.number));
 
 function ciRunOf(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): CiRun | null {
   return runsOf(pr, runs).find((r) => ciTone(r) === tone) ?? null;
-}
-
-export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): TrackingAlert | null {
-  const pr = mainPr(ticket.externalRefs);
-  if (pr === null || !isLivePr(pr)) return null;
-  const changes = liveReview(pr) === "changes_requested";
-  const ci = prCiTone(pr, runs);
-  const parts: AlertPart[] = [];
-  if (changes) parts.push({ text: t.review.changes_requested, tone: "amber" });
-  if (ci === "error") parts.push({ text: t.ci.error, tone: "red" });
-  if (ci === "running") parts.push({ text: t.ci.running, tone: "amber" });
-  if (parts.length === 0) return null;
-  const tone = changes || ci === "running" ? "amber" : "red";
-  const job = ci === "error" || ci === "running" ? jobLinkOf(pr, ciRunOf(pr, runs, ci)) : null;
-  return { pr, tone, parts, job };
 }
 
 type CiDetail = { tone: CiTone; job: string | null; at: number | null; url: string | null };

@@ -1,4 +1,11 @@
-import type { TicketView } from "@kibo/schema";
+import {
+  blockingQuestion,
+  isFeature,
+  isGroup,
+  type Question,
+  questionLabel,
+  type TicketView,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -10,6 +17,7 @@ import { frInbox } from "../i18n/fr-inbox";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 import { useFlash } from "../lib/use-flash";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
+import { copyDeliveryEntry } from "./CopyCommandButton";
 import { HoldDialog } from "./HoldDialog";
 import { useHoldSuggestions } from "./hold-suggestions";
 import { useHold } from "./use-hold";
@@ -24,6 +32,7 @@ type Props = {
   onFile?: () => void;
   onDeleted(): void;
   extra?: MenuEntry[];
+  questions?: readonly Question[];
 };
 
 type HoldActions = { hold(): void; resume(): void };
@@ -36,13 +45,21 @@ function holdEntry(p: Props, actions: HoldActions): MenuEntry[] {
   return ticket.statusId === "done" ? [] : [{ label: frHold.menu, icon: Pause, onSelect: actions.hold }];
 }
 
+function deliveryEntry(ticket: TicketView, questions: readonly Question[]): MenuEntry | null {
+  const blocking = blockingQuestion(ticket, questions);
+  return copyDeliveryEntry(ticket, blocking ? questionLabel(blocking) : null);
+}
+
 function ticketMenuEntries(p: Props, copy: () => void, remove: () => void, hold: HoldActions): MenuEntry[] {
   const extra = p.extra ?? [];
   const entries: MenuEntry[] = extra.length > 0 ? [...extra, { separator: true }] : [];
-  if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });
-  entries.push({ label: t.copyKey, icon: Copy, onSelect: copy });
-  if (p.onFile) entries.push({ label: frInbox.fileTo, icon: FolderInput, onSelect: p.onFile });
+  const delivery = p.questions ? deliveryEntry(p.ticket, p.questions) : null;
+  if (delivery) entries.push(delivery);
+  if (isFeature(p.ticket) || isGroup(p.ticket))
+    entries.push({ label: t.copyKey, icon: Copy, onSelect: copy });
   entries.push(...holdEntry(p, hold));
+  if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });
+  if (p.onFile) entries.push({ label: frInbox.fileTo, icon: FolderInput, onSelect: p.onFile });
   if (p.editable)
     entries.push({ separator: true }, { label: t.remove, icon: Trash2, destructive: true, onSelect: remove });
   return entries;
@@ -106,7 +123,12 @@ export function TicketActionsMenu(p: Props) {
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="ghost" className="size-7" aria-label={t.actions(p.ticket.keyLabel)}>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="-mx-[6.5px] size-7"
+            aria-label={t.actions(p.ticket.keyLabel)}
+          >
             <Ellipsis aria-hidden />
           </Button>
         </DropdownMenuTrigger>

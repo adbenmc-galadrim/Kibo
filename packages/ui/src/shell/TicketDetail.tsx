@@ -6,8 +6,10 @@ import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
 import { DomainSelect } from "../ticket/DomainSelect";
 import { FoldSection } from "../ticket/FoldSection";
+import { OptionalToggle } from "../ticket/OptionalToggle";
 import { QuestionsSection } from "../ticket/QuestionsSection";
 import { TrackingSection } from "../ticket/TrackingSection";
+import { headerContext } from "../ticket/tracking-model";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import type { TicketJournal } from "../ticket/use-ticket-tracking";
 import { useOptionalHost } from "./Host";
@@ -42,6 +44,7 @@ export function TicketDetail({
   const now = useNow(60_000);
   const host = useOptionalHost();
   const descriptionCommand = useTicketCommand(project.meta.id);
+  const optionalCommand = useTicketCommand(project.meta.id);
   const children = project.tickets.filter((x) => x.parentId === t.id);
   const domain = domains?.find((d) => d.id === t.domainId)?.name ?? fr.ticket.noDomain;
   const mockups = t.externalRefs.filter((r) => DESIGN_KINDS.has(r.kind)).length;
@@ -61,7 +64,22 @@ export function TicketDetail({
         events={journal.events}
         now={now}
         repo={project.meta.folder !== null}
+        requirement={
+          t.parentId !== null && (
+            <OptionalToggle
+              ticket={t}
+              feature={headerContext(t, project).feature}
+              editable
+              command={optionalCommand}
+            />
+          )
+        }
       />
+      {optionalCommand.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {optionalCommand.error}
+        </p>
+      )}
       <div className={LINE} />
       <DescriptionEditor
         ticketId={t.id}

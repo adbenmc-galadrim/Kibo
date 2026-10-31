@@ -1,4 +1,12 @@
-import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import {
+  type Domain,
+  type FileRef,
+  isFeature,
+  isGroup,
+  isInbox,
+  type ProjectSnapshot,
+  type Question,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import {
@@ -55,9 +63,10 @@ export function TicketSheet({
   const labelsCommand = useTicketCommand(project.meta.id);
   if (!t) return null;
   const inbox = isInbox(project.meta.id);
-  const actionsMenu = (extra?: MenuEntry[]) => (
+  const actionsMenu = (extra?: MenuEntry[], questions?: readonly Question[]) => (
     <TicketActionsMenu
       extra={extra}
+      questions={questions}
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
@@ -120,12 +129,16 @@ export function TicketSheet({
         <TicketTopBar
           projectId={project.meta.id}
           ticket={t}
-          questions={project.questions}
-          copy={!inbox}
-          actions={actionsMenu()}
+          folder={project.meta.folder}
+          launch={!inbox}
+          actions={actionsMenu(undefined, inbox ? undefined : project.questions)}
           close={
             <SheetClose asChild>
-              <Button variant="ghost" size="sm" className="h-[25px] text-xs text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-[25px] gap-1.5 px-2.5 text-xs text-muted-foreground [&_svg]:size-[13px]"
+              >
                 <X />
                 {frTicketTracking.close}
               </Button>

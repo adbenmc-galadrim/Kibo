@@ -1,7 +1,6 @@
 import type { ProjectSnapshot, TicketView } from "@kibo/schema";
-import { CalendarRange, GitPullRequest, Package } from "lucide-react";
+import { CalendarRange, Package } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
-import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 import { headerContext } from "./tracking-model";
 
 type Props = { project: Pick<ProjectSnapshot, "tickets" | "sprints">; ticket: TicketView };
@@ -29,22 +28,6 @@ export function TicketHeader({ project, ticket }: Props) {
           <CalendarRange aria-hidden className={ICON} />
           {context.sprint}
         </span>
-      ),
-    });
-  if (context.pr)
-    parts.push({
-      key: "pr",
-      node: (
-        <a
-          href={context.pr.url}
-          target="_blank"
-          rel="noreferrer noopener"
-          title={t.openPr(context.pr.number)}
-          className="inline-flex items-center gap-1 text-foreground underline-offset-2 hover:underline"
-        >
-          <GitPullRequest aria-hidden className={`${ICON} text-(--tracking-purple)`} />
-          {t.pr(context.pr.number)}
-        </a>
       ),
     });
   if (parts.length === 0) return null;

@@ -216,11 +216,11 @@ beforeEach(() => {
   frames = defaultFrames();
 });
 
-test("the header names the PR, the Suivi block links the PR and the issue", async () => {
+test("the header leaves the PR to the Suivi block, which links the PR and the issue", async () => {
   await show();
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("sheet has a header");
-  expect(header.querySelector("[data-ticket-context]")?.textContent).toBe("PR #12");
+  expect(header.querySelector("[data-ticket-context]")).toBeNull();
   const links = tracking()
     .getAllByRole("link")
     .filter((l) => l.textContent?.startsWith("#"));

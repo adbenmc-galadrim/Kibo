@@ -1,6 +1,7 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import { EMPTY_TABS, type RpcRequest } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { kiboProject } from "../lib/fixtures";
 
@@ -49,7 +50,8 @@ const tab = () =>
 
 test("the ticket sheet has no assign, no Livrer, but copies /full-delivery", async () => {
   sheet();
-  expect(await screen.findByRole("button", { name: "Copier /full-delivery KIB-12" })).toBeTruthy();
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Actions KIB-12" }));
+  expect(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-12" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Livrer" })).toBeNull();
 });
