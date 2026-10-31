@@ -79,13 +79,13 @@ test("a late feature is outlined in red with a warning under its sprint, from th
   expect(within(f5).getByText("en retard")).toBeTruthy();
   const stroke = f5.querySelector("[data-slot=penpot-stroke] rect");
   expect(stroke?.getAttribute("stroke")).toBe("var(--tracking-red)");
-  expect(within(await column(/^S42 /)).getByText("F5 en retard : 4 étapes restantes")).toBeTruthy();
+  expect(within(await column(/^S42 /)).getByText(/F5 en retard \(4 étapes restantes\)/)).toBeTruthy();
   expect(within(await column(/^S42 /)).getByText("terminé")).toBeTruthy();
 });
 
 test("during its sprint, a feature at risk gets an amber warning, not a red outline", async () => {
   setupPlanning();
-  const note = within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes");
+  const note = within(await column(/^S42 /)).getByText(/F5 ne tiendra pas \(4 étapes restantes\)/);
   expect(note.closest("[role=note]")?.className).toContain("text-(--tracking-amber)");
 });
 
@@ -119,9 +119,7 @@ test("the open badge turns amber with a note above the limit, and lists the open
   m.run({ method: "setStatus", ticketId: first.id, statusId: "in_progress" });
   const badge = await screen.findByRole("button", { name: /En cours : 3 \/ 2/ });
   expect(badge.getAttribute("data-over")).toBe("true");
-  expect(
-    within(await column(/^S42 /)).getByText(/3 fonctionnalités en cours pour une limite de 2/),
-  ).toBeTruthy();
+  expect(within(await column(/^S42 /)).getByText(/3 en cours pour une limite de 2/)).toBeTruthy();
   await userEvent.setup().click(badge);
   const menu = await screen.findByRole("menu");
   expect(within(menu).getByText("Rapport de centre journalier")).toBeTruthy();
@@ -219,7 +217,7 @@ test("two sprints overlap: the one that started last is current, for a new featu
     });
   });
   const late = m.snapshot().sprints.find((s) => s.code === "S45")?.id ?? "";
-  const note = /2 fonctionnalités en cours pour une limite de 1/;
+  const note = /2 en cours pour une limite de 1/;
   await waitFor(async () => expect(within(await column("S45 Correctifs")).getByText(note)).toBeTruthy());
   expect(within(await column(/^S42 /)).queryByText(note)).toBeNull();
   const user = userEvent.setup();

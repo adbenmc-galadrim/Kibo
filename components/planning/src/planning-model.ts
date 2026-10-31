@@ -10,6 +10,7 @@ import {
   isFeature,
   isOpen,
   type Link,
+  nextSprint,
   openFeatures,
   type ProjectEvent,
   type Question,
@@ -21,6 +22,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
+import { type CapacityTone, capacityTone } from "./capacity-tone";
 import { type HeldGroup, heldGroups } from "./held-model";
 import { sprintDates } from "./sprint-label";
 import { type SprintLoad, sprintLoad } from "./sprint-load";
@@ -62,6 +64,7 @@ export type SprintColumn = {
   cards: FeatureCard[];
   warnings: SprintWarning[];
   load: SprintLoad;
+  capacityTone: CapacityTone;
 };
 export type PlanningModel = {
   sprints: SprintColumn[];
@@ -169,9 +172,10 @@ const warningOf = (c: FeatureCard): SprintWarning[] =>
 function sprintColumn(
   sprint: SprintView,
   cards: ReadonlyMap<string, FeatureCard>,
-  today: string,
+  { today, sprints }: PlanningInput,
 ): SprintColumn {
   const own = sprint.features.flatMap((id) => cards.get(id) ?? []);
+  const load = sprintLoad(sprint, own);
   return {
     sprint,
     phase: sprintPhase(sprint, today),
@@ -179,7 +183,8 @@ function sprintColumn(
     dates: sprintDates(sprint.start, sprint.end),
     cards: own,
     warnings: own.flatMap(warningOf),
-    load: sprintLoad(sprint, own),
+    load,
+    capacityTone: capacityTone(sprint, currentSprint(sprints, today), nextSprint(sprints, today), load.over),
   };
 }
 
@@ -194,7 +199,7 @@ export function planningModel(input: PlanningInput): PlanningModel {
   const limit = input.openLimit ?? DEFAULT_OPEN_LIMIT;
   const openIds = new Set(planned.filter((f) => openFeatures([f]) === 1).map((f) => f.id));
   return {
-    sprints: sortSprints(input.sprints).map((s) => sprintColumn(s, cards, input.today)),
+    sprints: sortSprints(input.sprints).map((s) => sprintColumn(s, cards, input)),
     backlog: all.filter((c) => c.sprintId === null),
     delivered: all.filter((c) => c.badge?.kind === "delivered").length,
     total: all.length,

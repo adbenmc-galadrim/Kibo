@@ -1,15 +1,17 @@
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@kibo/sdk/lib/utils";
+import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 import { BACKLOG_ID } from "./drag";
 import { fr } from "./fr";
-import { COLUMN_CLASS, DropZone } from "./SprintColumn";
+import { CARD_LIST_CLASS, COLUMN_CLASS, DropZone } from "./SprintColumn";
 
-type Props = { dropping: boolean; children: ReactNode; footer?: ReactNode; held?: ReactNode };
+type Props = { dropping: boolean; empty: boolean; children: ReactNode; footer?: ReactNode };
 
-export function BacklogColumn({ dropping, children, footer, held }: Props) {
+export function BacklogColumn({ dropping, empty, children, footer }: Props) {
   const { setNodeRef } = useDroppable({ id: BACKLOG_ID });
+  const [cards] = useAutoAnimate<HTMLDivElement>();
   return (
     <section
       ref={setNodeRef}
@@ -28,11 +30,14 @@ export function BacklogColumn({ dropping, children, footer, held }: Props) {
           {fr.backlogHint}
         </span>
       </header>
-      {children}
+      <div ref={cards} className={CARD_LIST_CLASS}>
+        {children}
+      </div>
       {dropping && <DropZone label={fr.dropBacklog} dates={null} />}
-      <p className="px-1 py-2 text-(--tracking-dim) text-[11.5px] leading-[17px]">{fr.backlogNote}</p>
+      <p className="px-1 py-2 text-(--tracking-dim) text-[11.5px] leading-[17px]">
+        {empty ? fr.backlogEmpty : fr.backlogNote}
+      </p>
       {footer}
-      {held}
     </section>
   );
 }

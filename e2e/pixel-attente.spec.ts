@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
 import { ATTENTE_SCREENS_DIR } from "./attente-kit";
@@ -80,7 +81,7 @@ test("the Planning of Silo with « En attente (3) », F9 dragged over S44, match
   await pairBrowser(page);
   await openPixelPage(page, await siloComponentUrl(page, "planning@1.0.0"), PLANNING_HEIGHT);
   await expect(page.getByRole("region", { name: "S42 Saisie hors ligne" })).toBeVisible();
-  await expect(page.getByText("En attente (3)", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "En attente (3)" })).toBeVisible();
   await expect(page.getByText("livrée · 1 en attente", { exact: true })).toBeVisible();
   await expect(page.getByText(/ne tiendra pas/)).toHaveCount(0);
   await measureScreen(page, {
@@ -93,6 +94,22 @@ test("the Planning of Silo with « En attente (3) », F9 dragged over S44, match
     pose: posePlanning,
     release: cancelDrag,
   });
+});
+
+test("the band En attente of the Planning stays folded after a reload", async ({ page }, info) => {
+  await page.setViewportSize({ width: PIXEL_WIDTH, height: PLANNING_HEIGHT });
+  await pairBrowser(page);
+  await openPixelPage(page, await siloComponentUrl(page, "planning@1.0.0"), PLANNING_HEIGHT);
+  const band = page.getByRole("region", { name: "En attente (3)" });
+  await band.getByRole("button", { name: "Replier" }).click();
+  await expect(band.getByRole("article")).toHaveCount(0);
+  await page.reload();
+  await expect(band.getByRole("button", { name: "Déplier" })).toBeVisible();
+  await expect(band.getByRole("article")).toHaveCount(0);
+  const scheme = info.project.name.endsWith("light") ? "light" : "dark";
+  await page.screenshot({ path: join(OUT, `attente-planning-repliee-${scheme}.png`) });
+  await band.getByRole("button", { name: "Déplier" }).click();
+  await expect(band.getByRole("article")).toHaveCount(3);
 });
 
 test("the feature sheet of F5 with three steps on hold matches the mockup on the whole screen", async ({
