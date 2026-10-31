@@ -32,12 +32,29 @@ function QuestionItem({ q, onOpen }: { q: QuestionRow; onOpen(id: string): void 
   );
 }
 
+function BlockingCount({ count }: { count: number }) {
+  return (
+    <span className="flex items-center gap-[8px]">
+      <span aria-hidden className="size-[6px] rounded-full bg-(--tracking-red)" />
+      <span className="font-medium text-(--tracking-red) text-[12px] leading-[15px]">
+        {fr.questions.blockingCount(count)}
+      </span>
+    </span>
+  );
+}
+
 export function QuestionsCard({ rows, onOpenQuestion, onOpenQuestions }: Props) {
   const [shown, setShown] = useState(QUESTION_PAGE);
   const page = questionPage(rows, shown);
+  const blocking = rows.filter((q) => q.blocking).length;
   return (
     <section aria-label={fr.questions.title} className={CARD}>
-      <CardHeader icon={MessageCircleQuestion} title={fr.questions.title} count={rows.length} />
+      <CardHeader
+        icon={MessageCircleQuestion}
+        title={fr.questions.title}
+        count={rows.length}
+        {...(blocking > 0 && { aside: <BlockingCount count={blocking} /> })}
+      />
       {rows.length === 0 ? (
         <p className={cn("px-[16px] py-[12px] text-(--tracking-mfg) text-[12.5px]", ROW_LINE)}>
           {fr.questions.none}

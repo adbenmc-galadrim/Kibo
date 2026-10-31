@@ -32,6 +32,7 @@ type BoxProps = {
   label: string;
   hint?: string;
   text: Pick<IndicatorText, "value" | "unit">;
+  wrapUnit?: boolean;
   children?: ReactNode;
 };
 
@@ -61,7 +62,7 @@ function BoxLabel({ icon: Icon, label, hint }: Pick<BoxProps, "icon" | "label" |
   );
 }
 
-function Box({ icon, label, hint, text, children }: BoxProps) {
+function Box({ icon, label, hint, text, wrapUnit = false, children }: BoxProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-[5px] border-(--tracking-soft) border-l px-[18px] py-[12px] first:border-l-0">
       <BoxLabel icon={icon} label={label} hint={hint} />
@@ -69,7 +70,13 @@ function Box({ icon, label, hint, text, children }: BoxProps) {
         <span className="shrink-0 font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
           {text.value}
         </span>
-        <span title={text.unit} className="min-w-0 truncate text-(--tracking-mfg) text-[13px] leading-[16px]">
+        <span
+          title={text.unit}
+          className={cn(
+            "min-w-0 text-(--tracking-mfg)",
+            wrapUnit ? "text-[12px] leading-[14px]" : "truncate text-[13px] leading-[16px]",
+          )}
+        >
           {text.unit}
         </span>
       </span>
@@ -84,7 +91,10 @@ function Sub({ text }: { text: IndicatorText }) {
   return (
     <>
       {text.dot && <span aria-hidden className={cn("size-[7px] shrink-0 rounded-full", DOT_BG[text.dot])} />}
-      <span title={text.sub} className="truncate">
+      <span
+        title={text.sub}
+        className={cn("truncate", text.subTone === "amber" && "text-(--tracking-amber)")}
+      >
         {text.sub}
       </span>
     </>
@@ -167,7 +177,13 @@ export function Indicators({ indicators, onOpenHeld }: Props) {
       <Box icon={CalendarRange} label={fr.indicators.sprint} text={t.sprint}>
         <Sub text={t.sprint} />
       </Box>
-      <Box icon={Target} label={fr.indicators.open} hint={fr.indicators.openHint} text={t.open}>
+      <Box
+        icon={Target}
+        label={fr.indicators.open}
+        {...(t.open.hint === undefined ? {} : { hint: t.open.hint })}
+        text={t.open}
+        wrapUnit
+      >
         <Sub text={t.open} />
       </Box>
       <Box icon={GitPullRequest} label={fr.indicators.review} text={t.review}>

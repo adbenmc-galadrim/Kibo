@@ -16,7 +16,12 @@ test("the five indicators read as the mockup", () => {
       tone: "amber",
     },
     sprint: { value: "S42", unit: "Saisie hors ligne", sub: "se termine aujourd'hui" },
-    open: { value: "2", unit: "/ 2", sub: "limite · bloquée : F6", dot: "red" },
+    open: expect.objectContaining({
+      value: "2",
+      unit: "fonctionnalités ouvertes",
+      sub: "limite 2",
+      dot: "amber",
+    }),
     review: { value: "3", unit: "PR", sub: "#20 · #22 · #23" },
     questions: { value: "3", unit: "ouvertes", sub: "Q14 bloque F6", dot: "red" },
   });

@@ -14,7 +14,6 @@ export function PlanningBands({ timeline, onOpen }: Props) {
         today={today}
         {...(startsIn !== null && { todayLabel: fr.bands.startsIn(startsIn) })}
         collapsed={{ label: fr.bands.delivered(delivered.length), rows: delivered }}
-        legend
         onOpen={onOpen}
       />
     </div>

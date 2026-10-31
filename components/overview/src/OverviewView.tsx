@@ -3,6 +3,7 @@ import { ActivityCard } from "./ActivityCard";
 import type { ActivityInput } from "./activity-model";
 import { CurrentSprintCard } from "./CurrentSprintCard";
 import { DeadlinesCard } from "./DeadlinesCard";
+import { DeliveredTodayLines } from "./DeliveredTodayLine";
 import { GettingStarted } from "./GettingStarted";
 import type { GettingStartedModel } from "./getting-started-model";
 import { HeldCard } from "./HeldCard";
@@ -83,29 +84,29 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
       {project !== null && start !== null && (
         <StartCard project={project} start={start} handlers={handlers} />
       )}
-      {model.now.length > 0 && <NowCard rows={model.now} onOpenTicket={handlers.onOpenTicket} />}
-      <DeadlinesCard deadlines={model.deadlines} onOpenTicket={handlers.onOpenTicket} />
       <LateCard rows={model.late} onOpenTicket={handlers.onOpenTicket} />
-      <HeldCard rows={model.held} onOpenPlanning={handlers.onOpenPlanning} />
       <div className="flex items-start gap-[16px]">
         <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
+          <HeldCard rows={model.held} onOpenPlanning={handlers.onOpenPlanning} />
           <CurrentSprintCard
             card={model.sprint}
             onOpenTicket={handlers.onOpenTicket}
             onOpenSprint={handlers.onOpenSprint}
           />
           <NextFeatureCard card={model.next} actions={handlers} />
-          <ActivityCard input={activity} onOpenTicket={handlers.onOpenTicket} />
         </div>
         <div className="flex w-[300px] shrink-0 flex-col gap-[14px]">
-          <InReviewCard rows={model.review} onOpenTicket={handlers.onOpenTicket} />
           <QuestionsCard
             rows={model.questions}
             onOpenQuestion={handlers.onOpenQuestion}
             onOpenQuestions={handlers.onOpenQuestions}
           />
+          <InReviewCard rows={model.review} onOpenTicket={handlers.onOpenTicket} />
         </div>
       </div>
+      <DeadlinesCard deadlines={model.deadlines} onOpenTicket={handlers.onOpenTicket} />
+      {model.now.length > 0 && <NowCard rows={model.now} onOpenTicket={handlers.onOpenTicket} />}
+      <ActivityCard input={activity} onOpenTicket={handlers.onOpenTicket} />
     </>
   );
 }
@@ -118,6 +119,11 @@ export function OverviewView(props: Props) {
       <div className="flex min-w-0 flex-col gap-[14px] px-[24px] pt-[18px] pb-[24px]">
         <ProjectHeading project={project} />
         <Indicators indicators={model.indicators} onOpenHeld={handlers.onOpenPlanning} />
+        <DeliveredTodayLines
+          rows={model.deliveredToday}
+          features={model.indicators.features}
+          onOpen={handlers.onOpenTicket}
+        />
         {empty ? <EmptyProject {...props} project={project} start={start} /> : <ProjectCards {...props} />}
       </div>
     </div>

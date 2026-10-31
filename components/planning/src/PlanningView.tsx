@@ -1,6 +1,5 @@
 import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CASE_BG, type LegendEntry, LegendToggle } from "@kibo/sdk/tracking";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
@@ -12,26 +11,13 @@ import { PlanningBands } from "./PlanningBands";
 import { AddButton, PlanningHeader, type PlanningLayout } from "./PlanningHeader";
 import type { FeatureCard as Card, PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
-import { TONES } from "./tones";
 
-const LEGEND: readonly LegendEntry[] = [
-  ...TONES.map((tone) => ({
-    key: tone,
-    label: fr.legend[tone],
-    mark: <span className={cn("h-2 w-3 rounded-[2px]", CASE_BG[tone])} />,
-  })),
-  { key: "hint", label: fr.legend.hint, mark: null },
-];
-
-function Legend({ error }: { error: string | null }) {
+function PlanningError({ error }: { error: string }) {
   return (
-    <footer className="flex h-5 shrink-0 items-center gap-3.5 text-[11.5px] leading-[14px]">
-      <LegendToggle items={LEGEND} />
-      {error && (
-        <span role="alert" className="ml-auto text-(--tracking-red)">
-          {error}
-        </span>
-      )}
+    <footer className="flex h-5 shrink-0 items-center text-[11.5px] leading-[14px]">
+      <span role="alert" className="ml-auto text-(--tracking-red)">
+        {error}
+      </span>
     </footer>
   );
 }
@@ -121,7 +107,7 @@ export function PlanningView(props: PlanningViewProps) {
               </SprintColumn>
             ))}
           </div>
-          <Legend error={props.error} />
+          {props.error && <PlanningError error={props.error} />}
         </>
       )}
     </div>

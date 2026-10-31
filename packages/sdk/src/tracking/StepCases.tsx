@@ -1,5 +1,6 @@
 import { cn } from "../lib/utils";
-import type { CaseTone, TimelineCase } from "./timeline-model";
+import { TimelineTooltip } from "./TimelineTooltip";
+import type { CaseTone, TimelineRow } from "./timeline-model";
 
 export const CASE_BG: Record<CaseTone, string> = {
   done: "bg-(--tracking-fg)",
@@ -9,15 +10,33 @@ export const CASE_BG: Record<CaseTone, string> = {
   hold: "bg-(--tracking-hold)",
   todo: "bg-(--tracking-border)",
 };
-export const SLIPPED_CASE = "border border-(--tracking-red) bg-(--tracking-red-soft)";
+const SLIPPED_CASE = "border border-(--tracking-red) bg-(--tracking-red-soft)";
 
-export function StepCases({ cases, y }: { cases: readonly TimelineCase[]; y: number }) {
-  return cases.map((c, i) => (
-    <span
-      key={`${c.slipped ? "s" : "p"}${i}`}
-      data-tone={c.slipped ? "slipped" : c.tone}
-      className={cn("absolute h-[12px] rounded-[2px]", c.slipped ? SLIPPED_CASE : CASE_BG[c.tone])}
-      style={{ left: c.x, top: y + 10, width: c.width }}
-    />
-  ));
+export function StepCases({ row, sprint }: { row: TimelineRow; sprint: string | null }) {
+  const planned = row.row.cells.filter((c) => !c.slipped).length;
+  return row.cases.map((c, i) => {
+    const square = (
+      <span
+        key={`${c.slipped ? "s" : "p"}${i}`}
+        data-tone={c.slipped ? "slipped" : c.tone}
+        className={cn("absolute h-[12px] rounded-[2px]", c.slipped ? SLIPPED_CASE : CASE_BG[c.tone])}
+        style={{ left: c.x, top: row.y + 10, width: c.width }}
+      />
+    );
+    if (c.step === undefined) return square;
+    const position = row.row.cells.findIndex((cell) => cell.step?.key === c.step?.key) + 1;
+    return (
+      <TimelineTooltip
+        key={`${c.slipped ? "s" : "p"}${i}`}
+        tone={c.tone}
+        step={c.step}
+        feature={`${row.row.shortKey} ${row.row.title}`}
+        position={position}
+        total={planned}
+        sprint={sprint}
+      >
+        {square}
+      </TimelineTooltip>
+    );
+  });
 }

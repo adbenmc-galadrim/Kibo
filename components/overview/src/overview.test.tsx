@@ -80,7 +80,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
   expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
-  expect(within(indicators).getByText("limite · bloquée : F6")).toBeTruthy();
+  expect(within(indicators).getByText("limite 2")).toBeTruthy();
   expect(within(indicators).getByText("2 à risque")).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
   expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
@@ -202,9 +202,10 @@ test("the in-progress box explains what it counts and where its limit is set", a
   setup();
   const indicators = await card("Indicateurs du projet");
   const label = within(indicators).getByRole("button", { name: "En cours" });
-  expect(within(indicators).getByText("/ 2")).toBeTruthy();
+  expect(within(indicators).getByText("fonctionnalités ouvertes")).toBeTruthy();
   await userEvent.hover(label);
-  const hint = "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet";
+  const hint =
+    "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet · bloquée : F6";
   expect((await screen.findByRole("tooltip")).textContent).toBe(hint);
 });
 

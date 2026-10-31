@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test";
 import type { ProjectEvent, TicketView } from "@kibo/schema";
 import { activityRows } from "./activity-model";
+import { fr } from "./fr";
 import { indicatorTexts } from "./indicator-texts";
 import { build } from "./model-test-kit";
 import { type OverviewInput, overviewModel } from "./overview-model";
 
+const OPEN_HINT = fr.indicators.openHint;
 const SUNDAY = "2026-10-18";
 
 const started = (t: TicketView): TicketView =>
@@ -43,15 +45,17 @@ test("an exceeded limit names the features started ahead of their sprint", () =>
   const model = overviewModel(startFeatures(input, [F8, F7]));
   expect(indicatorTexts(model.indicators).open).toEqual({
     value: "4",
-    unit: "/ 2",
-    sub: "dépassée : F7, F8 démarrées avant leur sprint · bloquée : F6",
-    dot: "red",
+    unit: "fonctionnalités ouvertes",
+    sub: "limite 2",
+    dot: "amber",
+    subTone: "amber",
+    hint: `${OPEN_HINT} · dépassée : F7, F8 démarrées avant leur sprint · bloquée : F6`,
   });
   expect(model.sprint?.ahead).toBe("hors sprint : F7 (S44), F8 (S43)");
   const one = overviewModel(startFeatures(input, [F8]));
   expect(one.indicators.ahead).toEqual(["F8"]);
-  expect(indicatorTexts({ ...one.indicators, blockedFeatures: [] }).open.sub).toBe(
-    "dépassée : F8 démarrée avant son sprint",
+  expect(indicatorTexts({ ...one.indicators, blockedFeatures: [] }).open.hint).toBe(
+    `${OPEN_HINT} · dépassée : F8 démarrée avant son sprint`,
   );
 });
 

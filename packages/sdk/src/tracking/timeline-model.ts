@@ -1,4 +1,4 @@
-import type { DeadlineCell, DeadlineColumn, DeadlineRow, FeatureStep } from "@kibo/schema";
+import type { DeadlineCell, DeadlineCellStep, DeadlineColumn, DeadlineRow, FeatureStep } from "@kibo/schema";
 
 export type UnplannedColumn = { kind: "unplanned"; label: string };
 export type TimelineColumnInput = DeadlineColumn | UnplannedColumn;
@@ -18,7 +18,13 @@ export type TimelineGeometry = {
   row: number;
   bottom: number;
 };
-export type TimelineCase = { x: number; width: number; tone: CaseTone; slipped: boolean };
+export type TimelineCase = {
+  x: number;
+  width: number;
+  tone: CaseTone;
+  slipped: boolean;
+  step: DeadlineCellStep | undefined;
+};
 export type TimelineColumn = {
   x: number;
   start: string | null;
@@ -88,6 +94,7 @@ function placeCases(cells: readonly DeadlineCell[], left: number, width: number,
     width,
     tone: caseTone(cell),
     slipped: cell.slipped,
+    step: cell.step,
   }));
 }
 

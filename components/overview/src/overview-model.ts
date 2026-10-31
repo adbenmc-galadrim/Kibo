@@ -20,6 +20,7 @@ import {
 } from "@kibo/schema";
 import type { MarkedRow, TimelineInput } from "@kibo/sdk/tracking";
 import { deadlineSpan, markRows } from "./deadline-marks";
+import { type DeliveredToday, deliveredToday } from "./delivered-today";
 import { type HeldRow, heldCount, heldRows } from "./held-model";
 import type { IndicatorFacts } from "./indicator-texts";
 import { type LateRow, lateRows } from "./late-model";
@@ -61,6 +62,7 @@ export type NowRow = {
 export type Deadlines = Omit<TimelineInput, "collapsed" | "rows"> & { rows: MarkedRow[]; later: number };
 export type OverviewModel = {
   indicators: IndicatorFacts;
+  deliveredToday: DeliveredToday[];
   now: NowRow[];
   deadlines: Deadlines;
   late: LateRow[];
@@ -155,6 +157,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       remaining: sprint?.remaining ?? 0,
       held: heldCount(held),
     },
+    deliveredToday: deliveredToday(features, input.events, input.today),
     now: nowRows(input.tickets, input.now),
     deadlines: deadlines(input, features, blocking),
     late: lateRows({ features, sprints: input.sprints, blocking, today: input.today }),

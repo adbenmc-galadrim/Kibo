@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { currentSprint } from "@kibo/schema";
+import { fr } from "./fr";
 import { indicatorTexts } from "./indicator-texts";
 import { build } from "./model-test-kit";
 import { sprintOf } from "./sprint-model";
@@ -55,12 +56,14 @@ test("the in-progress indicator names the blocked features", () => {
   expect(model.indicators.blockedFeatures).toEqual(["F6"]);
   expect(indicatorTexts(model.indicators).open).toEqual({
     value: "2",
-    unit: "/ 2",
-    sub: "limite · bloquée : F6",
-    dot: "red",
+    unit: "fonctionnalités ouvertes",
+    sub: "limite 2",
+    dot: "amber",
+    subTone: "amber",
+    hint: `${fr.indicators.openHint} · bloquée : F6`,
   });
   const blocked = { ...model.indicators, blockedFeatures: ["F6", "F8"] };
-  expect(indicatorTexts(blocked).open.sub).toBe("limite · bloquées : F6, F8");
+  expect(indicatorTexts(blocked).open.hint).toBe(`${fr.indicators.openHint} · bloquées : F6, F8`);
 });
 
 test("an empty project reads as the Pour commencer mockup", () => {
@@ -80,7 +83,7 @@ test("an empty project reads as the Pour commencer mockup", () => {
   expect(indicatorTexts(empty)).toEqual({
     features: { value: "0", unit: "livrées sur 0", cells: [], sub: "aucune pour l'instant" },
     sprint: { value: "—", unit: "", sub: "S1 commence le lun. 19 oct." },
-    open: { value: "0", unit: "/ 2", sub: "aucune en cours" },
+    open: { value: "0", unit: "fonctionnalité ouverte", sub: "limite 2", hint: fr.indicators.openHint },
     review: { value: "0", unit: "PR", sub: "aucune PR" },
     questions: { value: "0", unit: "ouvertes", sub: "aucune question" },
   });

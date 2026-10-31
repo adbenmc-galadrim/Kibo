@@ -6,7 +6,7 @@ import type { TicketView } from "./rpc";
 import { type Sprint, type SprintView, sortSprints } from "./sprint";
 import { FINAL_STATUSES } from "./startable";
 
-export type SprintEndFeature = {
+type SprintEndFeature = {
   shortKey: string;
   title: string;
   state: FeatureState;
@@ -25,7 +25,7 @@ export type SprintRecap = SprintDates & {
   next: (SprintDates & { plannedSteps: number }) | null;
 };
 
-export type SprintRecapNext = { sprint: SprintDates; features: readonly SprintEndFeature[] };
+type SprintRecapNext = { sprint: SprintDates; features: readonly SprintEndFeature[] };
 
 export const STEPS_PER_WEEK = 5;
 const WEEK_DAYS = 7;

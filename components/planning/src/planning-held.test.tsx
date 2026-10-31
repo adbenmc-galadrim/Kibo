@@ -80,17 +80,8 @@ test("Reprendre dans ▸ S43 lifts the hold, then plans its feature from an ende
   await waitFor(() => expect(screen.queryByRole("region", { name: /^En attente/ })).toBeNull());
 });
 
-test("the legend is folded until clicked, then names the held case in cyan right after the blocked one", async () => {
+test("the planning has no legend toggle", async () => {
   setupPlanning();
-  const toggle = await screen.findByRole("button", { name: "Légende" });
-  expect(screen.queryByText("étape livrée")).toBeNull();
-  await userEvent.click(toggle);
-  const legend = screen.getByRole("list", { name: "Légende" });
-  const entries = within(legend)
-    .getAllByRole("listitem")
-    .map((item) => [item.textContent, item.querySelector(".bg-\\(--tracking-hold\\)") !== null]);
-  expect(entries.slice(3, 5)).toEqual([
-    ["bloquée", false],
-    ["en attente", true],
-  ]);
+  await screen.findByRole("region", { name: /^S42/ });
+  expect(screen.queryByRole("button", { name: "Légende" })).toBeNull();
 });
