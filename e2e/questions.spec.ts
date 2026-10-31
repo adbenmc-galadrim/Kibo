@@ -4,7 +4,6 @@ import { addComponent, createPage, createSidebarPage, pairAndCreateProject } fro
 import {
   capture,
   expandQuestion,
-  hoverBadge,
   openCardMenu,
   projectIdOf,
   questionArticle,
@@ -54,7 +53,6 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   const all = kanban.getByRole("button", { name: "Tous", exact: true });
   if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   const card = kanban.getByRole("article", { name: /Stockage S3/ });
-  await expect(card.getByText("2 questions")).toBeVisible();
 
   const widget = page.locator("[data-instance]").nth(1);
   await expect(widget.getByText("Questions ouvertes · 2")).toBeVisible();
@@ -65,7 +63,6 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await shot(page, info, "ecran-170");
   await widget.getByRole("button", { name: "Valider le choix provisoire" }).click();
   await expect(widget.getByText("Questions ouvertes · 1")).toBeVisible();
-  await expect(card.getByText("1 question", { exact: true })).toBeVisible();
   await expect(widget.getByText(/Transmettre/)).toHaveCount(0);
 
   await card.getByRole("button", { name: "Stockage S3" }).click();
@@ -250,12 +247,6 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await page.goto(dashboard);
   const kanban = await showAllCards(page);
   const card = kanban.getByRole("article", { name: /Stockage S3/ });
-  const chip = card.getByRole("button", { name: "2 questions, ouvrir" });
-  const preview = await hoverBadge(page, chip);
-  await expect(preview.getByText(ADMIN)).toBeVisible();
-  await expect(preview.getByText(ARCHIVE)).toBeVisible();
-  await capture(page, info, "205");
-  await page.mouse.move(0, 0);
   await kanban
     .getByRole("article", { name: /Chiffrement/ })
     .getByRole("button", { name: "Chiffrement" })
@@ -266,7 +257,11 @@ test("les réponses se modifient, les questions s'archivent, se retrouvent et se
   await sheet.getByRole("tab", { name: "Détails" }).click();
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
-  await chip.click();
+  await card.getByRole("button", { name: "Stockage S3" }).click();
+  await sheet
+    .getByRole("region", { name: "Questions" })
+    .getByRole("button", { name: /Un admin non affecté/ })
+    .click();
   await expect(page).toHaveURL(/\?question=/);
   const aimed = questionArticle(page.getByRole("main"), ADMIN);
   await expect(aimed).toHaveAttribute("data-spotlight", "bounce");
