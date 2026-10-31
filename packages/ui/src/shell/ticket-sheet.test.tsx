@@ -67,6 +67,31 @@ const open = async (ticketId: string, patch: Partial<TicketView> = {}) => {
   return result;
 };
 
+test("one Escape closes the sheet, and the key tooltip still shows on Tab", async () => {
+  const onClose = mock(noop);
+  render(
+    <TicketSheet
+      project={project}
+      ticketId="e33"
+      domains={[]}
+      viewer="adam"
+      onClose={onClose}
+      onOpenInTab={noop}
+      onOpenFile={noop}
+      onOpenTicket={noop}
+      onDeleted={noop}
+    />,
+  );
+  await act(async () => {});
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  const user = userEvent.setup();
+  await user.tab();
+  expect((await screen.findByRole("tooltip")).textContent).toContain("Copier");
+  await user.tab({ shift: true });
+  await user.keyboard("{Escape}");
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
 test("the sheet of a step leads with « F5 · S42 », its Suivi block and a « Fermer » button", async () => {
   await open("e33");
   const dialog = screen.getByRole("dialog");

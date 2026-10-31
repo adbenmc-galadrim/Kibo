@@ -18,6 +18,7 @@ import {
   SheetTitle,
 } from "@kibo/sdk/ui/sheet";
 import { X } from "lucide-react";
+import { useRef } from "react";
 import { frFeature, frGroup } from "../i18n/fr-group";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
 import { findTicket } from "../tabs/target-hash";
@@ -61,6 +62,7 @@ export function TicketSheet({
   const t = findTicket(project.tickets, ticketId);
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
+  const stepContent = useRef<HTMLDivElement>(null);
   if (!t) return null;
   const inbox = isInbox(project.meta.id);
   const actionsMenu = (extra?: MenuEntry[], questions?: readonly Question[]) => (
@@ -122,8 +124,13 @@ export function TicketSheet({
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent
+        ref={stepContent}
         showCloseButton={false}
-        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-x-hidden overflow-y-auto"
+        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-x-hidden overflow-y-auto outline-none"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          stepContent.current?.focus();
+        }}
       >
         <SheetDescription className="sr-only">{`${t.keyLabel} · ${t.title}`}</SheetDescription>
         <TicketTopBar
