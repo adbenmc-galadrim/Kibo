@@ -93,6 +93,14 @@ const clockTime = (x: number, y: number, w: number, h: number, what: string): Pi
   why: `${what} : heure réelle d'un fait semé sous l'horloge figée (§37.15 point 13)`,
 });
 
+const grapheCounterMask = (x: number): PixelMask => ({
+  x,
+  y: 64,
+  w: 291,
+  h: 16,
+  why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
+});
+
 const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   planning: [USER],
   fonctionnalite: [
@@ -125,16 +133,7 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
       why: "« S45 2 nov. » : la maquette nomme la quatrième semaine d'un sprint que la fixture ne sème pas",
     },
   ],
-  graphe: [
-    USER,
-    {
-      x: 1037,
-      y: 64,
-      w: 291,
-      h: 16,
-      why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
-    },
-  ],
+  graphe: [USER, grapheCounterMask(1037)],
   "graphe-prs": [USER],
   "apercu-maquette": [],
   "nouveau-projet": [],
@@ -177,6 +176,8 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   "attente-graphe": ORIGIN_MASKS.graphe,
   "agent-agrandi": AGENT_WIDE_MASKS,
 };
+
+export const GRAPHE_FOLDED_MASKS: readonly PixelMask[] = [USER, grapheCounterMask(1019)];
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);
 

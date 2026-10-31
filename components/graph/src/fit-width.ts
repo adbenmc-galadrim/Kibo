@@ -1,7 +1,9 @@
 import { FIRST_FRAME_Y, frameHeight, LANE_MARGIN, STACK_GAP, titleLines } from "./frame-geometry";
 import type { Lane, LaneFrame, SprintLanesModel } from "./sprint-lanes";
 
-export const COLUMN_MIN_W = 160;
+export const COLUMN_MIN_W = 132;
+const COMFORTABLE_COLUMN_W = 160;
+const TIGHT_LANE_MARGIN = 8;
 export const FOLDED_FRAME_H = 56;
 
 export const fitColumnWidth = (columns: number, available: number): number =>
@@ -30,10 +32,9 @@ function stackFrames(
 
 function fitLane(lane: Lane, x: number, column: number | null, unfolded: ReadonlySet<string>): Lane {
   const width = column ?? lane.width;
+  const margin = column !== null && column < COMFORTABLE_COLUMN_W ? TIGHT_LANE_MARGIN : LANE_MARGIN;
   const place = (frame: LaneFrame): FramePlace =>
-    column === null
-      ? { x: frame.x, width: frame.width }
-      : { x: x + LANE_MARGIN, width: column - 2 * LANE_MARGIN };
+    column === null ? { x: frame.x, width: frame.width } : { x: x + margin, width: column - 2 * margin };
   return { ...lane, x, width, frames: stackFrames(lane.frames, place, unfolded) };
 }
 

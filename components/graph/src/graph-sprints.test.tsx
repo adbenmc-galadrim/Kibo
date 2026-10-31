@@ -248,7 +248,8 @@ const hold = (ticketId: string, reason = MINIO): MockHold => ({ ticketId, reason
 test("a held step shows a cyan dot and a pause icon with its reason, the dependency says which step it waits for", async () => {
   setup(seedSprintGraph, { holds: [hold("KIB-26")] });
   const region = await lanes();
-  const f5 = within(region).getByRole("article", { name: /^F5 / });
+  const f5 = await within(region).findByRole("article", { name: /^F5 / });
+  await within(f5).findAllByRole("img", { name: /^En attente de KIB-26$/ });
   const segments = f5.querySelector('[data-slot="frame-segments"]');
   expect(segments?.querySelectorAll('[data-tone="hold"]')).toHaveLength(3);
   const rows = within(f5).getAllByRole("listitem");

@@ -1,7 +1,8 @@
+import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
 import { preparePixelPage } from "./pixel-kit";
-import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
+import { GRAPHE_FOLDED_MASKS, PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import {
   contentBox,
   measureScreen,
@@ -14,7 +15,6 @@ import { siloPageUrl } from "./pixel-silo";
 
 const HEIGHT = PIXEL_HEIGHTS.graphe;
 const OUT_DIR = "2026-10-31-p34-t10";
-const FOLDED_MASKS = PIXEL_MASKS.graphe.map((m) => (m.w === 291 ? { ...m, x: 1019 } : m));
 
 test("the Graphe of Silo in sprint columns matches the mockup on the whole screen", async ({ page }) => {
   await pairBrowser(page);
@@ -42,7 +42,7 @@ test("« Tout voir » folds every frame as in the mockup", async ({ page }) => {
     screen: "graphe-tout-voir",
     reference: "p34-graphe-tout-voir",
     height: HEIGHT,
-    masks: FOLDED_MASKS,
+    masks: GRAPHE_FOLDED_MASKS,
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
     outDir: screensDir(OUT_DIR),
@@ -61,7 +61,7 @@ test("one frame unfolded after « Tout voir » matches the mockup", async ({ pag
     screen: "graphe-redeplie",
     reference: "p34-graphe-redeplie",
     height: HEIGHT,
-    masks: FOLDED_MASKS,
+    masks: GRAPHE_FOLDED_MASKS,
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
     outDir: screensDir(OUT_DIR),
@@ -79,4 +79,18 @@ test("the lane headers stay in place while the canvas scrolls", async ({ page })
   await lanes.evaluate((el) => el.scrollTo({ top: 200 }));
   await expect.poll(() => lanes.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   expect((await header.boundingBox())?.y).toBe(before?.y);
+});
+
+test("at the narrowest columns the folded canvas does not scroll sideways", async ({ page }) => {
+  await pairBrowser(page);
+  await openPixelPage(page, await siloPageUrl(page, "Graphe"), HEIGHT);
+  await page.getByRole("button", { name: "Tout voir" }).click();
+  await page.setViewportSize({ width: 48 + 5 * 132, height: HEIGHT });
+  const lanes = page.getByRole("region", { name: "Fonctionnalités par sprint" });
+  await expect.poll(() => lanes.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  const header = lanes.locator("[data-slot='lane-header']").first();
+  await expect.poll(async () => (await header.boundingBox())?.width).toBe(132);
+  await settlePointer(page, HEIGHT);
+  const scheme = schemeOf(test.info().project.name);
+  await page.screenshot({ path: join(screensDir(OUT_DIR), `graphe-132px-${scheme}.png`) });
 });

@@ -6,11 +6,12 @@ import { kitInput } from "./sprint-lanes-kit";
 const model = () => sprintLanes(kitInput());
 const frames = (m = model()) => m.lanes.flatMap((l) => l.frames);
 
-test("column width makes n sprints fit the container, minimum 160", () => {
+test("column width makes n sprints fit the container, minimum 132", () => {
   expect(fitColumnWidth(4, 1200)).toBe(300);
   expect(fitColumnWidth(7, 1200)).toBe(171);
-  expect(fitColumnWidth(9, 1199)).toBe(COLUMN_MIN_W);
-  expect(COLUMN_MIN_W).toBe(160);
+  expect(fitColumnWidth(9, 1199)).toBe(133);
+  expect(fitColumnWidth(12, 1199)).toBe(COLUMN_MIN_W);
+  expect(COLUMN_MIN_W).toBe(132);
 });
 
 test("every frame folds to 56 px and the stacks close up, 30 px apart", () => {
@@ -49,6 +50,22 @@ test("columns too wide for the container share it evenly and no frame overflows 
       expect(frame.x + frame.width).toBeLessThanOrEqual(lane.x + lane.width);
     }
   }
+});
+
+test("nine lanes fit 1 199 px without horizontal scrolling, each frame inside its column", () => {
+  const natural = model();
+  const first = natural.lanes[0];
+  if (first === undefined) throw new Error("missing lane");
+  const lanes = Array.from({ length: 9 }, (_, i) => ({ ...first, id: `lane-${i}` }));
+  const wide = { ...natural, lanes, width: first.width * 9 + 1199 };
+  const folded = foldLanes(wide, new Set(), 1199);
+  expect(folded.width).toBeLessThanOrEqual(1199);
+  expect(folded.lanes).toHaveLength(9);
+  for (const lane of folded.lanes)
+    for (const frame of lane.frames) {
+      expect(frame.x + frame.width).toBeLessThanOrEqual(lane.x + lane.width);
+      expect(frame.width).toBeGreaterThanOrEqual(116);
+    }
 });
 
 test("an unfolded frame gets its natural height back and pushes the next one down", () => {

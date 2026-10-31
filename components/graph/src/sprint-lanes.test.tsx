@@ -16,5 +16,7 @@ test("lane headers are sticky, opaque and underlined", () => {
     expect(header?.className).toContain("top-0");
     expect(header?.className).toContain("border-b");
     expect(header?.className).toMatch(/bg-\(--tracking-(panel|canvas)\)/);
+    for (const text of Array.from(header?.querySelectorAll(".truncate") ?? []))
+      expect(text.getAttribute("title")).toBe(text.textContent);
   }
 });

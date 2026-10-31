@@ -33,11 +33,17 @@ function LaneHeader({ lane }: { lane: Lane }) {
         ) : (
           <>
             <span className={cn("font-mono", strong)}>{lane.code}</span>
-            <span className={cn("truncate", strong)}>{lane.name}</span>
+            <span title={lane.name ?? undefined} className={cn("truncate", strong)}>
+              {lane.name}
+            </span>
           </>
         )}
       </div>
-      {lane.label !== null && <span className={cn("text-[11px] leading-[14px]", soft)}>{lane.label}</span>}
+      {lane.label !== null && (
+        <span title={lane.label} className={cn("truncate text-[11px] leading-[14px]", soft)}>
+          {lane.label}
+        </span>
+      )}
     </div>
   );
 }

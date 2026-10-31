@@ -79,6 +79,16 @@ test("the state resets when the component unmounts", async () => {
   expect(folded("F5")).toBe(false);
 });
 
+test("a truncated title keeps its full name for assistive technology and the pointer", async () => {
+  await setup();
+  await foldAll();
+  const article = frame("F5");
+  const name = article.getAttribute("aria-label")?.replace(/^F5 /, "") ?? "";
+  expect(name.length).toBeGreaterThan(0);
+  const button = within(article).getByRole("button", { name: new RegExp(name) });
+  expect(button.getAttribute("title")).toBe(name);
+});
+
 test("the PRs view has no fold button", async () => {
   await setup();
   await userEvent.click(screen.getByRole("radio", { name: "PRs" }));
