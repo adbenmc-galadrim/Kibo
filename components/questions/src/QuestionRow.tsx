@@ -66,7 +66,7 @@ export function QuestionRow(props: Props) {
         </button>
         <span className="inline-flex h-4.5 w-fit items-center gap-1 rounded-[4px] border px-1.5 text-[11.5px] text-muted-foreground">
           <UserRound aria-hidden className="size-2.75" />
-          {recipientName(data.recipients, q.recipient)}
+          {recipientName(data.recipients, q.recipient, data.client)}
         </span>
         <span>
           <StateMark question={q} />

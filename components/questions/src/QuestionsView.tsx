@@ -99,6 +99,7 @@ export function QuestionsView() {
         filters={
           <RecipientFilters
             recipients={data.recipients}
+            client={data.client}
             counts={counts}
             value={recipient}
             onChange={setRecipient}

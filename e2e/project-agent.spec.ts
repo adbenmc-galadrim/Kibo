@@ -1,7 +1,14 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { list, pairBrowser, rpc, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
-import { capture, hoverBadge, questionArticle, seedAnswered, seedQuestion } from "./questions-kit";
+import {
+  capture,
+  expandQuestion,
+  hoverBadge,
+  questionArticle,
+  seedAnswered,
+  seedQuestion,
+} from "./questions-kit";
 import { shot } from "./repo-project";
 import { openAgentList, sayToAgent as say, userBubbles } from "./suivi-kit";
 
@@ -205,12 +212,15 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   await createSidebarPage(page, PROJECT, "Questions", "Vue");
   await addComponent(page, "Questions");
   const view = page.getByRole("main");
+  await expandQuestion(questionArticle(view, "Couleur ?"));
   await expect(
     questionArticle(view, "Couleur ?").getByRole("button", { name: "Destinataire : Galadrim" }),
   ).toBeVisible();
+  await expandQuestion(questionArticle(view, LOGO));
   await expect(questionArticle(view, LOGO).getByRole("form", { name: `Répondre à ${LOGO}` })).toBeVisible();
   await expect(questionArticle(view, FONT)).toHaveCount(0);
   await view.getByRole("radio", { name: "Archivées" }).click();
+  await expandQuestion(questionArticle(view, FONT));
   await expect(questionArticle(view, FONT).getByRole("button", { name: "Restaurer" })).toBeVisible();
 });
 

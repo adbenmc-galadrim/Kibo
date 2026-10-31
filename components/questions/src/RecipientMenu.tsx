@@ -16,13 +16,14 @@ import { recipientName } from "./questions-logic";
 type Props = {
   question: Question;
   recipients: readonly QuestionRecipient[];
+  client: string | null;
   readOnly: boolean;
 };
 
-export function RecipientMenu({ question, recipients, readOnly }: Props) {
+export function RecipientMenu({ question, recipients, client, readOnly }: Props) {
   const sdk = useSdk();
   const [failed, setFailed] = useState(false);
-  const name = recipientName(recipients, question.recipient);
+  const name = recipientName(recipients, question.recipient, client);
   if (readOnly)
     return (
       <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground">
@@ -64,7 +65,7 @@ export function RecipientMenu({ question, recipients, readOnly }: Props) {
           <DropdownMenuRadioGroup value={question.recipient} onValueChange={(v) => void choose(v)}>
             {recipients.map((r) => (
               <DropdownMenuRadioItem key={r.id} value={r.id} className="text-xs">
-                {recipientName(recipients, r.id)}
+                {recipientName(recipients, r.id, client)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

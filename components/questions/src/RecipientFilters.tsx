@@ -21,6 +21,7 @@ const ALL = "*";
 
 type Props = {
   recipients: readonly QuestionRecipient[];
+  client: string | null;
   counts: RecipientCounts;
   value: string | null;
   onChange(recipient: string | null): void;
@@ -65,14 +66,14 @@ function AddRecipient({ onClose }: { onClose(): void }) {
   );
 }
 
-export function RecipientFilters({ recipients, counts, value, onChange }: Props) {
+export function RecipientFilters({ recipients, client, counts, value, onChange }: Props) {
   const [adding, setAdding] = useState(false);
   const count = (id: string) => counts.byRecipient.get(id) ?? 0;
   const shown = recipients
     .filter((r) => r.id === value || count(r.id) > 0)
     .sort((a, b) => Number(b.id === CLIENT_RECIPIENT) - Number(a.id === CLIENT_RECIPIENT));
   const label =
-    value === null ? fr.recipients.shownAll : fr.recipients.shown(recipientName(recipients, value));
+    value === null ? fr.recipients.shownAll : fr.recipients.shown(recipientName(recipients, value, client));
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
@@ -94,7 +95,7 @@ export function RecipientFilters({ recipients, counts, value, onChange }: Props)
             </DropdownMenuRadioItem>
             {shown.map((r) => (
               <DropdownMenuRadioItem key={r.id} value={r.id} className="text-xs">
-                {fr.recipients.filter(recipientName(recipients, r.id), count(r.id))}
+                {fr.recipients.filter(recipientName(recipients, r.id, client), count(r.id))}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

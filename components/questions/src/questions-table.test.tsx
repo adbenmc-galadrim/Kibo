@@ -7,7 +7,32 @@ import { fr } from "./fr";
 import { Component, manifest } from "./index";
 import { ADAM, Q14, Q16, Q17, seedSilo } from "./question-fixtures.test-helper";
 
-afterEach(cleanup);
+const realMatchMedia = window.matchMedia;
+const realAnimate = Element.prototype.animate;
+
+afterEach(() => {
+  cleanup();
+  window.matchMedia = realMatchMedia;
+  Element.prototype.animate = realAnimate;
+});
+
+const countAnimations = () => {
+  const calls = { count: 0 };
+  Element.prototype.animate = function animate() {
+    calls.count += 1;
+    return { addEventListener: () => {}, cancel: () => {}, finished: Promise.resolve() };
+  } as unknown as typeof Element.prototype.animate;
+  return calls;
+};
+
+const switchScope = async () => {
+  const user = userEvent.setup();
+  const row = await rowOf(Q14);
+  await user.click(titleButton(row, Q14));
+  expect(within(row).getByRole("textbox", { name: fr.yourAnswer })).toBeTruthy();
+  await user.click(screen.getByRole("radio", { name: "Archivées" }));
+  await waitFor(() => expect(screen.queryByRole("article", { name: Q14 })).toBeNull());
+};
 
 const mount = () => {
   const m = createMockSdk(manifest, { seed: seedSilo, surface: "view", client: "Silo SA" });
@@ -28,7 +53,7 @@ test("one row per question with Qn, truncated title with a tooltip, recipient, t
   expect(within(row).getByText("Q3").className).toContain("font-mono");
   const title = within(row).getByText(Q14);
   expect(title.className).toContain("truncate");
-  expect(within(row).getByText("Client")).toBeTruthy();
+  expect(within(row).getByText("Silo SA")).toBeTruthy();
   expect(within(row).getByRole("button", { name: /^KIB-|^F\d|^T\d|Lecture/ })).toBeTruthy();
   expect(within(row).getByText("1 min")).toBeTruthy();
   expect(row.querySelector("[data-chevron]")).toBeTruthy();
@@ -51,7 +76,7 @@ test("a click expands one row at a time with the full text, recipient select, po
   const row = await rowOf(Q14);
   expect(within(row).queryByRole("textbox")).toBeNull();
   await user.click(titleButton(row, Q14));
-  expect(within(row).getByRole("button", { name: "Destinataire : Client" })).toBeTruthy();
+  expect(within(row).getByRole("button", { name: "Destinataire : Silo SA" })).toBeTruthy();
   expect(within(row).getByText(/posée par/).textContent).toContain("adam · à l'instant");
   expect(within(row).getByText("Historique")).toBeTruthy();
   expect(within(row).getByRole("button", { name: "Actions de Q3" })).toBeTruthy();
@@ -110,4 +135,24 @@ test("the menu of an open question edits its text", async () => {
   await user.type(field, "Quota de 5 Go ?");
   await user.click(within(dialog).getByRole("button", { name: fr.save }));
   await waitFor(() => expect(m.snapshot().questions.some((q) => q.title === "Quota de 5 Go ?")).toBe(true));
+});
+
+test("reduced motion: the list changes without any animation", async () => {
+  window.matchMedia = ((query: string) => ({
+    matches: query === "(prefers-reduced-motion: reduce)",
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  })) as unknown as typeof window.matchMedia;
+  const calls = countAnimations();
+  mount();
+  await switchScope();
+  expect(calls.count).toBe(0);
+});
+
+test("without matchMedia the list still renders and expands", async () => {
+  Reflect.set(window, "matchMedia", undefined);
+  countAnimations();
+  mount();
+  await switchScope();
 });

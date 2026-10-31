@@ -48,11 +48,11 @@ test("cards carry Qn, the blocking badge and come blocking first", async () => {
   expect(screen.getByText("1 bloquante en tête · 3 ouvertes")).toBeTruthy();
 });
 
-test("the client recipient reads « Client » on the row and in its detail", async () => {
+test("the row and its detail both show the real name of the client", async () => {
   mount();
   const card = await openRow(Q14);
-  expect(within(card).getByText("Pour : Client")).toBeTruthy();
-  expect(within(card).getByText("Client")).toBeTruthy();
+  expect(within(card).getByText("Pour : Silo SA")).toBeTruthy();
+  expect(within(card).getByText("Silo SA")).toBeTruthy();
 });
 
 test("« Exporter » copies the text, marks the questions sent and can be undone", async () => {

@@ -151,7 +151,12 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
     <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px]">
       <div className="grid gap-1.5 text-[13px]">{context ?? <p>{q.title}</p>}</div>
       <div className="flex flex-wrap items-center gap-2.5">
-        <RecipientMenu question={q} recipients={data.recipients} readOnly={isArchived(q)} />
+        <RecipientMenu
+          question={q}
+          recipients={data.recipients}
+          client={data.client}
+          readOnly={isArchived(q)}
+        />
         <AskedLine question={q} now={now} />
         <span aria-hidden className={META}>
           ·

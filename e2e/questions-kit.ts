@@ -58,6 +58,7 @@ export const questionArticle = (view: Locator, title: string): Locator =>
 
 export async function expandQuestion(article: Locator): Promise<Locator> {
   const toggle = article.locator("button[aria-expanded]").first();
+  await expect(toggle).toBeVisible();
   if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
   return article;
 }
