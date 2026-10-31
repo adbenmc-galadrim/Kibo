@@ -84,10 +84,10 @@ struct OpenUrlScope {
 }
 
 impl OpenUrlScope {
-    fn https() -> Self {
-        Self {
-            url: "https://**".into(),
-        }
+    fn allowed() -> Vec<Self> {
+        ["https://**", "t3-thread://**"]
+            .map(|url| Self { url: url.into() })
+            .into()
     }
 }
 
@@ -114,7 +114,7 @@ fn daemon_capability(daemon_url: &Url) -> CapabilityBuilder {
     }
     capability.permission_scoped(
         "opener:allow-open-url",
-        vec![OpenUrlScope::https()],
+        OpenUrlScope::allowed(),
         Vec::<OpenUrlScope>::new(),
     )
 }
@@ -408,9 +408,15 @@ mod tests {
     }
 
     #[test]
-    fn opener_scope_is_https_only() {
-        let scope = serde_json::to_value(OpenUrlScope::https()).unwrap();
-        assert_eq!(scope, serde_json::json!({ "url": "https://**" }));
+    fn opener_scope_is_https_and_t3_thread_only() {
+        let scope = serde_json::to_value(OpenUrlScope::allowed()).unwrap();
+        assert_eq!(
+            scope,
+            serde_json::json!([{ "url": "https://**" }, { "url": "t3-thread://**" }])
+        );
+        for refused in ["http:", "javascript:", "file:"] {
+            assert!(!scope.to_string().contains(refused));
+        }
     }
 
     #[test]

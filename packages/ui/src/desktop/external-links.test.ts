@@ -28,6 +28,9 @@ test("a link is outgoing when it leaves the daemon origin or opens a new tab", (
     url: "https://github.com/kibo/pull/4",
   });
   expect(externalLinkOf(anchor("https://kibo.dev/", null).a, DAEMON)).toEqual({ url: "https://kibo.dev/" });
+  expect(externalLinkOf(anchor("t3-thread://v2/env/thr_1", null).a, DAEMON)).toEqual({
+    url: "t3-thread://v2/env/thr_1",
+  });
   for (const href of ["http://example.org/", "javascript:alert(1)", "file:///etc/passwd", "mailto:a@b.c"]) {
     expect(externalLinkOf(anchor(href).a, DAEMON)).toEqual({ url: null });
     expect(externalLinkOf(anchor(href, null).a, DAEMON)).toEqual({ url: null });
