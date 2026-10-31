@@ -112,11 +112,11 @@ test("frame width follows the content within 126 to 262, the column adds its mar
 
 test("frames stack by rank with 30 px between them", () => {
   const s42 = model().lanes[1]?.frames ?? [];
-  expect(s42.map((f) => f.height)).toEqual([66, 216, 216]);
-  expect(s42.map((f) => f.y)).toEqual([70, 166, 412]);
+  expect(s42.map((f) => f.height)).toEqual([66, 236, 236]);
+  expect(s42.map((f) => f.y)).toEqual([70, 166, 432]);
   expect(frame("F1").height).toBe(81);
   expect(frame("F1").titleLines).toBe(2);
-  expect(frame("F6").height).toBe(206);
+  expect(frame("F6").height).toBe(222);
   expect(frame("F4").x).toBe((model().lanes[1]?.x ?? 0) + 14);
   expect(frame("F1").x).toBe(12);
 });

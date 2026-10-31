@@ -128,7 +128,7 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   graphe: [
     USER,
     {
-      x: 1134,
+      x: 1037,
       y: 64,
       w: 291,
       h: 16,

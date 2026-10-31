@@ -6,7 +6,6 @@ import { FRAME_PAD, type TitleLines } from "./frame-geometry";
 import type { FrameFooter, FrameSegment, LaneFrame, StepTone } from "./sprint-lanes";
 
 const SEGMENT_GAP = 3;
-const DASH = "11 11";
 
 const TITLE_CLAMP: Record<TitleLines, string> = { 1: "truncate", 2: "line-clamp-2", 3: "line-clamp-3" };
 
@@ -19,34 +18,10 @@ const SEGMENT_BG: Record<StepTone, string> = {
   todo: "bg-(--tracking-border)",
 };
 
-function DashedOutline({
-  width,
-  height,
-  radius,
-  color,
-}: {
-  width: number;
-  height: number;
-  radius: number;
-  color: string;
-}) {
-  return (
-    <svg aria-hidden="true" className="pointer-events-none absolute inset-0" width={width} height={height}>
-      <rect
-        x={0.5}
-        y={0.5}
-        width={width - 1}
-        height={height - 1}
-        rx={radius - 0.5}
-        fill="none"
-        stroke={color}
-        strokeDasharray={DASH}
-      />
-    </svg>
-  );
-}
+export const frameBorder = (late: boolean): string =>
+  late ? "border-(--tracking-red)" : "border-(--tracking-border)";
 
-function Segments({ segments, inner }: { segments: readonly FrameSegment[]; inner: number }) {
+export function Segments({ segments, inner }: { segments: readonly FrameSegment[]; inner: number }) {
   const count = Math.max(1, segments.length);
   const width = Math.max(2, Math.floor((inner - SEGMENT_GAP * (count - 1)) / count));
   return (
@@ -75,7 +50,7 @@ function Footer({ footer }: { footer: FrameFooter }) {
   );
 }
 
-function HeldCount({ held }: { held: number }) {
+export function HeldCount({ held }: { held: number }) {
   return (
     <span
       role="img"
@@ -88,24 +63,21 @@ function HeldCount({ held }: { held: number }) {
   );
 }
 
-type Props = { frame: LaneFrame; onOpen(id: string): void };
+type Props = { frame: LaneFrame; onOpen(id: string): void; onToggle?(id: string): void };
 
-export function FeatureFrame({ frame, onOpen }: Props) {
+export function FeatureFrame({ frame, onOpen, onToggle }: Props) {
   return (
     <article
       aria-label={`${frame.shortKey} ${frame.title}`}
       data-key={frame.shortKey}
       data-late={frame.late ? "true" : undefined}
       data-title-lines={frame.titleLines}
-      className="absolute flex flex-col gap-1.5 rounded-[10px] bg-(--tracking-bg) p-2.5"
+      className={cn(
+        "absolute flex flex-col gap-1.5 rounded-[10px] border bg-(--tracking-bg) p-[9px]",
+        frameBorder(frame.late),
+      )}
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
     >
-      <DashedOutline
-        width={frame.width}
-        height={frame.height}
-        radius={10}
-        color={frame.late ? "var(--tracking-red)" : "var(--tracking-mfg)"}
-      />
       <div className="flex h-[14px] shrink-0 items-center gap-1.5 font-mono text-[11px] leading-[14px]">
         <span className="text-(--tracking-dim)">{frame.shortKey}</span>
         <span className="ml-auto text-(--tracking-mfg)">{`${frame.done}/${frame.total}`}</span>
@@ -122,7 +94,8 @@ export function FeatureFrame({ frame, onOpen }: Props) {
       <button
         type="button"
         title={frame.title}
-        onClick={() => onOpen(frame.id)}
+        aria-expanded={onToggle === undefined ? undefined : true}
+        onClick={() => (onToggle ?? onOpen)(frame.id)}
         className="shrink-0 cursor-pointer text-left font-semibold text-(--tracking-fg) text-[12.5px] leading-[15px]"
       >
         <span className={cn("block", TITLE_CLAMP[frame.titleLines])}>{frame.title}</span>

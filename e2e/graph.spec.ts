@@ -47,7 +47,7 @@ test("sans sprint : une seule colonne « À planifier » et la barre « Vue »",
     await expect(lanes.getByRole("article", { name: new RegExp(`${title}$`) })).toBeVisible();
   await expect(views(page).getByRole("radio")).toHaveText(["Fonctionnalités", "PRs"]);
   await expect(views(page).getByRole("radio", { name: "Fonctionnalités" })).toBeChecked();
-  for (const name of ["Options", "Livrées repliées", "Tout voir"])
+  for (const name of ["Options", "Livrées repliées"])
     await expect(page.getByRole("button", { name })).toHaveCount(0);
   await shot(page, info, "graphe-sans-sprint");
 

@@ -58,6 +58,7 @@ export type LaneFrame = {
   held: number;
   late: boolean;
   collapsed: boolean;
+  folded: boolean;
   segments: FrameSegment[];
   steps: LaneStep[];
   footer: FrameFooter | null;
@@ -104,7 +105,7 @@ type Facts = {
   blocking: ReadonlyMap<string, string | null>;
   byId: ReadonlyMap<string, TicketView>;
 };
-type Draft = Omit<LaneFrame, "x" | "y" | "width" | "height" | "titleLines">;
+type Draft = Omit<LaneFrame, "x" | "y" | "width" | "height" | "titleLines" | "folded">;
 
 function blockingQuestions(questions: readonly Question[]): Map<string, string | null> {
   const blocking = new Map<string, string | null>();
@@ -178,6 +179,7 @@ function placeLane(seed: LaneSeed, index: number, x: number): Lane {
     const height = frameHeight({ lines, steps: d.steps.length, footer: d.footer !== null });
     const frame = {
       ...d,
+      folded: false,
       titleLines: lines,
       x: x + margin,
       y,

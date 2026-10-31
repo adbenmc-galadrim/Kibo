@@ -76,7 +76,7 @@ test("three stacks, five cards from each root up, labels, rail and counter", asy
   expect(within(canvas).getByText("sur feat/envoi-hors-ligne")).toBeTruthy();
   expect(within(canvas).getByText("dev")).toBeTruthy();
   expect(within(canvas).getByText("branche de base")).toBeTruthy();
-  expect(screen.getByText(PRS_SEED_COUNTER)).toBeTruthy();
+  expect(await screen.findByText(PRS_SEED_COUNTER)).toBeTruthy();
 });
 
 test("a click on a card opens its ticket", async () => {
@@ -119,7 +119,7 @@ test("without any live PR the canvas says so, with no rail and no legend", async
       "Les PR ouvertes des étapes apparaissent ici, empilées sur leur branche de base.",
     ),
   ).toBeTruthy();
-  expect(screen.getByText("0 PR ouverte · 0 pile")).toBeTruthy();
+  expect(await screen.findByText("0 PR ouverte · 0 pile")).toBeTruthy();
   expect(screen.queryByText("branche de base")).toBeNull();
   expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
 });

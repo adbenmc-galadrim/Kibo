@@ -33,7 +33,7 @@ function StepDot({ tone }: { tone: StepTone }) {
     <span
       aria-hidden
       data-tone={tone}
-      className={cn("size-[7px] shrink-0", tone === "todo" ? RING_CLASS : cn("rounded-full", DOT_BG[tone]))}
+      className={cn("size-2.5 shrink-0", tone === "todo" ? RING_CLASS : cn("rounded-full", DOT_BG[tone]))}
     />
   );
 }
@@ -43,7 +43,7 @@ function HoldMark({ hold }: { hold: OnHold }) {
     hold.source === "own" ? fr.sprints.hold.own(hold.reason) : fr.sprints.hold.dependency(hold.key);
   return (
     <Pause
-      size={11}
+      size={15}
       absoluteStrokeWidth
       role="img"
       aria-label={label}
@@ -67,39 +67,40 @@ export function FrameStepRow({ step, onOpen }: Props) {
     <li
       data-session={step.session ? "true" : undefined}
       data-startable={step.startable ? "true" : undefined}
-      className={cn(
-        "flex h-6 items-center gap-1.5 rounded-[6px] border bg-(--tracking-card) px-2",
-        rowBorder(step),
-      )}
+      className={cn("h-7 rounded-[6px] border bg-(--tracking-card)", rowBorder(step))}
     >
-      <StepDot tone={step.tone} />
       <button
         type="button"
         title={step.key}
         onClick={() => onOpen(step.ticketId)}
-        className={cn(
-          "min-w-0 flex-1 cursor-pointer truncate text-left text-[11.5px] leading-[14px]",
-          step.tone === "done" ? "text-(--tracking-dim)" : "text-(--tracking-fg)",
-        )}
+        className="flex size-full cursor-pointer items-center gap-1.5 rounded-[5px] px-[7px] text-left"
       >
-        {step.title}
-      </button>
-      {step.session && (
+        <StepDot tone={step.tone} />
         <span
-          role="img"
-          aria-label={fr.sprints.session}
-          className="size-1.5 shrink-0 rounded-full bg-(--tracking-brand)"
-        />
-      )}
-      {step.hold !== null && <HoldMark hold={step.hold} />}
-      {Icon !== null && step.git !== null && (
-        <Icon
-          size={11}
-          absoluteStrokeWidth
-          aria-label={fr.sprints.git[step.git.kind]}
-          className={cn("shrink-0", GIT_TEXT[step.git.tone])}
-        />
-      )}
+          className={cn(
+            "min-w-0 flex-1 truncate text-[11.5px] leading-[14px]",
+            step.tone === "done" ? "text-(--tracking-dim)" : "text-(--tracking-fg)",
+          )}
+        >
+          {step.title}
+        </span>
+        {step.session && (
+          <span
+            role="img"
+            aria-label={fr.sprints.session}
+            className="size-1.5 shrink-0 rounded-full bg-(--tracking-brand)"
+          />
+        )}
+        {step.hold !== null && <HoldMark hold={step.hold} />}
+        {Icon !== null && step.git !== null && (
+          <Icon
+            size={15}
+            absoluteStrokeWidth
+            aria-label={fr.sprints.git[step.git.kind]}
+            className={cn("shrink-0", GIT_TEXT[step.git.tone])}
+          />
+        )}
+      </button>
     </li>
   );
 }
