@@ -54,19 +54,29 @@ const RETIRED_URLS = [
   "/#/settings/sync",
   "/#/settings/security",
   "/#/code",
+  "/#/mine",
+  "/#/inbox",
   "/#/runs/r1",
   "/#/p/silo/changes",
 ];
 
-test("les anciennes URL des écrans retirés ramènent à l'Accueil", async ({ page }) => {
+test("les anciennes URL des écrans retirés ramènent à Aujourd'hui", async ({ page }) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
   for (const url of RETIRED_URLS) {
     await page.goto("about:blank");
     await page.goto(url);
     await expect(page).toHaveURL(/#\/$/);
   }
   const sidebar = page.locator('[data-sidebar="sidebar"]');
-  for (const name of ["Agents", "Files d'attente", "Skills", "Créations", "Composants"])
+  for (const name of [
+    "Agents",
+    "Files d'attente",
+    "Skills",
+    "Créations",
+    "Composants",
+    "Mes tickets",
+    "Boîte de réception",
+  ])
     await expect(sidebar.getByRole("button", { name, exact: true })).toHaveCount(0);
 });

@@ -41,7 +41,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(reloaded.getByText("Attente du client")).toBeVisible();
 
   const other = `Autre ${key}`;
-  await page.getByRole("button", { name: "Accueil" }).click();
+  await page.getByRole("button", { name: "Aujourd'hui" }).click();
   await openNewProject(page);
   await page.getByLabel("Nom", { exact: true }).fill(other);
   await page.getByLabel("Clé").fill(`${key}B`);
@@ -55,10 +55,10 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(otherPages.getByRole("button", { name: "Vue d'ensemble", exact: true })).toBeVisible();
 
   const main = page.getByRole("main");
-  await page.getByRole("button", { name: "Accueil" }).click();
+  await page.getByRole("button", { name: "Aujourd'hui" }).click();
   await main.getByText(`Kibo ${key}`).click();
   await expect(page.getByRole("region", { name: "À faire" })).toBeVisible();
-  await page.getByRole("button", { name: "Accueil" }).click();
+  await page.getByRole("button", { name: "Aujourd'hui" }).click();
   await main.getByText(other).click();
   await expect(page.getByText(`Projet créé : ${other}`)).toHaveCount(0);
   await expect(page.getByRole("region", { name: "À faire" })).toHaveCount(0);

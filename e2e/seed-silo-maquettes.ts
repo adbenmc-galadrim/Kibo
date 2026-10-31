@@ -6,6 +6,7 @@ import {
 } from "../packages/schema/src/index";
 import {
   INBOX_TITLES,
+  OTHER_PROJECT_TICKETS,
   OTHER_PROJECTS,
   type ProjectSpec,
   prUrl,
@@ -263,6 +264,22 @@ async function buildTickets(silo: Silo, ids: Map<number, string>): Promise<void>
   await attachGit(silo);
 }
 
+async function seedOtherProject(rpc: SeedRpc, spec: ProjectSpec): Promise<void> {
+  const projectId = await ensureProject(rpc, spec, null);
+  const tickets = OTHER_PROJECT_TICKETS[spec.key];
+  if (projectId === null || tickets === undefined) return;
+  const statuses = [
+    ...Array.from({ length: tickets.done }, () => "done" as const),
+    ...Array.from({ length: tickets.open }, () => "in_progress" as const),
+  ];
+  for (const [i, statusId] of statuses.entries())
+    await rpc({
+      method: "command",
+      projectId,
+      command: { method: "createTicket", title: `Ticket ${i + 1}`, statusId },
+    });
+}
+
 async function seedInbox(rpc: SeedRpc): Promise<void> {
   const inbox = await rpc({ method: "getProject", projectId: INBOX_ID });
   const titles = new Set(listOf(field(inbox, "tickets")).map((t) => textOf(t, "title")));
@@ -283,7 +300,7 @@ export async function seedSiloMaquettes(rpc: SeedRpc, options: SeedOptions): Pro
   const user = textOf(await rpc({ method: "getSession" }), "user");
   const created = await ensureProject(rpc, SILO_PROJECT, options.folder);
   if (created !== null) await seedSilo(rpc, created, user, options);
-  for (const spec of OTHER_PROJECTS) await ensureProject(rpc, spec, null);
+  for (const spec of OTHER_PROJECTS) await seedOtherProject(rpc, spec);
   await seedInbox(rpc);
   await nameWorkspace(rpc);
   const projectId = await findProject(rpc, SILO_PROJECT.key);

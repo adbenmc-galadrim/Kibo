@@ -109,7 +109,7 @@ test.beforeAll(async ({ browser }, info) => {
   page = await openPage(browser, info);
   mockup = createMockupRepo();
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
   seeded = await seedWorkspace(page, mockup.repo);
   await rpc(page, {
     method: "command",
@@ -189,19 +189,6 @@ test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
   await expect(sheet).toBeHidden();
 });
 
-test("12 · Mes tickets", async () => {
-  const info = test.info();
-  await page.goto("/#/");
-  await page.reload();
-  const entry = sideButton("Mes tickets");
-  const count = Number(await entry.locator("..").getByText(/^\d+$/).textContent());
-  expect(count).toBeGreaterThan(0);
-  await entry.click();
-  await expect(page.getByRole("heading", { level: 1, name: "Mes tickets" })).toBeVisible();
-  await expect(page.getByText(new RegExp(`^${count} tickets? · \\d+ projets?$`))).toBeVisible();
-  await capture(info, "12");
-});
-
 test("D11 · menu du workspace et page Workspace", async () => {
   const info = test.info();
   const trigger = page.getByRole("button", { name: /Perso/ }).first();
@@ -223,7 +210,7 @@ test("densité 13 px des maquettes", async () => {
   await expect(doing).toBeVisible();
   const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
   expect(await size(page.locator("body"))).toBe("13px");
-  expect(await size(sideButton("Accueil"))).toBe("13px");
+  expect(await size(sideButton("Aujourd'hui"))).toBe("13px");
   expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("11px");
   expect(await size(doing.getByText("KIB-28", { exact: true }))).toBe("11px");
   expect(await size(bar().getByRole("tab", { name: "Kibo · Kanban" }))).toBe("12px");

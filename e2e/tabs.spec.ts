@@ -34,16 +34,16 @@ test("onglets épinglés persistés, raccourcis et palette", async ({ page }, in
   await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
   await expect(bar.getByRole("tab", { name: `Onglets ${key} · Kanban` })).toHaveText("");
 
-  const mine = bar.getByRole("tab", { name: "Mes tickets" });
+  const mine = bar.getByRole("tab", { name: "Général" });
   await expect
     .poll(async () => JSON.stringify(await rpc(page, { method: "getTabs" })))
-    .toContain('"screen":"mine"');
+    .toContain('"screen":"general"');
   await page.reload();
   await expect(bar.getByRole("tab", { name: `Onglets ${key} · Kanban` })).toBeVisible();
   await expect(mine).toBeVisible();
 
   await page.keyboard.press("ControlOrMeta+1");
-  await expect(bar.getByRole("tab", { name: "Accueil" })).toHaveAttribute("aria-selected", "true");
+  await expect(bar.getByRole("tab", { name: "Aujourd'hui" })).toHaveAttribute("aria-selected", "true");
   await mine.click();
   await page.keyboard.press("ControlOrMeta+w");
   await expect(mine).toHaveCount(0);
@@ -63,8 +63,8 @@ test("onglet fermé : aucun toast, ⌘⇧T, et Backspace ne ferme rien", async (
   const bar = page.getByRole("tablist", { name: "Onglets" });
 
   await showTabBar(page);
-  await page.goto("/#/inbox");
-  const inbox = bar.getByRole("tab", { name: "Boîte de réception" });
+  await page.goto("/#/settings/appearance");
+  const inbox = bar.getByRole("tab", { name: "Apparence" });
   await expect(inbox).toBeVisible();
   await page.keyboard.press("ControlOrMeta+w");
   await expect(inbox).toHaveCount(0);
@@ -96,6 +96,12 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   const previews = bar.locator('[role="tab"][data-preview="true"]');
   const tab = (title: string) => bar.getByRole("tab", { name: title, exact: true });
 
+  await createSidebarPage(page, name, "Notes", "Vue");
+  const notesHash = new URL(page.url()).hash;
+  const openNotes = () =>
+    page.evaluate((hash) => {
+      location.hash = hash;
+    }, notesHash);
   await createSidebarPage(page, name, "Brouillon", "Vue");
   await createSidebarPage(page, name, "Kanban", "Vue");
   await addComponent(page, "Kanban");
@@ -118,13 +124,13 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).click({ modifiers: ["ControlOrMeta"] });
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("aria-selected", "true");
   await expect(tab(`${name} · Brouillon`)).toBeVisible();
-  await bar.getByRole("button", { name: "Fermer Mes tickets", exact: true }).click();
-  await expect(tab("Mes tickets")).toHaveCount(0);
+  await bar.getByRole("button", { name: "Fermer Général", exact: true }).click();
+  await expect(tab("Général")).toHaveCount(0);
 
-  await tab("Accueil").click();
-  await sidebar.getByRole("button", { name: /^Boîte de réception/ }).click();
+  await tab("Aujourd'hui").click();
+  await sidebar.getByRole("button", { name: "Paramètres", exact: true }).click();
   await expect(previews).toHaveCount(1);
-  await expect(previews).toHaveAttribute("aria-label", "Boîte de réception · aperçu");
+  await expect(previews).toHaveAttribute("aria-label", "Général · aperçu");
   await expect(previews.locator("span.italic")).toBeVisible();
   await expect(page.getByText("Chargement…")).toBeHidden();
   await shot(page, info, "ecran-165");
@@ -134,30 +140,30 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await page.keyboard.press("Escape");
   await previews.dblclick();
   await expect(previews).toHaveCount(0);
-  await expect(tab("Boîte de réception")).toHaveAttribute("aria-selected", "true");
+  await expect(tab("Général")).toHaveAttribute("aria-selected", "true");
   await shot(page, info, "ecran-165b");
 
-  await sidebar.getByRole("button", { name: "Mes tickets", exact: true }).click();
-  await expect(tab("Mes tickets")).toHaveAttribute("aria-selected", "true");
-  await expect(tab("Boîte de réception")).toHaveCount(0);
+  await openNotes();
+  await expect(tab(`${name} · Notes`)).toHaveAttribute("aria-selected", "true");
+  await expect(tab("Général")).toHaveCount(0);
   await expect
     .poll(async () => {
       const saved = JSON.stringify(await rpc(page, { method: "getTabs" }));
       return saved.slice(0, saved.indexOf('"recents"'));
     })
-    .not.toContain('"screen":"inbox"');
+    .not.toContain('"screen":"general"');
   await page.goBack();
-  await expect(tab("Boîte de réception")).toHaveAttribute("aria-selected", "true");
+  await expect(tab("Général")).toHaveAttribute("aria-selected", "true");
 
-  await tab("Boîte de réception").click({ button: "right" });
+  await tab("Général").click({ button: "right" });
   await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
-  await sidebar.getByRole("button", { name: "Mes tickets", exact: true }).click();
-  await expect(tab("Mes tickets · aperçu")).toHaveAttribute("aria-selected", "true");
-  await expect(tab("Boîte de réception")).toBeVisible();
+  await openNotes();
+  await expect(tab(`${name} · Notes · aperçu`)).toHaveAttribute("aria-selected", "true");
+  await expect(tab("Général")).toBeVisible();
 
   await bar.getByRole("button", { name: `Fermer ${name} · Kanban`, exact: true }).click();
   await bar.getByRole("button", { name: `Fermer ${name} · Brouillon`, exact: true }).click();
-  await tab("Mes tickets · aperçu").click();
+  await tab(`${name} · Notes · aperçu`).click();
   await sidebar.getByRole("button", { name, exact: true }).click();
   await expect(previews).toHaveCount(1);
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
@@ -171,13 +177,13 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");
   await expect(previews).toHaveCount(0);
 
-  await tab("Accueil").click();
-  await sidebar.getByRole("button", { name: "Mes tickets", exact: true }).click();
-  await expect(previews).toHaveAttribute("aria-label", "Mes tickets · aperçu");
+  await tab("Aujourd'hui").click();
+  await openNotes();
+  await expect(previews).toHaveAttribute("aria-label", `${name} · Notes · aperçu`);
   await expect
     .poll(async () => JSON.stringify(await rpc(page, { method: "getTabs" })))
-    .toContain('"screen":"mine"},"pinned":false,"preview":true');
+    .toContain('"pinned":false,"preview":true');
   await page.reload();
-  await expect(previews).toHaveAttribute("aria-label", "Mes tickets · aperçu");
+  await expect(previews).toHaveAttribute("aria-label", `${name} · Notes · aperçu`);
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");
 });

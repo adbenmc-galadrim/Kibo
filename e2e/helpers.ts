@@ -19,9 +19,9 @@ export async function showTabBar(page: Page, back?: string) {
   await expect(bar).toBeHidden();
   await page
     .locator('[data-sidebar="sidebar"]')
-    .getByRole("button", { name: "Mes tickets", exact: true })
+    .getByRole("button", { name: "Paramètres", exact: true })
     .click({ modifiers: ["ControlOrMeta"] });
-  await expect(bar.getByRole("tab", { name: "Mes tickets" })).toBeVisible();
+  await expect(bar.getByRole("tab", { name: "Général" })).toBeVisible();
   const tabs = bar.getByRole("tab");
   const original =
     back === undefined ? tabs.nth((await tabs.count()) - 2) : bar.getByRole("tab", { name: back });
@@ -39,7 +39,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 }
 
 export async function openEmptyProject(page: Page, name: string, key: string, folder: string | null) {
-  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aujourd'hui" })).toBeVisible();
   const created = await rpc(page, { method: "createProject", name, key, folder, color: "#F97316" });
   await page.goto(`/#/p/${encodeURIComponent(text(created, "id"))}/`);
   await expect(page.getByText(`Projet créé : ${name}`)).toBeVisible();

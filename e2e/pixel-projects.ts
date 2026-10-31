@@ -29,7 +29,7 @@ const APERCU_PIXEL_SPEC = /pixel-apercu\.spec\.ts$/;
 const GRAPHE_PIXEL_SPEC = /pixel-graphe-attente\.spec\.ts$/;
 const PRS_PIXEL_SPEC = /pixel-prs\.spec\.ts$/;
 const PRS_SPEC = /\/prs\.spec\.ts$/;
-const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
+const ATTENTE_PIXEL_SPEC = /pixel-(attente|aujourdhui)\.spec\.ts$/;
 const ATTENTE_SPEC = /\/attente\.spec\.ts$/;
 const PIXEL_SPECS =
   /pixel-(planning|fonctionnalite|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket|agent)\.spec\.ts/;
