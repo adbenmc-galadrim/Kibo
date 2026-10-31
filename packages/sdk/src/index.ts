@@ -10,6 +10,7 @@ export * from "./group-chip";
 export * from "./human-name";
 export * from "./lazy";
 export * from "./markdown-lite";
+export * from "./page-actions";
 export * from "./phase-label";
 export * from "./question-preview";
 export * from "./question-preview-text";
