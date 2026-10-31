@@ -54,14 +54,14 @@ test("a step shows its PR or its branch, the time of its delivery step and the d
   expect(merged?.getByRole("img", { name: "CI réussie" })).toBeTruthy();
   expect(review?.getByRole("img", { name: "CI réussie" })).toBeTruthy();
   expect(merged?.getByText("hier 18:22")).toBeTruthy();
-  expect(merged?.getByText("11 · Livré")).toBeTruthy();
+  expect(merged?.getByText("Étape 11/12 · Livré")).toBeTruthy();
   expect(review?.getByText("#22")).toBeTruthy();
   expect(review?.getByText("15:04")).toBeTruthy();
-  expect(review?.getByText("10 · Démo")).toBeTruthy();
+  expect(review?.getByText("Étape 10/12 · Démo")).toBeTruthy();
   expect(coding?.getByText("feat/envoi-hors-ligne")).toBeTruthy();
   expect(coding?.getByText("14:51")).toBeTruthy();
-  expect(coding?.getByText("7 · Porte qualité")).toBeTruthy();
-  const bar = coding?.getByRole("progressbar");
+  expect(coding?.getByText("Étape 7/12 · Porte qualité")).toBeTruthy();
+  const bar = coding?.getByRole("progressbar", { name: "Étape 7/12 · Porte qualité" });
   if (!bar) throw new Error("no delivery bar");
   expect(Array.from(bar.querySelectorAll("[data-segment]"), (s) => s.getAttribute("data-segment"))).toEqual([
     ...Array(7).fill("done"),

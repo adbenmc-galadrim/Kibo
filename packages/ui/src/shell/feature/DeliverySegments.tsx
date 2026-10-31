@@ -1,5 +1,4 @@
-import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, type DeliveryStep } from "@kibo/schema";
-import { frDelivery } from "../../i18n/fr-delivery";
+import { DELIVERY_STEP_MAX, type DeliveryStep, deliveryStepLabel } from "@kibo/schema";
 import { frFeature as t } from "../../i18n/fr-group";
 
 const SEGMENTS = Array.from({ length: DELIVERY_STEP_MAX + 1 }, (_, i) => i);
@@ -18,13 +17,13 @@ const FILL = {
 export function DeliverySegments({ delivery }: { delivery: DeliveryStep | null }) {
   if (delivery === null)
     return <span className="ml-auto text-[12px] leading-[15px] text-(--tracking-faint)">{t.noDelivery}</span>;
-  const label = DELIVERY_STEP_LABELS[delivery.step] ?? "";
+  const label = deliveryStepLabel(delivery.step);
   const final = delivery.step === DELIVERY_STEP_MAX;
   return (
     <span className="ml-auto flex shrink-0 items-center gap-[8px]">
       <span
         role="progressbar"
-        aria-label={frDelivery.bar(label)}
+        aria-label={label}
         aria-valuemin={0}
         aria-valuemax={DELIVERY_STEP_MAX}
         aria-valuenow={delivery.step}
@@ -36,7 +35,7 @@ export function DeliverySegments({ delivery }: { delivery: DeliveryStep | null }
           return <span key={i} data-segment={segment} className={`h-[10px] w-[4px] rounded-[1px] ${fill}`} />;
         })}
       </span>
-      <span className="text-[12px] leading-[15px] text-(--tracking-mfg)">{`${delivery.step} · ${label}`}</span>
+      <span className="text-[12px] leading-[15px] text-(--tracking-mfg)">{label}</span>
     </span>
   );
 }
