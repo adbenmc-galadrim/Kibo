@@ -7,6 +7,7 @@ import {
   KiboError,
   Phase7Event,
   type ProjectCommand,
+  type ProjectSnapshot,
   type RpcRequest,
   type RpcResponse,
   type RpcResult,
@@ -185,9 +186,16 @@ export function createClient(opts: ClientOptions): KiboClient {
   };
 }
 
-export function projectBackend(client: KiboClient, projectId: string, instanceId: string): ProjectBackend {
+type ProjectBackendOptions = { snapshotSource?: () => Promise<ProjectSnapshot> };
+
+export function projectBackend(
+  client: KiboClient,
+  projectId: string,
+  instanceId: string,
+  { snapshotSource }: ProjectBackendOptions = {},
+): ProjectBackend {
   return {
-    snapshot: () => client.rpc({ method: "getProject", projectId }),
+    snapshot: snapshotSource ?? (() => client.rpc({ method: "getProject", projectId })),
     run: (command: ProjectCommand) => client.rpc({ method: "command", projectId, command, instanceId }),
     call: (call: ComponentCall) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
     subscribe: (listener) =>

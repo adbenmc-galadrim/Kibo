@@ -56,6 +56,7 @@ mock.module("../api", () =>
 
 const unmockedModule = "./use-projects?unmocked";
 const { useProject, useProjects }: typeof import("./use-projects") = await import(unmockedModule);
+const { projectStore } = await import("./project-store");
 
 const seen: Array<[string | null, string | null]> = [];
 function Probe({ projectId }: { projectId: string | null }) {
@@ -71,6 +72,7 @@ const resolve = (id: string) =>
   });
 
 beforeEach(() => {
+  projectStore.clear();
   seen.length = 0;
   pending.clear();
   listProjects = () => Promise.resolve([]);
@@ -92,6 +94,22 @@ test("useProject ignores a load that lands after leaving the project", async () 
   await resolve("b");
   await resolve("a");
   expect(seen.at(-1)).toEqual(["b", "b"]);
+});
+
+test("useProject keeps the cached view while the id changes back and forth", async () => {
+  const { rerender } = render(<Probe projectId="a" />);
+  await resolve("a");
+  rerender(<Probe projectId="b" />);
+  await resolve("b");
+  seen.length = 0;
+  pending.clear();
+  rerender(<Probe projectId="a" />);
+  rerender(<Probe projectId="b" />);
+  expect(seen).toEqual([
+    ["a", "a"],
+    ["b", "b"],
+  ]);
+  expect(pending.size).toBe(0);
 });
 
 const summary: ProjectSummary = {

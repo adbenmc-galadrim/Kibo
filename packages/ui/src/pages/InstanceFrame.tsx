@@ -6,6 +6,7 @@ import type { InstanceApis } from "../lib/instance-capabilities";
 import { findComponent } from "../registry";
 import { useHost } from "../shell/Host";
 import { viewSpotlight } from "../shell/view-spotlight";
+import { projectSnapshotSource } from "../state/project-store";
 import { RetiredComponent } from "./RetiredComponent";
 
 type Props = {
@@ -32,7 +33,7 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, apis }: Mo
   const sdk = useMemo(
     () =>
       createSdk(
-        projectBackend(client, projectId, instance.id),
+        projectBackend(client, projectId, instance.id, { snapshotSource: projectSnapshotSource(projectId) }),
         mod.manifest,
         {
           instanceId: instance.id,

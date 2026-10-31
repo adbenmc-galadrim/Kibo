@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { ProjectSnapshot } from "@kibo/schema";
 import { createClient, projectBackend } from "./client";
 
 const stubFetch = (status: number, body: unknown) =>
@@ -293,4 +294,19 @@ test("a typed event without a listener never reloads a project", async () => {
   expect(seen).toEqual(["p1"]);
   off();
   server.stop(true);
+});
+
+test("projectBackend.snapshot uses snapshotSource when given", async () => {
+  const bodies: unknown[] = [];
+  const recording = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return new Response(JSON.stringify({ ok: true, result: null }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
+  const cached = { meta: { id: "p1" } } as unknown as ProjectSnapshot;
+  const backend = projectBackend(client, "p1", "i1", { snapshotSource: async () => cached });
+  expect(await backend.snapshot()).toBe(cached);
+  expect(bodies).toEqual([]);
+  await projectBackend(client, "p1", "i1").snapshot();
+  expect(bodies).toEqual([{ method: "getProject", projectId: "p1" }]);
 });
