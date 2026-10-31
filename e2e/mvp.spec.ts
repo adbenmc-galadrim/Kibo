@@ -93,7 +93,7 @@ test("tableau de bord Kanban, sous-ticket et fiche", async ({ page }, info) => {
 
   const chip = "Ouvrir l'ensemble F1 · Préparer la démo";
   await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
-  await expect(page.getByTitle("1 ticket", { exact: true })).toBeAttached();
+  await expect(page.getByTitle("1 ticket", { exact: true }).first()).toBeAttached();
 
   await todo.getByRole("article").getByRole("button", { name: chip }).click();
   const sheet = page.getByRole("dialog");

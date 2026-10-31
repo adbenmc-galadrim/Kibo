@@ -149,7 +149,11 @@ test("the Kanban shows review, CI and sessions, and a CLI session lights SILO-51
   const pr20 = kanbanCard(page, "SILO-45");
   await expect(pr20).toContainText("#20");
   await expect(pr20.getByRole("note", { name: "changements demandés" })).toBeVisible();
-  await expect(pr20.getByLabel("CI cassée")).toHaveCount(0);
+  await pr20.getByText("Conflits de saisie", { exact: true }).click();
+  const conflicts = page.getByRole("dialog", { name: /Conflits de saisie/ });
+  await expect(conflicts.getByText("rouge", { exact: true })).toBeVisible();
+  await conflicts.getByRole("button", { name: "Fermer" }).click();
+  await expect(conflicts).toBeHidden();
   await expect(kanbanCard(page, "SILO-33").getByLabel("Session T3 Code en cours")).toBeVisible();
 
   const silo51 = page.getByRole("region", { name: "Bloqué" }).getByRole("article", { name: /^SILO-51 / });
