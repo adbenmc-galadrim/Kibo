@@ -3,7 +3,7 @@ import { KIBO_ERROR_CODES } from "./errors";
 import { RpcRequest } from "./rpc";
 import { startReasonText } from "./startability";
 import { T3_RPC_METHODS, T3Preview, T3Status } from "./t3-rpc";
-import { isActiveT3Status, T3Thread } from "./t3-thread";
+import { isActiveT3Status, normalizeT3Link, T3Thread } from "./t3-thread";
 
 const thread = { threadId: "t", link: "l", title: "x", status: "waiting", startedAt: 1, checkedAt: 2 };
 
@@ -41,4 +41,26 @@ test("the start reason text is shared with the copy button", () => {
   expect(startReasonText({ kind: "dependency", keys: ["SILO-33"] })).toBe("attend SILO-33");
   expect(startReasonText({ kind: "limit", limit: 2, count: 2 })).toBe("limite 2/2 atteinte");
   expect(startReasonText({ kind: "status" })).toBeNull();
+});
+
+test("a thread link loses its angle brackets", () => {
+  expect(normalizeT3Link("<t3-thread://v2/env/thr_1>")).toBe("t3-thread://v2/env/thr_1");
+  expect(normalizeT3Link("t3-thread://v2/env/thr_1")).toBe("t3-thread://v2/env/thr_1");
+  expect(normalizeT3Link(" <t3-thread://a> ")).toBe("t3-thread://a");
+});
+
+test("anything but a t3-thread link becomes empty", () => {
+  for (const raw of [
+    "",
+    "<>",
+    "https://evil.test",
+    "javascript:alert(1)",
+    "<file:///etc/passwd>",
+    "t3-thread:/x",
+  ])
+    expect(normalizeT3Link(raw)).toBe("");
+  expect(normalizeT3Link(undefined)).toBe("");
+  const thread = { threadId: "a", title: "t", status: "running", startedAt: 1, checkedAt: 1 };
+  expect(T3Thread.parse({ ...thread, link: "javascript:alert(1)" }).link).toBe("");
+  expect(T3Thread.parse({ ...thread, link: "<t3-thread://a>" }).link).toBe("t3-thread://a");
 });

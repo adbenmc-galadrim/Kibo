@@ -21,7 +21,7 @@ test("thread start adds a running thread, prints it and thread list filters by p
   });
   const listed = await run(["thread", "list", "--project", "/w/a", "--json"], {});
   expect(JSON.parse(listed.stdout)).toMatchObject([
-    { threadId: "thr_1", status: "running", project: "/w/a" },
+    { threadId: "thr_1", status: "running", project: "/w/a", link: "<t3-thread://v2/fake/thr_1>" },
   ]);
   expect(JSON.parse((await run(["thread", "list", "--project", "/w/b", "--json"], {})).stdout)).toEqual([]);
   expect(fake.calls()[0]?.slice(0, 2)).toEqual(["thread", "start"]);

@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { KiboError, type ProjectEventInput } from "@kibo/schema";
 import type { T3Runner } from "./t3-cli";
-import { createThreadPoll, T3_POLL_MS } from "./thread-poll";
+import { createThreadPoll, parseThreadList, T3_POLL_MS } from "./thread-poll";
 import { createThreadStore } from "./thread-store";
 
 const DAY = 24 * 3_600_000;
@@ -65,7 +65,7 @@ test("polling every 30 s maps statuses, publishes changes on the project channel
   s.poll.watch("p");
   expect([...s.timers.values()].map((t) => t.ms)).toEqual([30_000]);
 
-  s.listed.value = [{ threadId: "a", status: "running", link: "t3-thread://a" }];
+  s.listed.value = [{ threadId: "a", status: "running", link: "<t3-thread://a>" }];
   await s.tick();
   expect(s.calls[0]).toEqual(["thread", "list", "--project", "/w/silo", "--json"]);
   expect(s.emitted).toEqual([]);
@@ -177,4 +177,14 @@ test("a waiting thread unchanged for 24 h becomes done and polling stops", async
   expect(s.store.threadOf("p", "t1")?.status).toBe("done");
   expect(s.events.map((e) => e.kind)).toEqual(["t3_finished"]);
   expect(s.timers.size).toBe(0);
+});
+
+test("parseThreadList strips the angle brackets and empties an invalid link", () => {
+  const listed = parseThreadList(
+    JSON.stringify([
+      { threadId: "a", status: "running", link: "<t3-thread://v2/env/a>" },
+      { threadId: "b", status: "running", link: "<javascript:alert(1)>" },
+    ]),
+  );
+  expect(listed.map((t) => t.link)).toEqual(["t3-thread://v2/env/a", ""]);
 });

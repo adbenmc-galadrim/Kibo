@@ -9,6 +9,7 @@ import {
   type T3RpcRequest,
   type T3Status,
   type T3Thread,
+  T3ThreadLink,
   type TicketView,
 } from "@kibo/schema";
 import { z } from "zod";
@@ -28,7 +29,7 @@ type LaunchTarget = { projectId: string; folder: string; argv: readonly string[]
 
 const Started = z.object({
   threadId: z.string().min(1),
-  link: z.string().optional(),
+  link: T3ThreadLink,
   title: z.string().optional(),
 });
 
@@ -101,7 +102,7 @@ async function findBack(
   );
   const [found] = candidates;
   if (!found || candidates.length > 1) throw failed;
-  return { threadId: found.threadId, title: target.title, ...(found.link && { link: found.link }) };
+  return { threadId: found.threadId, title: target.title, link: found.link };
 }
 
 async function startThread(deps: T3RpcDeps, target: LaunchTarget): Promise<StartedThread> {
@@ -155,7 +156,7 @@ export function createT3Api(deps: T3RpcDeps): T3Api {
     const now = deps.now();
     const thread: T3Thread = {
       threadId: started.threadId,
-      link: started.link ?? "",
+      link: started.link,
       title: started.title ?? title,
       status: "running",
       startedAt: now,

@@ -1,4 +1,10 @@
-import { isActiveT3Status, KiboError, type ProjectEventSink, type T3Thread } from "@kibo/schema";
+import {
+  isActiveT3Status,
+  KiboError,
+  type ProjectEventSink,
+  type T3Thread,
+  T3ThreadLink,
+} from "@kibo/schema";
 import { z } from "zod";
 import type { SessionTicket } from "../activity/session-events";
 import { isKnownT3Status, mapT3Status } from "./status-map";
@@ -13,7 +19,7 @@ const ListedThreads = z.array(
   z.object({
     threadId: z.string(),
     status: z.string(),
-    link: z.string().optional(),
+    link: T3ThreadLink,
     title: z.string().optional(),
     updatedAt: z.union([z.string(), z.number()]).optional(),
   }),

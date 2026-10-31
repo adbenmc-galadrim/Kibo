@@ -69,7 +69,10 @@ if (args[0] === "thread" && args[1] === "list") {
     process.stderr.write("No T3 Code project matches '.'. Pass a project id or a path inside a project.\n");
     process.exit(1);
   }
-  process.stdout.write(`${JSON.stringify(state.threads.filter((t) => t.project === project))}\n`);
+  const listed = state.threads
+    .filter((t) => t.project === project)
+    .map((t) => ({ ...t, link: t.link && `<${t.link}>` }));
+  process.stdout.write(`${JSON.stringify(listed)}\n`);
   process.exit(0);
 }
 if (args[0] === "theme" && args[1] === "show") {
