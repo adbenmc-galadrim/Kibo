@@ -183,9 +183,13 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await tab("Aujourd'hui").click();
   await openNotes();
   await expect(previews).toHaveAttribute("aria-label", `${name} · Notes · aperçu`);
+  const savedTabs = (await bar.getByRole("tab").count()) - 1;
   await expect
-    .poll(async () => JSON.stringify(await rpc(page, { method: "getTabs" })))
-    .toContain('"pinned":false,"preview":true');
+    .poll(async () => {
+      const saved = JSON.stringify(await rpc(page, { method: "getTabs" }));
+      return saved.slice(0, saved.indexOf('"recents"')).match(/"preview":/g)?.length;
+    })
+    .toBe(savedTabs);
   await page.reload();
   await expect(previews).toHaveAttribute("aria-label", `${name} · Notes · aperçu`);
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");

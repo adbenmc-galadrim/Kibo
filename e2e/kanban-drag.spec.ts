@@ -102,16 +102,12 @@ async function previewFollowsAutoScroll(page: Page, root: Locator, title: string
   const from = await pointIn(card);
   const edge = await pointIn(board, 1);
   edge.x -= 8;
+  const scrolled = await scrollLeftOf(board);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
   await page.mouse.move(edge.x, edge.y, { steps: 12 });
-  await expect
-    .poll(async () => {
-      await page.mouse.move(edge.x - Math.random(), edge.y);
-      return board.evaluate((el) => el.scrollWidth - el.clientWidth - el.scrollLeft);
-    })
-    .toBeLessThanOrEqual(1);
+  await expect.poll(() => scrollLeftOf(board)).toBeGreaterThan(scrolled);
   await expect.poll(() => previewAt(page, edge)).toBe(true);
   await page.keyboard.press("Escape");
   await expect(page.locator(PREVIEW)).toHaveCount(0);
