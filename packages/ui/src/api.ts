@@ -5,6 +5,7 @@ import { isCodeWrite, isProjectWrite, projectIdOf } from "./tabs/write-requests"
 const unauthorizedListeners = new Set<() => void>();
 const writeListeners = new Set<(projectId: string | null) => void>();
 const writeDoneListeners = new Set<(projectId: string | null) => void>();
+const rpcListeners = new Set<(method: string) => void>();
 
 const raw = createClient({
   baseUrl: "",
@@ -26,6 +27,7 @@ const announceDone = (req: RpcRequest) => {
 export const client: KiboClient = {
   ...raw,
   rpc: (req) => {
+    for (const l of rpcListeners) l(req.method);
     if (!isProjectWrite(req)) return raw.rpc(req);
     announce(req);
     return raw.rpc(req).finally(() => announceDone(req));
@@ -49,4 +51,9 @@ export function onWrite(listener: (projectId: string | null) => void): () => voi
 export function onWriteDone(listener: (projectId: string | null) => void): () => void {
   writeDoneListeners.add(listener);
   return () => writeDoneListeners.delete(listener);
+}
+
+export function onRpc(listener: (method: string) => void): () => void {
+  rpcListeners.add(listener);
+  return () => rpcListeners.delete(listener);
 }
