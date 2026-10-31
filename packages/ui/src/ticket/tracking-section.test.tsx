@@ -107,7 +107,7 @@ test("the Suivi block names the branch, the PR, its review, the CI, the session 
       .getAttribute("href"),
   ).toBe("https://github.com/silo-labs/silo-location/actions/runs/9/job/1");
   expect(row("Session")?.textContent).toBe("T3 Code · 42 min");
-  expect(words("Livraison")).toEqual(["Phase 9/12 · Review", "· suivante : Démo"]);
+  expect(words("Livraison")).toEqual(["Étape 9/12 · Review", "· suivante : Démo"]);
 });
 
 test("the CI row reads the checks of the PR when no run is known, and says « Pas de CI » without any", () => {
@@ -147,7 +147,7 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
   expect(row("CI")?.textContent).toBe("Pas de CI");
 });
 
-test("a retouch names its phase « Retouche · Phase 7/12 · Porte qualité »", () => {
+test("a retouch names its phase « Retouche · Étape 7/12 · Porte qualité »", () => {
   render(
     <TrackingSection
       ticket={ticket({
@@ -159,7 +159,7 @@ test("a retouch names its phase « Retouche · Phase 7/12 · Porte qualité »",
       now={NOW}
     />,
   );
-  expect(words("Livraison")[0]).toBe("Retouche · Phase 7/12 · Porte qualité");
+  expect(words("Livraison")[0]).toBe("Retouche · Étape 7/12 · Porte qualité");
 });
 
 test("a ticket without any tracking says how to declare its branch", () => {

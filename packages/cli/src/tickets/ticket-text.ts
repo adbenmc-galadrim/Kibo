@@ -1,4 +1,4 @@
-import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, type DeliveryStep } from "@kibo/schema";
+import { type DeliveryStep, deliveryStepLabel } from "@kibo/schema";
 import { frTickets as t } from "../fr";
 import { holdLine } from "./hold-text";
 import type { DetailExtras } from "./ticket-detail";
@@ -13,10 +13,11 @@ export function clockTime(at: number): string {
   return `${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
 }
 
-const touchUpLines = (delivery: DeliveryStep | null): string[] =>
-  delivery?.kind === "update"
-    ? [t.touchUp(delivery.step, DELIVERY_STEP_MAX, DELIVERY_STEP_LABELS[delivery.step] ?? "")]
-    : [];
+const deliveryLines = (delivery: DeliveryStep | null): string[] => {
+  if (delivery === null) return [];
+  const label = deliveryStepLabel(delivery.step);
+  return [delivery.kind === "update" ? t.touchUp(label) : label];
+};
 
 const DEMO_TITLE = "démo client";
 
@@ -59,7 +60,7 @@ export function detailLines(d: TicketDetail): string[] {
     t.sprint(d.sprint),
     ...(d.optional ? [t.optional] : []),
     ...(d.session === null ? [] : [t.session(d.session.tool, clockTime(d.session.startedAt))]),
-    ...touchUpLines(d.delivery),
+    ...deliveryLines(d.delivery),
     t.children(d.children),
     t.deps(d.deps),
     t.branch(d.branch),

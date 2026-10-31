@@ -72,7 +72,7 @@ export const frTicketTracking = {
     open: "Ouvrir",
   },
   journal: "Chronologie",
-  journalHint: "journal du ticket : branche, PR, review, CI, phases de livraison, sessions, statut",
+  journalHint: "journal du ticket : branche, PR, review, CI, étapes de livraison, sessions, statut",
   noJournal: "Rien dans le journal de ce ticket pour l'instant.",
   journalError: "Journal du ticket indisponible.",
   events: {
@@ -89,7 +89,7 @@ export const frTicketTracking = {
     checksJob: (checks: string | null, job: string) =>
       `${CHECK_TEXTS[checks ?? ""] ?? "CI sans verdict"} · ${job}`,
     seeLog: "voir le journal",
-    step: (label: string | null) => (label ? `Phase ${label}` : "Phase de livraison mise à jour"),
+    stepUpdated: "Étape de livraison mise à jour",
     sessionStarted: (tool: string | null) => (tool ? `Session ${tool} ouverte` : "Session ouverte"),
     sessionStopped: (tool: string | null) => (tool ? `Session ${tool} fermée` : "Session fermée"),
     sprint: (code: string | null) => (code ? `Planifié en ${code}` : "Retiré du planning"),

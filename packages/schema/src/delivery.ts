@@ -79,7 +79,9 @@ export const DELIVERY_STEP_LABELS: readonly string[] = [
   "Livré",
 ];
 
-export const deliveryStepLabel = (step: number): string => `${step} · ${DELIVERY_STEP_LABELS[step] ?? ""}`;
+export const stepLabelShort = (step: number): string => `Étape ${step}/${DELIVERY_STEP_MAX + 1}`;
+export const phaseLabel = (step: number, name: string): string => `${stepLabelShort(step)} · ${name}`;
+export const deliveryStepLabel = (step: number): string => phaseLabel(step, DELIVERY_STEP_LABELS[step] ?? "");
 
 export const FULL_DELIVERY_AGENT = "full-delivery";
 

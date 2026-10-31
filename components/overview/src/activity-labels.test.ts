@@ -32,8 +32,8 @@ test("pull requests read as opened, merged, reviewed or checked", () => {
 });
 
 test("steps, sessions and statuses read with their label", () => {
-  expect(label(event("step_set", { step: 7 }, "full-delivery"))).toBe("Phase 7/12 · Porte qualité");
-  expect(label(event("step_set", { step: 2 }, "update-delivery"))).toBe("Retouche · Phase 2/12 · Repérage");
+  expect(label(event("step_set", { step: 7 }, "full-delivery"))).toBe("Étape 7/12 · Porte qualité");
+  expect(label(event("step_set", { step: 2 }, "update-delivery"))).toBe("Retouche · Étape 2/12 · Repérage");
   expect(label(event("session_started", {}, "full-delivery"))).toBe("Session démarrée");
   expect(
     label(event("session_stopped", { tool: "T3 Code", durationMs: 42 * 60_000 + 20_000 }, "full-delivery")),

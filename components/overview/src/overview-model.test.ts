@@ -37,8 +37,8 @@ test("a finished sprint that stays current says when it ended", () => {
 test("the sessions in progress, longest first, with their delivery step and duration", () => {
   const { model } = build();
   expect(model.now.map((r) => [r.feature, r.title, r.step, r.duration])).toEqual([
-    ["F5", "Écran d'envoi hors ligne", "7 · Porte qualité", "42 min"],
-    ["F4", "Conflits de saisie", "9 · Review", "18 min"],
+    ["F5", "Écran d'envoi hors ligne", "Étape 7/12 · Porte qualité", "42 min"],
+    ["F4", "Conflits de saisie", "Étape 9/12 · Review", "18 min"],
   ]);
   expect(model.now[0]?.segments.filter((s) => s === "done").length).toBe(7);
   expect(model.now[0]?.segments[7]).toBe("current");
@@ -170,12 +170,12 @@ test("the activity shows the four latest events, and filters by source", () => {
   const rows = activityRows(input, { sources: [], limit: 4 });
   expect(rows.map((r) => [r.time, r.label, r.feature, r.agent])).toEqual([
     ["15:04", "PR #22 ouverte", "F5", false],
-    ["14:51", "Phase 7/12 · Porte qualité", "F5", false],
+    ["14:51", "Étape 7/12 · Porte qualité", "F5", false],
     ["14:40", "Agent de projet · lot n° 7 proposé", null, true],
     ["14:36", "PR #18 fusionnée · F3 livrée", "F3", false],
   ]);
   expect(activityRows(input, { sources: ["full-delivery"], limit: 4 }).map((r) => r.label)).toEqual([
-    "Phase 7/12 · Porte qualité",
+    "Étape 7/12 · Porte qualité",
   ]);
   expect(activityRows(input, { sources: ["git"], limit: 50 }).length).toBe(4);
 });

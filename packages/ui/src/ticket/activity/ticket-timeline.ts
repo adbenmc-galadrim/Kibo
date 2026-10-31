@@ -44,7 +44,7 @@ const str = (d: Data, key: string): string | null => {
 
 function stepText(d: Data, ev: ProjectEvent): string {
   const step = num(d, "step");
-  if (step === null) return e.step(null);
+  if (step === null) return e.stepUpdated;
   const label = deliveryPhase(step);
   return ev.source === "update-delivery" || str(d, "kind") === "update"
     ? frTicketTracking.retouch(label)

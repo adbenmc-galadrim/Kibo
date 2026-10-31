@@ -444,9 +444,9 @@ test("a card shows its delivery step next to the agent, never once done", async 
   });
   const progress = await screen.findByRole("region", { name: "En cours" });
   const card = within(progress).getByRole("article", { name: /Récepteur/ });
-  expect(within(card).getByText("Phase 7/12 · Porte qualité")).toBeTruthy();
+  expect(within(card).getByText("Étape 7/12")).toBeTruthy();
   const done = screen.getByRole("region", { name: "Terminé" });
-  expect(within(done).queryByText("Phase 7/12 · Porte qualité")).toBeNull();
+  expect(within(done).queryByText("Étape 7/12")).toBeNull();
 });
 
 test("with agent execution hidden, the card menu copies the full-delivery command instead of Livrer", async () => {

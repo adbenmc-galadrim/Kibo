@@ -78,7 +78,7 @@ test("the Vue d'ensemble leads Silo and opens a feature, the sprint and a questi
   const rows = activity.getByRole("listitem");
   await expect(rows.first()).toBeVisible();
   for (const label of await rows.allTextContents()) expect(label).toMatch(/PR #\d+|Branche/);
-  await expect(activity.getByText(/Lot n° 7|Phase 7\/12/)).toHaveCount(0);
+  await expect(activity.getByText(/Lot n° 7|Étape 7\/12/)).toHaveCount(0);
 
   await section(page, "Sprint S42 · Saisie hors ligne")
     .getByRole("button", { name: "Saisir un constat hors ligne" })
@@ -169,11 +169,11 @@ test("a retouche posed by the CLI shows on the delivered SILO-21 card with its u
   page,
 }, info) => {
   expect(kiboCli(info, ["tickets", "step", "SILO-21", "7", "--update"])).toContain(
-    "retouche · 7 · Porte qualité",
+    "retouche · Étape 7/12 · Porte qualité",
   );
   await openSiloKanbanAll(page);
   const silo21 = kanbanCard(page, "SILO-21");
-  await expect(silo21).toContainText("retouche · Phase 7/12 · Porte qualité");
+  await expect(silo21).toContainText("retouche · Étape 7/12");
   await silo21.click({ button: "right" });
   await expect(page.getByRole("menuitem", { name: "Copier /update-delivery SILO-21" })).toBeVisible();
 });

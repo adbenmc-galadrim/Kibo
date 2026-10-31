@@ -85,7 +85,7 @@ test("a step row names its feature F<n>, its branch and its delivery phase, a cl
   expect(cell.getByText("Démo · F4")).toBeTruthy();
   expect(cell.getByText("F4")).toBeTruthy();
   expect(cell.getByText("feat/demo-f4")).toBeTruthy();
-  expect(row.querySelector("[data-delivery-step]")?.textContent).toBe("Phase 7/12 · Porte qualité");
+  expect(row.querySelector("[data-delivery-step]")?.textContent).toBe("Étape 7/12 · Porte qualité");
 });
 
 test("the copy of a row says why its step cannot start yet", async () => {

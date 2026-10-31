@@ -9,7 +9,7 @@ const delivery = { step: 7, note: "gates verts", at: 1, runId: null, kind: "deli
 test("the chip shows the delivery step in zinc", () => {
   const { container } = render(<DeliveryStepChip ticket={{ statusId: "in_progress", delivery }} />);
   const chip = container.querySelector("[data-delivery-step]");
-  expect(chip?.textContent).toBe("7 · Porte qualité");
+  expect(chip?.textContent).toBe("Étape 7/12 · Porte qualité");
   expect(chip?.className).toContain("zinc");
   expect(chip?.className).not.toContain("brand");
 });

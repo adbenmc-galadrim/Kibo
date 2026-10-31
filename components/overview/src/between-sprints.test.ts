@@ -109,5 +109,5 @@ test("a question asked on a feature shows the feature once", () => {
 test("a delivery phase reads as a phase out of twelve", () => {
   const { input } = build();
   const labels = activityRows(input, { sources: ["full-delivery"], limit: 4 }).map((r) => r.label);
-  expect(labels).toEqual(["Phase 7/12 · Porte qualité"]);
+  expect(labels).toEqual(["Étape 7/12 · Porte qualité"]);
 });

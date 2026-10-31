@@ -50,7 +50,7 @@ function sprintSet(data: Data, ctx: ActivityContext): string {
 
 function stepSet(data: Data, _ctx: ActivityContext, event: ProjectEvent): string {
   const step = num(data, "step");
-  if (step === null) return event.source === "update-delivery" ? "Retouche" : "Phase de livraison";
+  if (step === null) return event.source === "update-delivery" ? "Retouche" : "Étape de livraison";
   const label = phaseLabel(step, DELIVERY_STEP_LABELS[step] ?? "");
   return event.source === "update-delivery" ? `Retouche · ${label}` : label;
 }

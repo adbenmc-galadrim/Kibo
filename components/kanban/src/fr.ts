@@ -52,7 +52,7 @@ export const fr = {
   answer: "Répondre",
   empty: { text: "Les étapes avancent seules avec git et les PR.", action: "Nouveau ticket" },
   phaseHint: (step: number) =>
-    `Phase ${step} sur ${DELIVERY_STEP_MAX + 1} de ${FULL_DELIVERY_AGENT} : ${DELIVERY_STEP_LABELS[step] ?? ""}`,
+    `Étape ${step} sur ${DELIVERY_STEP_MAX + 1} de ${FULL_DELIVERY_AGENT} : ${DELIVERY_STEP_LABELS[step] ?? ""}`,
   waitingOn: (key: string) => `attend ${key}`,
   questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
   questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,

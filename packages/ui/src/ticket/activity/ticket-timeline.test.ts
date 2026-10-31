@@ -38,7 +38,7 @@ test("the journal of a ticket reads as dated lines, newest first, the status rid
   );
   expect(lines.map((l) => [l.kind, l.text, l.time, l.aside?.text ?? null])).toEqual([
     ["pr", "PR #20 ouverte", "15:00", "statut ⇒ En review"],
-    ["step", "Phase 7/12 · Porte qualité", "14:51", null],
+    ["step", "Étape 7/12 · Porte qualité", "14:51", null],
     ["session", "Session T3 Code ouverte", "14:10", null],
     ["status", "Passé en En cours", "hier 10:00", null],
     ["branch", "Branche feat/envoi-hors-ligne poussée", "mer. 09:05", "statut ⇒ En cours"],
@@ -61,7 +61,7 @@ test("reviews, checks, merges, retouches and sprints get their own words", () =>
   expect(texts).toEqual([
     "Session T3 Code fermée",
     "Planifié en S42",
-    "Retouche · Phase 7/12 · Porte qualité",
+    "Retouche · Étape 7/12 · Porte qualité",
     "PR #20 fusionnée",
     "CI cassée sur PR #20",
     "Changements demandés sur PR #20",
@@ -118,7 +118,7 @@ test("missing or odd data degrades to a plain line, never an error", () => {
   expect(texts).toEqual([
     "Mise à jour du suivi",
     "Session ouverte",
-    "Phase de livraison mise à jour",
+    "Étape de livraison mise à jour",
     "Passé en nowhere",
     "Branche poussée",
     "PR ouverte",

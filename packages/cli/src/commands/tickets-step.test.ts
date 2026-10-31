@@ -48,7 +48,7 @@ test("sends the step to the project found from the ticket key", async () => {
     { method: "listProjects" },
     { method: "setDeliveryStep", projectId: "p-silo", ticketKey: "SILO-15", step: 7, note: "porte qualité" },
   ]);
-  expect(t.out).toEqual(["✓ SILO-15 : 7 · Porte qualité"]);
+  expect(t.out).toEqual(["✓ SILO-15 : Étape 7/12 · Porte qualité"]);
 });
 
 test("accepts a lowercase key and no note", async () => {
@@ -61,7 +61,7 @@ test("accepts a lowercase key and no note", async () => {
     ticketKey: "SILO-15",
     step: 0,
   });
-  expect(t.out).toEqual(["✓ SILO-15 : 0 · Lecture"]);
+  expect(t.out).toEqual(["✓ SILO-15 : Étape 0/12 · Lecture"]);
 });
 
 test("--update marks a touch-up, without it no kind is sent", async () => {
@@ -75,7 +75,7 @@ test("--update marks a touch-up, without it no kind is sent", async () => {
     step: 7,
     kind: "update",
   });
-  expect(t.out).toEqual(["✓ SILO-15 : retouche · 7 · Porte qualité"]);
+  expect(t.out).toEqual(["✓ SILO-15 : retouche · Étape 7/12 · Porte qualité"]);
   expect(await ticketsStep(["SILO-15", "7"], {}, t.io, async () => client)).toBe(0);
   expect(calls.at(-1)).not.toHaveProperty("kind");
 });

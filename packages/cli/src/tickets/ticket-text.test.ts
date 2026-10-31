@@ -50,9 +50,9 @@ test("shows the session with its local start time", () => {
   expect(lines({}).some((l) => l.startsWith("Session"))).toBe(false);
 });
 
-test("shows a touch-up step, not a delivery one", () => {
+test("names a touch-up as such, not a delivery step", () => {
   const delivery = { step: 7, note: "", at: 1, runId: null, kind: "update" as const };
-  expect(lines({ delivery })).toContain("Retouche : 7/11 · Porte qualité");
+  expect(lines({ delivery })).toContain("Retouche · Étape 7/12 · Porte qualité");
   expect(lines({ delivery: { ...delivery, kind: "delivery" } }).some((l) => l.startsWith("Retouche"))).toBe(
     false,
   );
