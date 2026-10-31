@@ -1,5 +1,4 @@
 import type { SprintView } from "@kibo/schema";
-import { cn } from "@kibo/sdk/lib/utils";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
