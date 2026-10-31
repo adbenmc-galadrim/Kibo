@@ -2,6 +2,20 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.34.0-alpha.1 — 2026-11-01
+
+L'application s'allège et devient plus fluide, sans nouvel écran à apprendre, et Kibo peut lancer une livraison dans T3 Code.
+
+- L'Accueil devient « Aujourd'hui » : ce qui bloque, les PR à relire, les étapes démarrables, puis une ligne par projet ; « Mes tickets » et « Boîte de réception » quittent la barre latérale.
+- « Lancer dans T3 » : depuis la fiche, Aujourd'hui, le Graphe et le Kanban, Kibo lance `full-delivery` dans T3 Code (la commande est montrée avant, sous sa forme abrégée), suit l'état du fil sans token et ouvre le fil dans T3 ; un fil actif par ticket ; sans T3, la copie de la commande reste.
+- Une couleur par sens, une marque par élément : rouge bloque, ambre attention, cyan attente, violet review, vert livré ou démarrable, bleu en cours, orange pour l'agent seulement.
+- Vue d'ensemble, Planning, Graphe, Kanban et Questions allégés : sections par urgence, bande « En attente », une alerte par sprint, cadres pleins et « Tout voir », cartes à un seul signal, colonnes vides repliées, questions en liste compacte.
+- Kanban : une CI rouge n'apparaît plus sur la carte ; elle se voit dans la fiche et par le filtre « À reprendre ».
+- Fin de parcours : ligne « Livrée aujourd'hui », toast sobre, récapitulatif de sprint visible trois jours après la fin du sprint.
+- Fiche ticket : un clic sur la clé la copie ; la PR n'apparaît qu'une fois.
+- Transitions de 250 ms et listes animées, désactivées avec « Réduire les animations » ; les pages d'un projet déjà ouvert s'affichent sans rechargement.
+- « Phase n/12 » devient « Étape n/12 », dans l'interface et la CLI.
+
 ## 0.33.0-alpha.1 — 2026-10-30
 
 Kibo se recentre sur le suivi : l'exécution des agents sur les tickets, les composants tiers et le partage quittent l'application. L'agent de projet et son historique restent.
