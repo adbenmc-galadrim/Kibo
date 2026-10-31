@@ -109,6 +109,7 @@ const contentProps = {
   onOpen: () => {},
   onOpenFile: () => {},
   onOpenTicket: () => {},
+  onOpenPlanning: () => {},
 };
 
 test("ContentView welcomes a workspace without any project", async () => {

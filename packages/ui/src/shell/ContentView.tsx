@@ -31,7 +31,14 @@ type Props = {
   onOpen(target: TabTarget | null, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(projectId: string, ticketId: string): void;
+  onOpenPlanning(): void;
 };
+
+const ProjectSprintRecap = lazyPanel(
+  () => import("./SprintRecap").then((m) => m.ProjectSprintRecap),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 
 const SprintTab = lazyPanel(() => import("./sprint/SprintTab").then((m) => m.SprintTab), fr.lazy);
 
@@ -50,7 +57,12 @@ const knownTicket = (project: ProjectSnapshot, ref: string): boolean =>
   findTicket(project.tickets, ref) !== undefined;
 
 export function ContentView(p: Props) {
-  return <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>;
+  return (
+    <>
+      <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>
+      {p.project !== null && <ProjectSprintRecap project={p.project} onOpenPlanning={p.onOpenPlanning} />}
+    </>
+  );
 }
 
 function content(p: Props): ReactNode {

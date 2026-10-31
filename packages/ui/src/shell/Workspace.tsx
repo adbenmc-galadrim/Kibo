@@ -124,6 +124,7 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
         onOpen={(t, newTab) => go(t, newTab)}
         onOpenFile={(ref) => set({ preview: ref })}
         onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+        onOpenPlanning={() => host.openView("planning")}
       />
     ),
     targetToHash(active),

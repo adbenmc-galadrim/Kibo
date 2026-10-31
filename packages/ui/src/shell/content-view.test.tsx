@@ -73,6 +73,7 @@ test("a reopened tab whose page was deleted shows « Page introuvable »", () =>
       onNewPage={noop}
       onOpen={noop}
       onOpenFile={noop}
+      onOpenPlanning={noop}
       onOpenTicket={noop}
     />,
   );
@@ -95,6 +96,7 @@ const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot
       onNewPage={noop}
       onOpen={(t) => opened.push(t)}
       onOpenFile={noop}
+      onOpenPlanning={noop}
       onOpenTicket={noop}
     />,
   );
