@@ -65,7 +65,6 @@ test("a reopened tab whose page was deleted shows « Page introuvable »", () =>
       viewer="me"
       projects={[summary]}
       snapshots={new Map()}
-      inboxCount={0}
       project={project}
       domains={[]}
       startEditing={false}
@@ -88,7 +87,6 @@ const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot
       viewer="me"
       projects={[summary]}
       snapshots={new Map()}
-      inboxCount={0}
       project={snapshot}
       domains={[]}
       startEditing={false}
@@ -106,7 +104,7 @@ const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot
 test("an unknown project shows « Introuvable » and leads back home", async () => {
   const opened = contentAt({ kind: "project", projectId: "inconnu" }, null);
   expect(await screen.findByRole("heading", { name: "Introuvable" })).toBeTruthy();
-  screen.getByRole("button", { name: "Retour à l'Accueil" }).click();
+  screen.getByRole("button", { name: "Retour à Aujourd'hui" }).click();
   expect(opened).toEqual([null]);
 });
 

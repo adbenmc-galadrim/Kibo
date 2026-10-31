@@ -14,12 +14,16 @@ type LaunchInT3Props = {
   done: boolean;
   thread: T3Thread | null;
   folderMissing?: boolean;
-  size?: "sm" | "default";
+  size?: "xs" | "sm" | "default";
   variant?: "primary" | "inline";
 };
 
 const BADGE_REFRESH_MS = 60_000;
-const SIZES = { sm: "h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]", default: "" };
+const SIZES = {
+  xs: "h-[22px] gap-1.5 px-2 text-xs [&_svg]:size-[13px]",
+  sm: "h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]",
+  default: "",
+};
 
 function useMinuteClock(): number {
   const [now, setNow] = useState(() => Date.now());

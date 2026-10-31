@@ -9,7 +9,7 @@ import { WorkspaceFrame } from "./WorkspaceFrame";
 
 const tab = (id: string): Tab => ({
   id,
-  target: { kind: "screen", screen: "mine" },
+  target: { kind: "screen", screen: "appearance" },
   pinned: false,
   preview: false,
 });

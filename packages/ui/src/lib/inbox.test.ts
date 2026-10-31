@@ -7,7 +7,6 @@ import {
   inboxMeta,
   inboxSummary,
   newTicketProjects,
-  openInboxCount,
   subtreeIds,
   withInbox,
 } from "./inbox";
@@ -43,14 +42,12 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
   };
 }
 
-test("withInbox puts the inbox first only when its snapshot is loaded, and counts open tickets", () => {
+test("withInbox puts the inbox first only when its snapshot is loaded", () => {
   const snapshots = new Map([[INBOX_ID, inboxSnapshot(["todo", "done"])]]);
   expect(withInbox(projectsFixture, new Map()).map((p) => p.id)).toEqual(projectsFixture.map((p) => p.id));
   const all = withInbox(projectsFixture, snapshots);
   expect(all[0]?.id).toBe(INBOX_ID);
   expect(all[0]?.name).toBe("Boîte de réception");
-  expect(openInboxCount(snapshots.get(INBOX_ID))).toBe(1);
-  expect(openInboxCount(undefined)).toBe(0);
   expect(displayName({ id: INBOX_ID, name: "Inbox" })).toBe("Boîte de réception");
   expect(displayName({ id: "p1", name: "Kibo" })).toBe("Kibo");
 });

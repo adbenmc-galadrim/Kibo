@@ -9,8 +9,6 @@ export const Screen = z.enum([
   "general",
   "domains",
   "components",
-  "mine",
-  "inbox",
   "integrations",
   "appearance",
   "sources",

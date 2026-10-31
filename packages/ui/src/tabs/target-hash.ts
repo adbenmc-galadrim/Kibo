@@ -25,8 +25,6 @@ const SCREEN_HASHES: Record<Screen, string> = {
   general: "#/settings/general",
   domains: "#/settings/domains",
   components: "#/components",
-  mine: "#/mine",
-  inbox: "#/inbox",
   integrations: "#/settings/integrations",
   appearance: "#/settings/appearance",
   sources: "#/settings/components",

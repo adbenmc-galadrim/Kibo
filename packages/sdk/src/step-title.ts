@@ -1,7 +1,7 @@
 import type { TicketView } from "@kibo/schema";
 import { fr } from "./fr";
 
-export type StepFeature = Pick<TicketView, "keyLabel" | "shortKey">;
+type StepFeature = Pick<TicketView, "keyLabel" | "shortKey">;
 
 const DEMO_TITLE = "démo client";
 

@@ -22,7 +22,6 @@ type Props = {
   viewer: string;
   projects: ProjectSummary[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
-  inboxCount: number;
   project: ProjectSnapshot | null;
   domains: Domain[] | undefined;
   startEditing: boolean;
@@ -68,12 +67,11 @@ function content(p: Props): ReactNode {
   if (!t)
     return (
       <Overview
-        viewer={p.viewer}
         projects={p.projects}
         snapshots={p.snapshots}
-        inboxCount={p.inboxCount}
         onNewProject={p.onNewProject}
-        onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
+        onOpenProject={(projectId) => p.onOpen({ kind: "project", projectId })}
+        onOpenTicket={p.onOpenTicket}
       />
     );
   if (!p.project) return unknownProject(p, t) ? <NotFound what="project" onHome={home} /> : null;

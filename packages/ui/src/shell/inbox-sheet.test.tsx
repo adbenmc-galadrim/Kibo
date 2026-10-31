@@ -3,7 +3,7 @@ import { INBOX_ID, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { fileSnapshots, fileTargets, inboxSnapshot } from "../inbox/fixtures";
+import { fileSnapshots, fileTargets, inboxSnapshot } from "../dialogs/fixtures-file-ticket";
 
 const calls: RpcRequest[] = [];
 

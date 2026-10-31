@@ -38,12 +38,15 @@ test("their real hashes, sub-paths and run, skill and changes tabs lead back hom
     expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
 });
 
+test("#/mine and #/inbox go home", () => {
+  for (const hash of ["#/mine", "#/inbox", "#/mine/", "#/inbox?project=p1"])
+    expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
+});
+
 test("the tracking routes stay", () => {
   for (const hash of [
     "#/",
     "",
-    "#/inbox",
-    "#/mine",
     "#/settings/general",
     "#/settings/integrations",
     "#/p/silo/",
@@ -70,5 +73,5 @@ test("retired screens, and the hashes of the run, skill and changes tabs", () =>
   ])
     expect([hash, home(hash)]).toEqual([hash, true]);
   expect(home(targetToHash({ kind: "ticket", projectId: "p1", ticketId: "t1" }))).toBe(false);
-  expect(home(targetToHash({ kind: "screen", screen: "inbox" }))).toBe(false);
+  expect(home(targetToHash({ kind: "screen", screen: "general" }))).toBe(false);
 });

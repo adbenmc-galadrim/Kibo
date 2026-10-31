@@ -10,9 +10,9 @@ import {
   type TicketView,
 } from "@kibo/schema";
 
-export const HOME_TODAY = "2026-10-17";
+export const TODAY = "2026-10-17";
 
-const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title">): TicketView => ({
+export const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title">): TicketView => ({
   description: "",
   statusId: "todo",
   blockedReason: null,
@@ -48,7 +48,7 @@ const sprint = (id: string, code: string, start: string, end: string): SprintVie
   name: `Sprint ${code}`,
   start,
   end,
-  state: end < HOME_TODAY ? "done" : start <= HOME_TODAY ? "current" : "planned",
+  state: end < TODAY ? "done" : start <= TODAY ? "current" : "planned",
   features: [],
   delivered: 0,
   total: 0,
@@ -101,7 +101,7 @@ export const question = (p: Partial<Question> & Pick<Question, "id" | "ticketId"
   ...p,
 });
 
-export function siloHomeSnapshot(): ProjectSnapshot {
+export function siloSnapshot(): ProjectSnapshot {
   return {
     meta: {
       id: "silo",

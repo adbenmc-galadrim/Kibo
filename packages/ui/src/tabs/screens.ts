@@ -1,9 +1,7 @@
 import type { Screen } from "@kibo/schema";
 import {
   Building2,
-  Inbox,
   Keyboard,
-  List,
   type LucideIcon,
   Package,
   Palette,
@@ -20,8 +18,6 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
   general: { title: fr.nav.general, icon: SlidersHorizontal, crumbs: [fr.nav.settings, fr.nav.general] },
   domains: { title: fr.nav.domains, icon: Settings, crumbs: [fr.nav.settings, fr.nav.domains] },
   components: { title: fr.nav.components, icon: Puzzle, crumbs: [fr.nav.components] },
-  mine: { title: fr.nav.mine, icon: List, crumbs: [fr.nav.mine] },
-  inbox: { title: fr.nav.inbox, icon: Inbox, crumbs: [fr.nav.inbox] },
   integrations: {
     title: fr.settings.integrations,
     icon: Plug,

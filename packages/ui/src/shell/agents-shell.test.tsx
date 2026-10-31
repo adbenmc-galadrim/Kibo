@@ -200,7 +200,7 @@ test("routes name the settings screens, and no longer the agent ones", () => {
 test("the sidebar leads to the settings, never to the agents", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  expect(await screen.findAllByRole("button", { name: /^Boîte de réception/ })).not.toHaveLength(0);
+  expect(await screen.findAllByRole("button", { name: /^Aujourd'hui/ })).not.toHaveLength(0);
   for (const name of [/^Agents/, /^Files d'attente/, /^Skills/])
     expect(screen.queryByRole("button", { name })).toBeNull();
   const user = userEvent.setup();

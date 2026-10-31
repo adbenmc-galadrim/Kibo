@@ -95,7 +95,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
     },
   };
   expect(crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox })).toEqual([
-    { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" }, color: "#64748B" },
+    { label: "Boîte de réception", target: null, color: "#64748B" },
     { label: "KIB-12", target: null },
   ]);
 });

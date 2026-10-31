@@ -10,7 +10,7 @@ test("an unknown project says Introuvable and leads back home", async () => {
   render(<NotFound what="project" onHome={() => homes++} />);
   expect(screen.getByRole("heading", { name: "Introuvable" })).toBeTruthy();
   expect(screen.getByText("Ce projet n'existe pas ou a été supprimé.")).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Retour à l'Accueil" }));
+  await userEvent.setup().click(screen.getByRole("button", { name: "Retour à Aujourd'hui" }));
   expect(homes).toBe(1);
 });
 

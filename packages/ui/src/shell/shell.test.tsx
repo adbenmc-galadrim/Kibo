@@ -420,13 +420,13 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
   await go("#/settings/general");
   await expectTitle("Général");
   expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
-  const inbox = screen.getByRole("button", { name: "Boîte de réception" });
-  fireEvent.click(inbox);
-  fireEvent.doubleClick(inbox);
-  await expectTitle("Boîte de réception");
-  fireEvent.click(screen.getByRole("button", { name: "Mes tickets" }), { metaKey: true, ctrlKey: true });
+  const settings = screen.getByRole("button", { name: "Paramètres" });
+  fireEvent.click(settings);
+  fireEvent.doubleClick(settings);
+  await expectTitle("Général");
+  fireEvent.click(screen.getByRole("button", { name: "Kibo" }), { metaKey: true, ctrlKey: true });
   const bar = await screen.findByRole("tablist", { name: "Onglets" });
-  const kept = await within(bar).findByRole("tab", { name: "Boîte de réception" });
+  const kept = await within(bar).findByRole("tab", { name: "Général" });
   expect(kept.getAttribute("data-preview")).toBe("false");
   expect(bar.querySelectorAll('[data-preview="true"]')).toHaveLength(0);
 });
@@ -466,25 +466,10 @@ test("an agent-era URL leads back home, the tracking screens stay", async () => 
     await waitFor(() => expect(location.hash).toBe("#/"));
   }
   await go("#/inbox");
-  await expectTitle("Boîte de réception");
-  expect(location.hash).toBe("#/inbox");
-});
-
-test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
-  renderShell();
-  await go("#/");
-  const entry = await screen.findByRole("button", { name: "Boîte de réception" });
-  await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Boîte de réception3"));
-  const labels = within(entry.closest("ul") ?? document.body)
-    .getAllByRole("button")
-    .map((b) => b.textContent?.replace(/\d+$/, ""));
-  expect(labels.indexOf("Boîte de réception")).toBe(labels.indexOf("Mes tickets") + 1);
-  await userEvent.click(entry);
-  expect(location.hash).toBe("#/inbox");
-  await expectTitle("Boîte de réception");
-  expect(await screen.findByRole("row", { name: /INB-2/ })).toBeTruthy();
-  expect(screen.getAllByRole("heading", { level: 1, name: "Boîte de réception" })).toHaveLength(1);
-  expect(entry.getAttribute("data-active")).toBe("true");
+  await waitFor(() => expect(location.hash).toBe("#/"));
+  await go("#/settings/general");
+  await expectTitle("Général");
+  expect(location.hash).toBe("#/settings/general");
 });
 
 test("the workspace menu no longer offers the Components screen", async () => {

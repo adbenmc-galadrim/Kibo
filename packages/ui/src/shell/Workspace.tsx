@@ -67,7 +67,7 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
   const activeProjectId = active ? targetProjectId(active) : null;
   const { ticketProject, project, currentProject, forget } = useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
-  const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
+  const snapshots = useWorkspaceSnapshots(projects);
   const config = useConfig();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
   const agentPanel = useProjectAgentPanel(project);
@@ -108,24 +108,13 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
 
   const pageContent = usePageTransition(
     screen ? (
-      <ScreenView
-        key={`${screen}-${screenVisit.visit}`}
-        screen={screen}
-        viewer={viewer}
-        projects={projects}
-        snapshots={snapshots}
-        config={config}
-        onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-        onFile={(ticketId) => set({ fileTicket: { ticketId } })}
-        onNewTicket={() => set({ newTicket: {} })}
-      />
+      <ScreenView key={`${screen}-${screenVisit.visit}`} screen={screen} config={config} />
     ) : (
       <ContentView
         target={active}
         viewer={viewer}
         projects={projects}
         snapshots={snapshots}
-        inboxCount={inboxCount}
         project={project}
         domains={projectDomainsOf(project, config)}
         startEditing={active?.kind === "file" && editRequests.current.has(targetToHash(active))}
@@ -150,8 +139,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
             active={project}
             activeTarget={active}
             screen={screen}
-            mineCount={mineCount}
-            inboxCount={inboxCount}
             workspaceName={config?.workspaceName ?? null}
             workspaceIcon={
               config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
@@ -164,7 +151,6 @@ export function Workspace({ viewer, projects, tabs, agents }: WorkspaceProps) {
           <SidebarInset className="min-h-0 min-w-0 mr-(--project-agent-w)">
             <ShellHeader
               active={active}
-              screen={screen}
               project={project}
               gitError={project ? git.error : null}
               agents={agents}

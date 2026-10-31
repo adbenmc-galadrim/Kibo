@@ -63,6 +63,9 @@ test("an address may name the project by its key instead of its id", () => {
     kind: "project",
     projectId: "ZZZ",
   });
-  expect(resolveProjectKey(hashToTarget("#/inbox"), projects)).toEqual({ kind: "screen", screen: "inbox" });
+  expect(resolveProjectKey(hashToTarget("#/settings/general"), projects)).toEqual({
+    kind: "screen",
+    screen: "general",
+  });
   expect(resolveProjectKey(null, projects)).toBeNull();
 });
