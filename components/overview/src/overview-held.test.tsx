@@ -3,6 +3,7 @@ import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HeldCard } from "./HeldCard";
 import { Component, manifest } from "./index";
 import { HOLD_REASONS, NOW, seed, seedHeld, TODAY } from "./test-seed";
 
@@ -92,4 +93,15 @@ test("without any hold there is neither a sub-line nor a card", async () => {
   expect(within(indicators).queryByRole("button", { name: /en attente/ })).toBeNull();
   expect(screen.queryByRole("region", { name: "En attente" })).toBeNull();
   expect(screen.queryByRole("img", { name: /en attente/ })).toBeNull();
+});
+
+test("the title of En attente stays on one line and its long subtitle is the one cut", () => {
+  render(
+    <HeldCard
+      rows={[{ reason: "Serveur", keys: ["SILO-33"], dependents: 0 }]}
+      onOpenPlanning={() => undefined}
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "En attente" }).className).toContain("whitespace-nowrap");
+  expect(screen.getByText(/étapes mises de côté/).className).toContain("truncate");
 });

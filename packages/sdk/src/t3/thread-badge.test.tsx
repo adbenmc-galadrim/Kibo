@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { ThreadBadge, ThreadPill } from "./ThreadBadge";
 import { ACTIVE_THREAD } from "./t3-test-kit";
 
@@ -57,4 +58,18 @@ test("the pill of a waiting step turns amber", () => {
 test("a finished thread shows no pill", () => {
   const { container } = render(<ThreadPill thread={{ ...ACTIVE_THREAD, status: "done" }} now={NOW} />);
   expect(container.firstChild).toBeNull();
+});
+
+test("waiting carries a clock mark on the pill and the badges, running keeps the dot", () => {
+  const waiting = { ...ACTIVE_THREAD, status: "waiting" as const };
+  const marks = (ui: ReactElement) => {
+    const { container, unmount } = render(ui);
+    const hasMark = container.querySelector("svg.lucide-clock-alert") !== null;
+    unmount();
+    return hasMark;
+  };
+  expect(marks(<ThreadPill thread={waiting} now={NOW} />)).toBe(true);
+  expect(marks(<ThreadBadge thread={waiting} now={NOW} compact />)).toBe(true);
+  expect(marks(<ThreadBadge thread={waiting} now={NOW} />)).toBe(true);
+  expect(marks(<ThreadPill thread={ACTIVE_THREAD} now={NOW} />)).toBe(false);
 });

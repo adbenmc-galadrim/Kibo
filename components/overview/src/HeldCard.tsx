@@ -36,7 +36,11 @@ export function HeldCard({ rows, onOpenPlanning }: { rows: readonly HeldRow[]; o
         icon={Pause}
         title={fr.held.title}
         count={heldCount(rows)}
-        aside={<span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{fr.held.subtitle}</span>}
+        aside={
+          <span className="truncate text-(--tracking-mfg) text-[12.5px] leading-[15px]">
+            {fr.held.subtitle}
+          </span>
+        }
       />
       <ul>
         {rows.map((row) => (

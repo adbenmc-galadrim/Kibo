@@ -1,6 +1,6 @@
 import { isActiveT3Status, type T3Thread } from "@kibo/schema";
 import { cn } from "cn";
-import { ExternalLink } from "lucide-react";
+import { ClockAlert, ExternalLink } from "lucide-react";
 import { frT3 as t } from "./fr-t3";
 
 const STYLES = {
@@ -37,6 +37,12 @@ const stateText = (thread: T3Thread, now: number): string =>
 
 const styleOf = (thread: T3Thread) => (thread.status === "waiting" ? STYLES.waiting : STYLES.running);
 
+function StateMark({ thread, size }: { thread: T3Thread; size: string }) {
+  if (thread.status === "waiting")
+    return <ClockAlert aria-hidden className={cn("size-3 shrink-0", styleOf(thread).text)} />;
+  return <span aria-hidden className={cn("shrink-0 rounded-full", size, styleOf(thread).dot)} />;
+}
+
 export function ThreadPill({ thread, now }: ThreadMarkProps) {
   if (!isActiveT3Status(thread.status)) return null;
   const style = styleOf(thread);
@@ -50,7 +56,7 @@ export function ThreadPill({ thread, now }: ThreadMarkProps) {
         style.text,
       )}
     >
-      <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+      <StateMark thread={thread} size="size-1.5" />
       {t.pill}
     </span>
   );
@@ -67,7 +73,7 @@ export function ThreadBadge({ thread, now, compact = false }: ThreadMarkProps & 
           style.soft,
         )}
       >
-        <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+        <StateMark thread={thread} size="size-1.5" />
         <span className={cn("truncate text-[11px] font-medium", style.text)}>{stateText(thread, now)}</span>
       </span>
     );
@@ -78,7 +84,7 @@ export function ThreadBadge({ thread, now, compact = false }: ThreadMarkProps & 
         style.box,
       )}
     >
-      <span aria-hidden className={cn("size-[7px] shrink-0 rounded-full", style.dot)} />
+      <StateMark thread={thread} size="size-[7px]" />
       <span className={cn("text-xs font-medium whitespace-nowrap", style.text)}>
         {stateText(thread, now)}
       </span>
