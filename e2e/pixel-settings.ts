@@ -8,7 +8,15 @@ export const SILO_ATTENTE = "silo-attente";
 export const SILO_PRS = "silo-prs";
 export const SILO_APERCU = "silo-apercu";
 export const SILO_GRAPHE = "silo-graphe";
-const SILO_SCENARIOS: readonly string[] = [SILO_MAQUETTES, SILO_ATTENTE, SILO_PRS, SILO_APERCU, SILO_GRAPHE];
+export const SILO_T3 = "silo-t3";
+const SILO_SCENARIOS: readonly string[] = [
+  SILO_MAQUETTES,
+  SILO_ATTENTE,
+  SILO_PRS,
+  SILO_APERCU,
+  SILO_GRAPHE,
+  SILO_T3,
+];
 export const isSiloScenario = (scenario: string): boolean => SILO_SCENARIOS.includes(scenario);
 export const PIXEL_WIDTH = 1440;
 export const DESIGN_REFERENCES = fileURLToPath(new URL("../design/redesign/exports", import.meta.url));

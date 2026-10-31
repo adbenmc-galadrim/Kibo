@@ -26,13 +26,15 @@ import {
   SILO_ATTENTE,
   SILO_GRAPHE,
   SILO_PRS,
+  SILO_T3,
 } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
 import { seedSiloApercu } from "./seed-silo-apercu";
 import { seedSiloAttente } from "./seed-silo-attente";
 import { seedSiloGraphe } from "./seed-silo-graphe";
-import { seedSiloMaquettes } from "./seed-silo-maquettes";
+import { type SeedOptions, type SeedRpc, seedSiloMaquettes } from "./seed-silo-maquettes";
 import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
+import { fakeT3Seed, type SeedT3, seedSiloT3 } from "./seed-silo-t3";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -112,6 +114,8 @@ if (withGh) {
   chmodSync(gh, 0o755);
 }
 const fakeT3 = join(ghDir, "t3");
+const fakeT3State = join(ghDir, "t3-state.json");
+const seedT3: SeedT3 = fakeT3Seed(fakeT3State, join(home, "kibo.db"));
 copyFileSync(join(root, "packages/daemon/src/t3/fake-t3.ts"), fakeT3);
 chmodSync(fakeT3, 0o755);
 type Fakes = { origins: string[]; stop(): void | Promise<void> };
@@ -211,7 +215,7 @@ const proc = Bun.spawn(
       FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
       KIBO_T3: fakeT3,
-      FAKE_T3_STATE: join(ghDir, "t3-state.json"),
+      FAKE_T3_STATE: fakeT3State,
       FAKE_T3_LOG: join(ghDir, "t3-log.jsonl"),
       ...(siloScenario ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: SILO_PR_POLL_MS } : {}),
     },
@@ -222,11 +226,13 @@ const proc = Bun.spawn(
 const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));
 process.on("SIGINT", forward("SIGINT"));
-const SILO_SEEDS = new Map([
+type SiloSeed = (rpc: SeedRpc, options: SeedOptions & { stackPrs(): void; t3: SeedT3 }) => Promise<unknown>;
+const SILO_SEEDS = new Map<string, SiloSeed>([
   [SILO_ATTENTE, seedSiloAttente],
   [SILO_PRS, seedSiloPrs],
   [SILO_APERCU, seedSiloApercu],
   [SILO_GRAPHE, seedSiloGraphe],
+  [SILO_T3, seedSiloT3],
 ]);
 async function seedScenario(): Promise<void> {
   if (!siloScenario) return;
@@ -234,7 +240,12 @@ async function seedScenario(): Promise<void> {
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
   const seed = SILO_SEEDS.get(scenario) ?? seedSiloMaquettes;
-  await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: mergeSiloPr, stackPrs: stackSiloPrs });
+  await seed(rpc, {
+    folder: siloRepo?.repo ?? null,
+    mergePr: mergeSiloPr,
+    stackPrs: stackSiloPrs,
+    t3: seedT3,
+  });
 }
 const seeded = await seedScenario().then(
   () => true,
