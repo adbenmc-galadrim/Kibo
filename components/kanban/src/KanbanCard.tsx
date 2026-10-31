@@ -8,7 +8,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entries";
 import { MoreHorizontal } from "lucide-react";
-import type { PointerEvent } from "react";
+import { type PointerEvent, useState } from "react";
 import { CardTooltip } from "./CardTooltip";
 import { cardMenuEntries } from "./card-menu";
 import { fr } from "./fr";
@@ -43,6 +43,7 @@ export function KanbanCard(props: Props) {
   };
   const insertion =
     sortable.isOver && sortable.active !== null && !sortable.items.includes(String(sortable.active.id));
+  const [menuOpen, setMenuOpen] = useState(false);
   const entries = cardMenuEntries({
     ticket: t,
     statuses,
@@ -51,7 +52,7 @@ export function KanbanCard(props: Props) {
     actions: { open: onOpen, move: onMove, remove: onRemove },
   });
   const menu = (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           size="icon"
@@ -93,7 +94,7 @@ export function KanbanCard(props: Props) {
     );
   return (
     <ContextMenu>
-      <CardTooltip ticket={t} suppressed={sortable.active !== null}>
+      <CardTooltip ticket={t} suppressed={sortable.active !== null || menuOpen}>
         <ContextMenuTrigger asChild>
           <article
             ref={ref}

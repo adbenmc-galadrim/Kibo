@@ -3,7 +3,7 @@ import { DndContext } from "@dnd-kit/core";
 import type { T3Thread, TicketView } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { manifest } from "./index";
 import { KanbanCard } from "./KanbanCard";
@@ -95,4 +95,16 @@ test("a finished thread leaves no badge, and the card can be launched again", as
   renderCard({ startable: true, thread: { ...THREAD, status: "done" } });
   expect(screen.queryByText(/^T3 ·/)).toBeNull();
   expect(await screen.findByRole("button", { name: "Lancer dans T3" })).toBeTruthy();
+});
+
+test("the tooltip of the card closes while its menu is open, so Escape closes the menu", async () => {
+  renderCard({ labels: ["ux"] });
+  const user = userEvent.setup();
+  screen.getByRole("button", { name: /^Actions KIB-1/ }).focus();
+  await waitFor(() => expect(document.querySelector('[data-slot="tooltip-rows"]')).not.toBeNull());
+  await user.keyboard("{Enter}");
+  expect(await screen.findByRole("menu")).toBeTruthy();
+  await waitFor(() => expect(document.querySelector('[data-slot="tooltip-rows"]')).toBeNull());
+  await user.keyboard("{Escape}");
+  expect(screen.queryByRole("menu")).toBeNull();
 });
