@@ -85,7 +85,7 @@ test("at the narrowest columns the folded canvas does not scroll sideways", asyn
   await pairBrowser(page);
   await openPixelPage(page, await siloPageUrl(page, "Graphe"), HEIGHT);
   await page.getByRole("button", { name: "Tout voir" }).click();
-  await page.setViewportSize({ width: 48 + 5 * 132, height: HEIGHT });
+  await page.setViewportSize({ width: 663, height: HEIGHT });
   const lanes = page.getByRole("region", { name: "Fonctionnalités par sprint" });
   await expect.poll(() => lanes.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
   const header = lanes.locator("[data-slot='lane-header']").first();
