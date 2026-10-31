@@ -64,7 +64,8 @@ export const KIBO_ERROR_CODES = [
   "PROJECT_FOLDER_NOT_FOUND",
   "EMBED_REFUSED",
   "TICKET_HAS_CHILDREN",
-  "AGENT_EXECUTION_REMOVED",
+  "BACKUP_FAILED",
+  "VACUUM_FAILED",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];

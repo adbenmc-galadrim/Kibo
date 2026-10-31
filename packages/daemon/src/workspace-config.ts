@@ -50,7 +50,6 @@ function assertUnused(docs: Docs, domainId: string, projectId: string | null): v
 
 export function runConfigCommand(docs: Docs, cmd: ConfigCommand): unknown {
   const target = configTarget(cmd);
-  if (target !== null) docs.assertWritable(target);
   if (cmd.method === "deleteDomain") assertUnused(docs, cmd.domainId, target);
   const result = executeConfigCommand(target ? docs.project(target) : docs.workspace, cmd);
   docs.save(target);

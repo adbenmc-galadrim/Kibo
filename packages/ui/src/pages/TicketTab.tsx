@@ -6,7 +6,6 @@ import { GroupDetail } from "../shell/GroupDetail";
 import { importTitle } from "../shell/sheet/import-title";
 import { GithubRefs } from "../shell/sheet/lazy-sections";
 import { descendantCount } from "../shell/TicketDetail";
-import { canEdit } from "../state/access";
 import { findTicket } from "../tabs/target-hash";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
@@ -35,13 +34,12 @@ export function TicketTab({ project, ticketId, domains, viewer, onOpenFile, onOp
   if (!t) return <p className="p-8 text-sm text-muted-foreground">{fr.tabs.missingTicket}</p>;
   if (isFeature(t))
     return <FeatureDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />;
-  const editable = canEdit(project);
   const actions = (
     <TicketActionsMenu
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
-      editable={editable}
+      editable
       onOpenInTab={null}
       onDeleted={() => undefined}
     />
@@ -58,13 +56,13 @@ export function TicketTab({ project, ticketId, domains, viewer, onOpenFile, onOp
           <h1 className="text-lg font-semibold" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle
               title={t.title}
-              editable={editable}
+              editable
               error={command.error}
               onSave={(title) => command.run({ method: "updateTicket", ticketId: t.id, title })}
               onCancel={command.clearError}
             />
           </h1>
-          <LabelsField ticket={t} editable={editable} command={labelsCommand} />
+          <LabelsField ticket={t} editable command={labelsCommand} />
         </header>
         <GroupDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />
       </article>

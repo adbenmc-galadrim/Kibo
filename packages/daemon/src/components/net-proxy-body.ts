@@ -5,7 +5,7 @@ const DROPPED_RESPONSE_HEADERS = new Set(["set-cookie", "set-cookie2"]);
 
 const MASK = new TextEncoder().encode("***");
 
-export type CappedBody = { bytes: Uint8Array; truncated: boolean };
+type CappedBody = { bytes: Uint8Array; truncated: boolean };
 
 export async function readCapped(res: Response, maxBytes: number): Promise<CappedBody> {
   const chunks: Uint8Array[] = [];
@@ -25,7 +25,7 @@ export async function readCapped(res: Response, maxBytes: number): Promise<Cappe
   return { bytes: Buffer.concat(chunks, total), truncated: false };
 }
 
-export function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
+function scrubSecret(bytes: Uint8Array, secret: string): Uint8Array {
   const needle = Buffer.from(secret);
   if (needle.length === 0) return bytes;
   const source = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);

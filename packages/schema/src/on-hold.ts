@@ -5,8 +5,8 @@ export type OnHold = { source: "own" | "dependency"; key: string; reason: string
 export type HoldSource = Pick<Ticket, "id" | "key" | "statusId" | "hold" | "parentId">;
 type HoldLink = Pick<Link, "from" | "to" | "type">;
 
-export const HOLD_SUGGESTIONS_MAX = 6;
-export const SHORT_REASON_MAX = 24;
+const HOLD_SUGGESTIONS_MAX = 6;
+const SHORT_REASON_MAX = 24;
 
 const byKey = (a: string, b: string): number => a.localeCompare(b, "en", { numeric: true });
 
@@ -76,7 +76,7 @@ export function holdSuggestions(
   return [...new Set([...now, ...journal])].slice(0, max);
 }
 
-export type HeldGroup<T> = { reason: string; steps: T[]; dependents: number };
+type HeldGroup<T> = { reason: string; steps: T[]; dependents: number };
 
 export function heldByReason<T extends { onHold: OnHold | null }>(tickets: readonly T[]): HeldGroup<T>[] {
   const groups = new Map<string, { since: string; steps: T[] }>();

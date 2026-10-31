@@ -1,8 +1,0 @@
-{
-  "id": "undeclared",
-  "version": "0.1.0",
-  "kind": "widget",
-  "title": "Undeclared",
-  "reads": ["ticket"],
-  "writes": []
-}

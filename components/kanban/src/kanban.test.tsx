@@ -1,12 +1,5 @@
 import { expect, test } from "bun:test";
-import {
-  type CiRun,
-  KiboError,
-  type ProjectCommand,
-  type ProjectSnapshot,
-  type Ticket,
-  type TicketRun,
-} from "@kibo/schema";
+import { type CiRun, KiboError, type ProjectCommand, type Ticket } from "@kibo/schema";
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
@@ -14,15 +7,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
 import { seed } from "./test-seed";
-
-const runs = (s: ProjectSnapshot): TicketRun[] => {
-  const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
-  return [
-    { ticketId: id("KIB-4"), runId: "r1", label: "opus-dev-2", state: "waiting_input", position: null },
-    { ticketId: id("KIB-5"), runId: "r2", label: "opus-dev", state: "queued", position: 2 },
-    { ticketId: id("KIB-6"), runId: "r3", label: "sonnet-review-1", state: "done", position: null },
-  ];
-};
 
 test("the board is loaded on demand behind a neutral loading line", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
@@ -39,10 +23,10 @@ test("the board is loaded on demand behind a neutral loading line", async () => 
   expect(container.querySelector(LAZY_FALLBACK_SELECTOR)).toBeNull();
 });
 
-runConformance({ manifest, Component }, seed, { runs });
+runConformance({ manifest, Component }, seed);
 
 const setup = () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", agentExecution: "shown" });
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -103,7 +87,7 @@ test("right click opens the same menu as ⋯; delete asks then removes the card"
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Ouvrir",
-    "Livrer",
+    "Copier /full-delivery KIB-1",
     "Déplacer vers",
     "Supprimer…",
   ]);
@@ -173,19 +157,6 @@ test("a failed block keeps the dialog open and shows an alert", async () => {
   await user.click(screen.getByRole("button", { name: "Bloquer" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer KIB-2.");
   expect(screen.getByRole("dialog")).toBeTruthy();
-});
-
-test("an agent's card shows its run: neutral badge, state dot and short state", async () => {
-  const m = setup();
-  m.setRuns(runs(m.snapshot()));
-  const badge = async (text: string) => (await screen.findByText(text)).closest("[data-slot=badge]");
-  const waiting = await badge("· Attend");
-  expect(waiting?.textContent).toBe("opus-dev-2· Attend");
-  expect(waiting?.querySelector("[data-state]")?.getAttribute("data-state")).toBe("waiting_input");
-  expect(waiting?.className).not.toContain("brand");
-  expect((await badge("· En file #2"))?.textContent).toBe("opus-dev· En file #2");
-  const done = await badge("sonnet-review");
-  expect(done?.querySelector("[data-state]")).toBeNull();
 });
 
 const issueRef = (n: number) => ({
@@ -329,92 +300,6 @@ test("an unavailable CI is stated, a missing GitHub account is not", async () =>
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
-test("shows member names and provisional keys", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    config: { filter: "all" },
-    shared: true,
-    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
-    seed: (run) =>
-      run({ method: "createTicket", title: "Schéma", assignee: { kind: "human", ref: "u-lea" } }),
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect((await screen.findByText("KIB-…")).className).toContain("italic");
-  expect(await screen.findByText("Léa")).toBeTruthy();
-});
-
-test("shows a colleague's run on the card", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    agentExecution: "shown",
-    presence: [
-      {
-        deviceId: "d2",
-        self: false,
-        userId: "u-lea",
-        name: "Léa",
-        pageId: null,
-        ticketId: null,
-        runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
-      },
-    ],
-    seed: (run) =>
-      run({ method: "createTicket", title: "Schéma", assignee: { kind: "agent", ref: "opus-dev-1" } }),
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect(await screen.findByText("opus-dev-1 · Léa")).toBeTruthy();
-});
-
-test("cards cannot be moved in a read-only project", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "adam",
-    config: { filter: "all" },
-    shared: true,
-    seed: (run) => run({ method: "createTicket", title: "Lecture" }),
-  });
-  m.setAccess("read-only");
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  await screen.findByText("KIB-…");
-  await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
-  expect(screen.queryByRole("button", { name: /Nouveau ticket dans/ })).toBeNull();
-  expect(screen.getByRole("article", { name: /Lecture/ }).getAttribute("tabindex")).toBeNull();
-  await userEvent
-    .setup()
-    .pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Lecture" }) });
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
-});
-
-test("in a shared project, 'Moi + agents' follows the account id", async () => {
-  const m = createMockSdk(manifest, {
-    viewer: "u-adam",
-    shared: true,
-    config: { filter: "mine-and-agents" },
-    seed: (run) => {
-      run({ method: "createTicket", title: "À moi", assignee: { kind: "human", ref: "u-adam" } });
-      run({ method: "createTicket", title: "Au nom local", assignee: { kind: "human", ref: "adam" } });
-    },
-  });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  expect(await screen.findByText("À moi")).toBeTruthy();
-  expect(screen.queryByText("Au nom local")).toBeNull();
-});
-
 test("a column scrolls its cards inside its own background", async () => {
   setup();
   const column = await screen.findByRole("region", { name: "À faire" });
@@ -548,32 +433,6 @@ const openMenu = async (key: string) => {
   return user;
 };
 
-test("Livrer asks the SDK to deliver the ticket", async () => {
-  const m = setup();
-  const user = await openMenu("KIB-1");
-  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
-  const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id;
-  await waitFor(() => expect(m.runDeliveries).toEqual([id ?? ""]));
-  expect(m.violations).toEqual([]);
-});
-
-test("Livrer is disabled while a run is active on the ticket", async () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", agentExecution: "shown" });
-  const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? "";
-  m.setRuns([
-    { ticketId: id, runId: "r1", label: "kib · full-delivery · KIB-1", state: "running", position: null },
-  ]);
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  await openMenu("KIB-1");
-  const item = await screen.findByRole("menuitem", { name: /^Livrer/ });
-  expect(item.getAttribute("aria-disabled")).toBe("true");
-  expect(item.textContent).toContain("déjà un run : kib · full-delivery · KIB-1");
-});
-
 test("a card shows its delivery step next to the agent, never once done", async () => {
   const m = setup();
   const id = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
@@ -590,18 +449,6 @@ test("a card shows its delivery step next to the agent, never once done", async 
   expect(within(done).queryByText("Phase 7/12 · Porte qualité")).toBeNull();
 });
 
-test("without a delivery agent the menu has no Livrer", async () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", deliveryAgent: null });
-  render(
-    <SdkProvider sdk={m.sdk}>
-      <Component />
-    </SdkProvider>,
-  );
-  await openMenu("KIB-1");
-  await screen.findByRole("menuitem", { name: "Ouvrir" });
-  expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();
-});
-
 test("with agent execution hidden, the card menu copies the full-delivery command instead of Livrer", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
   render(
@@ -613,5 +460,4 @@ test("with agent execution hidden, the card menu copies the full-delivery comman
   await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-1" }));
   expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
   await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-1"));
-  expect(m.runDeliveries).toEqual([]);
 });

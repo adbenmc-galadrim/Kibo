@@ -1,14 +1,8 @@
-import type { SandboxStatus } from "@kibo/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { useId } from "react";
 import { frMachine as t } from "../i18n/fr-machine";
-import { frSecurity } from "../i18n/fr-security";
 import { abbreviateHome } from "../lib/home-path";
-import { sandboxActive, sandboxProblem } from "../lib/sandbox-problem";
 import { useRpcQuery } from "../state/use-rpc-query";
-
-const isolationLine = (sandbox: SandboxStatus): string =>
-  sandbox.available ? sandboxActive(sandbox) : frSecurity.welcome.stopped(sandboxProblem(sandbox));
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -22,7 +16,6 @@ function Row({ label, value }: { label: string; value: string }) {
 export function MachineCard() {
   const titleId = useId();
   const env = useRpcQuery({ method: "getEnvironment" }, []).data;
-  const sandbox = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]).data;
   return (
     <Card role="region" aria-labelledby={titleId} className="gap-4">
       <CardHeader>
@@ -42,7 +35,6 @@ export function MachineCard() {
               label={t.capacity}
               value={t.capacityDetail(env.capacity.cores, env.capacity.ramGb, env.capacity.hostSlots)}
             />
-            {sandbox && <Row label={t.isolation} value={isolationLine(sandbox)} />}
           </dl>
         )}
       </CardContent>

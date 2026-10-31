@@ -111,7 +111,7 @@ function InboxCard({ count, onOpen }: { count: number; onOpen(): void }) {
   );
 }
 
-export type HomeViewProps = {
+type HomeViewProps = {
   viewer: string;
   projects: ProjectSummary[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;

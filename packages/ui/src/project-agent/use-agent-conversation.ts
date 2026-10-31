@@ -1,19 +1,16 @@
 import type { ProjectSnapshot, RunLogEntry } from "@kibo/schema";
 import { useEffect, useMemo, useState } from "react";
-import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
-import { projectQuestionLinks } from "../moments/QuestionText";
 import { useHost } from "../shell/Host";
-import { useAgentsState } from "../state/agents-context";
 import { useRunLog } from "../state/use-run-log";
 import { agentListItems } from "./agent-list";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { buildConversation, lastUserMessage, type PanelStatus, panelStatus } from "./conversation";
 import { mergeOutbox } from "./outbox";
+import { projectQuestionLinks } from "./QuestionText";
 import { useOutbox } from "./use-outbox";
 import { useProjectAgent } from "./use-project-agent";
-import { useSignals } from "./use-signals";
 
 type Mode = { kind: "current" } | { kind: "past"; runId: string };
 
@@ -43,17 +40,12 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     const logged = buildConversation(log, view?.batches ?? [], view?.run ?? null);
     return readOnly ? logged : mergeOutbox(logged, outbox.outbox);
   }, [log, view, readOnly, outbox.outbox]);
-  const agentList = useAgentList(projectId);
-  const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
-  const runs = useAgentsState()?.runs;
+  const labels = useMemo(() => projectLabels(project), [project]);
   const links = useMemo(
     () =>
-      projectQuestionLinks(project, runs ?? [], (id) =>
-        host.openView("questions", projectId, { kind: "question", id }),
-      ),
-    [project, runs, host, projectId],
+      projectQuestionLinks(project, (id) => host.openView("questions", projectId, { kind: "question", id })),
+    [project, host, projectId],
   );
-  const signals = useSignals(projectId);
   const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null);
   const agents = useMemo(() => (current.view ? agentListItems(current.view) : []), [current.view]);
 
@@ -87,7 +79,6 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     status,
     labels,
     links,
-    signals: signals.view?.signals ?? [],
     agents,
     selected: pastRunId ?? currentRunId,
     canReset: current.view?.session != null,

@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
 import { MEMORY_NOTE_PATH, type ProposeBatchInput, type RunView } from "@kibo/schema";
-import { projectAgentAgent } from "../agents/agents-port.test-helper";
-import { projectAgentBody } from "./bootstrap";
 import { GOOD_TOKEN, type Kit, PROJECT_ID, serviceKit } from "./service.test-helper";
 
 let kit: Kit;
@@ -29,8 +26,6 @@ test("send opens a session on the first message and resumes it after", () => {
   expect(kit.store.openSession(PROJECT_ID)).toMatchObject({ runId: first.id, sessionId: first.sessionId });
   kit.svc.send(PROJECT_ID, "Et ensuite ?");
   expect(kit.calls).toEqual(["start:Silo:Bonjour", `answer:${first.id}:Et ensuite ?`]);
-  kit.setWritable(false);
-  expect(() => kit.svc.send(PROJECT_ID, "Encore")).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
 });
 
 test("prepare composes the first turn with the overview and the next turns with the digest", async () => {
@@ -173,7 +168,7 @@ test("an apply that throws records every chosen action as failed", async () => {
   expect(decided.results).toEqual([{ actionId: 1, outcome: "failed", detail: "disk gone", created: null }]);
 });
 
-test("decide refuses unknown batches, action ids outside the batch and read-only projects", async () => {
+test("decide refuses unknown batches and action ids outside the batch", async () => {
   const run = await openTurn();
   kit.svc.propose(run, proposal());
   const pending = kit.store.pendingBatch(PROJECT_ID);
@@ -183,8 +178,6 @@ test("decide refuses unknown batches, action ids outside the batch and read-only
   await expect(decide({ batchId: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   await expect(decide({ projectId: "other" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   await expect(decide({ actionIds: [9] })).rejects.toMatchObject({ code: "INVALID_INPUT" });
-  kit.setWritable(false);
-  await expect(decide({})).rejects.toMatchObject({ code: "FORBIDDEN" });
   expect(kit.store.pendingBatch(PROJECT_ID)?.id).toBe(pending.id);
 });
 
@@ -223,8 +216,6 @@ test("view returns the current session, its run, its batches and the past sessio
   expect(past.batches.map((b) => b.status)).toEqual(["abandoned"]);
   expect(() => kit.svc.view(PROJECT_ID, "unknown")).toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
   expect(() => kit.svc.propose(old, proposal())).toThrow(expect.objectContaining({ code: "CONFLICT" }));
-  kit.setWritable(false);
-  expect(() => kit.svc.view(PROJECT_ID)).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
 });
 
 test("summaries list one entry per project with an open session, with pendingBatchId", async () => {
@@ -239,16 +230,11 @@ test("summaries list one entry per project with an open session, with pendingBat
 
 test("the MCP sink accepts only a live project run token and hands the run to the tools", async () => {
   const run = await openTurn();
-  const ticketRun = { ...run, id: crypto.randomUUID(), kind: "ticket" as const };
-  kit.runs.set(ticketRun.id, ticketRun);
   expect(kit.svc.mcp.verify(run.id, "b".repeat(64))).toBe(false);
   expect(kit.svc.mcp.verify(run.id, GOOD_TOKEN)).toBe(true);
-  expect(() => kit.svc.mcp.verify(ticketRun.id, GOOD_TOKEN)).toThrow("not a project run");
   expect(kit.svc.mcp.run(run.id)).toEqual(run);
   expect(kit.svc.mcp.run(crypto.randomUUID())).toBeNull();
   expect(await kit.svc.mcp.call(run, "list_tickets", {})).toBe(`list_tickets:${run.id}`);
-  await expect(kit.svc.mcp.call(ticketRun, "list_tickets", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
-  await expect(kit.svc.mcp.call(run, "ticket_progress", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
 
 test("the project agent's prompt takes the body of its file, and falls back to Kibo's role", async () => {
@@ -261,33 +247,15 @@ test("the project agent's prompt takes the body of its file, and falls back to K
   expect(custom.systemPrompt).not.toContain("chef de projet du projet Silo");
 });
 
-test("the body of kibo-project-agent.md feeds the project agent, Kibo's default role otherwise", () => {
-  const file = (body: string) => ({
-    frontmatter: { name: "kibo-project-agent", description: "Chef", extra: "", extraKeys: [] },
-    body,
-  });
-  const withFile = projectAgentAgent();
-  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: file("Mon rôle") }) })).toBe("Mon rôle");
-  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: null }) })).toBe(DEFAULT_PROJECT_AGENT_BODY);
-  expect(projectAgentBody({ agentOf: () => null })).toBe(DEFAULT_PROJECT_AGENT_BODY);
-});
-
-test("execution hidden: the prompt leaves out the ticket agents and a batch that launches one is refused", async () => {
-  kit.setAgentExecution("hidden");
+test("the prompt never offers the ticket agents and a batch that launches one is refused", async () => {
   const run = await openTurn();
   const turn = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
-  expect(turn.systemPrompt).toContain("ni `assignAgent` ni `deliverAnswers`");
-  const launch: ProposeBatchInput = {
+  expect(turn.systemPrompt).not.toContain("assignAgent");
+  expect(turn.systemPrompt).not.toContain("deliverAnswers");
+  const launch = {
     summary: "Confier",
     actions: [{ id: 1, why: "prêt", type: "assignAgent", ticket: "SILO-1", profileId: "global:opus-dev" }],
   };
-  expect(() => kit.svc.propose(run, launch)).toThrow(
-    expect.objectContaining({
-      code: "INVALID_INPUT",
-      detail: "#1 assignAgent : exécution des agents masquée dans Kibo : action indisponible",
-    }),
-  );
+  expect(() => kit.svc.propose(run, launch)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
   expect(kit.store.batches(run.id)).toHaveLength(0);
-  kit.setAgentExecution("shown");
-  expect(kit.svc.propose(run, launch)).toBe("Lot 1 enregistré, en attente de validation d'adam.");
 });

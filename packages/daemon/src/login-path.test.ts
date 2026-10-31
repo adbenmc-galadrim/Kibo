@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { cleanEnv } from "./agents/child-env";
 import {
   LOGIN_PATH_MARKERS,
   LOGIN_PATH_TIMEOUT_MS,
@@ -9,6 +8,7 @@ import {
   looksLikeLaunchdPath,
   mergePaths,
 } from "./login-path";
+import { cleanEnv } from "./runs/child-env";
 
 const LAUNCHD = "/usr/bin:/bin:/usr/sbin:/sbin";
 const NVM = "/Users/adam/.nvm/versions/node/v24.14.1/bin";

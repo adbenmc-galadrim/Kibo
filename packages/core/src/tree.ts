@@ -7,7 +7,7 @@ export function getNode(tree: LoroTree, id: string): LoroTreeNode {
   return node;
 }
 
-export function isDescendant(tree: LoroTree, ancestorId: string, id: string): boolean {
+function isDescendant(tree: LoroTree, ancestorId: string, id: string): boolean {
   let current = getNode(tree, id).parent();
   while (current) {
     if (current.id === ancestorId) return true;

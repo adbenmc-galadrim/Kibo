@@ -2,11 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   addedPermissions,
   Base64,
-  ComponentCall,
   ComponentManifest,
   ConfigField,
   ConfigSchema,
-  covers,
   DEFAULT_WORKFLOW,
   diffPermissions,
   formatTicketKey,
@@ -15,14 +13,13 @@ import {
   isKiboErrorCode,
   KeyCombo,
   KiboError,
-  NO_PERMISSIONS,
+  NotesCall,
   Phase7Event,
   ProjectKey,
   permissionList,
   permissionOfCall,
   RpcRequest,
   Sha256,
-  StartComponentDraftInput,
   SYSTEM_AGENT_IDS,
   sniffImage,
   Ticket,
@@ -68,7 +65,6 @@ describe("ticket", () => {
   const base = {
     id: "1@1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "Setup",
     description: "",
     statusId: "todo",
@@ -126,56 +122,37 @@ test("KiboError carries a stable code", () => {
   expect(e.message).toBe("TREE_CYCLE: cannot move under descendant");
 });
 
-describe("mcp and ci_run permissions", () => {
+describe("permissions", () => {
   const base = { id: "probe", version: "1.0.0", kind: "widget", title: "P", reads: [], writes: [] };
 
-  test("mcp calls map to a server or a tool permission", () => {
-    expect(permissionOfCall({ kind: "mcp.call", server: "ctx", tool: "echo", args: {} })).toBe(
-      "mcp:ctx/echo",
+  test("a version that gains a secret announces it (N41)", () => {
+    const before = grantedOf(ComponentManifest.parse({ ...base, net: ["api.github.com"] }));
+    const after = grantedOf(
+      ComponentManifest.parse({
+        ...base,
+        net: ["api.github.com"],
+        secrets: [{ name: "github", hosts: ["api.github.com"] }],
+      }),
     );
-    expect(permissionOfCall({ kind: "mcp.read", server: "ctx", uri: "x" })).toBe("mcp:ctx");
-    const item = { itemId: "a1", title: "A", url: null };
-    expect(permissionOfCall({ kind: "mcp.import", server: "ctx", item })).toBe("mcp:ctx");
-    expect(permissionOfCall({ kind: "list", entity: "ci_run" })).toBe("read:ci_run");
-  });
-
-  test("mcp calls are validated", () => {
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "ctx", tool: "echo", args: {} }).success).toBe(
-      true,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "CTX", tool: "echo", args: {} }).success).toBe(
-      false,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.call", server: "ctx", tool: "", args: {} }).success).toBe(
-      false,
-    );
-    expect(ComponentCall.safeParse({ kind: "mcp.read", server: "../x", uri: "x" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "mcp.read", server: "ctx", uri: "" }).success).toBe(false);
-    const item = { itemId: "a1", title: "A", url: "javascript:alert(1)" };
-    expect(ComponentCall.safeParse({ kind: "mcp.import", server: "ctx", item }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "list", entity: "ci_run" }).success).toBe(true);
+    expect(addedPermissions(before, after)).toEqual(["secret:github@api.github.com"]);
   });
 
   test("notes.attach and notes.asset are calls with strict names", () => {
     const attach = { kind: "notes.attach", notePath: "a.md", mime: "image/png", bytes: "AA==" };
-    expect(ComponentCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
-    expect(ComponentCall.safeParse({ ...attach, name: "../x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "a/x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "X.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.svg", mime: "image/svg+xml" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", notePath: "../a.md" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "A".repeat(2_800_001) }).success).toBe(
+    expect(NotesCall.safeParse({ ...attach, name: "a-20261004-101500.png" }).success).toBe(true);
+    expect(NotesCall.safeParse({ ...attach, name: "../x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "a/x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "X.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.svg", mime: "image/svg+xml" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", notePath: "../a.md" }).success).toBe(false);
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", bytes: "A".repeat(2_800_001) }).success).toBe(
       false,
     );
-    expect(ComponentCall.safeParse({ ...attach, name: "x.png", bytes: "<html>" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/x.png" }).success).toBe(true);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/../x.png" }).success).toBe(false);
-    expect(ComponentCall.safeParse({ kind: "notes.asset", path: "assets/a/x.png" }).success).toBe(false);
-    expect(permissionOfCall({ ...attach, kind: "notes.attach", mime: "image/png", name: "x.png" })).toBe(
-      "write:note",
-    );
-    expect(permissionOfCall({ kind: "notes.asset", path: "assets/x.png" })).toBe("read:note");
+    expect(NotesCall.safeParse({ ...attach, name: "x.png", bytes: "<html>" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/x.png" }).success).toBe(true);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/../x.png" }).success).toBe(false);
+    expect(NotesCall.safeParse({ kind: "notes.asset", path: "assets/a/x.png" }).success).toBe(false);
   });
 
   test("sniffImage reads the type from the first bytes only", () => {
@@ -187,58 +164,6 @@ describe("mcp and ci_run permissions", () => {
     expect(sniffImage(new TextEncoder().encode("<html>"))).toBeNull();
     expect(sniffImage(new Uint8Array())).toBeNull();
   });
-
-  test("covers resolves mcp rules, the config rule only with a config", () => {
-    expect(covers(["mcp:ctx"], "mcp:ctx/echo")).toBe(true);
-    expect(covers(["mcp:ctx"], "mcp:ctx")).toBe(true);
-    expect(covers(["mcp:ctx/resolve"], "mcp:ctx/echo")).toBe(false);
-    expect(covers(["mcp:ctx/echo"], "mcp:ctx")).toBe(false);
-    expect(covers(["mcp:ctx"], "mcp:ctx2/echo")).toBe(false);
-    expect(covers(["net:ctx", "read:ctx"], "mcp:ctx")).toBe(false);
-    expect(covers(["mcp:{config.server}"], "mcp:fs/read")).toBe(false);
-    expect(covers(["mcp:{config.server}"], "mcp:fs/read", { server: "fs" })).toBe(true);
-    expect(covers(["mcp:{config.server}"], "mcp:ctx/read", { server: "fs" })).toBe(false);
-    expect(covers(["mcp:ctx"], "net:https://ctx.com")).toBe(false);
-    expect(covers(["mcp:ctx/a"], "mcp:ctx/a/b")).toBe(false);
-    expect(
-      covers(
-        ["mcp:ctx/a"],
-        permissionOfCall({ kind: "mcp.call", server: "ctx", tool: "a/b", args: {} }) ?? "",
-      ),
-    ).toBe(false);
-  });
-
-  test("diffPermissions passes the config to mcp rules", () => {
-    const declared = ["mcp:{config.server}", "read:ci_run"];
-    expect(diffPermissions(declared, ["mcp:fs/read"]).missing).toEqual(["mcp:fs/read"]);
-    expect(diffPermissions(declared, ["mcp:fs/read"], { server: "fs" })).toEqual({
-      missing: [],
-      unused: ["read:ci_run"],
-    });
-  });
-
-  test("granted mcp rules are listed, older grants read back without any", () => {
-    const old = GrantedPermissions.parse({ reads: ["ticket"], writes: [], data: false, net: [] });
-    expect(old.mcp).toEqual([]);
-    expect(NO_PERMISSIONS.mcp).toEqual([]);
-    const m = ComponentManifest.parse({ ...base, reads: ["ci_run"], mcp: ["ctx", "ctx", "fs/read"] });
-    expect(grantedOf(m).mcp).toEqual(["ctx", "fs/read"]);
-    expect(permissionList(grantedOf(m))).toEqual(["read:ci_run", "mcp:ctx", "mcp:fs/read"]);
-  });
-
-  test("a version that gains a secret and a server announces both (N41)", () => {
-    const before = grantedOf(ComponentManifest.parse({ ...base, net: ["api.github.com"] }));
-    const after = grantedOf(
-      ComponentManifest.parse({
-        ...base,
-        net: ["api.github.com"],
-        mcp: ["ctx"],
-        secrets: [{ name: "github", hosts: ["api.github.com"] }],
-      }),
-    );
-    expect(addedPermissions(before, after)).toEqual(["secret:github@api.github.com", "mcp:ctx"]);
-    expect(addedPermissions(after, { ...after, mcp: ["ctx", "ctx/echo"] })).toEqual(["mcp:ctx/echo"]);
-  });
 });
 
 test("the agent error codes replace the profile one", () => {
@@ -247,9 +172,10 @@ test("the agent error codes replace the profile one", () => {
   expect(isKiboErrorCode("PROFILE_IN_USE")).toBe(false);
 });
 
-test("the ticket agents are refused with a stable code", () => {
-  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(true);
-  expect(new KiboError("AGENT_EXECUTION_REMOVED", "assign").code).toBe("AGENT_EXECUTION_REMOVED");
+test("a failed backup has a stable code", () => {
+  expect(isKiboErrorCode("BACKUP_FAILED")).toBe(true);
+  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(false);
+  expect(new KiboError("BACKUP_FAILED", "backup").code).toBe("BACKUP_FAILED");
 });
 
 describe("phase 7 error codes", () => {
@@ -286,31 +212,6 @@ describe("shared encodings", () => {
     expect(Sha256.safeParse("a".repeat(64)).success).toBe(true);
     expect(Sha256.safeParse("A".repeat(64)).success).toBe(false);
   });
-});
-
-test("capabilities are permissions", () => {
-  const granted = grantedOf({
-    reads: [],
-    writes: [],
-    data: false,
-    net: [],
-    secrets: [],
-    mcp: [],
-    capabilities: ["gamepad", "webgl"],
-  });
-  expect(granted.capabilities).toEqual(["gamepad", "webgl"]);
-  expect(permissionList(granted)).toEqual(["cap:gamepad", "cap:webgl"]);
-  expect(
-    GrantedPermissions.parse({ reads: [], writes: [], data: false, net: [], secrets: [], mcp: [] })
-      .capabilities,
-  ).toEqual([]);
-  expect(permissionOfCall({ kind: "assets.list" })).toBe("cap:assets");
-  expect(permissionOfCall({ kind: "assets.url", name: "robot.glb" })).toBe("cap:assets");
-  expect(covers(["cap:assets"], "cap:assets")).toBe(true);
-  expect(diffPermissions(["cap:assets"], ["cap:webgl"]).missing).toEqual(["cap:webgl"]);
-  expect(addedPermissions(granted, { ...granted, capabilities: ["gamepad", "webgl", "audio"] })).toEqual([
-    "cap:audio",
-  ]);
 });
 
 test("config fields may carry a label, help, bounds and an asset kind", () => {
@@ -358,15 +259,6 @@ test("file rpc methods parse", () => {
       size: 64 * 1024 * 1024 + 1,
     }).success,
   ).toBe(false);
-  const created = StartComponentDraftInput.parse({
-    mode: "create",
-    id: "cube",
-    title: "Cube",
-    kind: "widget",
-    withServer: false,
-    description: "Un cube qui tourne lentement dans le widget.",
-  });
-  expect(created.mode === "create" ? created.template : null).toBe("blank");
 });
 
 test("phase 14 methods are part of RpcRequest", () => {
@@ -376,13 +268,33 @@ test("phase 14 methods are part of RpcRequest", () => {
   expect(RpcRequest.safeParse({ method: "deleteBackup", id: "../x" }).success).toBe(false);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { dir: null } }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { nope: 1 } }).success).toBe(false);
-  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "review" }).success).toBe(true);
-  expect(RpcRequest.safeParse({ method: "markTutorialSeen", view: "kanban" }).success).toBe(false);
 });
 
 test("phase 14 events and the help combo", () => {
   expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
-  expect(Phase7Event.safeParse({ type: "tutorial.changed" }).success).toBe(true);
   expect(KeyCombo.safeParse("mod+/").success).toBe(true);
-  expect(SYSTEM_AGENT_IDS).toEqual(["assistant", "generateur", "demo", "project-agent"]);
+  expect(SYSTEM_AGENT_IDS).toEqual(["project-agent"]);
+});
+
+test("capabilities are permissions", () => {
+  const granted = grantedOf({
+    reads: [],
+    writes: [],
+    data: false,
+    net: [],
+    secrets: [],
+    capabilities: ["gamepad", "webgl"],
+  });
+  expect(granted.capabilities).toEqual(["gamepad", "webgl"]);
+  expect(permissionList(granted)).toEqual(["cap:gamepad", "cap:webgl"]);
+  expect(
+    GrantedPermissions.parse({ reads: [], writes: [], data: false, net: [], secrets: [], mcp: [] })
+      .capabilities,
+  ).toEqual([]);
+  expect(permissionOfCall({ kind: "assets.list" })).toBe("cap:assets");
+  expect(permissionOfCall({ kind: "assets.url", name: "robot.glb" })).toBe("cap:assets");
+  expect(diffPermissions(["cap:assets"], ["cap:webgl"]).missing).toEqual(["cap:webgl"]);
+  expect(addedPermissions(granted, { ...granted, capabilities: ["gamepad", "webgl", "audio"] })).toEqual([
+    "cap:audio",
+  ]);
 });

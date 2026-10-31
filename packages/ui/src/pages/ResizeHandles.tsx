@@ -3,7 +3,7 @@ import { type ArrowKey, isArrowKey, type ResizeEdge } from "./layout-resize";
 
 export type Pointer = { x: number; y: number };
 
-export type ResizeHandlesProps = {
+type ResizeHandlesProps = {
   title: string;
   onStart(edge: ResizeEdge, pointer: Pointer): void;
   onMove(pointer: Pointer): void;

@@ -5,7 +5,7 @@ import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import type { TabsAction } from "./tabs-model";
 
-export type TabMenuContentProps = {
+type TabMenuContentProps = {
   tab: Tab;
   dispatch(action: TabsAction): void;
   onOpenWindow: ((target: TabTarget) => void) | null;

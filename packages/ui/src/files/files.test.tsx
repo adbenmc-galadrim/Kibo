@@ -213,26 +213,6 @@ test("a file tab being edited is not re-read on a change", async () => {
   expect(reads()).toBe(before);
 });
 
-test("a remote view previews the file without Modifier nor the external editor, even when asked to edit", async () => {
-  render(<FileTabView fileRef={ref} startEditing remote />);
-  expect(await screen.findByText(/n'est possible que sur l'ordinateur où tourne Kibo/)).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
-  expect(screen.queryByRole("textbox")).toBeNull();
-});
-
-test("a remote preview hides Modifier and the external editor, and ignores the shortcut", async () => {
-  render(<FilePreviewSheet fileRef={ref} onClose={() => {}} onOpenInTab={() => {}} remote />);
-  expect(await screen.findByText(/worktree kib-12 · TypeScript/)).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Ouvrir dans un onglet" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Ouvrir dans l'éditeur externe" })).toBeNull();
-  fireEvent.keyDown(window, { key: "O", metaKey: true, shiftKey: true });
-  await act(() => Promise.resolve());
-  expect(calls.some((c) => c.method === "openInEditor")).toBe(false);
-});
-
 const appRef = { ...ref, path: "src/app.ts", line: null, origin: null };
 const appContent: FileContent = {
   ...content,

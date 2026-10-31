@@ -18,7 +18,6 @@ import {
   SILO_PRS,
 } from "./pixel-settings";
 import config from "./playwright.config";
-import { SYNC_PORTS } from "./sync-fixture";
 import {
   fakeBranchStorybookPort,
   fakeFigmaPort,
@@ -249,9 +248,7 @@ test("every scenario daemon is in the port check", () => {
 
 test("no port of a daemon or of its fake services is taken twice", () => {
   const daemons = [...ALL_DAEMONS, ...SCENARIO_DAEMONS].map((d) => d.port);
-  const sync = [SYNC_PORTS.server, SYNC_PORTS.dark.a, SYNC_PORTS.dark.b, SYNC_PORTS.light.a];
-  const fixed = [...daemons, ...sync, SYNC_PORTS.light.b, SYNC_PORTS.control];
-  const derived = [...daemons, ...sync, SYNC_PORTS.light.b].flatMap((port) => DERIVED.map((of) => of(port)));
-  const all = [...fixed, ...derived];
+  const derived = daemons.flatMap((port) => DERIVED.map((of) => of(port)));
+  const all = [...daemons, ...derived];
   expect(new Set(all).size).toBe(all.length);
 });

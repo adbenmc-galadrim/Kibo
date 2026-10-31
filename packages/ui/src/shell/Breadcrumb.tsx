@@ -1,4 +1,4 @@
-import { isInbox, type ProjectSnapshot, type RunView, type Screen, type TabTarget } from "@kibo/schema";
+import { isInbox, type ProjectSnapshot, type Screen, type TabTarget } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName } from "../lib/inbox";
@@ -6,7 +6,7 @@ import { SCREENS } from "../tabs/screens";
 import { findTicket } from "../tabs/target-hash";
 import { featureOf, planningPageOf } from "./nav/planning-missing";
 
-export type Crumb = { label: string; target: TabTarget | null; color?: string };
+type Crumb = { label: string; target: TabTarget | null; color?: string };
 
 const text = (label: string): Crumb => ({ label, target: null });
 
@@ -22,11 +22,6 @@ function screenCrumbs(screen: Screen): Crumb[] {
   return crumbs.map((label, i) =>
     parent && i === 0 ? { label, target: { kind: "screen", screen: parent } } : text(label),
   );
-}
-
-function runCrumbs(runId: string, runs: readonly RunView[] | undefined): Crumb[] {
-  const label = runs?.find((r) => r.id === runId)?.label ?? fr.tabs.run;
-  return [{ label: fr.nav.agents, target: { kind: "screen", screen: "agents" } }, text(label)];
 }
 
 function underPlanning(p: ProjectSnapshot, project: Crumb, title: Crumb): Crumb[] {
@@ -53,13 +48,8 @@ function sprintCrumbs(p: ProjectSnapshot, sprintId: string, project: Crumb): Cru
   return underPlanning(p, project, text(`${sprint.code} · ${sprint.name}`));
 }
 
-export function crumbsFor(
-  target: TabTarget | null,
-  ctx: { project: ProjectSnapshot | null; branch: string | null; runs?: readonly RunView[] },
-): Crumb[] {
+export function crumbsFor(target: TabTarget | null, ctx: { project: ProjectSnapshot | null }): Crumb[] {
   if (target?.kind === "screen") return screenCrumbs(target.screen);
-  if (target?.kind === "run") return runCrumbs(target.runId, ctx.runs);
-  if (target?.kind === "skill") return [...screenCrumbs("skills"), text(target.skillId)];
   const p = ctx.project;
   if (!target || !p) return [text(fr.nav.overview)];
   const project = projectCrumb(p);
@@ -68,10 +58,6 @@ export function crumbsFor(
       return [{ ...project, target: null }];
     case "page":
       return [project, text(p.pages.find((x) => x.id === target.pageId)?.title ?? fr.tabs.missingPage)];
-    case "changes":
-      return ctx.branch
-        ? [project, { label: fr.nav.changes, target }, text(ctx.branch)]
-        : [project, text(fr.nav.changes)];
     case "file":
       return [project, text(target.path)];
     case "ticket":

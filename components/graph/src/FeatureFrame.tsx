@@ -19,7 +19,7 @@ const SEGMENT_BG: Record<StepTone, string> = {
   todo: "bg-(--tracking-border)",
 };
 
-export function DashedOutline({
+function DashedOutline({
   width,
   height,
   radius,

@@ -5,7 +5,6 @@ import { Bot, ExternalLink, FileCode, Pencil, SquareTerminal, X } from "lucide-r
 import { useEffect } from "react";
 import { fr } from "../i18n/fr";
 import { relativeTime } from "../lib/relative-time";
-import { isRemoteView } from "../lib/remote-view";
 import { isMac } from "../lib/shortcut-label";
 import { CodeLines } from "./CodeLines";
 import { FileToolbar } from "./FileToolbar";
@@ -16,7 +15,7 @@ import { type FileContentState, useFileContent } from "./use-file-content";
 import { useFileFind } from "./use-file-find";
 import { useWrap } from "./wrap-pref";
 
-type Props = { fileRef: FileRef; onClose(): void; onOpenInTab(edit: boolean): void; remote?: boolean };
+type Props = { fileRef: FileRef; onClose(): void; onOpenInTab(edit: boolean): void };
 
 const isExternalShortcut = (e: KeyboardEvent) =>
   (e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "o";
@@ -34,7 +33,7 @@ function metadata(fileRef: FileRef, file: FileContentState): string {
     .join(" · ");
 }
 
-export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRemoteView() }: Props) {
+export function FilePreviewSheet({ fileRef, onClose, onOpenInTab }: Props) {
   const file = useFileContent(fileRef);
   const { dir, name } = splitPath(fileRef.path);
   const openExternal = useExternalOpen(fileRef, file.worktree?.path ?? null, file.setError);
@@ -43,7 +42,6 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
   const finder = useFileFind(c?.content ?? null, fileRef.line);
 
   useEffect(() => {
-    if (remote) return;
     const onKey = (e: KeyboardEvent) => {
       if (!isExternalShortcut(e)) return;
       e.preventDefault();
@@ -51,7 +49,7 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [openExternal, remote]);
+  }, [openExternal]);
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
@@ -75,23 +73,19 @@ export function FilePreviewSheet({ fileRef, onClose, onOpenInTab, remote = isRem
               <ExternalLink />
               {fr.file.openInTab}
             </Button>
-            {!remote && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => onOpenInTab(true)}>
-                  <Pencil />
-                  {fr.file.edit}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={fr.file.external}
-                  title={fr.file.external}
-                  onClick={openExternal}
-                >
-                  <SquareTerminal />
-                </Button>
-              </>
-            )}
+            <Button variant="outline" size="sm" onClick={() => onOpenInTab(true)}>
+              <Pencil />
+              {fr.file.edit}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={fr.file.external}
+              title={fr.file.external}
+              onClick={openExternal}
+            >
+              <SquareTerminal />
+            </Button>
             <Button variant="ghost" size="icon-sm" aria-label={fr.file.close} onClick={onClose}>
               <X />
             </Button>

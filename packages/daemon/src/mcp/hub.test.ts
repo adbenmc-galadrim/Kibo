@@ -136,6 +136,21 @@ describe("stdio", () => {
     expect(text(read)).toBe("fake://echo/***");
   });
 
+  test("the server stderr is relayed to the console with its id", async () => {
+    const original = console.error;
+    const relayed: string[] = [];
+    console.error = (...args: unknown[]) => void relayed.push(args.join(" "));
+    try {
+      await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
+      await hub.call("fake", "log_env", {}, "inst-1");
+      const until = Date.now() + 2_000;
+      while (Date.now() < until && !relayed.some((l) => l.includes("token"))) await Bun.sleep(20);
+    } finally {
+      console.error = original;
+    }
+    expect(relayed.some((l) => l.startsWith("[kibo-mcp fake] token "))).toBe(true);
+  });
+
   test("a disabled server cannot be called", async () => {
     await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: "tok-123456789" });
     await hub.setEnabled("fake", false);

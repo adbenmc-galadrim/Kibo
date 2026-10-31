@@ -1,18 +1,16 @@
 import { z } from "zod";
-import { type AppSettings, AppSettingsPatch } from "./app-settings";
-import { AbsPath } from "./delivery";
+import { AbsPath, DeliveryKind, DeliveryStepNumber } from "./delivery";
 import { GithubPrRef } from "./external-ref";
 import { GitBranchRef } from "./git-branch";
 import { TicketKey } from "./ids";
 import { ListProjectEventsInput, type ProjectEventPage } from "./project-event";
+import type { TicketView } from "./rpc";
 import type { Ticket } from "./ticket";
 import { SessionState, SessionTool, type TicketSession } from "./ticket-session";
 
 const DeclaredRef = z.discriminatedUnion("kind", [GitBranchRef, GithubPrRef]);
 
 export const TRACKING_RPC = [
-  z.object({ method: z.literal("getAppSettings") }),
-  z.object({ method: z.literal("setAppSettings"), patch: AppSettingsPatch }),
   z.object({
     method: z.literal("setTicketSession"),
     projectId: z.string().min(1),
@@ -28,6 +26,14 @@ export const TRACKING_RPC = [
     ticketKey: TicketKey,
     ref: DeclaredRef,
   }),
+  z.object({
+    method: z.literal("setDeliveryStep"),
+    projectId: z.string().min(1),
+    ticketKey: TicketKey,
+    step: DeliveryStepNumber,
+    note: z.string().max(300).optional(),
+    kind: DeliveryKind.optional(),
+  }),
 ] as const;
 
 export type DeclareTicketRefInput = Omit<
@@ -42,9 +48,8 @@ export const TRACKING_RPC_METHODS: readonly TrackingRpcRequest["method"][] = TRA
 );
 
 export type TrackingRpcResult = {
-  getAppSettings: AppSettings;
-  setAppSettings: AppSettings;
   setTicketSession: TicketSession | null;
   listProjectEvents: ProjectEventPage;
   declareTicketRef: DeclareTicketRefResult;
+  setDeliveryStep: TicketView;
 };

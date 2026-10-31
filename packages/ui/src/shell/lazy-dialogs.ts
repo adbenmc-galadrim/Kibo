@@ -13,11 +13,6 @@ export const NewPageDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const StarterDialog = lazyPanel(
-  () => import("../onboarding/StarterDialog").then((m) => m.StarterDialog),
-  fr.lazy,
-  hidden,
-);
 export const NewTicketDialog = lazyPanel(
   () => import("../dialogs/NewTicketDialog").then((m) => m.NewTicketDialog),
   fr.lazy,
@@ -25,21 +20,6 @@ export const NewTicketDialog = lazyPanel(
 );
 export const FileTicketDialog = lazyPanel(
   () => import("../dialogs/FileTicketDialog").then((m) => m.FileTicketDialog),
-  fr.lazy,
-  hidden,
-);
-export const AssignDialog = lazyPanel(
-  () => import("../agents/AssignDialog").then((m) => m.AssignDialog),
-  fr.lazy,
-  hidden,
-);
-export const NewAgentDialog = lazyPanel(
-  () => import("../agents/catalog/NewAgentDialog").then((m) => m.NewAgentDialog),
-  fr.lazy,
-  hidden,
-);
-export const NewSkillDialog = lazyPanel(
-  () => import("../skills/NewSkillDialog").then((m) => m.NewSkillDialog),
   fr.lazy,
   hidden,
 );
@@ -53,23 +33,8 @@ export const CommandPalette = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const ModifyWithAiDialog = lazyPanel(
-  () => import("../ai/ModifyWithAiDialog").then((m) => m.ModifyWithAiDialog),
-  fr.lazy,
-  hidden,
-);
 export const ConfirmDialog = lazyPanel(
   () => import("@kibo/sdk/ui/confirm-dialog").then((m) => m.ConfirmDialog),
-  fr.lazy,
-  hidden,
-);
-export const NotesDirDialog = lazyPanel(
-  () => import("../dialogs/NotesDirDialog").then((m) => m.NotesDirDialog),
-  fr.lazy,
-  hidden,
-);
-export const TrustDialog = lazyPanel(
-  () => import("../dialogs/TrustDialog").then((m) => m.TrustDialog),
   fr.lazy,
   hidden,
 );
@@ -100,11 +65,6 @@ export const DeleteProjectDialog = lazyPanel(
 );
 export const HelpDialogs = lazyPanel(
   () => import("./HelpDialogs").then((m) => m.HelpDialogs),
-  fr.lazy,
-  hidden,
-);
-export const TutorialSlot = lazyPanel(
-  () => import("../tutorial/TutorialSlot").then((m) => m.TutorialSlot),
   fr.lazy,
   hidden,
 );

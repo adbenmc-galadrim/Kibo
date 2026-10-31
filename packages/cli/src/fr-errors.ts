@@ -3,7 +3,6 @@ import { PLAN_FILE_ERRORS } from "./fr-plan";
 
 export type FrError = { code?: KiboError["code"]; match: RegExp; text: (m: RegExpMatchArray) => string };
 
-const READ_ONLY = "Ce projet est en lecture seule sur cette machine.";
 const ARCHIVED = "Cette question est archivée : rouvrez-la d'abord.";
 
 export const FR_ERRORS: readonly FrError[] = [
@@ -34,8 +33,6 @@ export const FR_ERRORS: readonly FrError[] = [
     text: (m) => `Le code ${m[1]} est déjà pris par un autre sprint.`,
   },
   { match: /end before start/, text: () => "La fin du sprint précède son début." },
-  { code: "READ_ONLY", match: /^(?!skill )/, text: () => READ_ONLY },
-  { code: "FORBIDDEN", match: /^project \S+ is read-only$/, text: () => READ_ONLY },
   { match: /^question \S+ is archived/, text: () => ARCHIVED },
   {
     match: /provisional choice is not an option$/,

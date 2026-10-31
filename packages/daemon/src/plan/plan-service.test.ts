@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { KiboError, type PlanAction } from "@kibo/schema";
-import { type Harness, harness, readOnly } from "../project-agent/fakes.test-helper";
+import { type Harness, harness } from "../project-agent/fakes.test-helper";
 import type { ProjectAgentDataPort } from "../project-agent/types";
 import { createPlanService } from "./plan-service";
 
@@ -123,15 +123,6 @@ describe("plan service", () => {
       ["new:2", "SILO-1"],
     ]);
     expect(h.commands.map((c) => c.method)).toEqual(["createTicket", "createTicket"]);
-  });
-
-  test("a read-only project is refused before any command", async () => {
-    const h = setup();
-    readOnly(h);
-    await expect(createPlanService({ data: h.data }).apply(h.project.id, fullPlan)).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(h.commands).toEqual([]);
   });
 
   test("preview on a server-keyed project gives null keys", () => {

@@ -13,7 +13,7 @@ import {
 } from "@kibo/schema";
 import { lstatOrNull, outside, resolveInside } from "../fs/resolve-inside";
 
-export type NoteFile = { markdown: string; mtime: number; size: number };
+type NoteFile = { markdown: string; mtime: number; size: number };
 export const MAX_NOTE_BYTES = MAX_NOTE_CHARS;
 
 const tooLarge = (p: string) => new KiboError("QUOTA_EXCEEDED", `${p} is larger than 1 MiB`);

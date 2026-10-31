@@ -1,7 +1,0 @@
-{
-  "routes": [
-    { "prompt": "KIB-14", "scenario": "progress-hold.json" },
-    { "prompt": "KIB-16", "scenario": "progress-no-plan.json" }
-  ],
-  "fallback": "done.json"
-}

@@ -2,8 +2,8 @@ import { beforeEach, expect, test } from "bun:test";
 import type { RunLogEntry } from "@kibo/schema";
 import { act, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { formatClock } from "../agents/format";
 import { CONVERSATION_LOG } from "./fixtures";
+import { formatClock } from "./format";
 import { emitTopic, harness, mockPanelApi, panel, resetHarness, rpcs, showPanel } from "./panel-harness";
 
 mockPanelApi();
@@ -30,7 +30,7 @@ const settle = async (f: (p: Pending) => void) => {
 
 async function sendText(text: string) {
   const user = userEvent.setup();
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   await user.type(box, text);
   await user.click(panel().getByRole("button", { name: "Envoyer" }));
   return { user, box };

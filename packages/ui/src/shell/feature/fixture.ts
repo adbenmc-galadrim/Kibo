@@ -18,7 +18,6 @@ const at = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).g
 const ticket = (id: string, key: string, title: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title,
@@ -202,7 +201,6 @@ export function siloFeatureProject(): ProjectSnapshot {
       color: "#14B8A6",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
@@ -218,18 +216,9 @@ export function siloFeatureProject(): ProjectSnapshot {
     bindings: [],
     nextTicketKey: "SILO-94",
     sprints: SPRINTS,
-    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     tickets: [F3, F3_STEP, F5, ...STEPS, F7, F7_STEP],
   };
 }
-
-export const SESSION_RUN = {
-  ticketId: "e33",
-  state: "running" as const,
-  agentName: "T3 Code",
-  startedAt: NOW - 42 * 60_000,
-  createdAt: NOW - 45 * 60_000,
-};
 
 export const MINIO = "Serveur MinIO de recette indisponible";
 export const MERGE_RULE = "Règle de fusion à valider par le client";

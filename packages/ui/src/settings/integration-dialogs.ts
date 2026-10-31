@@ -29,7 +29,7 @@ export const INTEGRATION_DIALOGS: Partial<
 };
 
 export function dialogOf(id: IntegrationId): IntegrationDialogId | null {
-  if (id === "github" || id === "github-issues" || id === "github-actions") return "github";
+  if (id === "github" || id === "github-actions") return "github";
   if (id === "figma" || id === "penpot" || id === "mcp") return id;
   return null;
 }

@@ -49,13 +49,6 @@ describe("explainError", () => {
     );
   });
 
-  test("a read-only project", () => {
-    const text = "Ce projet est en lecture seule sur cette machine.";
-    expect(explain("READ_ONLY", "project p-silo is read only")).toBe(text);
-    expect(explain("FORBIDDEN", "project p-silo is read-only")).toBe(text);
-    expect(explain("READ_ONLY", "skill relire is read only")).toBeNull();
-  });
-
   test("questions", () => {
     expect(explain("INVALID_INPUT", "question q-1 is archived")).toBe(
       "Cette question est archivée : rouvrez-la d'abord.",

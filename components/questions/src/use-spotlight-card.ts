@@ -1,9 +1,9 @@
 import { type SpotlightApi, useSdk, useSpotlight } from "@kibo/sdk";
 import { type RefObject, useEffect, useRef, useState } from "react";
 
-export const SPOTLIGHT_MS = 1500;
+const SPOTLIGHT_MS = 1500;
 
-export type SpotlightMotion = "bounce" | "fade";
+type SpotlightMotion = "bounce" | "fade";
 
 const playedBy = new WeakMap<SpotlightApi, Set<string>>();
 

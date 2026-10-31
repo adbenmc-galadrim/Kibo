@@ -84,7 +84,6 @@ export const frProjectAgent = {
       memoryNote: "note mémoire",
       profiles: "agents assignables",
       changes: "journal des étapes",
-      signals: "signaux",
       questions: {
         open: "questions ouvertes",
         answered: "questions répondues",
@@ -108,8 +107,7 @@ export const frProjectAgent = {
   },
   batch: {
     region: (seq: number) => `Lot n° ${seq}`,
-    lastRun: "Dernier run",
-    run: "Run",
+    retired: "Action retirée : Kibo ne lance plus d'agent de ticket",
     apply: (n: number) => `Valider (${n})`,
     reject: "Refuser",
     rejectConfirm: "Confirmer le refus",
@@ -129,9 +127,6 @@ export const frProjectAgent = {
     setStatus: (ticket: string, status: string) => `${ticket} : passer en ${status}`,
     link: (from: string, to: string) => `${from} bloque ${to}`,
     unlink: (from: string, to: string) => `Retirer le lien entre ${from} et ${to}`,
-    assignAgent: (ticket: string, profile: string) => `Assigner ${ticket} à ${profile}`,
-    deliverAnswers: (ticket: string) => `Transmettre les réponses de ${ticket}`,
-    cancelRun: (runId: string) => `Annuler le run ${runId}`,
     answerQuestion: (answer: string) => `Répondre « ${answer} »`,
     createQuestion: (ticket: string, title: string) => `Question sur ${ticket} : « ${title} »`,
     createQuestionFor: (ticket: string, recipient: string, title: string) =>
@@ -142,7 +137,6 @@ export const frProjectAgent = {
     addRecipient: (name: string) => `Ajouter le destinataire « ${name} »`,
     createNote: (path: string) => `Créer la note ${path}`,
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
-    dismissSignal: (ref: string) => `Signal ${ref} : sans suite`,
     postpone: (feature: string, sprint: string) => `Reporter ${feature} en ${sprint}`,
     plan: (feature: string, sprint: string) => `Planifier ${feature} en ${sprint}`,
     unplan: (feature: string) => `Retirer ${feature} du planning`,

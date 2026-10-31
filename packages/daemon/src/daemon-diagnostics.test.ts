@@ -2,14 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { AppInfo, isAppVersion, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
-import { aiScenarioPath } from "./agents/fake-claude-ai";
-import { FAKE_CLAUDE } from "./agents/fake-claude-scenario";
 import { startDaemon } from "./daemon";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
+
+import { FAKE_CLAUDE, scenarioPath } from "./runs/fake-claude-scenario";
 
 const Envelope = z.object({ ok: z.literal(true), result: z.unknown() });
 const cleanups: (() => Promise<void> | void)[] = [];
@@ -31,14 +30,13 @@ async function launch() {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),
     agentEnv: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
-      KIBO_FAKE_CLAUDE_SCENARIO: aiScenarioPath("onboarding-ok.json"),
+      KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("done"),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
     },
     redactor,

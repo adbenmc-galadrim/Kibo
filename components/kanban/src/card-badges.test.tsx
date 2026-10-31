@@ -20,7 +20,6 @@ const pr = (over: Partial<GithubPrRef> = {}): GithubPrRef => ({
 const ticket = (refs: GithubPrRef[], over: Partial<TicketView> = {}): TicketView => ({
   id: "1@1",
   key: "SILO-45",
-  pendingSeq: null,
   hold: null,
   keyLabel: "SILO-45",
   title: "Conflits de saisie",

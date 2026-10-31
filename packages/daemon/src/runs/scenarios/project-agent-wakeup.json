@@ -1,0 +1,36 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "sleepMs": 1500 },
+        { "mcp": "list_questions", "input": { "state": "answered" } },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Traiter les réponses",
+            "actions": [
+              {
+                "id": 1,
+                "type": "createTicket",
+                "ref": "new:1",
+                "title": "Tests du récepteur de hooks",
+                "parent": "KIB-14",
+                "why": "Réponse reçue : il faut des tests."
+              },
+              {
+                "id": 2,
+                "type": "setStatus",
+                "ticket": "KIB-16",
+                "statusId": "blocked",
+                "blockedReason": "attend KIB-12",
+                "why": "Réponse reçue : KIB-16 attend KIB-12."
+              }
+            ]
+          }
+        }
+      ],
+      "result": "J'ai proposé un lot pour 2 réponses.",
+      "tokens": 1600
+    }
+  ]
+}

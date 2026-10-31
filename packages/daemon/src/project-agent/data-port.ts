@@ -8,7 +8,6 @@ import {
   NotePath,
   type ProjectSnapshot,
 } from "@kibo/schema";
-import { isDemoProject } from "../demo/demo-project";
 import { type Docs, USER_COMMAND } from "../docs";
 import { noteHashOf } from "../notes/note-hash";
 import type { NotesService } from "../notes/service";
@@ -82,11 +81,9 @@ export function createProjectAgentDataPort(deps: ProjectAgentDataDeps): ProjectA
     project: (projectId) => snapshotOf(docs, projectId),
     projectName: (projectId) => docs.projectMeta(projectId).name,
     projectFolder: (projectId) => docs.projectMeta(projectId).folder,
-    assertWritable: (projectId) => docs.assertWritable(projectId),
     viewer: (projectId) => docs.identity(projectId),
     agents: (projectId) => deps.agents(projectId).map(agentSummary),
     guidelines: (projectId) => deps.guidelines(projectId),
-    isDemoProject: (projectId) => isDemoProject(deps.settings, projectId),
     ...notesPort(deps.notes),
     runCommand: (projectId, command) => docs.run(projectId, command, USER_COMMAND),
     forecast: (projectId) => keyForecast(docs.project(projectId)),

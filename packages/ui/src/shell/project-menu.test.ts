@@ -5,7 +5,6 @@ import { projectMenuEntries } from "./project-menu";
 const texts = {
   newPage: "Nouvelle page",
   planning: "Ajouter la page Planning",
-  share: "Partager",
   edit: "Modifier…",
   files: "Fichiers du projet…",
   remove: "Supprimer…",
@@ -13,40 +12,37 @@ const texts = {
 const actions = () => ({
   newPage: mock(() => {}),
   planning: null,
-  share: mock(() => {}),
   edit: mock(() => {}),
   files: mock(() => {}),
   remove: mock(() => {}),
 });
 
-test("an editable project offers new page, share, edit, files, then delete after a separator", () => {
+test("an editable project offers new page, edit, files, then delete after a separator", () => {
   const a = actions();
   const entries = projectMenuEntries({ editable: true, texts, actions: a });
   expect(entries.map((e) => (isSeparator(e) ? "—" : e.label))).toEqual([
     "Nouvelle page",
-    "Partager",
     "Modifier…",
     "Fichiers du projet…",
     "—",
     "Supprimer…",
   ]);
-  const last = entries[5];
+  const last = entries[4];
   if (!last || isSeparator(last) || !("onSelect" in last)) throw new Error("expected an action");
   expect(last.destructive).toBe(true);
   last.onSelect();
   expect(a.remove).toHaveBeenCalledTimes(1);
 });
 
-test("a read-only project keeps share, its files on this device and delete", () => {
+test("a read-only project keeps its files on this device and delete", () => {
   const a = actions();
   const entries = projectMenuEntries({ editable: false, texts, actions: a });
   expect(entries.map((e) => (isSeparator(e) ? "—" : e.label))).toEqual([
-    "Partager",
     "Fichiers du projet…",
     "—",
     "Supprimer…",
   ]);
-  const files = entries[1];
+  const files = entries[0];
   if (!files || isSeparator(files) || !("onSelect" in files)) throw new Error("expected an action");
   files.onSelect();
   expect(a.files).toHaveBeenCalledTimes(1);

@@ -18,12 +18,6 @@
     },
     {
       "path": "../packages/sdk"
-    },
-    {
-      "path": "../packages/sync-server"
-    },
-    {
-      "path": "../packages/trust"
     }
   ]
 }

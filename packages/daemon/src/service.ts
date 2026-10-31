@@ -1,14 +1,7 @@
-import {
-  createWorkspaceDoc,
-  getKeyAllocator,
-  getProjectMeta,
-  listProjects,
-  registerProject,
-} from "@kibo/core";
+import { createWorkspaceDoc, getProjectMeta, listProjects, registerProject } from "@kibo/core";
 import type { RuleTrigger } from "@kibo/core/rules";
 import {
   type ChangeMessage,
-  type DeliveryResult,
   INBOX_ID,
   isInbox,
   KiboError,
@@ -20,12 +13,6 @@ import {
   type Session,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { createDataPort } from "./agents/data-port";
-import type { AgentSource } from "./agents/neutral-agents";
-import type { AgentDataPort } from "./agents/orchestrator";
-import { deliverAnswers } from "./agents/question-delivery";
-import { type AgentQuestions, type AgentsPort, deliveryDeps, handleAgentRequest } from "./agents-rpc";
-import { type AiPort, isAiRequest } from "./ai/methods";
 import { type Clock, createClock } from "./clock";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
@@ -33,7 +20,7 @@ import type { Docs } from "./docs";
 import { createIconStore, ensureIconsTable, type IconStore } from "./icons/icon-store";
 import { createFileTicket } from "./inbox/file-ticket";
 import { loadInbox } from "./inbox/inbox-doc";
-import { assertInboxCommand, assertNotInbox, assertNotInboxForAgents } from "./inbox/inbox-rules";
+import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
@@ -41,11 +28,15 @@ import { type ActivitySources, type ActivityTracker, createActivityTracker } fro
 import { withLocalSettings } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
-import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
+import { handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { type AnswerWake, afterQuestionCommands } from "./questions/question-events";
 import { type QuestionImageDeps, questionImagesOf } from "./questions/question-images-port";
+import { createDataPort } from "./runs/data-port";
+import type { AgentSource } from "./runs/neutral-agents";
+import type { AgentDataPort } from "./runs/orchestrator";
+import { type AgentQuestions, type AgentsPort, handleAgentRequest } from "./runs/rpc";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
@@ -54,11 +45,9 @@ import { readConfig, runConfigCommand } from "./workspace-config";
 
 export type ComponentsPort = {
   handle(req: ComponentRequest): Promise<unknown>;
-  afterCommand(projectId: string): void;
 };
 
-export type { AgentsPort } from "./agents-rpc";
-export type { CollabPort } from "./projects/project-rpc";
+export type { AgentsPort } from "./runs/rpc";
 export type AnswerWakePort = { wake: AnswerWake };
 
 export type Service = {
@@ -67,12 +56,9 @@ export type Service = {
   docs: Docs;
   icons: IconStore;
   agentData: AgentDataPort;
-  deliverAnswers(projectId: string, ticketId: string): DeliveryResult;
   attachAgents(agents: AgentsPort): () => void;
   attachComponents(components: ComponentsPort): () => void;
   attachIntegrations(rpc: IntegrationRpc): () => void;
-  attachAi(port: AiPort): () => void;
-  attachCollab(port: CollabPort): () => void;
   attachProjectAgent(port: ProjectAgentSummaries): () => void;
   attachAnswerWake(port: AnswerWakePort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
@@ -112,13 +98,8 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   let tracker: ActivityTracker | null = null;
   const components = portSlot<ComponentsPort>();
   const integrations = portSlot<IntegrationRpc>();
-  const ai = portSlot<AiPort>();
-  const collab = portSlot<CollabPort>();
   const projectAgent = portSlot<ProjectAgentSummaries>();
   const answerWake = portSlot<AnswerWakePort>();
-  let writeGuard: ((projectId: string) => void) | null = null;
-  const osIdentity = () => opts.user;
-  let identity: (projectId: string) => string = osIdentity;
   ensureSettingsTable(store.db);
   const settings = createProjectSettings(store.db);
   ensureIconsTable(store.db);
@@ -142,14 +123,12 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const path = createCommandPath({
     store,
     project: (id) => docs.project(id),
-    assertWritable: (id) => docs.assertWritable(id),
     save: (id) => docs.save(id),
     restore,
     emit: (message) => docs.emit(message),
     published(projectId, done) {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
-      components.get()?.afterCommand(projectId);
       afterQuestionCommands(done, {
         emit: (m) => docs.emit(m),
         images: questionImages,
@@ -202,55 +181,33 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     imported(projectId) {
       docs.save(projectId);
       docs.emit({ projectId });
-      components.get()?.afterCommand(projectId);
     },
     onProjectDoc(listener) {
       docListeners.add(listener);
       return () => docListeners.delete(listener);
     },
-    assertWritable: (projectId) => writeGuard?.(projectId),
-    setWriteGuard(guard) {
-      writeGuard = guard;
-      return () => {
-        if (writeGuard === guard) writeGuard = null;
-      };
-    },
     projectMeta: (projectId) => {
       const doc = docs.project(projectId);
-      return withLocalSettings(getProjectMeta(doc), settings, getKeyAllocator(doc) === "server");
+      return withLocalSettings(getProjectMeta(doc), settings);
     },
-    updateProjectMeta: (projectId, patch, folderInDoc) =>
-      writeProjectMeta(docs, settings, projectId, patch, folderInDoc),
-    identity: (projectId) => identity(projectId),
-    setIdentity(fn) {
-      identity = fn;
-      return () => {
-        if (identity === fn) identity = osIdentity;
-      };
-    },
+    updateProjectMeta: (projectId, patch) => writeProjectMeta(docs, settings, projectId, patch),
+    identity: () => opts.user,
     activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
     today: (opts.clock ?? createClock(null)).today,
   };
   const agentData = createDataPort(docs, settings, Date.now, opts.agents, opts.questionImages ?? null);
-  const questions: AgentQuestions = {
-    data: agentData,
-    projectIds: () => docs.projectIds(),
-    projectAgents: () => projectAgent.get()?.summaries() ?? [],
-    viewer: (projectId) => docs.identity(projectId),
-    assertWritable: (projectId) => docs.assertWritable(projectId),
-  };
-  path.commands.intercept(questionActorInterceptor(questions.viewer));
+  const questions: AgentQuestions = { projectAgents: () => projectAgent.get()?.summaries() ?? [] };
+  const viewer = (projectId: string) => docs.identity(projectId);
+  path.commands.intercept(questionActorInterceptor(viewer));
   path.commands.intercept(holdSinceInterceptor(docs.today));
   const componentsReady = () => ready(components.get(), "INTERNAL", "components are not ready");
   const integrationsReady = () => ready(integrations.get(), "INTERNAL", "integrations are not ready");
-  const aiReady = () => ready(ai.get(), "AI_UNAVAILABLE", "the AI is not started");
   const agentsReady = () => ready(agents, "INTERNAL", "agents are not ready");
   const projectRpc = {
     workspace,
     docs,
     icons,
     settings,
-    collab: () => collab.get(),
     adopt,
     fileTicket: createFileTicket({ docs, store, restore }),
   };
@@ -259,11 +216,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     docs,
     icons,
     agentData,
-    deliverAnswers(projectId, ticketId) {
-      assertNotInboxForAgents(projectId);
-      questions.assertWritable(projectId);
-      return deliverAnswers(deliveryDeps(agentsReady(), questions), projectId, ticketId);
-    },
     attachAgents(port) {
       agents = port;
       const activity = createActivityTracker(port.state().runs, opts.activity);
@@ -283,8 +235,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     attachComponents: components.attach,
     attachIntegrations: integrations.attach,
-    attachAi: ai.attach,
-    attachCollab: collab.attach,
     attachProjectAgent: projectAgent.attach,
     attachAnswerWake: answerWake.attach,
     triggerRules(projectId, trigger) {
@@ -295,7 +245,6 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     handle(req) {
       if (isComponentRequest(req)) return componentsReady().handle(req);
       if (isIntegrationRequest(req)) return integrationsReady().handle(req);
-      if (isAiRequest(req)) return aiReady().handle(req);
       const handled = handleProjectRequest(projectRpc, req);
       if (handled !== NOT_HANDLED) return handled;
       switch (req.method) {

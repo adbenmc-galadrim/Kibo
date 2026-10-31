@@ -129,9 +129,6 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.getByRole("radio", { name: "Système" }).click();
 
-  await page.goto("/#/settings/security");
-  await expect(page.getByText("Accès web", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Générer un code" })).toBeVisible();
   await page.goto("/#/settings/general");
   await expect(page.getByText("Ce réglage vit dans l'application de bureau.")).toBeVisible();
   await expect(page.getByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" })).toHaveCount(0);
@@ -147,8 +144,10 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await menu.getByRole("menuitem", { name: "Thème" }).hover();
   await expect(page.getByRole("menuitemradio", { name: "Système" })).toHaveAttribute("aria-checked", "true");
   await shot(page, info, "ecran-112");
-  await menu.getByRole("menuitem", { name: "Sessions" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Sécurité" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Sessions" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
 
   await sidebar.getByRole("button", { name: /Maison/ }).click();
   await expect(page.getByRole("menuitem", { name: "Paramètres du workspace" })).toBeVisible();

@@ -2,112 +2,60 @@ import {
   type BuiltinEntityType,
   type ComponentCall,
   type ComponentSettings,
-  covers,
   type FetchInit,
   type FetchResponse,
-  type GrantedPermissions,
   type Instance,
   isBuiltinId,
   isReservedCommand,
   KiboError,
   type KiboErrorCode,
-  type PresencePeer,
   type ProjectCommand,
   type ProjectInfo,
-  type ProjectSyncInfo,
-  permissionList,
-  permissionOfCall,
   type QuestionRecipient,
-  type RunPeek,
   splitRef,
 } from "@kibo/schema";
-import type { DeliveryCall } from "../delivery/component-calls";
 import type { EventLog } from "./events";
 import type { Quotas } from "./quotas";
 
-export type FetchGrant = { net: readonly string[]; secrets: GrantedPermissions["secrets"] };
-export type ActiveVersion = { ref: string; trust: "trusted" | "sandboxed"; granted: GrantedPermissions };
 export type DataCall = Extract<
   ComponentCall,
   { kind: "data.get" | "data.set" | "data.delete" | "data.keys" }
 >;
-export type NotesCall =
-  | Extract<ComponentCall, { kind: `notes.${string}` }>
-  | { kind: "list"; entity: "note" };
-export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
 export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
 export type DesignCall = Extract<ComponentCall, { kind: "design.frame" | "design.storybooks" }>;
 
 export type GateHandlers = {
-  list(
-    projectId: string,
-    entity: Exclude<BuiltinEntityType, "note">,
-    config?: Record<string, unknown>,
-  ): Promise<unknown>;
+  list(projectId: string, entity: BuiltinEntityType, config?: Record<string, unknown>): Promise<unknown>;
   run(projectId: string, instanceId: string, command: ProjectCommand): Promise<unknown>;
   data(projectId: string, instanceId: string, call: DataCall): Promise<unknown>;
-  fetch(grant: FetchGrant | null, url: string, init: FetchInit): Promise<FetchResponse>;
-  action(
-    ref: string,
-    projectId: string,
-    instanceId: string,
-    config: Record<string, unknown>,
-    name: string,
-    input: unknown,
-  ): Promise<unknown>;
-  notes(projectId: string, call: NotesCall): Promise<unknown>;
-  mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
+  fetch(url: string, init: FetchInit): Promise<FetchResponse>;
   assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
-  embed(projectId: string, instance: Instance, url: string): Promise<unknown>;
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
-  presence(projectId: string): Promise<PresencePeer[]>;
-  sharing(projectId: string): Promise<ProjectSyncInfo>;
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
-  peek(projectId: string, runId: string): Promise<RunPeek>;
-  delivery(projectId: string, call: DeliveryCall): Promise<unknown>;
 };
-export type GateDeps = {
+type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
-  active(ref: string): ActiveVersion;
   handlers: GateHandlers;
   quotas: Quotas;
   events: EventLog;
 };
-export type Gate = { call(projectId: string, instanceId: string, call: ComponentCall): Promise<unknown> };
+type Gate = { call(projectId: string, instanceId: string, call: ComponentCall): Promise<unknown> };
 
 const REFUSALS = new Set<KiboErrorCode>([
   "NOT_FOUND",
-  "TRUST_REQUIRED",
   "PERMISSION_DENIED",
   "RATE_LIMITED",
   "QUOTA_EXCEEDED",
   "PATH_OUTSIDE_PROJECT",
 ]);
 
-export function missingPermission(granted: GrantedPermissions, call: ComponentCall): string | null {
-  if (call.kind === "run" && isReservedCommand(call.command.method)) return `write:${call.command.method}`;
-  const declared = permissionList(granted);
-  const needed = permissionOfCall(call);
-  if (needed !== null && !covers(declared, needed)) return needed;
-  if (call.kind === "mcp.import" && !covers(declared, "write:ticket")) return "write:ticket";
-  return null;
-}
-
-function dispatch(
-  h: GateHandlers,
-  projectId: string,
-  inst: Instance,
-  grant: FetchGrant | null,
-  call: ComponentCall,
-): Promise<unknown> {
+function dispatch(h: GateHandlers, projectId: string, inst: Instance, call: ComponentCall): Promise<unknown> {
   switch (call.kind) {
     case "list":
-      return call.entity === "note"
-        ? h.notes(projectId, { kind: "list", entity: "note" })
-        : h.list(projectId, call.entity, inst.config);
+      return h.list(projectId, call.entity, inst.config);
     case "run":
       return h.run(projectId, inst.id, call.command);
     case "data.get":
@@ -116,17 +64,9 @@ function dispatch(
     case "data.keys":
       return h.data(projectId, inst.id, call);
     case "fetch":
-      return h.fetch(grant, call.url, call.init);
+      return h.fetch(call.url, call.init);
     case "action":
-      return h.action(inst.component, projectId, inst.id, inst.config, call.name, call.input);
-    case "mcp.call":
-    case "mcp.read":
-    case "mcp.import":
-      return h.mcp(projectId, inst.id, call);
-    case "presence.list":
-      return h.presence(projectId);
-    case "sharing.get":
-      return h.sharing(projectId);
+      throw new KiboError("NOT_FOUND", `${inst.component} has no backend`);
     case "settings.get":
       return h.settings(projectId);
     case "project.get":
@@ -137,30 +77,15 @@ function dispatch(
     case "design.frame":
     case "design.storybooks":
       return h.design(projectId, inst.id, call);
-    case "embed.open":
-      return h.embed(projectId, inst, call.url);
     case "config.set":
       return h.config(projectId, inst, call.patch);
     case "questions.recipients":
       return h.recipients(projectId);
-    case "run.peek":
-      return h.peek(projectId, call.runId);
-    case "run.deliver":
-    case "run.denials":
-    case "run.allowAndResume":
-    case "run.deliveryAgent":
-      return h.delivery(projectId, call);
-    default:
-      return h.notes(projectId, call);
   }
 }
 
-function fetchGrant(deps: GateDeps, ref: string, call: ComponentCall): FetchGrant | null {
-  if (isBuiltinId(splitRef(ref).id)) return null;
-  const active = deps.active(ref);
-  const missing = missingPermission(active.granted, call);
-  if (missing) throw new KiboError("PERMISSION_DENIED", `${ref} was not granted ${missing}`);
-  return { net: active.granted.net, secrets: active.granted.secrets };
+function assertBuiltin(ref: string): void {
+  if (!isBuiltinId(splitRef(ref).id)) throw new KiboError("NOT_FOUND", `${ref} is not a Kibo component`);
 }
 
 function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: ComponentCall): void {
@@ -168,14 +93,8 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
   if (call.kind === "fetch" && !quotas.take(instanceId, "fetch")) {
     throw new KiboError("RATE_LIMITED", `${ref} fetches too often`);
   }
-  if (call.kind.startsWith("mcp.") && !quotas.take(instanceId, "mcp")) {
-    throw new KiboError("RATE_LIMITED", `${ref} calls mcp servers too often`);
-  }
   if (call.kind === "design.frame" && !quotas.take(instanceId, "design")) {
     throw new KiboError("RATE_LIMITED", `${ref} renders design frames too often`);
-  }
-  if (call.kind === "embed.open" && !quotas.take(instanceId, "embed")) {
-    throw new KiboError("RATE_LIMITED", `${ref} opens embedded frames too often`);
   }
 }
 
@@ -203,14 +122,14 @@ export function createGate(deps: GateDeps): Gate {
       let located = false;
       try {
         const inst = deps.instance(projectId, instanceId);
-        located = true;
         ref = inst.component;
+        assertBuiltin(ref);
+        located = true;
         if (call.kind === "run" && isReservedCommand(call.command.method)) {
           throw new KiboError("PERMISSION_DENIED", `${call.command.method} is not available to components`);
         }
-        const grant = fetchGrant(deps, ref, call);
         takeQuotas(deps.quotas, instanceId, ref, call);
-        return await dispatch(deps.handlers, projectId, inst, grant, call);
+        return await dispatch(deps.handlers, projectId, inst, call);
       } catch (e) {
         journal(e, located, projectId, instanceId, ref, call);
         throw e;

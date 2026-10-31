@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { EMPTY_DELIVERY, type ProjectMeta, type RpcRequest, type WorktreeSettings } from "@kibo/schema";
 import type { DaemonClient } from "../daemon-client";
 import { runCli } from "../index";
@@ -24,7 +23,6 @@ const meta = (over: Partial<ProjectMeta>): ProjectMeta => ({
   color: "#336699",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -129,7 +127,7 @@ test("kibo projects without a daemon exits 1 with the stable message", async () 
   const home = mkdtempSync(join(tmpdir(), "kibo-cli-projects-"));
   try {
     const err: string[] = [];
-    const io = { home, toolchain: DEV_TOOLCHAIN, out: () => {}, err: (l: string) => err.push(l) };
+    const io = { home, out: () => {}, err: (l: string) => err.push(l) };
     expect(await runCli(["projects", "list", "--json"], io)).toBe(1);
     expect(err).toEqual(["Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie."]);
   } finally {

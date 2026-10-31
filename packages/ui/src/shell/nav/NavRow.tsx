@@ -5,7 +5,6 @@ type Props = ComponentProps<"button"> & {
   icon?: LucideIcon | null;
   label: string;
   count?: string | null;
-  countYields?: boolean;
   active?: boolean;
   nested?: boolean;
   lead?: ReactNode;
@@ -24,7 +23,6 @@ export function NavRow({
   icon: Icon,
   label,
   count,
-  countYields = false,
   active = false,
   nested = false,
   lead,
@@ -43,7 +41,7 @@ export function NavRow({
       {lead}
       {Icon && <Icon size={15} absoluteStrokeWidth />}
       <span>{label}</span>
-      {count && <NavCount yields={countYields}>{count}</NavCount>}
+      {count && <NavCount>{count}</NavCount>}
       {trail}
     </button>
   );

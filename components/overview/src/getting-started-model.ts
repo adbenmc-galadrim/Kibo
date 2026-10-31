@@ -10,7 +10,7 @@ export type GettingStartedModel = {
 
 const isStep = (t: TicketView) => t.parentId !== null && t.key !== null;
 
-export function firstStep(tickets: readonly TicketView[]): TicketView | null {
+function firstStep(tickets: readonly TicketView[]): TicketView | null {
   const steps = tickets.filter(isStep);
   const open = steps.filter((t) => t.statusId !== "done");
   return open.find((t) => t.startable) ?? open[0] ?? steps[0] ?? null;

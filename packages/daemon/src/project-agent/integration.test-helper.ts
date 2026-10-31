@@ -1,7 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
   Agent,
   AgentsState,
@@ -14,17 +13,17 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
-import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
+import { type Daemon, startDaemon } from "../daemon";
+import type { DaemonOptions } from "../daemon-options";
+import { testAgent, testAgentSource } from "../runs/agents-port.test-helper";
 import {
   FAKE_CLAUDE,
   type FakeCall,
   type FakeScenarioName,
   fakeCalls,
   scenarioPath,
-} from "../agents/fake-claude-scenario";
-import type { Notice } from "../agents/notifier";
-import { type Daemon, startDaemon } from "../daemon";
-import type { DaemonOptions } from "../daemon-options";
+} from "../runs/fake-claude-scenario";
+import type { Notice } from "../runs/notifier";
 
 export type Rpc = <T>(body: Record<string, unknown>) => Promise<T>;
 
@@ -94,10 +93,8 @@ async function boot(
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
-    ticketExecution: "allowed",
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
     transcriptRoot: join(home, "fake"),
@@ -139,7 +136,7 @@ export async function startStack(
   return stack;
 }
 
-export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; livraison: Agent };
+export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket };
 
 export async function seedKibo(rpc: Rpc): Promise<Seeded> {
   const project = await rpc<ProjectMeta>({
@@ -157,7 +154,7 @@ export async function seedKibo(rpc: Rpc): Promise<Seeded> {
     });
   const receiver = await ticket("Récepteur de hooks", "Recevoir les hooks de Claude Code.");
   const docs = await ticket("Documentation", "Écrire le guide.");
-  return { project, receiver, docs, livraison: LIVRAISON_AGENT };
+  return { project, receiver, docs };
 }
 
 export const agentsOf = (rpc: Rpc) => rpc<AgentsState>({ method: "getAgents" });

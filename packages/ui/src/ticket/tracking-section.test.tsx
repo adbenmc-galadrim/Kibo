@@ -208,7 +208,6 @@ test("a ticket of a project without repository offers to choose the folder, the 
   const host: Host = {
     openTicket: none,
     openNewTicket: none,
-    openAssign: none,
     openFile: none,
     openView: none,
     openTarget: none,

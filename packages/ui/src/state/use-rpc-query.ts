@@ -2,9 +2,9 @@ import { KiboError, type Phase7Event, type RpcRequest, type RpcResult } from "@k
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
 
-export type ChangeType = Phase7Event["type"];
+type ChangeType = Phase7Event["type"];
 
-export type RpcQuery<M extends RpcRequest["method"]> = {
+type RpcQuery<M extends RpcRequest["method"]> = {
   data: RpcResult[M] | null;
   error: KiboError | null;
   reload(): void;

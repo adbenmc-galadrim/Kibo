@@ -8,9 +8,9 @@ import {
   wakeupAnswers,
   wakeupCount,
 } from "@kibo/schema";
-import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { frSignals } from "../i18n/fr-signals";
+import { frWakeup } from "../i18n/fr-wakeup";
+import { errorText } from "./format";
 import type { OutboxState } from "./outbox";
 
 export type ConversationItem =
@@ -27,12 +27,12 @@ export type PanelStatus = "ready" | "queued" | "thinking";
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
 const t = frProjectAgent.conversation;
-export function wakeupText(text: string): string {
+function wakeupText(text: string): string {
   const count = wakeupCount(text);
-  return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
+  return count === null ? frWakeup.label : frWakeup.event(count);
 }
 
-export function readingTool(payload: HookPayload): string | null {
+function readingTool(payload: HookPayload): string | null {
   if (payload.event !== "PostToolUse" || !payload.tool?.startsWith(KIBO_PREFIX)) return null;
   const name = payload.tool.slice(KIBO_PREFIX.length);
   if (NOT_READS.has(name)) return null;
@@ -100,7 +100,7 @@ class Builder {
   wakeupLines(entry: RunLogEntry, text: string): void {
     const answers = wakeupAnswers(text);
     answers.forEach(({ label, quote }, k) => {
-      const line = frSignals.wakeup.answered(label, quote);
+      const line = frWakeup.answered(label, quote);
       this.push({ kind: "wakeup", id: `log-${entry.id}-a${k}`, at: entry.at, text: line });
     });
     if (answers.length === 0 || wakeupCount(text) !== null)

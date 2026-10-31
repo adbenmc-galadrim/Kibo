@@ -18,7 +18,7 @@ import { type ActionRunnerDeps, type Created, runAction } from "../project-agent
 import type { ProjectAgentDataPort } from "../project-agent/types";
 import { planContext } from "./plan-context";
 
-export type PlanServiceDeps = { data: ProjectAgentDataPort; events?: ProjectEventSink };
+type PlanServiceDeps = { data: ProjectAgentDataPort; events?: ProjectEventSink };
 
 export type PlanService = {
   preview(projectId: string, actions: readonly PlanAction[]): PlanPreview;
@@ -92,7 +92,6 @@ export function createPlanService({ data, events }: PlanServiceDeps): PlanServic
       return { ok: true, keys: predictKeys(checked.batch.actions, data.forecast(projectId)) };
     },
     async apply(projectId, actions) {
-      data.assertWritable(projectId);
       const { ctx, checked } = validate(projectId, actions);
       if (!checked.ok)
         return { problems: problemsOf(checked.problems), results: [], created: [], stoppedAt: null };

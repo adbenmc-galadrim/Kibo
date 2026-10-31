@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 export type WatchFn = (dir: string, onEvent: () => void, onError: (e: unknown) => void) => { close(): void };
 export type NotesWatcher = { close(): void; readonly polling: boolean; readonly ready: Promise<void> };
-export type WatchNotesOptions = {
+type WatchNotesOptions = {
   debounceMs?: number;
   pollMs?: number;
   watch?: WatchFn;

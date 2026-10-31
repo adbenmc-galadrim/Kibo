@@ -1,0 +1,67 @@
+import { afterEach, expect, test } from "bun:test";
+import { type ProjectCommand, Question, Ticket } from "@kibo/schema";
+import { SdkProvider } from "@kibo/sdk";
+import { createMockSdk } from "@kibo/sdk/mock";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Component, manifest } from "./index";
+import { Q16 } from "./question-fixtures.test-helper";
+
+afterEach(cleanup);
+
+const GONE_ID = "2a4e8c1d-0b3f-4e5a-9c7d-6f8e9a0b1c2d";
+
+const seed = (run: (cmd: ProjectCommand) => unknown) => {
+  const ticket = Ticket.parse(run({ method: "createTicket", title: "Tests E2E de l'envoi" }));
+  const q = Question.parse(
+    run({
+      method: "createQuestion",
+      ticketId: ticket.id,
+      title: Q16,
+      options: ["2 Go", "5 Go"],
+      recipient: "product",
+      createdBy: { kind: "human", ref: GONE_ID },
+    }),
+  );
+  run({
+    method: "updateQuestion",
+    questionId: q.id,
+    context: "Quota mesuré par client.",
+    by: { kind: "human", ref: GONE_ID },
+  });
+  run({
+    method: "answerQuestion",
+    questionId: q.id,
+    answer: { kind: "option", option: "2 Go" },
+    by: { kind: "human", ref: GONE_ID },
+  });
+  run({
+    method: "updateAnswer",
+    questionId: q.id,
+    answer: { kind: "option", option: "5 Go" },
+    by: { kind: "human", ref: "adam" },
+  });
+};
+
+const mount = (surface: "view" | "widget") => {
+  const m = createMockSdk(manifest, { seed, surface, viewer: "adam" });
+  const { container } = render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return container;
+};
+
+test("an answer is signed with the local name, an old account id with a readable label", async () => {
+  const container = mount("view");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("radio", { name: "Toutes" }));
+  const card = await screen.findByRole("article", { name: Q16 });
+  expect(await within(card).findByText(/^Répondu par adam · /)).toBeTruthy();
+  expect(within(card).getByText("un membre")).toBeTruthy();
+  await user.click(within(card).getByRole("button", { name: /^Historique/ }));
+  expect(within(card).getByText(/· adam · Réponse modifiée/)).toBeTruthy();
+  expect(within(card).getByText(/· un membre · /)).toBeTruthy();
+  expect(container.textContent).not.toContain(GONE_ID);
+});

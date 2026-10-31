@@ -10,13 +10,12 @@ import { client } from "../api";
 import { ProjectFilesDialog } from "../files/lazy-files";
 import { fr } from "../i18n/fr";
 import { frProject } from "../i18n/fr-project";
-import { frShare } from "../i18n/fr-share";
 import { frTracking } from "../i18n/fr-tracking";
 import { addOverviewPage } from "./nav/overview-page";
 import { addPlanningPage } from "./nav/planning-page";
 import { type ProjectMenuActions, projectMenuEntries } from "./project-menu";
 
-export type ProjectHeaderMenuProps = {
+type ProjectHeaderMenuProps = {
   project: ProjectMeta;
   shifted: boolean;
   editable: boolean;
@@ -60,7 +59,6 @@ export function ProjectHeaderMenu({
     texts: {
       newPage: fr.nav.newPage,
       planning: frTracking.addPlanning,
-      share: frShare.action,
       edit: fr.nav.editProject,
       files: frProject.files,
       remove: fr.nav.deleteProject,
@@ -81,7 +79,7 @@ export function ProjectHeaderMenu({
           <SidebarMenuAction
             showOnHover
             className={shifted ? "right-7" : undefined}
-            aria-label={frShare.menu(project.name)}
+            aria-label={frProject.menu(project.name)}
           >
             <Ellipsis />
           </SidebarMenuAction>

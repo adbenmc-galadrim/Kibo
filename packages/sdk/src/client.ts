@@ -1,6 +1,4 @@
 import {
-  AiEvent,
-  CLOSE_CODES,
   CodeEvent,
   type CodeRequest,
   type CodeResult,
@@ -12,12 +10,8 @@ import {
   type RpcRequest,
   type RpcResponse,
   type RpcResult,
-  type RunChanged,
-  type RunMomentsEvent,
-  type RunState,
-  type TicketRun,
+  SESSION_REVOKED_CLOSE,
   type Topic,
-  ticketRuns,
 } from "@kibo/schema";
 import type { ProjectBackend } from "./types";
 
@@ -25,30 +19,16 @@ export type KiboClient = {
   rpc<R extends RpcRequest>(req: R): Promise<RpcResult[R["method"]]>;
   code<R extends CodeRequest>(req: R): Promise<CodeResult[R["method"]]>;
   pair(token: string): Promise<void>;
-  pairWithCode(code: string): Promise<void>;
   subscribe(listener: (projectId: string | null) => void): () => void;
   subscribeTopic(topic: Topic, listener: () => void): () => void;
-  onRunChanged(listener: (e: RunChanged) => void): () => void;
   subscribeCode(listener: (event: CodeEvent) => void): () => void;
   subscribeIntegrations(listener: (event: IntegrationEvent) => void): () => void;
-  subscribeAi(listener: (event: AiEvent) => void): () => void;
   subscribeEvents(listener: (event: Phase7Event) => void): () => void;
-  subscribeMoments(listener: (event: RunMomentsEvent) => void): () => void;
   online(): boolean;
   onConnection(listener: () => void): () => void;
 };
 
-const isMomentsEvent = (data: unknown): data is RunMomentsEvent =>
-  typeof data === "object" &&
-  data !== null &&
-  "type" in data &&
-  data.type === "run.moments" &&
-  "runId" in data &&
-  typeof data.runId === "string" &&
-  "moments" in data &&
-  Array.isArray(data.moments);
-
-export type ClientOptions = {
+type ClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
   onUnauthorized?: () => void;
@@ -76,12 +56,9 @@ export function createClient(opts: ClientOptions): KiboClient {
 
   const listeners = new Set<(projectId: string | null) => void>();
   const topics = new Map<Topic, Set<() => void>>();
-  const runListeners = new Set<(e: RunChanged) => void>();
   const codeListeners = new Set<(event: CodeEvent) => void>();
   const integrationListeners = new Set<(event: IntegrationEvent) => void>();
-  const aiListeners = new Set<(event: AiEvent) => void>();
   const eventListeners = new Set<(event: Phase7Event) => void>();
-  const momentListeners = new Set<(event: RunMomentsEvent) => void>();
   const statusListeners = new Set<() => void>();
   let socket: WebSocket | null = null;
   let open = false;
@@ -92,12 +69,9 @@ export function createClient(opts: ClientOptions): KiboClient {
   };
   const active = () =>
     listeners.size +
-    runListeners.size +
     codeListeners.size +
     integrationListeners.size +
-    aiListeners.size +
     eventListeners.size +
-    momentListeners.size +
     [...topics.values()].reduce((n, set) => n + set.size, 0);
 
   const connect = () => {
@@ -117,11 +91,6 @@ export function createClient(opts: ClientOptions): KiboClient {
         for (const l of integrationListeners) l(integration.data);
         return;
       }
-      const ai = AiEvent.safeParse(data);
-      if (ai.success) {
-        for (const l of aiListeners) l(ai.data);
-        return;
-      }
       const phase7 = Phase7Event.safeParse(data);
       if (phase7.success) {
         for (const l of eventListeners) l(phase7.data);
@@ -131,17 +100,8 @@ export function createClient(opts: ClientOptions): KiboClient {
         projectId?: string | null;
         topic?: Topic;
         type?: string;
-        runId?: string;
-        state?: RunState;
       };
-      if (isMomentsEvent(data)) {
-        for (const l of momentListeners) l(data);
-        return;
-      }
-      if (msg.type === "run.changed" && msg.runId && msg.state) {
-        for (const l of runListeners) l({ type: "run.changed", runId: msg.runId, state: msg.state });
-        return;
-      }
+      if (msg.type !== undefined) return;
       if (msg.topic) {
         for (const l of topics.get(msg.topic) ?? []) l();
         return;
@@ -151,7 +111,7 @@ export function createClient(opts: ClientOptions): KiboClient {
     socket.onclose = (e) => {
       socket = null;
       setOpen(false);
-      if (e.code === CLOSE_CODES.authFailed) {
+      if (e.code === SESSION_REVOKED_CLOSE) {
         opts.onUnauthorized?.();
         return;
       }
@@ -173,12 +133,6 @@ export function createClient(opts: ClientOptions): KiboClient {
       const res = await post("/api/pair", { token });
       if (res.status !== 204) throw new KiboError("UNAUTHORIZED", "invalid pairing token");
     },
-    async pairWithCode(code) {
-      const res = await post("/api/pair-code", { code });
-      if (res.status === 204) return;
-      if (res.status === 429) throw new KiboError("RATE_LIMITED", "too many attempts");
-      throw new KiboError("UNAUTHORIZED", "invalid or expired code");
-    },
     subscribe(listener) {
       listeners.add(listener);
       if (!socket) connect();
@@ -194,14 +148,6 @@ export function createClient(opts: ClientOptions): KiboClient {
       if (!socket) connect();
       return () => {
         set.delete(listener);
-        release();
-      };
-    },
-    onRunChanged(listener) {
-      runListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        runListeners.delete(listener);
         release();
       };
     },
@@ -221,27 +167,11 @@ export function createClient(opts: ClientOptions): KiboClient {
         release();
       };
     },
-    subscribeAi(listener) {
-      aiListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        aiListeners.delete(listener);
-        release();
-      };
-    },
     subscribeEvents(listener) {
       eventListeners.add(listener);
       if (!socket) connect();
       return () => {
         eventListeners.delete(listener);
-        release();
-      };
-    },
-    subscribeMoments(listener) {
-      momentListeners.add(listener);
-      if (!socket) connect();
-      return () => {
-        momentListeners.delete(listener);
         release();
       };
     },
@@ -263,12 +193,6 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
     subscribe: (listener) =>
       client.subscribe((id) => {
         if (id === projectId) listener();
-      }),
-    runs: async (): Promise<TicketRun[]> => ticketRuns(await client.rpc({ method: "getAgents" }), projectId),
-    subscribeRuns: (listener) => client.subscribeTopic("agents", listener),
-    subscribePresence: (listener) =>
-      client.subscribeEvents((m) => {
-        if (m.type === "presence.changed" && m.projectId === projectId) listener();
       }),
     subscribeConfig: (listener) => client.subscribeTopic("config", listener),
   };

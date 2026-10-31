@@ -1,7 +1,7 @@
 import type { ProjectEvent } from "./project-event";
 import type { Sprint } from "./sprint";
 
-export type SprintStart = Pick<Sprint, "code" | "start">;
+type SprintStart = Pick<Sprint, "code" | "start">;
 
 const pad = (n: number, width: number) => String(n).padStart(width, "0");
 

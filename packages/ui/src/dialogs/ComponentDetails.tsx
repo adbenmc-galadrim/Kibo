@@ -1,13 +1,12 @@
 import type { Page } from "@kibo/schema";
 import { Check } from "lucide-react";
-import type { ReactNode } from "react";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { componentIcon } from "../registry";
 import { ComponentPreview } from "./ComponentPreview";
 import type { Choice } from "./catalog-choices";
 import { Segment } from "./Segment";
 
-export function Details({ choice, page, source }: { choice: Choice; page: Page; source: ReactNode }) {
+export function Details({ choice, page }: { choice: Choice; page: Page }) {
   const a = frComponentsManage.addComponent;
   return (
     <>
@@ -23,7 +22,6 @@ export function Details({ choice, page, source }: { choice: Choice; page: Page; 
           options={[{ value: page.kind, label: page.kind === "dashboard" ? a.widget : a.view }]}
         />
       </div>
-      {source}
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <Check aria-hidden className="size-3.5 shrink-0 text-green-600 dark:text-green-400" />
         {choice.line}

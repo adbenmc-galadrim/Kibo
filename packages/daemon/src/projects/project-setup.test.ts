@@ -99,7 +99,6 @@ test("a seeded project is marked migrated and the tracking migration runs nothin
   };
   expect(migrateTracking({ docs, settings, log: () => {}, now: () => Date.parse(NOW) })).toEqual({
     migrated: 0,
-    skipped: 0,
   });
   expect(runs).toEqual([]);
 });
@@ -171,7 +170,6 @@ test("the seed never goes through the live command path, so a failing command ca
     },
     icons: service.icons,
     settings,
-    collab: () => null,
     adopt: (id, doc) => adopted.set(id, doc),
     fileTicket: () => ({ ticketId: "", key: null }),
   };

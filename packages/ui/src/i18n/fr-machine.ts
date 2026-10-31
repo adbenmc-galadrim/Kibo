@@ -6,6 +6,5 @@ export const frMachine = {
   capacity: "Capacité",
   capacityDetail: (cores: number, ramGb: number, slots: number) =>
     `${cores} cœurs, ${ramGb} Go · ${slots} place${slots > 1 ? "s" : ""} pour l'agent de projet`,
-  isolation: "Isolation des composants",
   loading: "Lecture de la machine…",
 } as const;

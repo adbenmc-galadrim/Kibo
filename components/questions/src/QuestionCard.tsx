@@ -5,7 +5,6 @@ import {
   type Question,
   type QuestionRecipient,
   questionLabel,
-  type TicketRun,
 } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
@@ -14,8 +13,6 @@ import { Archive, ArchiveRestore, ClipboardPaste, Lock, Send } from "lucide-reac
 import { useState } from "react";
 import { AnswerActionButtons, AnswerEditForm } from "./AnswerActions";
 import { CardMenu } from "./CardMenu";
-import { DenialProposals } from "./DenialProposals";
-import { isDenialQuestion } from "./denial-logic";
 import { ExportButton } from "./ExportButton";
 import { dayMonth, exportLabels } from "./export-text";
 import { fr } from "./fr";
@@ -44,9 +41,7 @@ type Props = {
   client: string | null;
   recipients: readonly QuestionRecipient[];
   now: number;
-  readOnly: boolean;
   viewer: string;
-  runOf(runId: string | null): TicketRun | null;
   ticketLabel(ticketId: string): string;
 };
 
@@ -96,23 +91,9 @@ function ArchivedLine({ question: q, now }: { question: Question; now: number })
   );
 }
 
-function AnswerArea({
-  question: q,
-  readOnly,
-  run,
-}: {
-  question: Question;
-  readOnly: boolean;
-  run: TicketRun | null;
-}) {
+function AnswerArea({ question: q }: { question: Question }) {
   if (!isOpen(q)) return null;
-  const form = readOnly ? null : isScreenValidation(q) ? (
-    <ValidationActions question={q} />
-  ) : (
-    <QuestionAnswerForm question={q} />
-  );
-  if (!isDenialQuestion(q)) return form;
-  return <DenialProposals question={q} run={run} readOnly={readOnly} fallback={form} />;
+  return isScreenValidation(q) ? <ValidationActions question={q} /> : <QuestionAnswerForm question={q} />;
 }
 
 function RestoreButton({ questionId }: { questionId: string }) {
@@ -160,7 +141,7 @@ function RemindedLine({ question, now }: { question: Question; now: number }) {
 }
 
 export function QuestionCard(props: Props) {
-  const { question: q, impact, client, recipients, now, readOnly, viewer, runOf } = props;
+  const { question: q, impact, client, recipients, now, viewer } = props;
   const sdk = useSdk();
   const [archiving, setArchiving] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -169,10 +150,10 @@ export function QuestionCard(props: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const spotlight = useSpotlightCard(q.id);
   const archived = isArchived(q);
-  const open = isOpen(q) && !readOnly;
+  const open = isOpen(q);
   const by = { kind: "human", ref: sdk.viewer } as const;
   const context = renderContext(q.context);
-  const editedAnswer = !readOnly && editing && isAnswered(q) ? q.answer : null;
+  const editedAnswer = editing && isAnswered(q) ? q.answer : null;
   const blocking = isOpenBlocking(q);
   return (
     <article
@@ -206,24 +187,20 @@ export function QuestionCard(props: Props) {
               {fr.paste.open}
             </Button>
           )}
-          {!readOnly && editedAnswer === null && (
-            <AnswerActionButtons question={q} onEdit={() => setEditing(true)} />
-          )}
-          {!readOnly && archived && <RestoreButton questionId={q.id} />}
-          {!readOnly && (
-            <CardMenu
-              question={q}
-              canArchive={canArchive(q, viewer, runOf(q.runId))}
-              onArchive={() => setArchiving(true)}
-              onRemove={() => setRemoving(true)}
-            />
-          )}
+          {editedAnswer === null && <AnswerActionButtons question={q} onEdit={() => setEditing(true)} />}
+          {archived && <RestoreButton questionId={q.id} />}
+          <CardMenu
+            question={q}
+            canArchive={canArchive(q, viewer)}
+            onArchive={() => setArchiving(true)}
+            onRemove={() => setRemoving(true)}
+          />
         </div>
       </header>
       <div className="flex flex-wrap items-center gap-2">
-        <RecipientMenu question={q} recipients={recipients} client={client} readOnly={readOnly || archived} />
+        <RecipientMenu question={q} recipients={recipients} client={client} readOnly={archived} />
         <span className="text-2xs text-muted-foreground">{fr.askedBy}</span>
-        <QuestionAuthor actor={q.createdBy} run={runOf(q.runId)} />
+        <QuestionAuthor actor={q.createdBy} />
         <span className="text-2xs text-muted-foreground">{relativeAge(q.createdAt, now)}</span>
         <SentLine question={q} />
         <RemindedLine question={q} now={now} />
@@ -232,12 +209,12 @@ export function QuestionCard(props: Props) {
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}
       <QuestionImages question={q} />
-      <ChoicesLine question={q} asButtons={open && !isDenialQuestion(q)} />
+      <ChoicesLine question={q} asButtons={open} />
       <QuestionAnswerLine question={q} now={now} />
       {editedAnswer !== null && (
         <AnswerEditForm question={q} answer={editedAnswer} onClose={() => setEditing(false)} />
       )}
-      <AnswerArea question={q} readOnly={readOnly} run={runOf(q.runId)} />
+      <AnswerArea question={q} />
       {open && pasting && <PasteAnswerForm question={q} onClose={() => setPasting(false)} />}
       {historyOpen && (
         <QuestionHistory question={q} context={{ recipients, ticketLabel: props.ticketLabel, now }} />

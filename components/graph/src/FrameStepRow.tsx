@@ -4,7 +4,7 @@ import { GitBranch, GitMerge, GitPullRequest, type LucideIcon, Pause } from "luc
 import { fr } from "./fr";
 import type { GitMark, LaneStep, StepTone } from "./sprint-lanes";
 
-export const DOT_BG: Record<Exclude<StepTone, "todo">, string> = {
+const DOT_BG: Record<Exclude<StepTone, "todo">, string> = {
   done: "bg-(--tracking-green)",
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
@@ -28,7 +28,7 @@ const GIT_TEXT: Record<GitMark["tone"], string> = {
   dim: "text-(--tracking-dim)",
 };
 
-export function StepDot({ tone }: { tone: StepTone }) {
+function StepDot({ tone }: { tone: StepTone }) {
   return (
     <span
       aria-hidden

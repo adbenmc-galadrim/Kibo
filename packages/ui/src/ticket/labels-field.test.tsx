@@ -18,8 +18,6 @@ mock.module("../api", () =>
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-        if (req.method === "getPresence") return [];
         return null;
       },
       subscribe: () => () => undefined,
@@ -36,7 +34,6 @@ const { TicketTab } = await import("../pages/TicketTab");
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
   key: "KIB-12",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-12",
   title: "Schéma Loro des tickets",
@@ -139,7 +136,6 @@ const project = (main: TicketView): ProjectSnapshot => ({
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -156,7 +152,6 @@ const project = (main: TicketView): ProjectSnapshot => ({
   bindings: [],
   nextTicketKey: "KIB-13",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 
 const showSheet = (main: TicketView) =>

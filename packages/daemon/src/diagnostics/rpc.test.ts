@@ -44,10 +44,15 @@ const rpc = appRpc({
     diagnosticsCalls++;
     return report;
   },
+  environment: async () => report.environment,
 });
 
-test("appRpc declares its two methods", () => {
-  expect(rpc.methods).toEqual(["getAppInfo", "getDiagnostics"]);
+test("appRpc declares its three methods", () => {
+  expect(rpc.methods).toEqual(["getAppInfo", "getDiagnostics", "getEnvironment"]);
+});
+
+test("getEnvironment is open, even to a remote session", async () => {
+  expect(await rpc.handle({ method: "getEnvironment" }, remote)).toEqual(report.environment);
 });
 
 test("getAppInfo is open, even to a remote session, which never learns the user home", async () => {

@@ -11,7 +11,6 @@ import { linkCandidates, linksOf } from "./links";
 const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"): TicketView => ({
   id: `${n}@1`,
   key: `KIB-${n}`,
-  pendingSeq: null,
   hold: null,
   keyLabel: `KIB-${n}`,
   title,
@@ -54,7 +53,6 @@ const project: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -85,7 +83,6 @@ const project: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-22",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 test("links are grouped from the ticket's point of view, relates being symmetric", () => {

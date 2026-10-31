@@ -1,4 +1,4 @@
-import type { CiRun, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
+import type { CiRun, ProjectSnapshot, TicketView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   Bot,
@@ -14,20 +14,15 @@ import {
   Pause,
 } from "lucide-react";
 import { frTicketTracking as t } from "../../i18n/fr-ticket-tracking";
-import { ActivityTab } from "../../shell/lazy-screens";
-import { useAgentsState } from "../../state/agents-context";
 import { useNow } from "../../state/use-agents";
-import { FoldSection } from "../FoldSection";
 import type { TicketJournal } from "../use-ticket-tracking";
 import { type TimelineKind, type TimelineLine, ticketTimeline } from "./ticket-timeline";
-import { ticketRuns } from "./timeline";
 
 type Props = {
   project: ProjectSnapshot;
   ticket: TicketView;
   journal: TicketJournal;
   ciRuns: readonly CiRun[];
-  onOpenFile(ref: FileRef): void;
 };
 
 const ICONS: Record<TimelineKind, { icon: LucideIcon; tone: string }> = {
@@ -87,10 +82,8 @@ function Entry({ line, last }: { line: TimelineLine; last: boolean }) {
   );
 }
 
-export function TicketTimeline({ project, ticket, journal, ciRuns, onOpenFile }: Props) {
+export function TicketTimeline({ project, ticket, journal, ciRuns }: Props) {
   const now = useNow(60_000);
-  const agents = useAgentsState();
-  const runs = ticketRuns(agents?.runs ?? [], ticket.id);
   const lines = ticketTimeline(journal.events, project, now, ciRuns);
   return (
     <div className="grid gap-4 pb-6 text-xs">
@@ -113,13 +106,6 @@ export function TicketTimeline({ project, ticket, journal, ciRuns, onOpenFile }:
           ))}
         </ol>
       </section>
-      {runs.length > 0 && (
-        <FoldSection title={t.oldRuns} hint={t.oldRunsHint}>
-          <div className="-mx-4">
-            <ActivityTab project={project} ticket={ticket} onOpenFile={onOpenFile} />
-          </div>
-        </FoldSection>
-      )}
     </div>
   );
 }

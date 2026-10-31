@@ -8,15 +8,15 @@ import {
   type WaitReason,
 } from "@kibo/schema";
 
-export type SchedulerAgent = { ref: string; name: string; maxParallel: number };
-export type SchedulerInput = {
+type SchedulerAgent = { ref: string; name: string; maxParallel: number };
+type SchedulerInput = {
   runs: RunView[];
   agents: SchedulerAgent[];
   settings: HostSettings;
   load: HostLoad;
 };
-export type Admission = { runId: string; lane: number };
-export type Plan = { admit: Admission[]; waiting: QueueEntry[] };
+type Admission = { runId: string; lane: number };
+type Plan = { admit: Admission[]; waiting: QueueEntry[] };
 
 const holdsSlot = (r: Pick<RunView, "state">) => r.state === "starting" || r.state === "running";
 const holdsLane = (r: Pick<RunView, "state">) => holdsSlot(r) || r.state === "waiting_input";

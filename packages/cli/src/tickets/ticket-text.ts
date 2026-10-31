@@ -20,7 +20,7 @@ const touchUpLines = (delivery: DeliveryStep | null): string[] =>
 
 const DEMO_TITLE = "démo client";
 
-export function displayTitle(s: Pick<TicketSummary, "title" | "feature">): string {
+function displayTitle(s: Pick<TicketSummary, "title" | "feature">): string {
   if (s.feature === null || s.title.trim().toLowerCase() !== DEMO_TITLE) return s.title;
   return t.demo(s.feature.shortKey ?? s.feature.key);
 }

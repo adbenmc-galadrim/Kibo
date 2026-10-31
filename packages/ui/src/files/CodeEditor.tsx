@@ -10,7 +10,7 @@ import { kiboEditorTheme } from "./editor-theme";
 import { splitPath } from "./file-path";
 import { useDarkMode } from "./use-dark-mode";
 
-export type EditorLayout = "single" | "unified" | "split";
+type EditorLayout = "single" | "unified" | "split";
 
 type Props = {
   initial: string;

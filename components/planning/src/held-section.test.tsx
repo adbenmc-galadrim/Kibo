@@ -36,9 +36,9 @@ const GROUPS: HeldGroup[] = [
   },
 ];
 
-function renderSection(groups = GROUPS, readOnly = false) {
+function renderSection(groups = GROUPS) {
   const handlers = { onOpen: mock(), onResume: mock(), onResumeIn: mock() };
-  const { container } = render(<HeldSection groups={groups} readOnly={readOnly} {...handlers} />);
+  const { container } = render(<HeldSection groups={groups} {...handlers} />);
   return { container, ...handlers };
 }
 
@@ -89,12 +89,6 @@ test("with resume targets, the menu also resumes the step in a sprint", async ()
   item.focus();
   await user.keyboard("{Enter}");
   expect(onResumeIn).toHaveBeenCalledWith(GROUPS[0]?.steps[0], "s43");
-});
-
-test("read only, the cards have no menu", () => {
-  renderSection(GROUPS, true);
-  expect(screen.getByRole("region", { name: "En attente (3)" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /^Actions de/ })).toBeNull();
 });
 
 test("nothing is rendered without a step on hold", () => {

@@ -61,7 +61,7 @@ test("a 401 on rpc notifies onUnauthorized before throwing", async () => {
   expect(events).toHaveLength(2);
 });
 
-test("topic, run and project messages reach their own listeners", async () => {
+test("topic and project messages reach their own listeners", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -70,7 +70,6 @@ test("topic, run and project messages reach their own listeners", async () => {
       open(ws) {
         ws.send(JSON.stringify({ projectId: "p1" }));
         ws.send(JSON.stringify({ topic: "agents" }));
-        ws.send(JSON.stringify({ type: "run.changed", runId: "r1", state: "running" }));
       },
       message() {},
     },
@@ -79,18 +78,16 @@ test("topic, run and project messages reach their own listeners", async () => {
   const seen: string[] = [];
   const done = Promise.withResolvers<void>();
   const offProject = client.subscribe((id) => seen.push(`project:${id}`));
-  const offAgents = client.subscribeTopic("agents", () => seen.push("agents"));
-  const offConfig = client.subscribeTopic("config", () => seen.push("config"));
-  const offRuns = client.onRunChanged((e) => {
-    seen.push(`run:${e.runId}:${e.state}`);
+  const offAgents = client.subscribeTopic("agents", () => {
+    seen.push("agents");
     done.resolve();
   });
+  const offConfig = client.subscribeTopic("config", () => seen.push("config"));
   await done.promise;
-  expect(seen).toEqual(["project:p1", "agents", "run:r1:running"]);
+  expect(seen).toEqual(["project:p1", "agents"]);
   offProject();
   offAgents();
   offConfig();
-  offRuns();
   server.stop(true);
 });
 
@@ -209,41 +206,6 @@ test("code events reach code listeners only, on the shared socket", async () => 
   server.stop(true);
 });
 
-test("ai events reach ai listeners only", async () => {
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: 0,
-    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
-    websocket: {
-      open(ws) {
-        ws.send(JSON.stringify({ type: "starter.ready", runId: "r1", plan: null }));
-        ws.send(
-          JSON.stringify({
-            type: "draft.changed",
-            draftId: "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11",
-            status: "review",
-          }),
-        );
-        ws.send(JSON.stringify({ projectId: "p1" }));
-      },
-      message() {},
-    },
-  });
-  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
-  const seen: string[] = [];
-  const done = Promise.withResolvers<void>();
-  const offProject = client.subscribe((id) => {
-    seen.push(`project:${id}`);
-    done.resolve();
-  });
-  const offAi = client.subscribeAi((e) => seen.push(e.type));
-  await done.promise;
-  expect(seen).toEqual(["starter.ready", "draft.changed", "project:p1"]);
-  offProject();
-  offAi();
-  server.stop(true);
-});
-
 test("phase 7 events reach subscribeEvents and never reload a project", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
@@ -251,7 +213,7 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
     fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
     websocket: {
       open(ws) {
-        ws.send(JSON.stringify({ type: "presence.changed", projectId: "p1" }));
+        ws.send(JSON.stringify({ type: "backups.changed" }));
         ws.send(JSON.stringify({ type: "sessions.changed" }));
         ws.send(JSON.stringify({ projectId: "p2" }));
       },
@@ -267,24 +229,10 @@ test("phase 7 events reach subscribeEvents and never reload a project", async ()
   });
   const offEvents = client.subscribeEvents((e) => seen.push(e.type));
   await done.promise;
-  expect(seen).toEqual(["presence.changed", "sessions.changed", "project:p2"]);
+  expect(seen).toEqual(["backups.changed", "sessions.changed", "project:p2"]);
   offProject();
   offEvents();
   server.stop(true);
-});
-
-test("pairWithCode posts the code, fails on 401 and reports rate limiting", async () => {
-  const seen: { url: string; body: string }[] = [];
-  const statuses = [204, 401, 429];
-  const recording = (async (url: string, init: RequestInit) => {
-    seen.push({ url, body: String(init.body) });
-    return new Response(null, { status: statuses.shift() ?? 500 });
-  }) as unknown as typeof fetch;
-  const client = createClient({ baseUrl: "http://127.0.0.1:1", fetch: recording });
-  await client.pairWithCode("K7Q4M2");
-  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-  await expect(client.pairWithCode("ZZZZZZ")).rejects.toMatchObject({ code: "RATE_LIMITED" });
-  expect(seen[0]).toEqual({ url: "http://127.0.0.1:1/api/pair-code", body: '{"code":"K7Q4M2"}' });
 });
 
 test("a revoked session (close 4401) stops the reconnection and reports it", async () => {
@@ -320,38 +268,29 @@ test("a revoked session (close 4401) stops the reconnection and reports it", asy
   server.stop(true);
 });
 
-test("run moments reach moment listeners only, never a project reload", async () => {
-  const moment = {
-    id: 1,
-    runId: "r1",
-    seq: 0,
-    at: 1,
-    stepId: null,
-    data: { kind: "message", text: "Bonjour" },
-  };
+test("a typed event without a listener never reloads a project", async () => {
   const server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
     fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
     websocket: {
       open(ws) {
-        ws.send(JSON.stringify({ type: "run.moments", runId: "r1", moments: [moment] }));
+        ws.send(JSON.stringify({ type: "run.changed", runId: "r1", state: "running" }));
+        ws.send(JSON.stringify({ type: "run.moments", runId: "r1", moments: [] }));
         ws.send(JSON.stringify({ projectId: "p1" }));
       },
       message() {},
     },
   });
   const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
-  const seen: string[] = [];
+  const seen: (string | null)[] = [];
   const done = Promise.withResolvers<void>();
-  const offProject = client.subscribe((id) => {
-    seen.push(`project:${id}`);
-    done.resolve();
+  const off = client.subscribe((id) => {
+    seen.push(id);
+    if (id === "p1") done.resolve();
   });
-  const offMoments = client.subscribeMoments((e) => seen.push(`${e.runId}:${e.moments.length}`));
   await done.promise;
-  expect(seen).toEqual(["r1:1", "project:p1"]);
-  offProject();
-  offMoments();
+  expect(seen).toEqual(["p1"]);
+  off();
   server.stop(true);
 });

@@ -1,12 +1,11 @@
-import type { MemberInfo, Question, QuestionAnswer, QuestionEvent, QuestionRecipient } from "@kibo/schema";
+import type { Question, QuestionAnswer, QuestionEvent, QuestionRecipient } from "@kibo/schema";
 import { fr } from "./fr";
 import { actorName, recipientName, relativeAge } from "./questions-logic";
 
 type QuestionState = Required<QuestionEvent["previous"]>;
-export type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
+type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
 export type HistoryContext = {
   recipients: readonly QuestionRecipient[];
-  members: readonly MemberInfo[];
   ticketLabel(ticketId: string): string;
   now: number;
 };
@@ -88,4 +87,4 @@ function what(entry: HistoryEntry, ctx: HistoryContext): string {
 }
 
 export const historyLine = (entry: HistoryEntry, ctx: HistoryContext): string =>
-  t.line(relativeAge(entry.event.at, ctx.now), actorName(entry.event.by, ctx.members), what(entry, ctx));
+  t.line(relativeAge(entry.event.at, ctx.now), actorName(entry.event.by), what(entry, ctx));

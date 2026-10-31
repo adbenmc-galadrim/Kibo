@@ -15,7 +15,7 @@ S.exportPng = async (board, file, scale = 1) => {
 S.count = (b) => penpotUtils.findShapes(() => true, b).length + 1;
 S.NAMES = { "a-vue": "A1 · ", "a-tickets": "A2 · ", "a-graphe": "A3 · ", "b-vue": "B1 · ", "b-tickets": "B2 · ", "b-graphe": "B3 · ", "c-vue": "C1 · ", "c-tickets": "C2 · ", "c-graphe": "C3 · " };
 S.ROWH = 1500;
-Object.assign(S.NAMES, { "p-vue": "P1 · ", "p-planning": "P2 · ", "p-fonctionnalite": "P3 · ", "p-tickets": "P4 · ", "p-graphe": "P5 · " });
+Object.assign(S.NAMES, { "p-vue": "P1 · ", "p-planning": "P2 · ", "p-fonctionnalite": "P3 · ", "p-graphe": "P5 · " });
 Object.assign(S.NAMES, { "p-vue2": "P1 bis · " });
 Object.assign(S.NAMES, { "s1-vue": "Style 1 · Vue", "s1-planning": "Style 1 · Planning", "s2-vue": "Style 2 · Vue", "s2-planning": "Style 2 · Planning", "s3-vue": "Style 3 · Vue", "s3-planning": "Style 3 · Planning",
   "v4": "Vue 4 · ", "v5": "Vue 5 · ", "v6": "Vue 6 · ", "v7": "Vue 7 · " });
@@ -25,10 +25,10 @@ S.exportStyles = async () => { await S.page("Styles"); await S.wait(1500); const
     else if ((m = b.name.match(/^Vue (\d) · ([^(]+)/))) out.push(await S.exportPng(b, `vue-ensemble-${m[1]}-${S.slug(m[2].trim())}-${mode}.png`)); }
   return out; };
 S.slug = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-S.PFILES = { 1: "vue-ensemble", 2: "planning", 3: "fonctionnalite", 4: "tickets", 5: "graphe" };
+S.PFILES = { 1: "vue-ensemble", 2: "planning", 3: "fonctionnalite", 5: "graphe" };
 // Exporte les dix boards de la proposition : proposition-<écran>-<dark|light>.png
 S.exportProposition = async () => { await S.page("Proposition"); await S.wait(1500); const out = [];
-  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && /^P[1-5] · /.test(c.name))) {
+  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && /^P[1235] · /.test(c.name))) {
     const mode = /\(clair\)$/.test(b.name) ? "light" : "dark";
     out.push(await S.exportPng(b, `proposition-${S.PFILES[b.name[1]]}-${mode}.png`)); }
   return out; };

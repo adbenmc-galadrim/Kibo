@@ -1,21 +1,14 @@
 import { expect, mock, test } from "bun:test";
-import type { Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
+import type { Page, ProjectSnapshot } from "@kibo/schema";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
-const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 mock.module("../api", () =>
   apiMock({
     client: {
-      rpc: (req: RpcRequest) => {
-        if (req.method === "listComponents") return Promise.resolve([]);
-        if (req.method === "getPresence") return Promise.resolve([]);
-        if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
-        if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
-        return Promise.resolve(null);
-      },
+      rpc: () => Promise.resolve(null),
       subscribe: () => () => undefined,
       subscribeTopic: () => () => undefined,
       subscribeEvents: () => () => undefined,
@@ -30,14 +23,13 @@ const { PageActionsProvider, PageActionsSlot } = await import("../shell/page-act
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,
 };
 const dashboard: Page = { id: "pg", title: "Tableau de bord", kind: "dashboard", parentId: null };
 const single: Page = { id: "pg", title: "Kanban", kind: "view", parentId: null };
-const withAccess = (access: "write" | "read-only" | "revoked", page: Page = dashboard): ProjectSnapshot => {
+const withPage = (page: Page = dashboard): ProjectSnapshot => {
   const base = kiboProject();
   return {
     ...base,
@@ -52,7 +44,6 @@ const withAccess = (access: "write" | "read-only" | "revoked", page: Page = dash
         componentHash: null,
       },
     ],
-    sync: { ...base.sync, shared: true, access },
   };
 };
 const show = (project: ProjectSnapshot, page: Page = dashboard) =>
@@ -66,7 +57,7 @@ const show = (project: ProjectSnapshot, page: Page = dashboard) =>
   );
 
 test("an editable project offers the widget menu", async () => {
-  show(withAccess("write"));
+  show(withPage());
   await userEvent.setup().click(await screen.findByRole("button", { name: "Actions Kanban" }));
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Réglages…",
@@ -74,25 +65,14 @@ test("an editable project offers the widget menu", async () => {
   ]);
 });
 
-test("a read-only or revoked project shows no widget menu", async () => {
-  for (const access of ["read-only", "revoked"] as const) {
-    const view = show(withAccess(access));
-    expect(await screen.findByText("Kanban")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "Réglages…" })).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "Retirer de la page…" })).toBeNull();
-    view.unmount();
-  }
-});
-
 test("a single-widget page leaves its widget menu to the page row of the sidebar", async () => {
-  show(withAccess("write", single), single);
+  show(withPage(single), single);
   await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
   expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
 });
 
 test("a single-widget page gives its component the height left under the page headers", async () => {
-  const { container } = show(withAccess("write", single), single);
+  const { container } = show(withPage(single), single);
   await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
   const body = container.querySelector("[data-view-body]");
   expect(body?.className.split(" ")).toEqual(
@@ -101,17 +81,8 @@ test("a single-widget page gives its component the height left under the page he
   expect(body?.parentElement?.className.split(" ")).toEqual(expect.arrayContaining(["h-full", "min-h-0"]));
 });
 
-test("a read-only or revoked single-widget page shows no widget menu", async () => {
-  for (const access of ["read-only", "revoked"] as const) {
-    const view = show(withAccess(access, single), single);
-    await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
-    expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
-    view.unmount();
-  }
-});
-
-const twoWidgets = (access: "write" | "read-only" = "write"): ProjectSnapshot => {
-  const base = withAccess(access);
+const twoWidgets = (): ProjectSnapshot => {
+  const base = withPage();
   return {
     ...base,
     instances: [
@@ -205,22 +176,15 @@ test(
     await user.click(screen.getByRole("button", { name: "Annuler" }));
     expect(await screen.findByRole("button", { name: "Modifier la disposition" })).toBeTruthy();
     editable.unmount();
-    show(twoWidgets("read-only"));
-    await screen.findAllByText("Kanban");
-    expect(screen.queryByRole("button", { name: "Modifier la disposition" })).toBeNull();
   }),
 );
 
 test("the Vue d'ensemble page puts « Nouveau ticket » in the shell header, Tickets keeps its own", async () => {
   const opened: unknown[] = [];
   const overviewPage: Page = { id: "pg", title: "Vue d'ensemble", kind: "view", parentId: null };
-  const withComponent = (component: string, access: "write" | "read-only" = "write"): ProjectSnapshot => {
-    const base = withAccess(access, overviewPage);
-    return {
-      ...base,
-      sync: { ...base.sync, shared: false },
-      instances: base.instances.map((i) => ({ ...i, component })),
-    };
+  const withComponent = (component: string): ProjectSnapshot => {
+    const base = withPage(overviewPage);
+    return { ...base, instances: base.instances.map((i) => ({ ...i, component })) };
   };
   const mountWith = (project: ProjectSnapshot) =>
     render(
@@ -240,7 +204,5 @@ test("the Vue d'ensemble page puts « Nouveau ticket » in the shell header, Tic
   const tickets = mountWith(withComponent("tickets@1.0.0"));
   expect(slotButtons(tickets)).toBe(0);
   tickets.unmount();
-  const readOnly = mountWith(withComponent("overview@1.0.0", "read-only"));
-  expect(slotButtons(readOnly)).toBe(0);
   cleanup();
 });

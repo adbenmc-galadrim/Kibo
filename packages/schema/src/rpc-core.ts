@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { AgentRef } from "./agent";
 import {
   type FilesInfo,
   MAX_PROJECT_ASSET_BYTES,
@@ -10,25 +9,13 @@ import {
 } from "./asset";
 import { ComponentCall } from "./call";
 import { ProjectCommand } from "./command";
-import {
-  ApprovableTrust,
-  type ComponentSummary,
-  type DraftSummary,
-  type PublishPreview,
-  type PublishResult,
-  type RegistryVersion,
-  type RuntimeInfo,
-} from "./component";
 import { IconInput, IconOwner } from "./icon";
-import { Base64, NodeId, ProjectKey, Sha256 } from "./ids";
-import type { Instance } from "./instance";
-import { ComponentId } from "./manifest";
+import { Base64, NodeId, ProjectKey } from "./ids";
 import type { NoteMeta, NotesInfo } from "./note";
 import { ProjectClient, type ProjectMeta, ProjectPatch } from "./project";
 import { ProjectSetup } from "./project-setup";
 import type { ProjectSnapshot, ProjectSummary, Session } from "./rpc";
-import type { AgentsState, AssignPreview, HostView, RunLogEntry, RunView } from "./run";
-import { SemVer } from "./semver";
+import type { AgentsState, HostView, RunLogEntry, RunView } from "./run";
 import { TabsState } from "./tabs";
 import { ConfigCommand, HostSettings, type WorkspaceConfig } from "./workspace-config";
 
@@ -65,20 +52,6 @@ export const CORE_RPC = [
   z.object({ method: z.literal("getAgents") }),
   z.object({ method: z.literal("getRunLog"), runId: z.string().min(1) }),
   z.object({
-    method: z.literal("previewAssign"),
-    projectId: z.string().min(1),
-    ticketId: NodeId,
-    profileId: AgentRef,
-  }),
-  z.object({
-    method: z.literal("assignAgent"),
-    projectId: z.string().min(1),
-    ticketId: NodeId,
-    profileId: AgentRef,
-    brief: z.string().max(10_000),
-    fresh: z.boolean().default(false),
-  }),
-  z.object({
     method: z.literal("answerRun"),
     runId: z.string().min(1),
     text: z.string().trim().min(1).max(10_000),
@@ -89,36 +62,12 @@ export const CORE_RPC = [
   z.object({ method: z.literal("setHost"), patch: HostSettings.partial() }),
   z.object({ method: z.literal("getTabs") }),
   z.object({ method: z.literal("saveTabs"), state: TabsState }),
-  z.object({ method: z.literal("listComponents") }),
   z.object({
     method: z.literal("componentCall"),
     projectId: z.string().min(1),
     instanceId: z.string().min(1),
     call: ComponentCall,
   }),
-  z.object({
-    method: z.literal("approveComponent"),
-    id: ComponentId,
-    version: SemVer,
-    hash: Sha256,
-    trust: ApprovableTrust,
-  }),
-  z.object({ method: z.literal("revokeComponent"), id: ComponentId, version: SemVer }),
-  z.object({ method: z.literal("rehashComponent"), id: ComponentId, version: SemVer }),
-  z.object({ method: z.literal("previewPublish"), id: ComponentId }),
-  z.object({
-    method: z.literal("publishComponent"),
-    id: ComponentId,
-    strategy: z.enum(["update-all", "new-version"]),
-  }),
-  z.object({
-    method: z.literal("updateInstance"),
-    projectId: z.string().min(1),
-    instanceId: z.string().min(1),
-    to: SemVer,
-  }),
-  z.object({ method: z.literal("uninstallComponent"), id: ComponentId, version: SemVer }),
-  z.object({ method: z.literal("listDrafts") }),
   z.object({ method: z.literal("getNotesDir"), projectId: z.string().min(1) }),
   z.object({ method: z.literal("listNotes"), projectId: z.string().min(1) }),
   z.object({
@@ -126,7 +75,6 @@ export const CORE_RPC = [
     projectId: z.string().min(1),
     dir: z.string().min(1).max(4096),
   }),
-  z.object({ method: z.literal("getRuntimeInfo") }),
   z.object({ method: z.literal("installCli") }),
   z.object({ method: z.literal("cliStatus") }),
   z.object({
@@ -174,8 +122,6 @@ export type CoreRpcResult = {
   config: unknown;
   getAgents: AgentsState;
   getRunLog: RunLogEntry[];
-  previewAssign: AssignPreview;
-  assignAgent: RunView;
   answerRun: RunView;
   cancelRun: RunView;
   moveRun: null;
@@ -183,20 +129,10 @@ export type CoreRpcResult = {
   setHost: HostView;
   getTabs: TabsState;
   saveTabs: null;
-  listComponents: ComponentSummary[];
   componentCall: unknown;
-  approveComponent: RegistryVersion;
-  revokeComponent: null;
-  rehashComponent: RegistryVersion;
-  previewPublish: PublishPreview;
-  publishComponent: PublishResult;
-  updateInstance: Instance;
-  uninstallComponent: null;
-  listDrafts: DraftSummary[];
   getNotesDir: NotesInfo;
   listNotes: NoteMeta[];
   setNotesDir: NotesInfo;
-  getRuntimeInfo: RuntimeInfo;
   installCli: { path: string };
   cliStatus: { path: string; installed: boolean };
   reportComponentRefusal: null;

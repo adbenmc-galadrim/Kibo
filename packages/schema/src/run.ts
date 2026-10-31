@@ -1,13 +1,6 @@
 import { z } from "zod";
 import type { AgentScope } from "./agent";
-import type { RunDeliveryStep } from "./delivery";
-import type { MachineLock } from "./machine-lock";
-import type { RunOverlapCount } from "./overlap";
-import type { RunProgressSummary } from "./progress";
-import type { RunQuestions } from "./question";
 import { type HookEventName, HookPayload } from "./run-hook";
-import type { ProjectSignalCount } from "./signal";
-import type { RunSubagentSummary } from "./subagent";
 import type { HostSettings } from "./workspace-config";
 
 export const RunState = z.enum([
@@ -22,19 +15,8 @@ export const RunState = z.enum([
 export type RunState = z.infer<typeof RunState>;
 
 export const SLOT_STATES: readonly RunState[] = ["starting", "running"];
-export const TERMINAL_STATES: readonly RunState[] = ["done", "failed", "cancelled"];
+const TERMINAL_STATES: readonly RunState[] = ["done", "failed", "cancelled"];
 export const isTerminal = (state: RunState): boolean => TERMINAL_STATES.includes(state);
-
-export const SetupStatus = z.enum(["running", "done", "failed"]);
-export type SetupStatus = z.infer<typeof SetupStatus>;
-export const SetupStep = z.object({
-  command: z.string(),
-  status: SetupStatus,
-  durationMs: z.number().int().nonnegative().optional(),
-});
-export type SetupStep = z.infer<typeof SetupStep>;
-export const BaseFallback = z.object({ base: z.string().min(1), from: z.string().min(1) });
-export type BaseFallback = z.infer<typeof BaseFallback>;
 
 export const SessionFreshReason = z.enum([
   "no_previous",
@@ -85,13 +67,11 @@ const LifecycleEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("failed"), error: z.string() }),
   z.object({ type: z.literal("reranked"), rank: z.number() }),
   z.object({ type: z.literal("prioritized"), priority: z.boolean() }),
-  SetupStep.extend({ type: z.literal("setup") }),
-  BaseFallback.extend({ type: z.literal("base_fallback") }),
 ]);
 export const RunEvent = z.union([LifecycleEvent, SessionEvent]);
 export type RunEvent = z.infer<typeof RunEvent>;
 
-export const RunKind = z.enum(["ticket", "project"]);
+export const RunKind = z.enum(["project"]);
 export type RunKind = z.infer<typeof RunKind>;
 
 export type RunRecord = {
@@ -111,8 +91,6 @@ export type RunRecord = {
   createdAt: number;
   resumedFrom: string | null;
 };
-
-export const isProjectRun = (run: Pick<RunRecord, "kind">): boolean => run.kind === "project";
 
 export type RunActivity = { at: number; event: HookEventName; tool: string | null; detail: string | null };
 export type ActiveSubagent = { id: string; type: string; since: number };
@@ -184,23 +162,8 @@ export type AgentsState = {
   host: HostView;
   tokensToday: number;
   resumable: string[];
-  questions: RunQuestions[];
   projectAgents: ProjectAgentSummary[];
-  progress: RunProgressSummary[];
-  signals: ProjectSignalCount[];
-  overlaps?: RunOverlapCount[];
-  overlapTotal?: number;
-  locks?: MachineLock[];
-  locksDir?: string;
-  delivery?: RunDeliveryStep[];
-  subagents?: RunSubagentSummary[];
 };
-
-export const runOverlapCounts = (state: Pick<AgentsState, "overlaps">): RunOverlapCount[] =>
-  state.overlaps ?? [];
-export const runSubagents = (state: Pick<AgentsState, "subagents">): RunSubagentSummary[] =>
-  state.subagents ?? [];
-export const openOverlapTotal = (state: Pick<AgentsState, "overlapTotal">): number => state.overlapTotal ?? 0;
 export type SessionPreview = {
   runId: string;
   label: string;
@@ -208,14 +171,6 @@ export type SessionPreview = {
   tokens: number;
   resumable: boolean;
   reason: SessionFreshReason | null;
-};
-export type AssignPreview = {
-  position: number | null;
-  reason: WaitReason | null;
-  guidelines: number;
-  session: SessionPreview | null;
-  model?: string;
-  inherited?: boolean;
 };
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
 export const TicketRun = z.object({

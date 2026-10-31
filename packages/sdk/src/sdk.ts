@@ -1,5 +1,4 @@
 import {
-  type AssetMime,
   type CiRun,
   COMMAND_WRITES,
   type CommandResult,
@@ -11,37 +10,18 @@ import {
   type FetchInitInput,
   type FetchResponse,
   KiboError,
-  type McpCallResult,
-  mcpCovered,
-  type NoteContent,
-  type NoteMeta,
-  type NotesInfo,
-  type PresencePeer,
   type ProjectCommand,
   type ProjectEvent,
   type ProjectInfo,
-  type ProjectSyncInfo,
   ruleCovers,
-  type Ticket,
 } from "@kibo/schema";
-import { assetsApi, designApi, embedApi } from "./capability-apis";
-import { base64ToBytes, bytesToBase64 } from "./lib/base64";
+import { assetsApi, designApi } from "./capability-apis";
 import { questionsApi } from "./questions-api";
-import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import { NO_SPOTLIGHT } from "./spotlight";
 import { openSprintOf, sprintsApi } from "./sprints-api";
 import { emitToast } from "./toast-bus";
-import type {
-  EntityMap,
-  InstanceData,
-  KiboSdk,
-  McpApi,
-  NotesApi,
-  ProjectBackend,
-  SdkContext,
-  SdkMode,
-} from "./types";
+import type { EntityMap, InstanceData, KiboSdk, ProjectBackend, SdkContext, SdkMode } from "./types";
 
 type Guard = {
   deny(what: string): never;
@@ -89,81 +69,6 @@ function instanceData(manifest: ComponentManifest, guard: Guard, call: Call): In
   };
 }
 
-function notesApi(guard: Guard, call: Call): NotesApi {
-  return {
-    async read(path) {
-      guard.needRead("note");
-      return call<NoteContent>({ kind: "notes.read", path });
-    },
-    async write(path, markdown, expectedMtime) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.write", path, markdown, expectedMtime });
-    },
-    async create(path, markdown) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.create", path, markdown });
-    },
-    async rename(from, to) {
-      guard.needWrite("note");
-      return call<NoteMeta>({ kind: "notes.rename", from, to });
-    },
-    async remove(path) {
-      guard.needWrite("note");
-      await call({ kind: "notes.remove", path });
-    },
-    async search(query) {
-      guard.needRead("note");
-      return call<NoteMeta[]>({ kind: "notes.search", query });
-    },
-    async info() {
-      guard.needRead("note");
-      return call<NotesInfo>({ kind: "notes.info" });
-    },
-    async attach(notePath, name, mime, bytes) {
-      guard.needWrite("note");
-      return call<{ path: string }>({
-        kind: "notes.attach",
-        notePath,
-        name,
-        mime,
-        bytes: bytesToBase64(bytes),
-      });
-    },
-    async asset(path) {
-      guard.needRead("note");
-      const asset = await call<{ mime: AssetMime; bytes: string }>({ kind: "notes.asset", path });
-      return { mime: asset.mime, bytes: base64ToBytes(asset.bytes) };
-    },
-  };
-}
-
-function mcpApi(
-  manifest: ComponentManifest,
-  guard: Guard,
-  call: Call,
-  config: Record<string, unknown>,
-): McpApi {
-  const need = (server: string, tool: string | null) => {
-    if (!mcpCovered(manifest.mcp, server, tool, config))
-      guard.deny(`mcp ${tool === null ? server : `${server}/${tool}`}`);
-  };
-  return {
-    async call(server, tool, args = {}) {
-      need(server, tool);
-      return call<McpCallResult>({ kind: "mcp.call", server, tool, args });
-    },
-    async read(server, uri) {
-      need(server, null);
-      return call<McpCallResult>({ kind: "mcp.read", server, uri });
-    },
-    async importItem(server, item) {
-      guard.needWrite("ticket");
-      need(server, null);
-      return call<Ticket>({ kind: "mcp.import", server, item });
-    },
-  };
-}
-
 export function createSdk(
   backend: ProjectBackend,
   manifest: ComponentManifest,
@@ -178,8 +83,6 @@ export function createSdk(
       status: async () => (await backend.snapshot()).workflow,
       link: async () => (await backend.snapshot()).links,
       page: async () => (await backend.snapshot()).pages,
-      run: () => backend.runs(),
-      note: () => call<NoteMeta[]>({ kind: "list", entity: "note" }),
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
       sprint: async () => (await backend.snapshot()).sprints,
@@ -204,8 +107,7 @@ export function createSdk(
         mode === "gated" ? await backend.call({ kind: "run", command: cmd }) : await backend.run(cmd);
       return result as CommandResult[C["method"]];
     },
-    subscribe: (listener, type) =>
-      type === "run" ? backend.subscribeRuns(listener) : backend.subscribe(listener),
+    subscribe: (listener) => backend.subscribe(listener),
     data: instanceData(manifest, guard, call),
     async fetch(url: string, init: FetchInitInput = {}): Promise<FetchResponse> {
       if (!manifest.net.some((rule) => ruleCovers(rule, url))) guard.deny(`net ${url}`);
@@ -224,19 +126,6 @@ export function createSdk(
     },
     async setConfig(patch) {
       await call({ kind: "config.set", patch });
-    },
-    notes: notesApi(guard, call),
-    mcp: mcpApi(manifest, guard, call, ctx.config),
-    presence: {
-      async list() {
-        guard.needRead("ticket");
-        return call<PresencePeer[]>({ kind: "presence.list" });
-      },
-      subscribe: (listener) => backend.subscribePresence?.(listener) ?? (() => undefined),
-    },
-    async sharing() {
-      guard.needRead("ticket");
-      return call<ProjectSyncInfo>({ kind: "sharing.get" });
     },
     settings: {
       async get() {
@@ -258,9 +147,7 @@ export function createSdk(
     },
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
-    embed: embedApi(manifest, guard, call),
     questions: questionsApi({ read: guard.needRead, write: guard.needWrite }, call, backend, mode),
-    runs: runsApi({ read: guard.needRead, write: guard.needWrite }, call),
     sprints: sprintsApi({
       list: (type) => sdk.list(type),
       run: (cmd) => sdk.run(cmd),
@@ -277,7 +164,6 @@ export function createSdk(
         else console.warn(`[kibo-sdk] ${ctx.instanceId}: no host to edit the project`);
       },
     },
-    openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

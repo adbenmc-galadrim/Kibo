@@ -14,7 +14,7 @@ import { currentBranch, pushRemote, remoteBranches } from "./read";
 import type { WorktreeHandle } from "./repo";
 import { type Env, firstLine, NETWORK_TIMEOUT_MS, type RunResult, runGh } from "./run";
 
-export type CreatePrInput = {
+type CreatePrInput = {
   title: string;
   body: string;
   base: string;

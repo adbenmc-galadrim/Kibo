@@ -38,7 +38,6 @@ const meta = (id: string, key: string, name: string, folder: string | null, colo
   color,
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,

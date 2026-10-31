@@ -15,8 +15,8 @@ Object.assign(S.ICONS, {
   triangleAlert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
 });
 S.NAV_ICON.Planning = "sprint";
-S.PAGES_P = ["Vue d'ensemble", "Planning", "Tickets", "Kanban", "Graphe", "Notes", "Questions"];
-S.COUNTS_P = { "Planning": "S42", "Tickets": "24", "Questions": "3" };
+S.PAGES_P = ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"];
+S.COUNTS_P = { "Planning": "S42", "Questions": "3" };
 
 // ---------- Données ----------
 const T = (key, title, st, o = {}) => ({ key, title, st, ...o });
@@ -74,7 +74,7 @@ S.shellP = (f, active, o = {}) => { const C = S.C;
   const root = S.box(f, { name: "root", w: 1440, h: f.height, dir: "row", align: "stretch" });
   S.sidebar(root, active, { pages: S.PAGES_P, counts: S.COUNTS_P });
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, o.crumbs || ["Silo", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : { count: "3" }); });
+  S.topbar(main, o.crumbs || ["Silo", active], t => { if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : { count: "3" }); });
   return { root, main }; };
 
 // ---------- P1 · Vue d'ensemble ----------
@@ -309,40 +309,6 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
     ["flag", C.mfg, "Phase 10/12 · Démo · SILO-32", "hier"], ["flag", C.mfg, "Phase 11/12 · Livré · SILO-31", "hier"]]) {
     const r = S.cardRow(ac, { gap: 9, pad: [7, 14] }); S.icon(r, icon, 13, col); S.fillX(S.txt(r, text, { size: 12 })); S.txt(r, t, { size: 11, mono: true, color: C.dim }); }
   const nb = S.row(R, { fx: true, gap: 8, align: "start" }); S.icon(nb, "lock", 13, C.dim); S.txt(nb, "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
-  return f; };
-
-// ---------- P4 · Tickets ----------
-S.draw["p-tickets"] = (x, y) => { const C = S.C, P = S.P;
-  const f = S.screen("P4 · Tickets", x, y, 1440, 1000);
-  const { main } = S.shellP(f, "Tickets");
-  const body = S.col(main, { fx: true, fy: true, pad: [18, 24], gap: 12 });
-  const hd = S.row(body, { fx: true, gap: 10, align: "end" }); S.txt(hd, "Tickets", { size: 22, weight: 600 }); S.txt(hd, "sprint S42 · 14 tickets dans 3 fonctionnalités", { size: 12.5, color: C.dim }); S.spacer(hd); S.btn(hd, "Nouveau ticket", "default", { sm: true, icon: "plus" });
-  const fr = S.row(body, { fx: true, gap: 8 });
-  const ss = S.row(fr, { pad: 2, radius: 7, fill: C.muted, gap: 2 });
-  for (const [l, on] of [["Tous les sprints"], ["S41"], ["S42", true], ["S43"], ["S44"], ["À planifier"]]) { const s = S.row(ss, { pad: [4, 10], gap: 5, radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null }); if (on) S.icon(s, "sprint", 12, C.fg); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : C.mfg, mono: /^S4/.test(l) }); }
-  S.spacer(fr); S.btn(fr, "Ouverts", "outline", { sm: true, icon: "circleCheck" }); S.btn(fr, "Fonctionnalité", "outline", { sm: true, icon: "package" }); S.btn(fr, "Activité récente", "outline", { sm: true, icon: "sort" });
-  const W = { key: 74, f: 226, st: 104, git: 196, step: 168, upd: 78 };
-  const tb = S.col(body, { fx: true, stroke: C.border, radius: 8, clip: true, fill: C.card });
-  const th = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 12, fill: C.panel });
-  const hc = (l, w) => { const c = S.row(th, { w, fx: !w }); S.txt(c, l, { size: 11.5, weight: 500, color: C.dim }); };
-  hc("Clé", W.key); hc("Titre"); hc("Fonctionnalité", W.f); hc("État", W.st); hc("Git et PR", W.git); hc("Livraison", W.step); hc("Mis à jour", W.upd);
-  const upd = { "SILO-33": "il y a 9 min", "SILO-45": "il y a 18 min", "SILO-32": "il y a 1 h", "SILO-34": "hier", "SILO-35": "hier", "SILO-46": "lun.", "SILO-21": "il y a 2 h", "SILO-31": "hier", "SILO-43": "mer.", "SILO-42": "mar.", "SILO-41": "lun." };
-  const rows = ["SILO-33", "SILO-45", "SILO-32", "SILO-34", "SILO-35", "SILO-46"].map(k => S.allTickets().find(t => t.key === k));
-  const row = (t, dim) => { S.hline(tb, C.soft); const r = S.row(tb, { fx: true, h: 40, pad: [0, 14], gap: 12 });
-    const kc = S.row(r, { w: W.key }); S.txt(kc, t.key, { size: 12, mono: true, color: dim ? C.dim : C.mfg });
-    const tc = S.row(r, { fx: true, gap: 8 }); S.txt(tc, t.title, { size: 13, color: dim ? C.mfg : C.fg }); if (t.live) S.dot(tc, C.brand, 7);
-    const fc = S.row(r, { w: W.f }); S.fChip(fc, t.f, { name: true });
-    const st = S.row(r, { w: W.st, gap: 7 }); S.status(st, t.st, 8); S.txt(st, t.st, { size: 12.5, color: dim ? C.mfg : C.fg });
-    const gc = S.row(r, { w: W.git }); S.gitRef(gc, t); S.stepCell(r, t.step, { w: W.step });
-    const u = S.row(r, { w: W.upd }); S.txt(u, upd[t.key] || "—", { size: 12, color: C.dim }); };
-  rows.forEach(t => row(t));
-  S.hline(tb, C.soft);
-  { const g = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 8, fill: C.panel }); S.icon(g, "chevDown", 13, C.dim); S.status(g, "Terminé", 8); S.txt(g, "Terminés dans S42", { size: 12, weight: 500, color: C.mfg }); S.txt(g, "8", { size: 11, mono: true, color: C.dim }); }
-  ["SILO-21", "SILO-31", "SILO-43", "SILO-42"].map(k => S.allTickets().find(t => t.key === k)).forEach(t => row(t, true));
-  S.hline(tb, C.soft);
-  { const g = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 8, fill: C.panel }); S.icon(g, "chevRight", 13, C.dim); S.txt(g, "Hors fonctionnalité", { size: 12, weight: 500, color: C.mfg }); S.txt(g, "1", { size: 11, mono: true, color: C.dim }); }
-  const ft = S.row(body, { fx: true, gap: 8 }); S.icon(ft, "refresh", 13, C.dim);
-  S.txt(ft, "États tirés de git : branche poussée ⇒ En cours, PR ouverte ⇒ En review, PR fusionnée ⇒ Terminé. Étapes posées par kibo tickets step.", { size: 11.5, color: C.dim });
   return f; };
 
 // ---------- P5 · Graphe ----------

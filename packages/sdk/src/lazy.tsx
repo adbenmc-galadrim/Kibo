@@ -2,8 +2,8 @@ import { Component, type ComponentType, lazy, type ReactNode, Suspense, useState
 import { cn } from "./lib/utils";
 import { Button } from "./ui/button";
 
-export type LazyLabels = { loading: string; failed: string; retry: string };
-export type LazyOptions = { fallback?: "visible" | "sr-only" | "children" };
+type LazyLabels = { loading: string; failed: string; retry: string };
+type LazyOptions = { fallback?: "visible" | "sr-only" | "children" };
 
 export const LAZY_FALLBACK_SELECTOR = "[data-kibo-loading]";
 

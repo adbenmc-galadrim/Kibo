@@ -1,4 +1,3 @@
-import type { TicketRun } from "@kibo/schema";
 import { MessageCircleQuestion } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, type PointerEvent, useCallback } from "react";
 import { cn } from "./lib/utils";
@@ -6,7 +5,7 @@ import { QuestionPreview, type QuestionPreviewProps } from "./question-preview";
 import { firstOpenQuestion } from "./question-preview-text";
 import { useEntities, useQuestionRecipients, useSdk } from "./react";
 
-export const QUESTIONS_CHIP =
+const QUESTIONS_CHIP =
   "inline-flex shrink-0 items-center gap-1 rounded-md border border-orange-500/40 px-1.5 py-0.5 text-3xs font-medium text-orange-600 outline-none hover:bg-orange-500/10 focus-visible:ring-2 focus-visible:ring-ring dark:text-orange-400";
 
 export type QuestionsChipProps = Omit<QuestionPreviewProps, "mode" | "onOpen" | "children"> & {
@@ -45,20 +44,16 @@ export function QuestionsChip({ text, label, title, className, onOpen, ...previe
   );
 }
 
-export type QuestionsChipData = Pick<QuestionsChipProps, "questions" | "recipients" | "runLabel" | "onOpen">;
+export type QuestionsChipData = Pick<QuestionsChipProps, "questions" | "recipients" | "onOpen">;
 
-export function useQuestionsChipData(runs: readonly TicketRun[]): QuestionsChipData {
+export function useQuestionsChipData(): QuestionsChipData {
   const sdk = useSdk();
   const questions = useEntities("question").data;
   const recipients = useQuestionRecipients();
-  const runLabel = useCallback(
-    (runId: string) => runs.find((r) => r.runId === runId)?.label ?? runId,
-    [runs],
-  );
   const onOpen = useCallback(
     (questionId: string | null) =>
       sdk.openView("questions", questionId === null ? undefined : { question: questionId }),
     [sdk],
   );
-  return { questions, recipients, runLabel, onOpen };
+  return { questions, recipients, onOpen };
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type FlashTone = "ok" | "error";
-export type Flash = {
+type FlashTone = "ok" | "error";
+type Flash = {
   message: string | null;
   tone: FlashTone;
   flash(message: string, tone?: FlashTone): void;

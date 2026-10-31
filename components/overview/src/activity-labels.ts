@@ -1,7 +1,7 @@
 import { DELIVERY_STEP_LABELS, type ProjectEvent, type ProjectEventKind } from "@kibo/schema";
 import { phaseLabel } from "@kibo/sdk";
 
-export type ActivityContext = {
+type ActivityContext = {
   subject: string;
   statusName(statusId: string): string;
   questionRef(questionId: string): string | null;
@@ -91,6 +91,7 @@ const LABELS: Record<ProjectEventKind, Labeler> = {
   question_deleted: (d, ctx) => `${question(d, ctx) ?? "Question"} supprimée`,
   held: (d) => `Mise en attente${text(d, "reason") === null ? "" : ` · ${text(d, "reason")}`}`,
   resumed: () => "Reprise",
+  keys_assigned: () => "Clés attribuées localement",
 };
 
 export const activityLabel = (event: ProjectEvent, ctx: ActivityContext): string =>

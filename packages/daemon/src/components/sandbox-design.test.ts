@@ -22,7 +22,7 @@ function served(body: Uint8Array, extra: { files?: FileOpener } = {}) {
     open: async (token) =>
       token === GOOD ? { path, name: "frame.png", mime: "image/png", size: body.byteLength } : null,
   };
-  const s = startSandboxServer({ port: 0, uiPort: 4317, assets: () => null, designs, ...extra });
+  const s = startSandboxServer({ port: 0, uiPort: 4317, designs, ...extra });
   servers.push(s);
   return s;
 }
@@ -63,7 +63,6 @@ describe("design frames", () => {
     const onlyFiles = startSandboxServer({
       port: 0,
       uiPort: 4317,
-      assets: () => null,
       files: { open: async () => ({ path: "/nonexistent", name: "frame.png", mime: "image/png", size: 1 }) },
     });
     servers.push(onlyFiles);

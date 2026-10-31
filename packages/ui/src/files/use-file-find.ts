@@ -12,7 +12,7 @@ type KeyInput = {
   preventDefault(): void;
 };
 
-export type FileFind = {
+type FileFind = {
   find: FindState | null;
   goTo: number | null;
   current: FindMatch | null;

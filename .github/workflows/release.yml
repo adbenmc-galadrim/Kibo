@@ -69,6 +69,9 @@ jobs:
           - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      MACOS_SIGNING_P12: ${{ secrets.MACOS_SIGNING_P12 }}
+      MACOS_SIGNING_P12_PASSWORD: ${{ secrets.MACOS_SIGNING_P12_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -86,7 +89,27 @@ jobs:
       - uses: actions/download-artifact@v5
         with: { name: ui-dist, path: packages/ui/dist }
       - run: bun apps/desktop/scripts/build-sidecar.ts
-      - run: bun apps/desktop/scripts/build-toolchain.ts
+      - name: Importer le certificat de signature
+        if: runner.os == 'macOS' && env.MACOS_SIGNING_P12 != ''
+        shell: bash
+        run: |
+          case "$MACOS_SIGNING_P12" in *[[:space:]]*) echo "MACOS_SIGNING_P12 must be base64 on a single line" >&2; exit 1 ;; esac
+          KEYCHAIN="$RUNNER_TEMP/kibo-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          printf '%s' "$MACOS_SIGNING_P12" | base64 --decode > "$RUNNER_TEMP/kibo-signing.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/kibo-signing.p12" -k "$KEYCHAIN" -P "$MACOS_SIGNING_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security find-certificate -c "Kibo Code Signing" -p "$KEYCHAIN" > "$RUNNER_TEMP/kibo-signing.pem"
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/kibo-signing.pem"
+          rm -f "$RUNNER_TEMP/kibo-signing.p12"
+          {
+            echo "APPLE_CERTIFICATE=$MACOS_SIGNING_P12"
+            echo "APPLE_CERTIFICATE_PASSWORD=$MACOS_SIGNING_P12_PASSWORD"
+            echo "APPLE_SIGNING_IDENTITY=Kibo Code Signing"
+          } >> "$GITHUB_ENV"
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -103,6 +126,12 @@ jobs:
           prerelease: ${{ needs.version.outputs.alpha == 'true' }}
           uploadUpdaterJson: true
           args: --target ${{ matrix.target }} --verbose
+      - name: Supprimer le trousseau de signature
+        if: always() && runner.os == 'macOS' && env.MACOS_SIGNING_P12 != ''
+        shell: bash
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/kibo-signing.keychain-db"
+          if [ -f "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN"; fi
   checksums:
     needs: [version, build]
     permissions: { contents: write }

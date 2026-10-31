@@ -1,7 +1,6 @@
 import {
   chmodSync,
   copyFileSync,
-  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -10,7 +9,6 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
-import { startTestSyncServer, type TestSyncServer } from "@kibo/sync-server/testing";
 import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
@@ -35,7 +33,6 @@ import { seedSiloAttente } from "./seed-silo-attente";
 import { seedSiloGraphe } from "./seed-silo-graphe";
 import { seedSiloMaquettes } from "./seed-silo-maquettes";
 import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
-import { type SyncSeed, shareSilo } from "./seed-silo-sync";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -74,7 +71,7 @@ const integrations = argv.includes(INTEGRATIONS_FLAG);
 const design = argv.includes(DESIGN_FLAG);
 const embeds = argv.includes(EMBEDS_FLAG);
 const withGh = !argv.includes(NO_GH_FLAG);
-const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => !FLAGS.includes(a));
+const [port = "4390", scenario = "question"] = argv.filter((a) => !FLAGS.includes(a));
 const home = e2eHome(port);
 rmSync(home, { recursive: true, force: true });
 mkdirSync(home, { recursive: true, mode: 0o700 });
@@ -82,12 +79,7 @@ writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
 const claudeConfig = join(home, "claude");
 const fakeState = join(claudeConfig, "projects");
 mkdirSync(fakeState, { recursive: true });
-for (const draft of drafts) {
-  const dir = join(home, "components", "src", draft);
-  cpSync(join(import.meta.dir, "fixtures", "components", draft), dir, { recursive: true });
-  renameSync(join(dir, "component.test.tsx.fixture"), join(dir, "component.test.tsx"));
-}
-const agents = join(root, "packages/daemon/src/agents");
+const agents = join(root, "packages/daemon/src/runs");
 const siloScenario = isSiloScenario(scenario);
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {
@@ -187,14 +179,6 @@ async function startFakesFor(): Promise<Fakes[]> {
 const fakes = await startFakesFor();
 const origins = fakes.flatMap((f) => f.origins);
 const fakeArgs = origins.length === 0 ? [] : ["--test-origins", origins.join(","), "--memory-secrets"];
-const syncServer: TestSyncServer | null = siloScenario
-  ? await startTestSyncServer({ dataDir: join(home, "sync-server") })
-  : null;
-async function syncSeed(server: TestSyncServer): Promise<SyncSeed> {
-  const caFile = join(home, "sync-ca.pem");
-  writeFileSync(caFile, server.caPem, { mode: 0o600 });
-  return { serverUrl: server.url, code: await server.inviteAccount("Adam"), caFile };
-}
 const proc = Bun.spawn(
   [
     "bun",
@@ -245,7 +229,6 @@ async function seedScenario(): Promise<void> {
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
   const seed = SILO_SEEDS.get(scenario) ?? seedSiloMaquettes;
   await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: mergeSiloPr, stackPrs: stackSiloPrs });
-  if (syncServer) await shareSilo(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(
   () => true,
@@ -272,7 +255,6 @@ const exited = await proc.exited;
 ready?.stop(true);
 const code = seeded ? exited : 1;
 for (const f of fakes) await f.stop();
-await syncServer?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
 siloRepo?.remove();

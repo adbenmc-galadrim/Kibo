@@ -13,7 +13,7 @@ export type McpForm = {
   bearer: string;
 };
 
-export type McpFormResult = { server: McpServerInput; secrets: Record<string, string> } | { error: string };
+type McpFormResult = { server: McpServerInput; secrets: Record<string, string> } | { error: string };
 
 export function slugId(name: string): string {
   return name

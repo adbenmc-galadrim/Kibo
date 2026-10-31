@@ -20,89 +20,64 @@ export type ReportOptions = {
   gzip(bytes: Uint8Array<ArrayBuffer>): number;
 };
 
-export const ENTRY_GZIP_BUDGET = 230_000;
-export const PHASE_BUDGET = 224_000;
+export const ENTRY_GZIP_BUDGET = 204_000;
+export const PHASE_BUDGET = 198_000;
 
 export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1)} kB (${bytes} octets)`;
 
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|ai\/[A-Za-z]+)\.tsx$/,
-  /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
-  /\/components\/(graph\/src\/(GraphView|PrsView)|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|mockup\/src\/(Mockup|FrameFullscreen))\.tsx$/,
-  /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
-  /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
+  /\/packages\/ui\/src\/(mine\/MyTicketsPage|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|Unpaired))\.tsx$/,
+  /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|shell\/TicketSheet|palette\/CommandPalette)\.tsx$/,
+  /\/components\/(graph\/src\/(GraphView|PrsView)|kanban\/src\/Kanban|mockup\/src\/(Mockup|FrameFullscreen))\.tsx$/,
+  /\/packages\/ui\/src\/(pages\/TicketTab|shell\/TicketDetail)\.tsx$/,
   /\/components\/questions\/src\/(QuestionsPanel|QuestionsView|QuestionsWidget)\.tsx$/,
   /\/components\/planning\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
   /\/components\/overview\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
   /\/packages\/sdk\/src\/tracking\//,
   /\/packages\/schema\/src\/(project-event|overview[a-z-]*)\.ts$/,
-  /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
-  /\/packages\/ui\/src\/dialogs\/(NotesDirDialog|TrustDialog|OpenViewDialog|RenamePageDialog)\.tsx$/,
+  /\/packages\/ui\/src\/dialogs\/(OpenViewDialog|RenamePageDialog)\.tsx$/,
   /\/packages\/sdk\/src\/ui\/(alert-dialog|confirm-dialog|reason-dialog)\.tsx$/,
   /\/packages\/ui\/src\/(ticket\/[A-Za-z-]+\.tsx?|i18n\/fr-(ticket-edit|labels)\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(InstanceSettingsDialog|FrameListField)\.tsx|i18n\/fr-widgets\.ts)$/,
   /\/packages\/ui\/src\/desktop\/install\.ts$/,
-  /\/packages\/ui\/src\/settings\/(AppearancePage|SecurityPage|WebAccessCard)\.tsx$/,
+  /\/packages\/ui\/src\/(settings\/AppearancePage\.tsx|i18n\/fr-appearance\.ts)$/,
   /\/packages\/ui\/src\/(settings\/ShortcutsPage\.tsx|i18n\/fr-shortcuts\.ts)$/,
   /\/packages\/ui\/src\/(desktop\/pick-folder\.ts|dialogs\/(FolderField|IconField)\.tsx|dialogs\/icon-file\.ts|i18n\/fr-fields\.ts)$/,
-  /\/packages\/ui\/src\/(shell\/ScreenActions|agents\/PauseAdmission)\.tsx$/,
-  /\/packages\/ui\/src\/shell\/(RunHistoryList|UserMenuContent)\.tsx$/,
+  /\/packages\/ui\/src\/shell\/UserMenuContent\.tsx$/,
   /\/packages\/ui\/src\/(settings\/WorkspacePage\.tsx|i18n\/fr-workspace\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(EditProjectDialog|DeleteProjectDialog)\.tsx|i18n\/fr-project\.ts)$/,
   /\/packages\/ui\/src\/tabs\/TabMenuContent\.tsx$/,
   /\/packages\/ui\/src\/shell\/(ProjectHeaderMenu\.tsx|project-menu\.ts)$/,
-  /\/packages\/ui\/src\/shell\/shared-modules\.ts$/,
   /\/node_modules\/@radix-ui\/react-(select|radio-group)\//,
-  /\/packages\/ui\/src\/(components-page\/(ComponentsFilters|UsagesSheet)\.tsx|i18n\/fr-components-list\.ts)$/,
   /\/packages\/ui\/src\/(shell\/DaemonUnreachable\.tsx|i18n\/fr-startup\.ts)$/,
   /\/packages\/ui\/src\/(files\/(FileToolbar|WrapSwitch)\.tsx|i18n\/fr-file-tools\.ts)$/,
   /\/packages\/ui\/src\/(files\/(ProjectFilesDialog|FilesDirDialog|FilesList)\.tsx|files\/(use-project-files|upload|slug)\.ts|i18n\/fr-files\.ts)$/,
-  /\/packages\/ui\/src\/(settings\/SyncEmptyState\.tsx|i18n\/fr-sync-page\.ts)$/,
-  /\/packages\/ui\/src\/(agents\/RunHistory\.tsx|i18n\/fr-agents-page\.ts)$/,
-  /\/packages\/ui\/src\/agents\/((project-filter|project-pref)\.ts|ProjectFilter\.tsx)$/,
-  /\/packages\/ui\/src\/(settings\/SettingsLayout\.tsx|code\/ChangesLayout\.tsx|components-page\/sort-pref\.ts)$/,
+  /\/packages\/ui\/src\/settings\/SettingsLayout\.tsx$/,
   /\/packages\/ui\/src\/(inbox\/[A-Za-z-]+\.tsx?|i18n\/fr-inbox\.ts|dialogs\/FileTicketDialog\.tsx)$/,
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
-  /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
-  /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
-  /\/packages\/ui\/src\/(dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|(AgentsEntry|HiddenScreenNotice|WorkspaceMenuItems)\.tsx)|i18n\/fr-tracking\.ts)$/,
-  /\/node_modules\/three\//,
-  /\/packages\/sdk\/src\/(three|game)\//,
-  /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
+  /\/packages\/sdk\/src\/(mock|mock-calls|fixtures|fixtures-glb)\.tsx?$/,
+  /\/packages\/ui\/src\/(dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|WorkspaceMenuItems\.tsx)|i18n\/fr-tracking\.ts)$/,
   /\/packages\/core\/src\/|\/node_modules\/loro-crdt\//,
   /\/packages\/ui\/src\/((about|whats-new)\/[A-Za-z-]+\.tsx?|i18n\/fr-(about|whats-new)\.ts)$/,
   /\/packages\/ui\/src\/(settings\/ApplicationCard\.tsx|desktop\/(autostart|about-event)\.ts|shell\/(HelpDialogs\.tsx|help-boot\.ts|help-labels\.ts))$/,
   /\/CHANGELOG\.md\?raw$/,
   /\/packages\/ui\/src\/(help\/ShortcutsDialog\.tsx|settings\/(ShortcutList\.tsx|shortcuts\.ts)|report\/[A-Za-z-]+\.tsx?|i18n\/fr-report\.ts)$/,
   /\/packages\/ui\/src\/(backups\/[A-Za-z-]+\.tsx?|i18n\/fr-backups\.ts|desktop\/reveal\.ts)$/,
-  /\/packages\/ui\/src\/(tutorial\/[A-Za-z-]+\.tsx?|i18n\/fr-tutorial\.ts)$/,
   /\/packages\/ui\/src\/(project-agent\/[A-Za-z-]+\.tsx?|i18n\/fr-project-agent\.ts)$/,
-  /\/packages\/ui\/src\/(pages\/(PendingTrust|OtherVersionMenu)|shell\/CreationsIndicator)\.tsx$/,
   /\/packages\/schema\/src\/(design-url|config-validate|design-problem)\.ts$/,
   /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
   /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty|LinkedFrame)\.tsx|(design-refs|use-design-thumbs|lazy-fullscreen)\.ts)|dialogs\/FrameField\.tsx)$/,
-  /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
-  /\/packages\/ui\/src\/(agents\/(dock|mention)\/|moments\/)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
-  /\/packages\/ui\/src\/settings\/(FolderTree|NodeHeader|EmptyNode|HowAgentsAreConfigured|DomainHeader)\.tsx$/,
-  /\/packages\/ui\/src\/(settings\/(domains-tree|domains-entries|folder-tree-keys|use-domains-page)\.tsx?|dialogs\/GuidelinesField\.tsx)$/,
+  /\/packages\/ui\/src\/dialogs\/GuidelinesField\.tsx$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
-  /\/packages\/ui\/src\/(project-agent\/signals\/[A-Za-z-]+\.tsx?|moments\/SignalMoment\.tsx|i18n\/fr-signals\.ts)$/,
-  /\/packages\/ui\/src\/(agents\/(catalog|sheet)\/[A-Za-z-]+\.tsx?|file-editor\/[A-Za-z-]+\.tsx?|skills\/[A-Za-z-]+\.tsx?)$/,
-  /\/packages\/ui\/src\/i18n\/fr-(agents-skills|skills)\.ts$/,
-  /\/packages\/ui\/src\/(overlaps\/[A-Za-z-]+\.tsx?|moments\/(OverlapMoment|AutoLinkMoment)\.tsx|i18n\/fr-overlaps\.ts)$/,
-  /\/packages\/ui\/src\/(agents\/run-state-text|i18n\/fr-agent-bar)\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
-  /\/packages\/ui\/src\/(moments\/(SubagentMoment|SubagentFeed)|agents\/(dock\/SubagentLines|mention\/SubagentsSection))\.tsx$/,
-  /\/packages\/ui\/src\/i18n\/fr-subagents\.ts$/,
-  /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts|dialogs\/(delivery-draft|delivery-import-rows|recipe-draft)\.ts)$/,
-  /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
+  /\/packages\/ui\/src\/i18n\/fr-delivery\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
   /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
   /\/packages\/ui\/src\/i18n\/fr-hold\.ts$/,
@@ -110,8 +85,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/shell\/nav\/(overview-page\.ts|new-ticket-pages\.ts|NewTicketAction\.tsx)$/,
   /\/packages\/ui\/src\/i18n\/fr-ai\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(new-project|new-ticket|home|ticket-tracking)\.ts$/,
-  /\/packages\/ui\/src\/(dialogs\/(SprintSetupFields|SprintPreview|FeatureSelect)|shell\/NotFound|pages\/PageErrorBoundary)\.tsx$/,
-  /\/packages\/ui\/src\/(i18n\/fr-changes\.ts|code\/AgentWorkingBanner\.tsx)$/,
+  /\/packages\/ui\/src\/(dialogs\/(SprintSetupFields|SprintPreview|FeatureSelect)|shell\/NotFound)\.tsx$/,
+  /\/packages\/ui\/src\/i18n\/fr-changes\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
@@ -160,24 +135,21 @@ export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions =
   };
 }
 
-export const PREVIEW_WORKER = /^workers\/draft-preview-worker-[A-Za-z0-9_-]+\.js$/;
 export const FORBIDDEN_IN_MAIN_GRAPH: readonly RegExp[] = [
   /\/packages\/core\/src\//,
   /\/node_modules\/loro-crdt\//,
 ];
 
 export type GraphReport = {
-  previewWorker: string | null;
   forbidden: { file: string; module: string }[];
   ok: boolean;
 };
 
-export function reportGraph(chunks: readonly BuiltChunk[], emitted: readonly string[]): GraphReport {
-  const previewWorker = emitted.find((name) => PREVIEW_WORKER.test(name)) ?? null;
+export function reportGraph(chunks: readonly BuiltChunk[]): GraphReport {
   const forbidden = chunks.flatMap((c) =>
     c.moduleIds
       .filter((id) => FORBIDDEN_IN_MAIN_GRAPH.some((r) => r.test(id)))
       .map((module) => ({ file: c.fileName, module })),
   );
-  return { previewWorker, forbidden, ok: previewWorker !== null && forbidden.length === 0 };
+  return { forbidden, ok: forbidden.length === 0 };
 }

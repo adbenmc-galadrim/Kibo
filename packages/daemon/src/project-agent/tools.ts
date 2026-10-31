@@ -6,14 +6,7 @@ import {
   projectOverview,
   ticketSheet,
 } from "@kibo/core/project-agent/overview";
-import {
-  compactJson,
-  listQuestions,
-  listRuns,
-  listSignals,
-  listTickets,
-  pageOf,
-} from "@kibo/core/project-agent/tools";
+import { compactJson, listQuestions, listRuns, listTickets, pageOf } from "@kibo/core/project-agent/tools";
 import {
   type Batch,
   CursorInput,
@@ -21,7 +14,6 @@ import {
   KiboError,
   ListQuestionsInput,
   ListRunsInput,
-  ListSignalsInput,
   ListTicketsInput,
   MEMORY_NOTE_PATH,
   type ProjectAgentTool,
@@ -31,11 +23,11 @@ import {
   sprintSummaries,
 } from "@kibo/schema";
 import type { z } from "zod";
-import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentSignalsPort } from "./types";
+import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const TOOL_REPLY_MAX = 200_000;
 
-export type ProjectToolDeps = {
+type ProjectToolDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   store: {
@@ -43,7 +35,6 @@ export type ProjectToolDeps = {
     lastDecided(projectId: string, since: number): Batch | null;
   };
   propose: (run: RunView, input: unknown) => string;
-  signals: Pick<ProjectAgentSignalsPort, "list" | "openCount">;
 };
 
 type ToolCall = { deps: ProjectToolDeps; run: RunView; projectId: string; input: unknown };
@@ -63,9 +54,7 @@ async function overview({ deps, projectId }: ToolCall) {
     queue,
     notes: await data.notes(projectId),
     agents: data.agents(projectId),
-    demoProject: data.isDemoProject(projectId),
     memory: (await data.readNote(projectId, MEMORY_NOTE_PATH)) ?? "",
-    openSignals: deps.signals.openCount(projectId),
   });
 }
 
@@ -122,15 +111,11 @@ async function reply(tool: ProjectAgentTool, call: ToolCall): Promise<unknown> {
     case "read_note":
       return noteOf(call);
     case "list_profiles":
-      return assignableAgents(deps.data.agents(projectId), deps.data.isDemoProject(projectId)).map(
-        assignableEntry,
-      );
+      return assignableAgents(deps.data.agents(projectId)).map(assignableEntry);
     case "project_changes":
       return changes(call);
     case "propose_batch":
       return deps.propose(call.run, input);
-    case "list_signals":
-      return listSignals(deps.signals.list(projectId).signals, parse(ListSignalsInput, input));
     case "list_sprints":
       return sprintSummaries(deps.data.project(projectId));
   }
@@ -149,8 +134,7 @@ export async function handleProjectTool(
   input: unknown,
 ): Promise<string> {
   const { projectId } = run;
-  if (projectId === null || run.kind !== "project")
-    throw new KiboError("FORBIDDEN", `run ${run.id} is not a project run`);
+  if (projectId === null) throw new KiboError("FORBIDDEN", `run ${run.id} is not a project run`);
   const out = await reply(tool, { deps, run, projectId, input });
   return bounded(typeof out === "string" ? out : compactJson(out));
 }

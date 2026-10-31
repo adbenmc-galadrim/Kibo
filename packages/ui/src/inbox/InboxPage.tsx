@@ -11,7 +11,7 @@ import { ConfirmDialog } from "../shell/lazy-dialogs";
 import { describeTicketError } from "../ticket/use-ticket-command";
 import { InboxRow } from "./InboxRow";
 
-export type InboxPageProps = {
+type InboxPageProps = {
   snapshot: ProjectSnapshot | null;
   projects: ProjectSummary[];
   viewer: string;

@@ -1,11 +1,10 @@
 import { mock } from "bun:test";
-import type { RpcRequest, RunLogEntry, SignalsView } from "@kibo/schema";
+import type { RpcRequest, RunLogEntry } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import type { ComponentType } from "react";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
 import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, siloProject, viewFixture } from "./fixtures";
-import { signalsView } from "./signal-fixtures";
 
 type PanelProps = { open: boolean; project: ReturnType<typeof siloProject>; onClose(): void };
 
@@ -15,7 +14,6 @@ export const harness = {
   current: viewFixture(),
   past: viewFixture(),
   log: CONVERSATION_LOG as RunLogEntry[],
-  signals: signalsView() as SignalsView,
   send: null as ((req: RpcRequest) => Promise<unknown>) | null,
   listeners: new Set<() => void>(),
 };
@@ -23,11 +21,8 @@ export const harness = {
 const answer = (req: RpcRequest): Promise<unknown> => {
   if (req.method === "getProjectAgent") return Promise.resolve(req.runId ? harness.past : harness.current);
   if (req.method === "getRunLog") return Promise.resolve(harness.log);
-  if (req.method === "listSignals") return Promise.resolve(harness.signals);
   if (req.method === "decideBatch") return Promise.resolve(pendingBatch({ status: "rejected" }));
   if (req.method === "resetProjectAgent") return Promise.resolve(emptyView());
-  if (req.method === "agents.list") return Promise.resolve({ agents: [], notices: [], partialWatch: false });
-  if (req.method === "skills.suggest") return Promise.resolve({ skills: [] });
   if (req.method === "sendProjectAgentMessage" && harness.send) return harness.send(req);
   return Promise.resolve(projectRun({ state: "queued" }));
 };
@@ -61,7 +56,6 @@ export function resetHarness(): void {
     past: [],
   });
   harness.log = CONVERSATION_LOG;
-  harness.signals = signalsView();
   harness.send = null;
 }
 
@@ -72,7 +66,6 @@ export function emitTopic(): void {
 const host: Host = {
   openTicket: (id) => harness.opened.push(id),
   openNewTicket: () => {},
-  openAssign: () => {},
   openFile: () => {},
   openView: () => {},
   openTarget: () => {},

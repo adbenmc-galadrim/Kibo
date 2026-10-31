@@ -45,7 +45,7 @@ export const GuidelineOwner = z.discriminatedUnion("scope", [
 export type GuidelineOwner = z.infer<typeof GuidelineOwner>;
 export type GuidelineScope = GuidelineOwner["scope"];
 
-export const GuidelineContent = z.string().max(100_000);
+const GuidelineContent = z.string().max(100_000);
 
 export const Guideline = z.object({
   id: z.string().min(1),
@@ -57,8 +57,8 @@ export type Guideline = z.infer<typeof Guideline>;
 
 const Id = z.string().min(1);
 
-export const WorkspaceName = z.string().trim().min(1).max(40);
-export const WorkspaceDescription = z.string().trim().max(500);
+const WorkspaceName = z.string().trim().min(1).max(40);
+const WorkspaceDescription = z.string().trim().max(500);
 export const WorkspacePatch = z
   .object({ name: WorkspaceName.optional(), description: WorkspaceDescription.nullable().optional() })
   .strict()
@@ -101,16 +101,6 @@ function ownerProject(owner: DomainOwner | GuidelineOwner | undefined): string |
 export function configTarget(cmd: ConfigCommand): string | null {
   return cmd.method === "updateWorkspace" ? null : ownerProject(cmd.owner);
 }
-
-export type ConfigResult = {
-  createDomain: Domain;
-  updateDomain: Domain;
-  deleteDomain: null;
-  addGuideline: Guideline;
-  updateGuideline: Guideline;
-  removeGuideline: null;
-  updateWorkspace: { name: string | null; description: string | null };
-};
 
 export type WorkspaceConfig = {
   domains: Domain[];

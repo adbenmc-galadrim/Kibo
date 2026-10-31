@@ -68,11 +68,9 @@ test("an immediate transaction nested in another joins it; an error in the inner
 
 const SOURCES = [
   "store.ts",
-  "agents/run-store.ts",
+  "runs/run-store.ts",
   "integrations/db.ts",
   "components/events.ts",
-  "collab/sync-db.ts",
-  "market/market-db.ts",
   "notes/index.ts",
 ];
 

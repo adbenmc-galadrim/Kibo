@@ -2,14 +2,9 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  enableServerAllocation,
-  listProjectDomainGuidelines,
-  listProjectDomains,
-  listTickets,
-} from "@kibo/core";
+import { listProjectDomainGuidelines, listProjectDomains, listTickets } from "@kibo/core";
 import { listDomains, listGuidelines } from "@kibo/core/agent-config";
-import { Domain, KiboError, type ProjectMeta, type Ticket } from "@kibo/schema";
+import { Domain, type ProjectMeta, type Ticket } from "@kibo/schema";
 import type { Docs } from "../docs";
 import { call, createService } from "../service";
 import { openStore } from "../store";
@@ -23,14 +18,9 @@ afterEach(() => {
 const color = "#14B8A6";
 const NOW = Date.parse("2026-10-12T08:00:00Z");
 
-function open(home: string, readOnlyClient = true) {
+function open(home: string) {
   const store = openStore(home);
   const s = createService(store, { user: "adam" });
-  s.docs.setWriteGuard((id) => {
-    if (readOnlyClient && s.docs.projectMeta(id).name === "Client") {
-      throw new KiboError("FORBIDDEN", `project ${id} is read-only`);
-    }
-  });
   const saves: (string | null)[] = [];
   const docs: Docs = {
     ...s.docs,
@@ -47,7 +37,7 @@ function open(home: string, readOnlyClient = true) {
 function seed() {
   const home = mkdtempSync(join(tmpdir(), "kibo-domain-scopes-"));
   homes.push(home);
-  const { store, s } = open(home, false);
+  const { store, s } = open(home);
   const project = (name: string, key: string): ProjectMeta =>
     call(s, { method: "createProject", name, key, folder: null, color: "#F97316" });
   const a = project("Kibo", "KIB");
@@ -99,8 +89,6 @@ function seed() {
   shop.getMap("projectDomains").set(d5.id, { name: "Boutique (copie)", color, guidelines: [] });
   shop.commit();
   s.docs.save(b.id);
-  enableServerAllocation(s.docs.project(c.id));
-  s.docs.save(c.id);
   store.close();
   return { home, a, b, c, d1, d2, d3, d4, d5 };
 }
@@ -108,16 +96,16 @@ function seed() {
 const domainIds = (s: ReturnType<typeof open>["s"], projectId: string) =>
   listProjectDomains(s.docs.project(projectId)).map((d) => d.id);
 
-test("moves a domain used by one writable project only, keeps the others, logs every domain", async () => {
+test("moves a domain used by one project only, keeps the others, logs every domain", async () => {
   const { home, a, b, c, d1, d2, d3, d4, d5 } = seed();
   const { store, s, lines, migrate } = open(home);
   const ticketsBefore = [a, b, c].map((p) => listTickets(s.docs.project(p.id)));
-  expect(await migrate()).toEqual({ moved: 2, kept: 3 });
+  expect(await migrate()).toEqual({ moved: 3, kept: 2 });
   expect(
     listDomains(s.docs.workspace)
       .map((d) => d.id)
       .sort(),
-  ).toEqual([d2.id, d3.id, d4.id].sort());
+  ).toEqual([d2.id, d3.id].sort());
   expect(listGuidelines(s.docs.workspace).map((g) => g.path)).toEqual(["conventions.md"]);
   expect(domainIds(s, a.id)).toEqual([d1.id]);
   expect(listProjectDomainGuidelines(s.docs.project(a.id)).map((g) => [g.path, g.content, g.owner])).toEqual([
@@ -127,7 +115,7 @@ test("moves a domain used by one writable project only, keeps the others, logs e
   expect(listProjectDomains(s.docs.project(b.id))).toEqual([
     { id: d5.id, name: "Boutique (copie)", color, owner: { scope: "project", projectId: b.id } },
   ]);
-  expect(domainIds(s, c.id)).toEqual([]);
+  expect(domainIds(s, c.id)).toEqual([d4.id]);
   expect([a, b, c].map((p) => listTickets(s.docs.project(p.id)))).toEqual(ticketsBefore);
   expect(s.docs.workspace.getMap("settings").get("domainsScopedAt")).toBe("2026-10-12T08:00:00.000Z");
   expect(lines.sort()).toEqual(
@@ -135,7 +123,7 @@ test("moves a domain used by one writable project only, keeps the others, logs e
       'domain "Sync" moved to project "Kibo"',
       'domain "Sécurité" kept in the workspace: used by 2 projects',
       'domain "Vide" kept in the workspace: unused',
-      'domain "Client" kept in the workspace: project "Client" is read-only',
+      'domain "Client" moved to project "Client"',
       'domain "Boutique" removed from the workspace: project "Portail" already has it',
     ].sort(),
   );
@@ -146,7 +134,7 @@ test("moves a domain used by one writable project only, keeps the others, logs e
     listDomains(restarted.s.docs.workspace)
       .map((d) => d.id)
       .sort(),
-  ).toEqual([d2.id, d3.id, d4.id].sort());
+  ).toEqual([d2.id, d3.id].sort());
   expect(domainIds(restarted.s, a.id)).toEqual([d1.id]);
   expect(await restarted.migrate()).toBeNull();
   expect(restarted.saves).toEqual([]);
@@ -155,10 +143,10 @@ test("moves a domain used by one writable project only, keeps the others, logs e
 });
 
 test("the project is saved before the workspace, the workspace once", async () => {
-  const { home, a, b } = seed();
+  const { home, a, b, c } = seed();
   const { store, saves, migrate } = open(home);
   await migrate();
-  expect(saves.sort()).toEqual([a.id, b.id, null].sort());
+  expect(saves.sort()).toEqual([a.id, b.id, c.id, null].sort());
   expect(saves.at(-1)).toBeNull();
   store.close();
 });

@@ -1,8 +1,8 @@
 import { NOT_STARTED_STATUSES } from "./startable";
 import type { StatusId } from "./status";
 
-export type GroupProgress = { done: number; total: number };
-export type GroupState = { statusId: StatusId; progress: GroupProgress };
+type GroupProgress = { done: number; total: number };
+type GroupState = { statusId: StatusId; progress: GroupProgress };
 type GroupFacts = { id: string; parentId: string | null; statusId: StatusId; optional?: boolean };
 
 export const isGroup = (t: { progress: GroupProgress }): boolean => t.progress.total > 0;

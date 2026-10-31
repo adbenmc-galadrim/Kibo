@@ -19,10 +19,7 @@
     { "path": "../sdk" },
     { "path": "../../components/graph" },
     { "path": "../../components/kanban" },
-    { "path": "../../components/mcp-source" },
-    { "path": "../../components/notes" },
     { "path": "../../components/overview" },
-    { "path": "../../components/planning" },
-    { "path": "../../components/tickets" }
+    { "path": "../../components/planning" }
   ]
 }

@@ -30,7 +30,7 @@ function setup() {
     const batch = await propose(h, actions);
     before();
     const chosen = new Set(actions.map((a) => a.id));
-    return applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
+    return applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
   };
   const ticket = (id: string) => h.data.project(h.project.id).tickets.find((t) => t.id === id);
   const journal = () => events.store.list({ projectId: h.project.id, limit: 200 }).items.reverse();

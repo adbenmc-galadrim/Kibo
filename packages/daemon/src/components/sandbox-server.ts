@@ -1,33 +1,11 @@
-import type { Capability, SandboxFile } from "@kibo/schema";
-import type { DraftAssets } from "../ai/draft-preview";
+import type { Capability } from "@kibo/schema";
 import type { EmbedService } from "../embed/types";
-import {
-  type AssetLookup,
-  lookupAsset,
-  parseAssetPath,
-  parseDesignPath,
-  parseDraftAssetPath,
-  parseEmbedPath,
-  parseFilePath,
-} from "./asset-path";
+import { parseDesignPath, parseEmbedPath, parseFilePath } from "./asset-path";
 import { type FileOpener, fileResponse } from "./file-response";
 
-export type { AssetLookup } from "./asset-path";
-export { type FileOpener, fileHeaders, type ServedFile } from "./file-response";
+export type { FileOpener } from "./file-response";
 
-export const SANDBOX_INDEX =
-  '<!doctype html><html><head><meta charset="utf-8"><style>html,body,#root{height:100%}</style>' +
-  '<link rel="stylesheet" href="ui.css" crossorigin="anonymous"></head>' +
-  '<body><div id="root"></div><script type="module" src="ui.sandbox.js"></script></body></html>';
-
-const SANDBOX_FILES: readonly SandboxFile[] = ["index.html", "ui.sandbox.js", "ui.css"];
-const TYPES: Record<SandboxFile, string> = {
-  "index.html": "text/html; charset=utf-8",
-  "ui.sandbox.js": "text/javascript; charset=utf-8",
-  "ui.css": "text/css; charset=utf-8",
-};
-
-const FRAMING: ReadonlySet<Capability> = new Set(["design", "embed"]);
+const FRAMING: ReadonlySet<Capability> = new Set(["design"]);
 
 export function sandboxHeaders(
   uiPort: number,
@@ -52,9 +30,7 @@ export function sandboxHeaders(
 export type SandboxServerOptions = {
   port: number;
   uiPort: number;
-  assets: AssetLookup;
   extraAncestors?: readonly string[];
-  drafts?: DraftAssets;
   files?: FileOpener;
   designs?: FileOpener;
   embeds?: Pick<EmbedService, "relay">;
@@ -63,23 +39,8 @@ export type SandboxServerOptions = {
 const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function startSandboxServer(opts: SandboxServerOptions): { url: string; port: number; stop(): void } {
-  const headersFor = (capabilities: readonly Capability[]) =>
-    sandboxHeaders(opts.uiPort, opts.extraAncestors, capabilities);
-  const headers = headersFor([]);
+  const headers = sandboxHeaders(opts.uiPort, opts.extraAncestors);
   const plain = (body: string, status: number) => new Response(body, { status, headers });
-  const file = (body: Uint8Array | string, name: SandboxFile, capabilities: readonly Capability[]) => {
-    const extra: Record<string, string> = name === "index.html" ? {} : { "access-control-allow-origin": "*" };
-    return new Response(body, {
-      headers: { ...headersFor(capabilities), "content-type": TYPES[name], ...extra },
-    });
-  };
-  const serveDraft = async (draftId: string, hash: string, name: SandboxFile): Promise<Response> => {
-    if (!opts.drafts) return plain("not found", 404);
-    const body = await opts.drafts.lookup(draftId, hash, name);
-    if (body === null) return plain("not found", 404);
-    const manifest = await opts.drafts.manifest(draftId);
-    return file(body, name, manifest?.capabilities ?? []);
-  };
   const serveFile = async (
     token: string,
     name: string,
@@ -120,16 +81,7 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
       if (req.method !== "GET" && req.method !== "HEAD") return plain("method not allowed", 405);
       return serveFile(design.token, design.name, req.method, opts.designs);
     }
-    if (req.method !== "GET") return plain("method not allowed", 405);
-    const draft = parseDraftAssetPath(pathname);
-    if (draft) return serveDraft(draft.draftId, draft.hash, draft.file);
-    const asset = parseAssetPath(pathname, "c", SANDBOX_FILES);
-    if (!asset) return plain("not found", 404);
-    const found = lookupAsset(opts.assets, asset);
-    if (!found) return plain("not found", 404);
-    const body = asset.file === "index.html" ? SANDBOX_INDEX : found.stored.build[asset.file];
-    if (body === undefined) return plain("not found", 404);
-    return file(body, asset.file, found.capabilities);
+    return plain("not found", 404);
   };
   const server = Bun.serve({
     hostname: "127.0.0.1",

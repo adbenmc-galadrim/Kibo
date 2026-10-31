@@ -55,10 +55,12 @@ test("a network failure shows « Kibo ne répond pas » with retry, then the she
   expect(screen.queryByRole("heading", { name: "Kibo ne répond pas" })).toBeNull();
 });
 
-test("UNAUTHORIZED still leads to pairing", async () => {
+test("without a pairing token the shell explains how to relaunch instead of asking a code", async () => {
   session = () => Promise.reject(new KiboError("UNAUTHORIZED", "no cookie"));
   render(<App retryMs={60_000} />);
-  expect(await screen.findByRole("button", { name: "Appairer" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Démon introuvable · relance Kibo" })).toBeTruthy();
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Appairer" })).toBeNull();
 });
 
 test("another daemon error is shown with retry, never a blank screen", async () => {

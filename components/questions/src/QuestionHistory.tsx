@@ -1,5 +1,4 @@
 import type { Question } from "@kibo/schema";
-import { useMembers } from "@kibo/sdk";
 import { History } from "lucide-react";
 import { fr } from "./fr";
 import { type HistoryContext, historyEntries, historyLine } from "./question-history-text";
@@ -21,14 +20,13 @@ export function HistoryToggle({ question, open, onToggle }: ToggleProps) {
   );
 }
 
-type HistoryProps = { question: Question; context: Omit<HistoryContext, "members"> };
+type HistoryProps = { question: Question; context: HistoryContext };
 
 export function QuestionHistory({ question, context }: HistoryProps) {
-  const members = useMembers();
   return (
     <ul className="grid gap-1 border-l pl-3 text-2xs text-muted-foreground">
       {historyEntries(question).map((entry) => (
-        <li key={entry.position}>{historyLine(entry, { ...context, members })}</li>
+        <li key={entry.position}>{historyLine(entry, context)}</li>
       ))}
     </ul>
   );

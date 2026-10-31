@@ -12,48 +12,14 @@
     },
     "title": "Kanban",
     "description": "Tickets par statut, glisser-déposer",
-    "reads": ["ticket", "status", "run", "ci_run", "question", "sprint"],
+    "reads": ["ticket", "status", "ci_run", "question", "sprint"],
     "selection": true,
-    "writes": ["ticket", "run"],
+    "writes": ["ticket"],
     "data": true,
     "configSchema": {
       "filter": {
         "enum": ["mine-and-agents", "all"],
         "default": "all"
-      }
-    }
-  },
-  {
-    "id": "tickets",
-    "version": "1.0.0",
-    "kind": "both",
-    "formats": ["medium", "large", "half", "full"],
-    "size": {
-      "min": {
-        "w": 4,
-        "h": 3
-      }
-    },
-    "title": "Tickets",
-    "description": "Arbre des tickets, sous-tickets illimités",
-    "reads": ["ticket", "status", "run", "question", "sprint", "ci_run"],
-    "selection": true,
-    "writes": ["ticket", "run"],
-    "configSchema": {
-      "filter": {
-        "enum": ["all", "mine"],
-        "default": "all"
-      },
-      "sprint": {
-        "type": "string",
-        "nullable": true,
-        "default": null,
-        "label": "Sprint affiché"
-      },
-      "doneOpen": {
-        "type": "boolean",
-        "default": true,
-        "label": "Terminés dépliés"
       }
     }
   },
@@ -70,153 +36,12 @@
     },
     "title": "Graphe de dépendances",
     "description": "Généré depuis les liens bloque / bloqué par",
-    "reads": ["ticket", "status", "link", "run", "sprint", "question"],
+    "reads": ["ticket", "status", "link", "sprint", "question"],
     "writes": [],
     "configSchema": {
       "filter": {
         "enum": ["mine-and-agents", "all"],
         "default": "mine-and-agents"
-      }
-    }
-  },
-  {
-    "id": "notes",
-    "version": "1.0.0",
-    "kind": "both",
-    "formats": ["medium", "large", "half", "full"],
-    "size": {
-      "min": {
-        "w": 4,
-        "h": 3
-      }
-    },
-    "title": "Notes",
-    "description": "Markdown local, compatible Obsidian",
-    "reads": ["note", "ticket", "status"],
-    "writes": ["note"],
-    "configSchema": {
-      "path": {
-        "type": "string",
-        "nullable": true,
-        "default": null
-      }
-    }
-  },
-  {
-    "id": "mcp-source",
-    "version": "1.0.0",
-    "kind": "widget",
-    "formats": ["small", "medium", "large", "half"],
-    "size": {
-      "min": {
-        "w": 3,
-        "h": 2
-      }
-    },
-    "title": "Source MCP",
-    "description": "Liste des éléments d'un serveur MCP, un ticket par élément sur demande",
-    "reads": ["ticket"],
-    "writes": ["ticket"],
-    "data": true,
-    "mcp": ["{config.server}"],
-    "configSchema": {
-      "title": {
-        "type": "string",
-        "default": "Source MCP"
-      },
-      "server": {
-        "type": "string"
-      },
-      "mode": {
-        "enum": ["tool", "resource"],
-        "default": "tool"
-      },
-      "tool": {
-        "type": "string"
-      },
-      "uri": {
-        "type": "string"
-      },
-      "args": {
-        "type": "string",
-        "default": "{}"
-      },
-      "refreshMinutes": {
-        "type": "number",
-        "default": 15
-      },
-      "itemsPointer": {
-        "type": "string",
-        "default": "/items"
-      },
-      "idPointer": {
-        "type": "string",
-        "default": "/id"
-      },
-      "titlePointer": {
-        "type": "string",
-        "default": "/name"
-      },
-      "subtitlePointer": {
-        "type": "string"
-      },
-      "urlPointer": {
-        "type": "string"
-      }
-    }
-  },
-  {
-    "id": "viewer-3d",
-    "version": "1.0.0",
-    "kind": "both",
-    "formats": ["medium", "large", "half", "full"],
-    "size": {
-      "min": {
-        "w": 3,
-        "h": 3
-      }
-    },
-    "title": "Visionneuse 3D",
-    "description": "Affiche un modèle .glb du projet",
-    "reads": [],
-    "writes": [],
-    "capabilities": ["webgl", "assets"],
-    "configSchema": {
-      "model": {
-        "type": "string",
-        "nullable": true,
-        "default": null,
-        "asset": "model",
-        "label": "Modèle (.glb)"
-      },
-      "autoRotate": {
-        "type": "boolean",
-        "default": true,
-        "label": "Rotation automatique"
-      },
-      "lighting": {
-        "type": "string",
-        "enum": ["soft", "studio", "contrast"],
-        "default": "soft",
-        "label": "Éclairage"
-      },
-      "lightIntensity": {
-        "type": "number",
-        "min": 0.25,
-        "max": 2,
-        "default": 1,
-        "label": "Intensité"
-      },
-      "shadows": {
-        "type": "boolean",
-        "default": false,
-        "label": "Ombres"
-      },
-      "environment": {
-        "type": "boolean",
-        "default": true,
-        "label": "Lumière d'ambiance",
-        "help": "Reflets doux d'un studio neutre."
       }
     }
   },
@@ -253,46 +78,50 @@
     }
   },
   {
-    "id": "github-issues",
-    "version": "1.0.0",
-    "kind": "adapter",
-    "title": "GitHub Issues",
-    "description": "Synchronise les tickets avec les issues et un Project GitHub",
-    "reads": ["ticket", "status"],
-    "writes": [],
-    "net": ["api.github.com"],
-    "secrets": [
-      {
-        "name": "github",
-        "hosts": ["api.github.com"]
-      }
-    ]
-  },
-  {
     "id": "questions",
     "version": "1.0.0",
     "kind": "both",
     "formats": ["medium", "large", "half", "full"],
-    "size": { "min": { "w": 4, "h": 3 } },
+    "size": {
+      "min": {
+        "w": 4,
+        "h": 3
+      }
+    },
     "title": "Questions",
     "description": "Questions des agents, à valider ou à répondre",
-    "reads": ["question", "ticket", "status", "run", "sprint"],
-    "writes": ["question", "run"],
+    "reads": ["question", "ticket", "status", "sprint"],
+    "writes": ["question"],
     "selection": false,
-    "configSchema": { "scope": { "enum": ["open", "all"], "default": "open", "label": "Afficher" } }
+    "configSchema": {
+      "scope": {
+        "enum": ["open", "all"],
+        "default": "open",
+        "label": "Afficher"
+      }
+    }
   },
   {
     "id": "planning",
     "version": "1.0.0",
     "kind": "view",
     "formats": ["full"],
-    "size": { "min": { "w": 6, "h": 4 } },
+    "size": {
+      "min": {
+        "w": 6,
+        "h": 4
+      }
+    },
     "title": "Planning",
     "description": "Fonctionnalités par sprint, glisser pour planifier",
     "reads": ["ticket", "link", "status", "sprint", "question", "project_event"],
     "writes": ["ticket", "sprint"],
     "configSchema": {
-      "layout": { "enum": ["columns", "bands"], "default": "columns", "label": "Disposition" }
+      "layout": {
+        "enum": ["columns", "bands"],
+        "default": "columns",
+        "label": "Disposition"
+      }
     }
   },
   {
@@ -300,10 +129,15 @@
     "version": "1.0.0",
     "kind": "view",
     "formats": ["full"],
-    "size": { "min": { "w": 6, "h": 6 } },
+    "size": {
+      "min": {
+        "w": 6,
+        "h": 6
+      }
+    },
     "title": "Vue d'ensemble",
     "description": "Indicateurs, échéances, sprint en cours, PR en review, questions et activité du projet",
     "reads": ["ticket", "link", "status", "sprint", "question", "project_event", "ci_run"],
-    "writes": ["run"]
+    "writes": []
   }
 ]

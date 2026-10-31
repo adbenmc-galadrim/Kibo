@@ -32,6 +32,16 @@ const broken: KeychainBackend = {
 };
 
 describe("keychain secret store", () => {
+  test("an orphan name of the old Kibo can be deleted, never read nor written", async () => {
+    const backend = memoryBackend();
+    await backend.set({ service: KEYCHAIN_SERVICE, name: "remote:tls", value: "key" });
+    const store = createBunSecretStore(createRedactor(), backend);
+    await store.delete("remote:tls");
+    expect(await backend.get({ service: KEYCHAIN_SERVICE, name: "remote:tls" })).toBeNull();
+    await expect(store.delete("aws" as "github")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(store.get("remote:tls" as "github")).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  });
+
   test("stores under the kibo service and registers values for redaction", async () => {
     const backend = memoryBackend();
     const r = createRedactor();

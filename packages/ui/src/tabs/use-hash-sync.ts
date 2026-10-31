@@ -1,6 +1,7 @@
 import type { TabTarget } from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { navigateTo } from "../route";
+import { retiredRoute } from "../shell/retired-routes";
 import { activeTarget } from "./tabs-model";
 import { targetToHash } from "./target-hash";
 import type { TabsApi } from "./use-tabs";
@@ -14,7 +15,7 @@ export function useHashSync(tabs: TabsApi, routeTarget: TabTarget | null): void 
   useEffect(() => {
     const prev = last.current;
     last.current = { route: routeHash, active: activeHash };
-    if (routeHash === activeHash) return;
+    if (routeHash === activeHash || retiredRoute(location.hash) !== null) return;
     if (!prev) {
       if (routeTarget) open(routeTarget);
       else navigateTo(active);

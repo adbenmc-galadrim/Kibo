@@ -76,7 +76,7 @@ export type PlanningModel = {
   currentSprintId: string | null;
   held: HeldGroup[];
 };
-export type PlanningInput = {
+type PlanningInput = {
   tickets: readonly TicketView[];
   links: readonly Link[];
   sprints: readonly SprintView[];

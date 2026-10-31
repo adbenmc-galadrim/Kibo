@@ -28,7 +28,7 @@ type Props = {
   onOpenChange(open: boolean): void;
 };
 
-export const optionLines = (text: string): string[] =>
+const optionLines = (text: string): string[] =>
   text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -37,7 +37,7 @@ export const optionLines = (text: string): string[] =>
 const hasClient = (recipients: readonly QuestionRecipient[], client: string | null): boolean =>
   client !== null && recipients.some((r) => r.id === CLIENT_RECIPIENT);
 
-export const defaultRecipient = (recipients: readonly QuestionRecipient[], client: string | null): string =>
+const defaultRecipient = (recipients: readonly QuestionRecipient[], client: string | null): string =>
   hasClient(recipients, client) ? CLIENT_RECIPIENT : ME_RECIPIENT;
 
 const recipientLabel = (r: QuestionRecipient, client: string | null): string =>

@@ -21,30 +21,27 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 01 · Shell — variantes | explorations A/B/C (historique) |
 | 02 · Écrans MVP | 1–6, 29 créer un composant, 30 permissions |
 | 03 · Pages projet | 7–11, 24 nouveau ticket, 25 nouvelle page, 26 projet créé, 27 assigner à un agent |
-| 04 · Workspace & paramètres | 12–19, 28 profil d'agent, 31 appairage web |
+| 04 · Workspace & paramètres | 12–19, 28 profil d'agent (31 appairage web **retiré** en phase 33) |
 | 05 · Logo | piste 5 « Kanban » retenue |
 | 06 · Onglets, code & fichiers | 20–23 |
 | 07 · Agents (suite) | 32–35 (phase 2) |
 | 08 · Code (états) | 36–42 (phase 3) |
-| 09 · Composants | 43–49 (phase 4) |
-| 10 · Intégrations | 50–57, 57b–57n (phase 5 : source synchronisée, Sheet ticket GitHub / CI / Maquettes, Source MCP, vues synchronisées) |
+| 10 · Intégrations | 50–57, 57f, 57i (phase 5 : intégrations, GitHub, Figma, serveurs MCP, Sheet ticket GitHub / CI / Maquettes, logs CI) ; 57b–57e, 57g, 57h, 57j–57n (sources synchronisées, Source MCP, vues synchronisées) **retirés** en phase 33 |
 | 11 · IA | 58–64 (phase 6) |
-| 12 · Sync & marketplace | 65–97 (phase 7) |
 | 13 · Compléments | 76–78 (revue §7) |
 | 14 · Finitions UI | 98–106 (phase 9, vague 1 : fiche ticket, menus, confirmations) ; **dessinés** |
 | 15 · Projets & réglages | 107–112 (vague 2 : projet, workspace, apparence, historique, avatar) ; **dessinés** |
 | 16 · Tickets & boîte de réception | 113–115, 125, 126 (vague 3) ; **dessinés** |
-| 17 · Composants & synchronisation | 116–120 (vague 3 ; 116 amendé en vague 4) ; **dessinés** |
 | 18 · Agents, code & démarrage | 121–124 (vague 3) ; **dessinés** |
 | 19 · Formats & créations | 127–135 (vague 4) ; **dessinés** |
 | 20 · Notes, graphe & disposition | 150–155 (phase 12) ; **dessinés** |
-| 21 · Composants riches | 30b, 156–160 (phase 13) ; **dessinés** ; 157 : composant retiré (§26.11) |
+| 21 · Composants riches | 30b, 158–160 (phase 13) ; **dessinés** ; 156 à 157c **retirés** en phase 33 (Visionneuse 3D, Serpent) |
 | 22 · Installation & aide | 19, 19b, 19c, 78, 76, 76b, 76c, 112c, 136–139 (phase 14) ; **dessinés** |
 | 23 · Didacticiel | 140–146 (phase 14) ; **dessinés** |
 | 24 · Maquettes Figma & Penpot | 16, 16b, 53, 53b, 53c, 147, 148, 149, 4, 4b (phase 15) ; **dessinés** |
 | 25 · Questions & session | 166 à 173 (phase 17 : étiquettes, worktrees, mode Automatique, questions, session principale) ; **dessinés** |
 | 26 · Agent de projet | 174 à 177 (phase 18 : panneau, lot à valider, anciens agents, profil) ; **dessinés** |
-| 27 · Jeux & Storybook | 178 à 182 (phase 19 : widget Jeu itch.io, story Storybook, comparaison, réglage Storybook) ; **dessinés** ; 178, 179 : composant retiré (§26.11) |
+| 27 · Jeux & Storybook | 180 à 182 (phase 19 : story Storybook, comparaison, réglage Storybook) ; **dessinés** ; 178 à 179 **retirés** en phase 33 (Jeu itch.io) |
 | 28 à 28d · Pistes | pistes de brainstorming de la phase 20 (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF |
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
@@ -52,10 +49,18 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** |
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
-| 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
+| 35 · Redesign Silo | 210 à 218, sans 213 retiré en phase 33 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
 | 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent ; 225 et 225b retirés en phase 31) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3, retiré en phase 31) ; 236 à 238b (phase 30 : Graphe, Fonctionnalités et PRs, aucune PR, fiche ticket, Maquettes, maquette en plein écran) ; 239 à 242 (phase 31 : Graphe en attente, agent de projet en volet, agrandi, liste rétractée ; 219, 219c, 220, 226 à 229 et 236 refaits) ; **dessinés** |
 
-Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
+Pages 00 à 08, 10, 11, 13 à 16, 18 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
+
+Phase 33 (retrait de l'ancien Kibo, spec §49.5) : pages 09 « Composants », 12 « Sync & marketplace » et 17 « Composants & synchronisation »
+**retirées** du fichier et des PDF ; écrans 31 (appairage web), 57b à 57e, 57g, 57h, 57j à 57n (sources synchronisées, Source MCP, vues
+synchronisées), 156 à 157c et 178 à 179 retirés de leur page et des PDF. Retirés, jamais redessinés ; les scripts de ces pages restent dans
+`scripts/` pour l'historique.
+Pages 35 et 36 : 213 (Tickets) retiré ; puce « Synchronisé · il y a 1 min » de la barre du haut et entrées « Tickets » et « Notes » de la
+barre latérale (et du menu des pages de 224) retirées en place sur tous leurs boards, comme dans « Kibo · Redesign » ; leurs pages des PDF
+sont réexportées (ordre y puis x). Les écrans Notes et Tickets des pages d'archive (00 à 34) restent.
 
 ## Redesign : les anciennes pages sont une archive
 
@@ -63,7 +68,8 @@ Depuis la phase 25 (redesign validé le 2026-10-16, spec §37), la **référence
 `design/redesign/exports/` (sombre et clair) et les cotes de `design/redesign/cotes.md`, comparés au pixel près par les E2E
 (`e2e/pixel-*.spec.ts`). Les pages 00 à 34 de `kibo.penpot.xz` décrivent l'ancienne coque (barre d'onglets permanente, entrées Agents
 et Files d'attente, « Vue d'ensemble » tous projets) et restent en **archive** : elles ne sont ni redessinées ni réexportées, et un écran du
-redesign prime sur l'ancien écran qu'il remplace. Le fichier « Kibo · Redesign » et la page 35 sont les seules
+redesign prime sur l'ancien écran qu'il remplace. L'archive est réduite en phase 33 : les pages et écrans de l'ancien Kibo retirés de l'application (composants tiers,
+sync et marketplace, sources synchronisées, appairage web, Visionneuse 3D, Serpent, Jeu itch.io) en sont retirés, sans redessin. Le fichier « Kibo · Redesign » et la page 35 sont les seules
 sources à jour ; un nouvel écran se dessine dans `design/redesign/` (voir son README).
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
@@ -144,8 +150,7 @@ Numéros : 136 à 149 (phases 14 et 15) et 150 à 160 (phases 12 et 13) suivent 
   151c compaction pendant le glisser · 152 notes, barre d'outils · 152b menu `/` · 152c bulle de sélection · 152d image collée et aperçu en direct ·
   153 graphe, navigation (minimap, zoom, légende) et sélection · 153b sélection multiple · 154 widget Graphe par format · 155 toast « Onglet fermé · Annuler ».
   Rend obsolètes le fantôme rouge de 127b et « Pas de place » de 128 (§18.2).
-- 21 · Composants riches : 30b autoriser un composant, capacités · 156 Visionneuse 3D · 156b sans modèle · 156c réglages (fichier du projet) · 157 Serpent ·
-  157b plein écran de Kibo · 157c partie perdue (157 à 157c **retirés**, §26.11 : composant Serpent supprimé) · 158 sélection partagée · 159 Fichiers du projet · 159b envois et refus · 159c supprimer un fichier · 160 gabarits.
+- 21 · Composants riches : 30b autoriser un composant, capacités · (156 à 157c Visionneuse 3D et Serpent **retirés** du fichier en phase 33) · 158 sélection partagée · 159 Fichiers du projet · 159b envois et refus · 159c supprimer un fichier · 160 gabarits.
 - 22 · Installation & aide : 19 premier lancement complété · 19b Claude Code non connecté · 19c aide dépliée · 78 Claude Code introuvable ·
   76 Général (Application, Mises à jour, Sauvegardes, Commande kibo ; version de bureau) · 76b supprimer une sauvegarde · 76c sauvegarde en cours, dossier refusé ·
   112c menu de l'avatar, groupe Aide · 136 À propos · 137 Quoi de neuf · 137b aucune note · 138 Signaler un problème · 139 Raccourcis (dialogue `⌘/`).
@@ -182,8 +187,7 @@ Panneau à droite sous la barre du haut (440 px), pour garder visible le bouton 
 `32-jeux-storybook.js`, chargé après `24-socle-suite` ; liste de job `S.JEUX`, un écran par appel, puis `S.dropBases()`. Données : section
 « Jeux et Storybook (phase 19) » de `donnees-fictives.md`. Le contenu des cadres (jeu, story, maquette Figma) garde des couleurs fixes en sombre et en clair.
 
-- 27 · Jeux & Storybook : (178 à 179 **retirés**, §26.11 : composant Jeu itch.io supprimé) 178 widget Jeu itch.io (« Una war », « Fourni par itch.io ») · 178b hors ligne · 178c intégration refusée · 178d vide et dialogue Réglages ·
-  179 plein écran de Kibo · 180 widget Maquette, story `Screens / Home` · 180b Storybook injoignable · 180c menu des origines (Projet, `feat/login` injoignable) ·
+- 27 · Jeux & Storybook : (178 à 179, Jeu itch.io, **retirés** du fichier en phase 33) 180 widget Maquette, story `Screens / Home` · 180b Storybook injoignable · 180c menu des origines (Projet, `feat/login` injoignable) ·
   181 comparaison côte à côte (story, cadre Figma « Accueil ») · 181b superposition (opacité 50 %, curseur 40 %) · 182 Modifier le projet, section Storybook.
 
 ## Phase 20 (page 29)
@@ -304,13 +308,13 @@ de haut (207 à 208, 208c), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px.
 
 Scripts de `design/redesign/scripts/` (et non ceux de ce dossier), servis par `design/redesign/scripts/receiver.py` ; chargement comme dans
 `design/redesign/scripts/00-charger.js`, plus `85-etats.js`. Écrans du redesign validé le 2026-10-16 (voir `design/redesign/README.md`),
-projet fictif Silo (location de box ; données : section « Projet Silo » de `donnees-fictives.md`), horloge au 16 oct. : `S.draw["p-vue2"]` (210), `p-planning` (211), `p-fonctionnalite` (212), `p-tickets` (213), `p-graphe` (214, puis
+projet fictif Silo (location de box ; données : section « Projet Silo » de `donnees-fictives.md`), horloge au 16 oct. : `S.draw["p-vue2"]` (210), `p-planning` (211), `p-fonctionnalite` (212), (`p-tickets`, 213, retiré en phase 33), `p-graphe` (214, puis
 `S.edgesP()` dans un second appel), `etat-215` à `etat-218` (panneau « Recommandé » des choix 7, 4, 5 et 6). Écrans de 1 440 px de large ; rangées
 de 1 500 px, clair à x = 1 540 ; états de 604 × 452 à partir de y = 7 500, rangées de 600 px. Le dessin renomme ensuite chaque board en `n · titre`.
 
 - 35 · Redesign Silo : 210 vue d'ensemble (indicateurs, « En ce moment », échéances, sprint S42, prochaine à finir, activité, En review,
   questions, panneau de l'agent de projet et lot n° 7) · 211 Planning, sprints en colonnes · 212 fiche fonctionnalité F5, parcours de A à Z ·
-  213 Tickets · 214 Graphe, une colonne par sprint · 215 fiche de sprint S42 et « Fin de sprint : reporter F5 en S43 ? » · 216 « 3/2 ouvertes »,
+  (213 Tickets retiré en phase 33) · 214 Graphe, une colonne par sprint · 215 fiche de sprint S42 et « Fin de sprint : reporter F5 en S43 ? » · 216 « 3/2 ouvertes »,
   « Ouvrir F6 » reste possible · 217 démo client facultative en pointillé, F4 livrée · 218 nom tronqué et infobulle du nom complet.
 
 ## Suivi seul (page 36)
@@ -381,13 +385,14 @@ volet de P1 bis v3, « En retard au 18 oct. », P6 et « Vue d'ensemble · en at
 
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui, sans 09, 12 ni 17 (retirées) (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`. Pour ne changer que quelques boards, remplacer leurs pages et ajouter
    les nouvelles dans le PDF existant avec `pypdf` (`add_page`, puis `compress_identical_objects`) : `pdfseparate` et `pdfunite` doublent la taille
    du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
    Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2, 235 en 0.29.0-alpha.3, 236 à 238b en phase 30) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
    clair, dans l'ordre des rangées) et les ajouter en fin de chaque PDF, les pages existantes restant inchangées.
    Phase 31 : pages de 219, 219c, 220, 226 à 229 et 236 remplacées sur place, celles de 225, 225b et 235 retirées, 239 à 242 ajoutés en fin.
+   Phase 33 : pages des écrans et pages retirés supprimées des deux PDF par `pypdf` (ordre des boards : page Penpot, puis y et x, comme `exportPage`).
 2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
    l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

@@ -53,7 +53,7 @@ function featureReason(feature: NonNullable<StartFacts["feature"]>, ctx: StartCo
     : null;
 }
 
-export type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional" | "onHold">;
+type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional" | "onHold">;
 
 export function lastStepWaitsOn(ticketId: string, steps: readonly StepFacts[]): string[] {
   const active = steps.filter((s) => s.onHold === null);

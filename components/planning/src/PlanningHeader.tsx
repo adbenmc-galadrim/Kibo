@@ -46,7 +46,6 @@ export function AddButton({ label, title, onClick }: { label: string; title: str
 
 type Props = {
   model: PlanningModel;
-  readOnly: boolean;
   layout: PlanningLayout;
   onLayout(layout: PlanningLayout): void;
   onOpen(id: string): void;
@@ -57,7 +56,7 @@ type Props = {
 const SUBTITLE = "min-w-0 truncate text-(--tracking-dim) text-[12.5px] leading-[15px]";
 
 export function PlanningHeader(props: Props) {
-  const { model, readOnly, layout, onOpen, onNewFeature, onNewSprint } = props;
+  const { model, layout, onOpen, onNewFeature, onNewSprint } = props;
   return (
     <header className="flex shrink-0 flex-wrap items-end gap-2.5">
       <div className="flex min-w-0 grow basis-64 items-end gap-2.5">
@@ -66,12 +65,8 @@ export function PlanningHeader(props: Props) {
         {layout === "bands" && <span className={`${SUBTITLE} shrink-[8]`}>{fr.bands.hint}</span>}
       </div>
       <div className="ml-auto flex min-w-0 flex-wrap items-end justify-end gap-2.5">
-        {!readOnly && (
-          <>
-            <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />
-            <AddButton label={fr.addSprint} title={fr.newSprint} onClick={onNewSprint} />
-          </>
-        )}
+        <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />
+        <AddButton label={fr.addSprint} title={fr.newSprint} onClick={onNewSprint} />
         <OpenLimitBadge
           open={model.open}
           limit={model.limit}

@@ -15,7 +15,7 @@ const HEAD = 16;
 const LABEL = "project file";
 const READ_FLAGS = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
 
-export type SniffedFile = { mime: ProjectAssetMime | null; size: number; mtime: number };
+type SniffedFile = { mime: ProjectAssetMime | null; size: number; mtime: number };
 
 const errnoOf = (e: unknown) => (e instanceof Error && "code" in e ? e.code : null);
 export const notFound = (name: string) => new KiboError("NOT_FOUND", `project file ${name} not found`);

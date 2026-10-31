@@ -67,7 +67,7 @@ test("in the narrow panel the list opens over the conversation, a past agent is 
   await user.click(list.getByRole("button", { name: /^Relances client/ }));
   expect(await panel().findByText("Ancien agent · 2 oct. 10:05")).toBeTruthy();
   expect(panel().queryByRole("navigation", { name: "Agents" })).toBeNull();
-  expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();
+  expect(panel().queryByRole("textbox", { name: "Message à l'agent de projet" })).toBeNull();
   expect(rpcs("getProjectAgent").at(-1)).toMatchObject({ runId: "r1" });
   expect(await panel().findByText("Abandonné")).toBeTruthy();
   const [, renew] = panel().getAllByRole("button", { name: "Nouvel agent" });
@@ -75,7 +75,7 @@ test("in the narrow panel the list opens over the conversation, a past agent is 
   await user.click(renew);
   await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Nouvel agent" }));
   await waitFor(() => expect(rpcs("resetProjectAgent")).toHaveLength(1));
-  expect(await panel().findByRole("combobox", { name: "Message à l'agent de projet" })).toBeTruthy();
+  expect(await panel().findByRole("textbox", { name: "Message à l'agent de projet" })).toBeTruthy();
 });
 
 test("Retour leaves a past agent for the current conversation; Fermer la liste closes the list", async () => {
@@ -87,7 +87,7 @@ test("Retour leaves a past agent for the current conversation; Fermer la liste c
   await user.click(panel().getByRole("button", { name: "Liste des agents" }));
   await user.click(panel().getByRole("button", { name: /^Relances client/ }));
   await user.click(await panel().findByRole("button", { name: "Retour" }));
-  expect(await panel().findByRole("combobox", { name: "Message à l'agent de projet" })).toBeTruthy();
+  expect(await panel().findByRole("textbox", { name: "Message à l'agent de projet" })).toBeTruthy();
   expect(panel().queryByText(/^Ancien agent/)).toBeNull();
 });
 
@@ -95,7 +95,7 @@ test("in the narrow panel the open list makes the conversation inert, and closin
   show();
   const user = userEvent.setup();
   const toggle = await panel().findByRole("button", { name: "Liste des agents" });
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   expect(box.closest("[inert]")).toBeNull();
   await user.click(toggle);
   expect(box.closest("[inert]")).not.toBeNull();

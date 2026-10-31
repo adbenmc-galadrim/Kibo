@@ -10,16 +10,12 @@ describe("domainsOf", () => {
   const workspace = [Domain.parse({ id: "w", name: "Sécurité", color })];
 
   test("a local project sees its domains, then the workspace ones", () => {
-    expect(domainsOf({ project: { domains: [own], shared: false }, workspace })).toEqual([own, ...workspace]);
+    expect(domainsOf({ project: { domains: [own] }, workspace })).toEqual([own, ...workspace]);
   });
 
   test("a project copy hides the workspace domain with the same id", () => {
     const copy = Domain.parse({ id: "w", name: "Sécurité (copie)", color, owner: inProject });
-    expect(domainsOf({ project: { domains: [copy], shared: false }, workspace })).toEqual([copy]);
-  });
-
-  test("a shared project sees its own domains only", () => {
-    expect(domainsOf({ project: { domains: [own], shared: true }, workspace })).toEqual([own]);
+    expect(domainsOf({ project: { domains: [copy] }, workspace })).toEqual([copy]);
   });
 });
 
@@ -34,7 +30,7 @@ describe("domain order", () => {
     const early = make("w9", "Auth");
     const twinB = make("wb", "Auth");
     const result = domainsOf({
-      project: { domains: [zeta, alpha], shared: false },
+      project: { domains: [zeta, alpha] },
       workspace: [late, twinB, early],
     });
     expect(result.map((d) => d.id)).toEqual(["p2", "p1", "w9", "wb", "w2"]);

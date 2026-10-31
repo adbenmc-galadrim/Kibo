@@ -6,7 +6,6 @@ test("a ticket without labels parses to an empty list and labels are validated",
   const base = {
     id: "t1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "x",
     description: "",
     statusId: "todo",
@@ -24,7 +23,6 @@ test("a ticket without agent progress parses to the empty progress", () => {
   const ticket = Ticket.parse({
     id: "t1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "x",
     description: "",
     statusId: "todo",
@@ -41,7 +39,6 @@ test("a ticket without delivery step has none, a stored step is validated", () =
   const base = {
     id: "t1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "x",
     description: "",
     statusId: "todo",
@@ -61,7 +58,6 @@ test("a ticket has no sprint, is mandatory and has no short key by default", () 
   const base = {
     id: "t1",
     key: "KIB-1",
-    pendingSeq: null,
     title: "x",
     description: "",
     statusId: "todo",

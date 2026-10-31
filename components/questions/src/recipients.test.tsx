@@ -3,7 +3,7 @@ import { type ProjectCommand, Question, questionLabel } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { seedDemo, seedQuestions } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { dayMonth, exportDate } from "./export-text";
 import { Component, manifest } from "./index";
@@ -165,16 +165,6 @@ test("a failed copy still shows the text and marks the question sent", async () 
   await user.click(within(card).getByRole("button", { name: "Exporter" }));
   expect(await screen.findByText(new RegExp(`· ${OPEN.replace("?", "\\?")}`))).toBeTruthy();
   await waitFor(() => expect(exported(named(m, OPEN))).toBe(true));
-});
-
-test("read-only projects show the recipient without its menu, and no export", async () => {
-  const m = mount();
-  act(() => m.setAccess("read-only"));
-  const card = await screen.findByRole("article", { name: OPEN });
-  expect(within(card).getByText("Pour : Moi (technique)")).toBeTruthy();
-  expect(within(card).queryByRole("button", { name: /Destinataire :/ })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Exporter" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Destinataire" })).toBeNull();
 });
 
 test("a 21st recipient is refused with the quota", async () => {

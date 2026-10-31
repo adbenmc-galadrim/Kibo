@@ -9,7 +9,6 @@ type Go = (target: TabTarget | null, newTab?: boolean) => void;
 
 type PaletteDeps = {
   set: SetDialogs;
-  setFocusRun(id: string | null): void;
   go: Go;
   activeProjectId: string | null;
   cycleTheme(): void;
@@ -22,8 +21,6 @@ export function paletteActionHandler(d: PaletteDeps): (a: PaletteAction) => void
   return (a) => {
     if (a.kind === "newProject") return d.set({ newProject: true });
     if (a.kind === "toggleTheme") return d.cycleTheme();
-    if (a.kind === "reply") return d.setFocusRun(a.runId);
-    if (a.kind === "assign") return d.set({ assign: { projectId: null, ticketId: a.ticketId } });
     if (isHelpAction(a)) return d.set(helpPatch(a.kind));
     if (a.projectId !== d.activeProjectId) d.go({ kind: "project", projectId: a.projectId });
     if (a.kind === "newPage") d.set({ newPageParent: null });

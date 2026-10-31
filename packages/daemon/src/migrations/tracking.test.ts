@@ -2,13 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  KiboError,
-  type ProjectCommand,
-  type ProjectMeta,
-  type ProjectSnapshot,
-  type Ticket,
-} from "@kibo/schema";
+import type { ProjectCommand, ProjectMeta, ProjectSnapshot, Ticket } from "@kibo/schema";
 import type { CommandMeta, Docs } from "../docs";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
@@ -69,7 +63,7 @@ const planningPages = (snap: ProjectSnapshot) => snap.pages.filter((p) => p.titl
 test("each project is migrated with the kibo origin until nothing is left, then never again", () => {
   const { home, silo, client, root } = seed();
   const first = open(home);
-  expect(first.migrate()).toEqual({ migrated: 2, skipped: 0 });
+  expect(first.migrate()).toEqual({ migrated: 2 });
   expect(first.runs.every((r) => r.meta?.origin === "kibo")).toBe(true);
   const snap = first.snapshot(silo.id);
   expect(snap.tickets.find((t) => t.id === root.id)?.shortKey).toBe("C4");
@@ -100,21 +94,6 @@ test("the Planning and overview pages deleted by the user are not added back on 
   expect(second.runs).toEqual([]);
   expect(second.snapshot(silo.id).pages).toEqual([]);
   second.store.close();
-});
-
-test("a read-only project is left alone and logged, then migrated once it can be written", () => {
-  const { home, client } = seed();
-  const first = open(home);
-  const off = first.service.docs.setWriteGuard((id) => {
-    if (id === client.id) throw new KiboError("FORBIDDEN", `project ${id} is read-only`);
-  });
-  expect(first.migrate()).toEqual({ migrated: 1, skipped: 1 });
-  expect(first.runs.some((r) => r.projectId === client.id)).toBe(false);
-  expect(first.lines).toEqual(['tracking migration skipped: project "Client" is read-only']);
-  off();
-  expect(first.migrate()).toEqual({ migrated: 1, skipped: 0 });
-  expect(planningPages(first.snapshot(client.id))).toHaveLength(1);
-  first.store.close();
 });
 
 test("a migration that does not converge stops after five passes and leaves no marker", () => {

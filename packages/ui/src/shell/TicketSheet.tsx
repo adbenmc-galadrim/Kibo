@@ -11,10 +11,7 @@ import {
 } from "@kibo/sdk/ui/sheet";
 import { X } from "lucide-react";
 import { frFeature, frGroup } from "../i18n/fr-group";
-import { frPresence } from "../i18n/fr-presence";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
-import { canEdit } from "../state/access";
-import { usePresencePeers } from "../state/use-presence";
 import { findTicket } from "../tabs/target-hash";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
@@ -54,13 +51,9 @@ export function TicketSheet({
   onDeleted,
 }: Props) {
   const t = findTicket(project.tickets, ticketId);
-  const peers = usePresencePeers(project.sync.shared ? project.meta.id : null).filter(
-    (p) => !p.self && p.ticketId === t?.id,
-  );
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
   if (!t) return null;
-  const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
   const actionsMenu = (extra?: MenuEntry[]) => (
     <TicketActionsMenu
@@ -68,7 +61,7 @@ export function TicketSheet({
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
-      editable={editable}
+      editable
       onOpenInTab={onOpenInTab}
       onFile={inbox ? onFile : undefined}
       onDeleted={onDeleted}
@@ -92,17 +85,11 @@ export function TicketSheet({
         </SheetContent>
       </Sheet>
     );
-  const notice = peers.map((p) => (
-    <p key={p.deviceId} className="rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
-      {frPresence.watching(p.name)}
-    </p>
-  ));
   if (isGroup(t))
     return (
       <Sheet open onOpenChange={(o) => !o && onClose()}>
         <SheetContent className="w-full overflow-x-hidden overflow-y-auto sm:max-w-[min(90vw,560px)]">
           <SheetHeader>
-            {notice}
             <div className="flex items-center gap-2">
               <SheetDescription className="font-mono text-xs">{frGroup.kicker(t.keyLabel)}</SheetDescription>
               <GithubRefs ticket={t} />
@@ -111,13 +98,13 @@ export function TicketSheet({
             <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
               <TicketTitle
                 title={t.title}
-                editable={editable}
+                editable
                 error={command.error}
                 onSave={(title) => command.run({ method: "updateTicket", ticketId: t.id, title })}
                 onCancel={command.clearError}
               />
             </SheetTitle>
-            <LabelsField ticket={t} editable={editable} command={labelsCommand} />
+            <LabelsField ticket={t} editable command={labelsCommand} />
           </SheetHeader>
           <GroupDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />
         </SheetContent>
@@ -150,7 +137,6 @@ export function TicketSheet({
           ticket={t}
           domains={domains}
           viewer={viewer}
-          notice={notice}
           heading={(title, label) => (
             <SheetTitle
               className="text-[22px] font-semibold tracking-[-0.3px]"

@@ -11,7 +11,7 @@ import { transportUrl } from "../integrations/net";
 import { relayAncestors, relayHeaders, relayHtml } from "./relay";
 import type { EmbedGrant, EmbedService } from "./types";
 
-export type EmbedServiceDeps = {
+type EmbedServiceDeps = {
   now(): number;
   sandboxOrigin(): string | null;
   uiOrigins(): string[];

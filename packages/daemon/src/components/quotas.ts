@@ -1,4 +1,4 @@
-export type QuotaKind = "call" | "fetch" | "mcp" | "design" | "embed";
+export type QuotaKind = "call" | "fetch" | "design";
 export type Quotas = { take(instanceId: string, kind: QuotaKind): boolean };
 
 export function createQuotas(
@@ -6,18 +6,14 @@ export function createQuotas(
     now?: () => number;
     callsPerSecond?: number;
     fetchPerMinute?: number;
-    mcpPerMinute?: number;
     designPerMinute?: number;
-    embedPerMinute?: number;
   } = {},
 ): Quotas {
   const now = opts.now ?? Date.now;
   const limits = {
     call: { max: opts.callsPerSecond ?? 200, window: 1_000 },
     fetch: { max: opts.fetchPerMinute ?? 20, window: 60_000 },
-    mcp: { max: opts.mcpPerMinute ?? 30, window: 60_000 },
     design: { max: opts.designPerMinute ?? 30, window: 60_000 },
-    embed: { max: opts.embedPerMinute ?? 10, window: 60_000 },
   };
   const seen = new Map<string, number[]>();
   return {

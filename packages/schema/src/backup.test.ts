@@ -3,6 +3,8 @@ import { BACKUP_SETTINGS_DEFAULT, BackupId, BackupInfo, BackupSettings } from ".
 
 test("a backup id is a UTC timestamp usable as a folder name", () => {
   expect(BackupId.safeParse("2026-10-04T14-05-00Z").success).toBe(true);
+  expect(BackupId.safeParse("2026-10-04T14-05-00Z-avant-retrait").success).toBe(true);
+  expect(BackupId.safeParse("2026-10-04T14-05-00Z-autre").success).toBe(false);
   expect(BackupId.safeParse("2026-10-04T14:05:00Z").success).toBe(false);
   expect(BackupId.safeParse("../x").success).toBe(false);
 });

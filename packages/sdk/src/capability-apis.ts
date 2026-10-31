@@ -4,11 +4,10 @@ import {
   type ComponentManifest,
   capPermission,
   type DesignFrame,
-  type EmbedView,
   type ProjectAsset,
   type StorybookOrigin,
 } from "@kibo/schema";
-import type { AssetsApi, DesignApi, EmbedApi } from "./types";
+import type { AssetsApi, DesignApi } from "./types";
 
 type Guard = { deny(what: string): never };
 type Call = <T>(c: ComponentCall) => Promise<T>;
@@ -41,15 +40,6 @@ export function designApi(manifest: ComponentManifest, guard: Guard, call: Call)
     async storybooks() {
       need();
       return call<StorybookOrigin[]>({ kind: "design.storybooks" });
-    },
-  };
-}
-
-export function embedApi(manifest: ComponentManifest, guard: Guard, call: Call): EmbedApi {
-  return {
-    async open(url) {
-      if (!manifest.capabilities.includes("embed")) guard.deny(capPermission("embed"));
-      return call<EmbedView>({ kind: "embed.open", url });
     },
   };
 }

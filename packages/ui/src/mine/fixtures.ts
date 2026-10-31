@@ -1,6 +1,6 @@
 import type { Assignee, ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 
 let seq = 0;
 
@@ -14,7 +14,6 @@ export function mineTicket(
   return {
     id: `${seq}@1`,
     key,
-    pendingSeq: key === null ? seq : null,
     hold: null,
     keyLabel: key ?? "KIB-…",
     title: key ?? `Ticket ${seq}`,

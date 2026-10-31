@@ -1,0 +1,60 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["test/*.ts"],
+      "project": ["test/*.ts"]
+    },
+    "apps/desktop": {
+      "entry": ["scripts/*.ts", "sidecar/*.ts"],
+      "project": ["scripts/*.ts", "sidecar/*.ts"]
+    },
+    "packages/daemon": {
+      "entry": [
+        "src/server.ts",
+        "src/daemon.ts",
+        "src/**/fake-*.ts",
+        "src/**/*.test.ts",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/cli": {
+      "entry": ["src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/ui": {
+      "entry": ["scripts/*.ts", "src/**/*.test.{ts,tsx}", "src/**/fixtures*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/*.ts"]
+    },
+    "packages/*": {
+      "entry": [
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "components/*": {
+      "entry": [
+        "src/index.ts",
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "e2e": {
+      "entry": ["*.ts", "**/*.spec.ts"],
+      "project": ["**/*.ts"]
+    },
+    "scripts/*": {
+      "entry": ["*.ts", "src/**/*.ts"],
+      "project": ["**/*.ts"]
+    }
+  }
+}

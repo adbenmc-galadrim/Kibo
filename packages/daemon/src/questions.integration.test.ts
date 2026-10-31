@@ -2,10 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ProjectCommand, ProjectEventPage, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
-import { fakeBuild, okReport } from "./components/service.test-helper";
 import { startDaemon } from "./daemon";
 import { questionImagesDir } from "./questions/question-images";
 
@@ -29,10 +27,7 @@ async function launch() {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     home,
   });
   cleanups.push(() => daemon.stop());

@@ -30,7 +30,7 @@ test("the count of a sidebar page gives way to its ⋯ button on hover, focus an
   await openSilo(page);
   await openSiloPage(page, "Vue d'ensemble");
   const { sidebar, row, count, action } = pageRow(page, "Questions");
-  const tickets = pageRow(page, "Tickets");
+  const planning = pageRow(page, "Planning");
   await expect(count).toHaveText(/^\d+$/);
   await expect(count).toBeVisible();
   const rest = await box(row);
@@ -39,8 +39,8 @@ test("the count of a sidebar page gives way to its ⋯ button on hover, focus an
   await sidebar.screenshot({ path: `${SHOTS}/apres-survol-${scheme()}.png` });
   await expect(count).toBeHidden();
   await expect(action).toHaveCSS("opacity", "1");
-  await expect(tickets.action).toHaveCSS("opacity", "0");
-  await expect(tickets.count).toBeVisible();
+  await expect(planning.action).toHaveCSS("opacity", "0");
+  await expect(planning.count).toBeVisible();
   expect(await box(row)).toEqual(rest);
 
   await page.mouse.move(0, 0);
@@ -65,10 +65,10 @@ test("under 48rem every ⋯ stays shown and the counts of editable rows stay hid
   await openSiloPage(page, "Vue d'ensemble");
   await page.getByRole("button", { name: "Afficher ou masquer la barre latérale" }).first().click();
   const questions = pageRow(page, "Questions");
-  const tickets = pageRow(page, "Tickets");
+  const planning = pageRow(page, "Planning");
   await expect(questions.row).toBeVisible();
   await page.mouse.move(0, 0);
-  for (const line of [questions, tickets]) {
+  for (const line of [questions, planning]) {
     await expect(line.action).toHaveCSS("opacity", "1");
     await expect(line.count).toBeHidden();
   }

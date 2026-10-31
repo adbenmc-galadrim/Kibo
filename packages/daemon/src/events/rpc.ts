@@ -3,7 +3,7 @@ import type { Docs } from "../docs";
 import type { RpcExtension } from "../rpc-extensions";
 import type { EventStore } from "./store";
 
-export type EventsRpcDeps = { events: EventStore; docs: Pick<Docs, "project"> };
+type EventsRpcDeps = { events: EventStore; docs: Pick<Docs, "project"> };
 
 export function listProjectEvents(deps: EventsRpcDeps, raw: unknown): ProjectEventPage {
   const parsed = ListProjectEventsInput.safeParse(raw);

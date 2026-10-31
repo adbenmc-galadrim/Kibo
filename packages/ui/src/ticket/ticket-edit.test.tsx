@@ -7,17 +7,9 @@ import {
   type RpcRequest,
   type TicketView,
 } from "@kibo/schema";
-import { act, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
@@ -26,8 +18,6 @@ mock.module("../api", () =>
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-        if (req.method === "getPresence") return [];
         return answer(req);
       },
       subscribe: () => () => undefined,
@@ -43,7 +33,6 @@ const { TicketTab } = await import("../pages/TicketTab");
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
   key: "KIB-12",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-12",
   title: "Schéma Loro des tickets",
@@ -81,7 +70,7 @@ const child = (n: number, parentId: string): TicketView =>
     parentId,
     progress: { done: 0, total: 0 },
   });
-const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
+const project = (main: TicketView): ProjectSnapshot => ({
   meta: {
     id: "p1",
     name: "Kibo",
@@ -90,7 +79,6 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -107,22 +95,15 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   bindings: [],
   nextTicketKey: "KIB-22",
   sprints: [],
-  sync: {
-    shared: access !== "write",
-    keyAllocator: "local",
-    role: null,
-    access,
-    members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
-  },
 });
 
-const show = async (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "write") => {
+const show = async (main = ticket()) => {
   const onDeleted = mock(() => {});
   const onOpenTicket = mock((_id: string) => {});
   const onOpenInTab = mock(() => {});
   render(
     <TicketSheet
-      project={project(main, access)}
+      project={project(main)}
       ticketId={main.id}
       domains={[]}
       viewer="adam"
@@ -241,14 +222,10 @@ test("the status select sends setStatus, Bloqué asks for a reason first", async
   });
 });
 
-test("the assignee select offers nobody, me and the members; an agent assignee is not editable here", async () => {
+test("the assignee select offers nobody and me; an agent assignee is not editable here", async () => {
   const { user } = await show();
   await openSelect(user, "Assigné");
-  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual([
-    "Personne",
-    "Moi",
-    "Léa",
-  ]);
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Personne", "Moi"]);
   await user.click(screen.getByRole("option", { name: "Moi" }));
   expect(command(calls.at(-1))).toEqual({
     method: "updateTicket",
@@ -326,19 +303,4 @@ test("the menu opens in a tab, copies the key and deletes after confirmation", a
   await user.click(within(dialog).getByRole("button", { name: "Supprimer" }));
   expect(command(calls.at(-1))).toEqual({ method: "deleteTicket", ticketId: "12@1" });
   await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
-});
-
-test("a read-only project shows the ticket without any editing control", async () => {
-  const { user } = await show(ticket(), "read-only");
-  expect(screen.queryByRole("button", { name: "Modifier le titre" })).toBeNull();
-  expect(screen.getByRole("heading", { name: "Schéma Loro des tickets" })).toBeTruthy();
-  expect(screen.queryByRole("combobox", { name: "Statut" })).toBeNull();
-  expect(screen.getByText("En cours")).toBeTruthy();
-  expect(screen.queryByRole("combobox", { name: "Assigné" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
-  await user.click(screen.getByRole("button", { name: "Actions KIB-12" }));
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
-    "Ouvrir dans un onglet",
-    "Copier la clé",
-  ]);
 });

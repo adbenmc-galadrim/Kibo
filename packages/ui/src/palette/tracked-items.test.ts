@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { ProjectSnapshot, ProjectSummary } from "@kibo/schema";
-import { kiboProject, projectsFixture } from "../agents/fixtures";
+import { kiboProject, projectsFixture } from "../lib/fixtures";
 import { sprintProject } from "../project-agent/sprint-fixtures";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 
@@ -15,8 +15,6 @@ const context = (project: ProjectSnapshot): PaletteContext => ({
   recents: [],
   activeProjectId: project.meta.id,
   activeTicketId: null,
-  agents: null,
-  executionShown: false,
 });
 
 const actionLabels = (project: ProjectSnapshot) =>

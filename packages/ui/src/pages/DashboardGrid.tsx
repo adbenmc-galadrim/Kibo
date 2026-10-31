@@ -2,7 +2,7 @@ import type { Instance, Layout } from "@kibo/schema";
 import type { CSSProperties, ReactNode } from "react";
 import { GAP, ROW_HEIGHT, readingOrder, spanLength } from "../lib/format-grid";
 
-export type DashboardGridProps = {
+type DashboardGridProps = {
   instances: Instance[];
   layouts: ReadonlyMap<string, Layout>;
   narrow: boolean;

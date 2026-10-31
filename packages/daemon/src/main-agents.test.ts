@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentsState, ProjectMeta, RunLogEntry, RunView } from "@kibo/schema";
-import { FAKE_CLAUDE, scenarioPath } from "./agents/fake-claude-scenario";
+import { FAKE_CLAUDE, scenarioPath } from "./runs/fake-claude-scenario";
 
 const alive = (pid: number) => {
   try {

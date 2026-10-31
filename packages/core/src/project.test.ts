@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_DUPLICATION_SETTINGS, DUPLICATION_SHARED_GLOBS, EMPTY_DELIVERY } from "@kibo/schema";
+import { EMPTY_DELIVERY, ProjectMeta } from "@kibo/schema";
 import { LoroDoc, LoroMap } from "loro-crdt";
 import {
   countTicketsByStatus,
   createProjectDoc,
   createTicket,
   createWorkspaceDoc,
-  effectiveDuplication,
   executeProjectCommand,
   getProjectMeta,
   getWorkflow,
@@ -30,7 +29,6 @@ const meta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -48,6 +46,17 @@ describe("workspace", () => {
     const ws = createWorkspaceDoc();
     registerProject(ws, meta);
     expect(() => registerProject(ws, { ...meta, id: "p3" })).toThrow("INVALID_INPUT");
+  });
+  test("a workspace entry still carrying the retired duplication setting stays readable", () => {
+    const ws = createWorkspaceDoc();
+    registerProject(ws, meta);
+    const entry = ws.getList("projects").get(0);
+    if (!(entry instanceof LoroMap)) throw new Error("the entry is not a map");
+    entry.set("duplication", { shared: ["src/**"] });
+    ws.commit();
+    expect(listProjects(ws)[0]).toMatchObject(meta);
+    expect(ProjectMeta.parse(listProjects(ws)[0])).toEqual(meta);
+    expect(updateRegisteredProject(ws, "p1", { name: "Kibo 2" })).toEqual({ ...meta, name: "Kibo 2" });
   });
   test("a registered project is updated in place and can be removed", () => {
     const ws = createWorkspaceDoc();
@@ -73,6 +82,16 @@ describe("workspace", () => {
 });
 
 describe("project meta", () => {
+  test("a project doc still carrying the retired duplication setting reads without it", () => {
+    const doc = createProjectDoc(meta);
+    doc.getMap("meta").set("duplication", { shared: ["src/**"] });
+    doc.commit();
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy)).toEqual(meta);
+    expect(setProjectMeta(copy, { name: "Noyau" })).toEqual({ ...meta, name: "Noyau" });
+  });
+
   test("setProjectMeta writes only the given fields and keeps key and id", () => {
     const doc = createProjectDoc(meta);
     expect(setProjectMeta(doc, { color: "#6366F1" })).toEqual({ ...meta, color: "#6366F1" });
@@ -200,38 +219,6 @@ test("local storybook settings never reach the project doc nor the workspace", (
   expect(JSON.stringify(ws.toJSON())).not.toContain("sb.example.com");
   expect(getProjectMeta(doc).storybook).toBeNull();
   expect(listProjects(ws)[0]?.storybook).toBeNull();
-});
-
-test("local duplication settings never reach the project doc nor the workspace", () => {
-  const duplication = { ...DEFAULT_DUPLICATION_SETTINGS, ignore: ["src/generated-zz/**"] };
-  const local = { ...meta, duplication };
-  const ws = createWorkspaceDoc();
-  registerProject(ws, local);
-  const doc = createProjectDoc(local);
-  expect(LOCAL_ONLY_META.has("duplication")).toBe(true);
-  expect(doc.getMap("meta").get("duplication")).toBeUndefined();
-  expect(JSON.stringify(ws.toJSON())).not.toContain("generated-zz");
-  expect(getProjectMeta(doc).duplication).toBeNull();
-  expect(listProjects(ws)[0]?.duplication).toBeNull();
-});
-
-test("the effective duplication settings fall back to the defaults", () => {
-  expect(effectiveDuplication({ duplication: null })).toEqual({
-    ...DEFAULT_DUPLICATION_SETTINGS,
-    shared: [...DUPLICATION_SHARED_GLOBS],
-  });
-  const own = { ...DEFAULT_DUPLICATION_SETTINGS, minLines: 12, shared: [] };
-  expect(effectiveDuplication({ duplication: own })).toBe(own);
-});
-
-test("a duplication row stored before shared files gets the default shared files", () => {
-  const { shared: _shared, ...old } = DEFAULT_DUPLICATION_SETTINGS;
-  expect(effectiveDuplication({ duplication: { ...old, minLines: 12 } })).toEqual({
-    ...old,
-    minLines: 12,
-    shared: [...DUPLICATION_SHARED_GLOBS],
-  });
-  expect(effectiveDuplication({ duplication: { ...old, shared: [] } }).shared).toEqual([]);
 });
 
 test("local delivery settings never reach the project doc nor the workspace", () => {

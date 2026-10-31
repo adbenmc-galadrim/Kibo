@@ -1,11 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-  type ComponentFormat,
-  type ProjectCommand,
-  type ProjectSnapshot,
-  Ticket,
-  type TicketRun,
-} from "@kibo/schema";
+import { type ComponentFormat, type ProjectCommand, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo } from "@kibo/sdk/fixtures";
@@ -21,15 +15,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   seedDemo(run);
 };
 
-const runs = (s: ProjectSnapshot): TicketRun[] => {
-  const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
-  return [
-    { ticketId: id("KIB-29"), runId: "r1", label: "opus-dev-1", state: "running", position: null },
-    { ticketId: id("KIB-14"), runId: "r2", label: "opus-dev-2", state: "waiting_input", position: null },
-  ];
-};
-
-runConformance({ manifest, Component }, seed, { runs });
+runConformance({ manifest, Component }, seed);
 
 type Seed = (run: (cmd: ProjectCommand) => unknown) => void;
 
@@ -39,7 +25,6 @@ const setup = (format: ComponentFormat, seedFn: Seed | null = seed, config: Reco
     format,
     surface: "widget",
     viewer: "adam",
-    agentExecution: "shown",
     config,
   });
   render(

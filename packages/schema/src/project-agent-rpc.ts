@@ -9,7 +9,7 @@ import {
 import type { RpcRequest } from "./rpc";
 import type { RunView } from "./run";
 
-export const PROJECT_AGENT_MESSAGE_MAX = 10_000;
+const PROJECT_AGENT_MESSAGE_MAX = 10_000;
 
 export const PROJECT_AGENT_RPC = [
   z.object({

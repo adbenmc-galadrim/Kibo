@@ -1,16 +1,13 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import type { CaseTone } from "@kibo/sdk/tracking";
 import { Button } from "@kibo/sdk/ui/button";
-import { Copy, Flag, Truck } from "lucide-react";
-import { useState } from "react";
+import { Copy, Flag } from "lucide-react";
 import { fr } from "./fr";
 import { CardHeader, FLUSH_CARD, MONO_KEY, Segments } from "./parts";
 import type { NextCard, RemainingStep } from "./sprint-model";
 
 export type NextActions = {
-  execution: "shown" | "hidden";
   copy(ticketId: string): Promise<void>;
-  deliver(ticketId: string): Promise<void>;
   onOpenTicket(id: string): void;
 };
 
@@ -48,15 +45,6 @@ function StepLine({ step, onOpen }: { step: RemainingStep; onOpen(id: string): v
 }
 
 function NextStep({ deliver, actions }: { deliver: NonNullable<NextCard["deliver"]>; actions: NextActions }) {
-  const [failed, setFailed] = useState(false);
-  const shown = actions.execution === "shown";
-  const run = () =>
-    shown
-      ? actions.deliver(deliver.ticketId).then(
-          () => setFailed(false),
-          () => setFailed(true),
-        )
-      : actions.copy(deliver.ticketId);
   return (
     <div className="flex min-h-[41px] flex-wrap items-center gap-[10px] rounded-[8px] bg-(--tracking-muted) py-[8px] pr-[10px] pl-[12px]">
       <span className="font-medium text-(--tracking-mfg) text-[12px] leading-[15px]">{fr.next.step}</span>
@@ -64,16 +52,11 @@ function NextStep({ deliver, actions }: { deliver: NonNullable<NextCard["deliver
       <Button
         variant="outline"
         className="ml-auto h-[25px] gap-[6px] rounded-[6px] px-[10px] py-[5px] font-medium text-[12px] shadow-none has-[>svg]:px-[10px]"
-        onClick={() => void run()}
+        onClick={() => void actions.copy(deliver.ticketId)}
       >
-        {shown ? <Truck absoluteStrokeWidth size={13} /> : <Copy absoluteStrokeWidth size={13} />}
-        {shown ? fr.next.deliver : fr.next.copy}
+        <Copy absoluteStrokeWidth size={13} />
+        {fr.next.copy}
       </Button>
-      {failed && (
-        <p role="alert" className="basis-full text-(--tracking-red) text-[12px]">
-          {fr.next.deliverFailed}
-        </p>
-      )}
     </div>
   );
 }

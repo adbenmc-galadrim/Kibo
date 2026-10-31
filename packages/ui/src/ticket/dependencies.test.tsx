@@ -7,17 +7,9 @@ import {
   type RpcRequest,
   type TicketView,
 } from "@kibo/schema";
-import { act, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
@@ -27,9 +19,6 @@ mock.module("../api", () =>
       subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-        if (req.method === "getPresence") return [];
-        if (req.method === "autoLinks.list") return [];
         return answer(req);
       },
       subscribe: () => () => undefined,
@@ -45,7 +34,6 @@ const { TICKET_TAB_KEY } = await import("./activity/TicketTabs");
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
   key: "KIB-12",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-12",
   title: "Schéma Loro des tickets",
@@ -74,7 +62,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   feature: null,
   ...patch,
 });
-const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
+const project = (main: TicketView): ProjectSnapshot => ({
   meta: {
     id: "p1",
     name: "Kibo",
@@ -83,7 +71,6 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -100,13 +87,9 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   bindings: [],
   nextTicketKey: "KIB-22",
   sprints: [],
-  sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
-const withLinks = (
-  main: TicketView,
-  access: ProjectSnapshot["sync"]["access"] = "write",
-): ProjectSnapshot => {
-  const base = project(main, access);
+const withLinks = (main: TicketView): ProjectSnapshot => {
+  const base = project(main);
   const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo") =>
     ticket({ id: `${n}@1`, key: `KIB-${n}`, keyLabel: `KIB-${n}`, title, statusId });
   return {
@@ -128,15 +111,11 @@ const withLinks = (
   };
 };
 
-const show = async (
-  main = ticket(),
-  access: ProjectSnapshot["sync"]["access"] = "write",
-  build = project,
-) => {
+const show = async (main = ticket(), build = project) => {
   const onOpenTicket = mock((_id: string) => {});
   render(
     <TicketSheet
-      project={build(main, access)}
+      project={build(main)}
       ticketId={main.id}
       domains={[]}
       viewer="adam"
@@ -163,7 +142,7 @@ beforeEach(() => {
 });
 
 test("the three groups list the linked tickets, done ones greyed, and open them", async () => {
-  const { user, onOpenTicket } = await show(ticket(), "write", withLinks);
+  const { user, onOpenTicket } = await show(ticket(), withLinks);
   const section = screen.getByRole("region", { name: "Dépendances" });
   const group = (name: string) => within(within(section).getByRole("group", { name }));
   expect(
@@ -193,7 +172,7 @@ test("the three groups list the linked tickets, done ones greyed, and open them"
 });
 
 test("the cross removes the link", async () => {
-  const { user } = await show(ticket(), "write", withLinks);
+  const { user } = await show(ticket(), withLinks);
   await user.click(screen.getByRole("button", { name: "Retirer KIB-13" }));
   expect(command(calls.at(-1))).toEqual({ method: "removeLink", linkId: "l2" });
 });
@@ -202,13 +181,13 @@ test("a failed removal is shown", async () => {
   answer = () => {
     throw new KiboError("NOT_FOUND", "link");
   };
-  const { user } = await show(ticket(), "write", withLinks);
+  const { user } = await show(ticket(), withLinks);
   await user.click(screen.getByRole("button", { name: "Retirer KIB-13" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Ce ticket n'existe plus.");
 });
 
 test("adding a dependency searches by key or title and sends addLink in the right direction", async () => {
-  const { user } = await show(ticket(), "write", withLinks);
+  const { user } = await show(ticket(), withLinks);
   await user.click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
   await user.type(screen.getByRole("textbox", { name: "Ticket" }), "KIB-2");
   expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["KIB-20 Schéma des pages"]);
@@ -231,7 +210,7 @@ test("a cycle and a duplicate are explained, nothing else changes", async () => 
     if (command(req)?.method !== "addLink") return null;
     throw new KiboError("LINK_CYCLE", "cycle");
   };
-  const { user } = await show(ticket(), "write", withLinks);
+  const { user } = await show(ticket(), withLinks);
   await user.click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
   await user.type(screen.getByRole("textbox", { name: "Ticket" }), "pages");
   await user.click(screen.getByRole("option", { name: /KIB-20/ }));
@@ -245,17 +224,4 @@ test("a cycle and a duplicate are explained, nothing else changes", async () => 
   await user.click(screen.getByRole("option", { name: /KIB-20/ }));
   await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Ce lien existe déjà."));
   expect(calls.filter((c) => command(c)?.method === "addLink")).toHaveLength(2);
-});
-
-test("a read-only project shows the groups without crosses or the add form", async () => {
-  await show(ticket(), "read-only", withLinks);
-  expect(screen.getByRole("group", { name: "Bloqué par" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /^Retirer / })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Ajouter une dépendance" })).toBeNull();
-  expect(screen.queryByRole("textbox", { name: "Ticket" })).toBeNull();
-});
-
-test("a ticket without links in a read-only project shows no dependencies section", async () => {
-  await show(ticket(), "read-only");
-  expect(screen.queryByRole("region", { name: "Dépendances" })).toBeNull();
 });

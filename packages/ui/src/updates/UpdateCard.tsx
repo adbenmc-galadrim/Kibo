@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo
 import { Progress } from "@kibo/sdk/ui/progress";
 import { CircleX, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
-import { holdsSlot } from "../agents/queue-runs";
 import { frUpdates as t } from "../i18n/fr-updates";
 import { RELEASES_URL } from "../lib/kibo-links";
+import { holdsSlot } from "../project-agent/queue-runs";
 import { inTauri } from "../shell/workspace-actions";
 import { useAgents } from "../state/use-agents";
 import { classifyUpdateFailure, downloadPercent, type UpdateInfo, type UpdateStatus } from "./update-state";
@@ -129,7 +129,7 @@ function Status({
   }
 }
 
-export type UpdatePanelProps = {
+type UpdatePanelProps = {
   snapshot: UpdateSnapshot;
   activeRuns: number;
   desktop: boolean;

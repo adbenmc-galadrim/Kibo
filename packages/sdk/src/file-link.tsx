@@ -1,7 +1,7 @@
 import { cn } from "./lib/utils";
 
-export type FileRefText = { path: string; line: number | null; column: number | null };
-export type TextSegment =
+type FileRefText = { path: string; line: number | null; column: number | null };
+type TextSegment =
   | { kind: "text"; text: string; start: number }
   | { kind: "file"; text: string; start: number; ref: FileRefText };
 type OpenRef = { path: string; line: number | null };
@@ -59,7 +59,7 @@ export function parseFileRef(text: string): FileRefText | null {
   return only?.kind === "file" && rest.length === 0 ? only.ref : null;
 }
 
-export function FileLink({
+function FileLink({
   path,
   line = null,
   label,

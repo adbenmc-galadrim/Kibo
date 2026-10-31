@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { frHold } from "../i18n/fr-hold";
 import { useTicketCommand } from "./use-ticket-command";
 
-export type HoldCommand = {
+type HoldCommand = {
   hold(reason: string): Promise<boolean>;
   resume(): Promise<boolean>;
   error: string | null;

@@ -1,14 +1,11 @@
 import { z } from "zod";
 import { RelPath } from "./code";
 import { NodeId } from "./ids";
-import { SkillId } from "./skill-id";
 
 const ProjectId = z.string().min(1);
 const WorktreePath = z.string().min(1).nullable();
 
 export const Screen = z.enum([
-  "agents",
-  "queue",
   "general",
   "domains",
   "components",
@@ -16,13 +13,9 @@ export const Screen = z.enum([
   "inbox",
   "integrations",
   "appearance",
-  "security",
   "sources",
-  "sync",
   "shortcuts",
   "workspace",
-  "creations",
-  "skills",
 ]);
 export type Screen = z.infer<typeof Screen>;
 
@@ -34,7 +27,6 @@ export const TabTarget = z.discriminatedUnion("kind", [
     pageId: NodeId,
     question: NodeId.nullable().optional(),
   }),
-  z.object({ kind: z.literal("changes"), projectId: ProjectId, worktree: WorktreePath }),
   z.object({
     kind: z.literal("file"),
     projectId: ProjectId,
@@ -45,8 +37,6 @@ export const TabTarget = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("ticket"), projectId: ProjectId, ticketId: NodeId }),
   z.object({ kind: z.literal("sprint"), projectId: ProjectId, sprintId: NodeId }),
   z.object({ kind: z.literal("screen"), screen: Screen, projectId: ProjectId.nullable().optional() }),
-  z.object({ kind: z.literal("run"), runId: z.string().min(1) }),
-  z.object({ kind: z.literal("skill"), skillId: SkillId }),
 ]);
 export type TabTarget = z.infer<typeof TabTarget>;
 

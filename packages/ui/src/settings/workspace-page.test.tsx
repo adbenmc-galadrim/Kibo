@@ -2,8 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { configFixture } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 const answer = async (req: RpcRequest): Promise<unknown> => {

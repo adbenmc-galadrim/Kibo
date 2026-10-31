@@ -36,7 +36,7 @@ test("loads once, reloads on the listed events only, and unsubscribes on unmount
   await waitFor(() => expect(hook.result.current.data).toEqual([]));
   hook.rerender();
   expect(requests).toHaveLength(1);
-  act(() => emit({ type: "sandbox.changed" }));
+  act(() => emit({ type: "backups.changed" }));
   expect(requests).toHaveLength(1);
   act(() => emit({ type: "sessions.changed" }));
   await waitFor(() => expect(requests).toHaveLength(2));
@@ -46,7 +46,7 @@ test("loads once, reloads on the listed events only, and unsubscribes on unmount
 
 test("a daemon error is exposed as a KiboError", async () => {
   answer = () => Promise.reject(new KiboError("FORBIDDEN", "local session required"));
-  const hook = renderHook(() => useRpcQuery({ method: "getSandboxStatus" }, []));
+  const hook = renderHook(() => useRpcQuery({ method: "listSessions" }, []));
   await waitFor(() => expect(hook.result.current.error?.code).toBe("FORBIDDEN"));
   expect(hook.result.current.data).toBeNull();
   hook.unmount();

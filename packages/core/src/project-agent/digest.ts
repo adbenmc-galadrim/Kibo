@@ -10,8 +10,8 @@ import {
   type TicketPrint,
 } from "@kibo/schema";
 
-export type ChangeCategory = "runs" | "tickets" | "questions" | "notes";
-export type Change = { category: ChangeCategory; key: string; text: string };
+type ChangeCategory = "runs" | "tickets" | "questions" | "notes";
+type Change = { category: ChangeCategory; key: string; text: string };
 export type ChangeNames = {
   ticket(id: string): string;
   question(id: string): string;
@@ -19,9 +19,9 @@ export type ChangeNames = {
   recipient(id: string): string;
 };
 
-export const DIGEST_LIMIT = 50;
-export const DIGEST_TITLE = "## Depuis ton dernier tour";
-export const NO_CHANGE = "Aucun changement depuis ton dernier tour.";
+const DIGEST_LIMIT = 50;
+const DIGEST_TITLE = "## Depuis ton dernier tour";
+const NO_CHANGE = "Aucun changement depuis ton dernier tour.";
 const CATEGORIES: readonly ChangeCategory[] = ["runs", "tickets", "questions", "notes"];
 
 export const RUN_STATE_TEXT: Record<RunState, string> = {
@@ -225,7 +225,7 @@ const STATUS_TEXT: Record<Exclude<BatchStatus, "applied" | "partial">, string> =
   abandoned: "abandonné",
 };
 
-export function batchLine(batch: Batch): string {
+function batchLine(batch: Batch): string {
   const head = `Dernier lot : n° ${batch.seq} — `;
   if (batch.status !== "applied" && batch.status !== "partial") return head + STATUS_TEXT[batch.status];
   const counts = ActionOutcome.options.map(

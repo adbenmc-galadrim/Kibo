@@ -72,7 +72,6 @@ export const HostToFrame = z.discriminatedUnion("type", [
   Reply,
 ]);
 export type HostToFrame = z.infer<typeof HostToFrame>;
-export type InitMessage = Extract<HostToFrame, { type: "init" }>;
 
 export const ProjectEditField = z.enum(["folder"]);
 export type ProjectEditField = z.infer<typeof ProjectEditField>;
@@ -114,15 +113,13 @@ export const FrameToHost = z.discriminatedUnion("type", [
 ]);
 export type FrameToHost = z.infer<typeof FrameToHost>;
 
-export const InvokeTarget = z.union([
+const InvokeTarget = z.union([
   z.object({ action: z.string().min(1) }),
   z.object({ job: z.string().min(1) }),
   z.object({ migrate: z.object({ from: z.number().int(), to: z.number().int(), config: Json, data: Json }) }),
 ]);
-export type InvokeTarget = z.infer<typeof InvokeTarget>;
 
-export const BackendCode = z.object({ server: z.string().nullable(), migrations: z.string().nullable() });
-export type BackendCode = z.infer<typeof BackendCode>;
+const BackendCode = z.object({ server: z.string().nullable(), migrations: z.string().nullable() });
 
 const BackendResult = z.object({
   type: z.literal("result"),
@@ -146,11 +143,10 @@ export const DaemonToBackend = z.discriminatedUnion("type", [
 ]);
 export type DaemonToBackend = z.infer<typeof DaemonToBackend>;
 
-export const BackendDescription = z.object({
+const BackendDescription = z.object({
   actions: z.array(z.string()),
   jobs: z.array(z.object({ name: z.string(), everyMinutes: z.number().int().min(1) })),
 });
-export type BackendDescription = z.infer<typeof BackendDescription>;
 
 export const BackendToDaemon = z.discriminatedUnion("type", [
   BackendDescription.extend({ type: z.literal("ready") }),

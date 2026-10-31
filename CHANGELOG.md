@@ -2,6 +2,21 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.33.0-alpha.1 — 2026-10-30
+
+Kibo se recentre sur le suivi : l'exécution des agents sur les tickets, les composants tiers et le partage quittent l'application. L'agent de projet et son historique restent.
+
+- Avant de retirer quoi que ce soit, Kibo sauvegarde tes bases une fois dans `~/.kibo/backups/<horodatage>-avant-retrait`. Tes projets, tes tickets et les conversations de l'agent de projet sont conservés ; l'historique des runs d'agents sur les tickets ne l'est plus, sauf dans cette sauvegarde.
+- Agents sur les tickets : plus d'assignation, de bouton « Livrer » ni d'écrans Agents et Files d'attente. Le menu d'une carte copie la commande `/full-delivery` ou `/update-delivery` à lancer dans ton outil.
+- Composants : il reste Vue d'ensemble, Planning, Kanban, Graphe, Questions et Maquettes. Une instance d'un composant retiré sur une page affiche un encart que tu peux retirer ; ses données ne sont plus lues.
+- Plus de marketplace, de composants tiers, de création de composants ni de synchronisation GitHub Issues.
+- Accès distant et sync d'équipe : retirés, à repenser plus tard. La puce de sync de la barre du haut laisse place à « Hors connexion » quand le démon ne répond pas.
+- Écrans Domaines et Sources retirés ; les anciennes adresses ramènent à l'Accueil.
+- Trousseau : au premier démarrage, Kibo purge les secrets devenus orphelins (`remote:tls`, `sync:device`, `market:publisher`). Tes jetons GitHub, Figma et Penpot ne sont pas touchés.
+- Mac : la chaîne de release sait signer avec un certificat stable ; sans ce certificat, la release reste ad hoc et macOS redemande l'accès au trousseau à chaque mise à jour.
+- CLI : `kibo component` disparaît ; tickets, fonctionnalités, sprints, questions, plan, projets et `rpc` restent.
+- Application plus légère : l'entrée de l'interface passe d'environ 222 Ko à 195 Ko compressés.
+
 ## 0.32.0-alpha.1 — 2026-10-29
 
 - CLI : `kibo` écrit enfin : `features create`, `tickets create|update|move|link|unlink`, `sprints create|update|assign`, `questions list|add|answer`. Les textes se lisent dans un fichier (`@fichier`) ou sur l'entrée standard (`@-`) ; `--append` et `--prepend` complètent une description sans la réécrire à la main.

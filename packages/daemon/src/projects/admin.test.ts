@@ -2,35 +2,15 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  INBOX_ID,
-  KiboError,
-  type ProjectMeta,
-  type ProjectSnapshot,
-  type ProjectSummary,
-  type ProjectSyncInfo,
-} from "@kibo/schema";
+import { INBOX_ID, type ProjectMeta, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
-import {
-  LOCAL_DUPLICATION_KEY,
-  LOCAL_FOLDER_KEY,
-  LOCAL_STORYBOOK_KEY,
-  LOCAL_WORKTREE_KEY,
-} from "../project-folder";
+import { LOCAL_FOLDER_KEY, LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { createService } from "../service";
 import { openStore } from "../store";
 import { createProjectAdmin, folderIsDirectory } from "./admin";
 
 const REMOTE: RpcContext = { sessionHash: "r", remote: true };
-const LOCAL_SYNC: ProjectSyncInfo = {
-  shared: false,
-  keyAllocator: "local",
-  role: null,
-  access: "write",
-  members: [],
-};
-const SHARED_SYNC: ProjectSyncInfo = { ...LOCAL_SYNC, shared: true, keyAllocator: "server", role: "editor" };
 const PNG = "iVBORw0KGgoAAA==";
 const dirs: string[] = [];
 const tmp = () => {
@@ -42,7 +22,7 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-function setup(opts: { sharing?: ProjectSyncInfo; activeRuns?: number } = {}) {
+function setup(opts: { activeRuns?: number } = {}) {
   const store = openStore(tmp());
   const service = createService(store, { user: "adam" });
   const settings = createProjectSettings(store.db);
@@ -59,10 +39,7 @@ function setup(opts: { sharing?: ProjectSyncInfo; activeRuns?: number } = {}) {
     settings,
     icons: service.icons,
     store,
-    sharing: () => opts.sharing ?? LOCAL_SYNC,
     activeRuns: () => opts.activeRuns ?? 0,
-    detach: () => {},
-    isLocked: () => false,
     folderExists: (path) => {
       probed.push(path);
       return path.startsWith("/tmp/ok");
@@ -118,11 +95,8 @@ test("the folder is local only, must exist, and is refused while runs are active
   busy.close();
 });
 
-test("worktree settings are local, checked, and work on a read-only shared project", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
+test("worktree settings are local", () => {
+  const s = setup();
   const worktree = {
     baseRef: "origin/dev",
     pathTemplate: "../silo-{slug}",
@@ -132,15 +106,6 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
     s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
   expect(() => update({ worktree }, REMOTE)).toThrow("FORBIDDEN");
-  for (const pathTemplate of ["/tmp/{slug}", "../../x/{slug}", "{slug}/../../x", "{nope}"])
-    expect(() => update({ worktree: { ...worktree, pathTemplate } })).toThrow("INVALID_INPUT");
-  expect(() => update({ worktree: { ...worktree, setup: "make {nope}" } })).toThrow("INVALID_INPUT");
-  const recipe = { copyFrom: ["{repo}"], copy: [".env"], env: null, after: ["pnpm install"] };
-  for (const copy of [["../x"], ["/abs/.env"]])
-    expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, copy } } })).toThrow("INVALID_INPUT");
-  expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, after: ["echo {nope}"] } } })).toThrow(
-    "INVALID_INPUT",
-  );
   expect(s.settings.get(s.project.id, LOCAL_WORKTREE_KEY)).toBeNull();
   expect(update({ worktree }).worktree).toEqual(worktree);
   expect(s.snapshot().meta.worktree).toEqual(worktree);
@@ -149,11 +114,8 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   s.close();
 });
 
-test("storybook settings are local, checked, and work on a read-only shared project", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
+test("storybook settings are local and checked", () => {
+  const s = setup();
   const storybook = { origin: "https://sb.example.com", portEnv: "STORYBOOK_PORT" };
   const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
     s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
@@ -173,39 +135,6 @@ test("storybook settings are local, checked, and work on a read-only shared proj
   expect(update({ storybook: null }).storybook).toBeNull();
   expect(s.settings.get(s.project.id, LOCAL_STORYBOOK_KEY)).toBeNull();
   expect(s.summary()?.storybook).toBeNull();
-  s.close();
-});
-
-test("a shared project keeps its folder out of the doc", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  const req = {
-    method: "updateProject",
-    projectId: s.project.id,
-    patch: { folder: "/tmp/ok/shared" },
-  } as const;
-  expect(s.admin.updateProject(req, LOCAL_CONTEXT).folder).toBe("/tmp/ok/shared");
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBe("/tmp/ok/shared");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
-  expect(s.summary()?.folder).toBe("/tmp/ok/shared");
-  s.admin.updateProject({ ...req, patch: { folder: null } }, LOCAL_CONTEXT);
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBeNull();
-  expect(s.summary()?.folder).toBeNull();
-  s.close();
-});
-
-test("a read-only shared project refuses doc fields but accepts its local folder", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  const update = (patch: { name?: string; folder?: string }) =>
-    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, LOCAL_CONTEXT);
-  expect(() => update({ name: "Noyau" })).toThrow("FORBIDDEN");
-  expect(s.summary()?.name).toBe("Kibo");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("name")).toBe("Kibo");
-  expect(update({ folder: "/tmp/ok/x" }).folder).toBe("/tmp/ok/x");
-  expect(s.settings.get(s.project.id, LOCAL_FOLDER_KEY)).toBe("/tmp/ok/x");
-  expect(s.service.docs.project(s.project.id).getMap("meta").get("folder")).toBeNull();
   s.close();
 });
 
@@ -326,32 +255,4 @@ test("an existing folder is an absolute path to a directory", () => {
   writeFileSync(file, "x");
   expect(folderIsDirectory(file)).toBe(false);
   expect(folderIsDirectory(join(file, "inside"))).toBe(false);
-});
-
-test("duplication settings are local, need a local session, and null restores the defaults", () => {
-  const s = setup({ sharing: SHARED_SYNC });
-  s.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  const duplication = {
-    enabled: false,
-    minLines: 12,
-    compareTests: true,
-    ignore: ["src/gen/**"],
-    genericExports: [],
-  };
-  const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
-    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
-  expect(() => update({ duplication }, REMOTE)).toThrow("FORBIDDEN");
-  expect(() => update({ duplication: { ...duplication, minLines: 3 } })).toThrow("INVALID_INPUT");
-  expect(update({ duplication }).duplication).toEqual(duplication);
-  expect(JSON.parse(s.settings.get(s.project.id, LOCAL_DUPLICATION_KEY) ?? "null")).toEqual(duplication);
-  expect(s.snapshot().meta.duplication).toEqual(duplication);
-  expect(s.summary()?.duplication).toEqual(duplication);
-  expect(JSON.stringify(s.service.docs.project(s.project.id).toJSON())).not.toContain("src/gen/**");
-  expect(JSON.stringify(s.service.docs.workspace.toJSON())).not.toContain("src/gen/**");
-  expect(update({ duplication: null }).duplication).toBeNull();
-  expect(s.settings.get(s.project.id, LOCAL_DUPLICATION_KEY)).toBeNull();
-  expect(s.summary()?.duplication).toBeNull();
-  s.close();
 });

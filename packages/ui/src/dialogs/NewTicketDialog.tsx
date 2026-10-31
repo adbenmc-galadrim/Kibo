@@ -29,7 +29,7 @@ import { displayName } from "../lib/inbox";
 import { type Host, useOptionalHost } from "../shell/Host";
 import { FeatureSelect, NO_FEATURE, placementOf } from "./FeatureSelect";
 
-export type NewTicketDialogProps = {
+type NewTicketDialogProps = {
   projects: readonly ProjectMeta[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
   initialProjectId: string;
@@ -45,7 +45,7 @@ const ME = "me";
 
 function keyLine(project: ProjectSnapshot | null): string {
   if (!project) return fr.lazy.loading;
-  return project.nextTicketKey === null ? t.keyPending : t.key(project.nextTicketKey);
+  return t.key(project.nextTicketKey);
 }
 
 const nameOf = (meta: ProjectMeta | undefined): string => (meta ? displayName(meta) : fr.lazy.loading);
@@ -106,15 +106,12 @@ function ProjectField({ id, projects, value, locked, onChange }: ProjectFieldPro
 
 type AssigneeFieldProps = {
   id: string;
-  project: ProjectSnapshot | null;
   viewer: string;
   value: string;
   onChange(v: string): void;
 };
 
-function AssigneeField({ id, project, viewer, value, onChange }: AssigneeFieldProps) {
-  const me = project?.viewer ?? viewer;
-  const members = project?.sync.shared ? project.sync.members.filter((m) => m.userId !== me) : [];
+function AssigneeField({ id, viewer, value, onChange }: AssigneeFieldProps) {
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{t.assignee}</Label>
@@ -125,11 +122,6 @@ function AssigneeField({ id, project, viewer, value, onChange }: AssigneeFieldPr
         <SelectContent>
           <SelectItem value={NOBODY}>{t.nobody}</SelectItem>
           <SelectItem value={ME}>{t.me(viewer)}</SelectItem>
-          {members.map((m) => (
-            <SelectItem key={m.userId} value={m.userId}>
-              {m.name}
-            </SelectItem>
-          ))}
         </SelectContent>
       </Select>
     </div>
@@ -253,13 +245,7 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
                 </SelectContent>
               </Select>
             </div>
-            <AssigneeField
-              id={`${id}-assignee`}
-              project={project}
-              viewer={p.viewer}
-              value={assignee}
-              onChange={setAssignee}
-            />
+            <AssigneeField id={`${id}-assignee`} viewer={p.viewer} value={assignee} onChange={setAssignee} />
           </div>
           {blocked && (
             <div className="grid gap-2">

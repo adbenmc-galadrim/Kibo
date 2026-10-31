@@ -14,7 +14,6 @@ const newDoc = (tracking: TrackingSettings | null = null) =>
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking,
     description: null,

@@ -22,7 +22,7 @@ const STATE_PILL: Record<FeatureStatus, { tone: PillTone; icon?: LucideIcon }> =
   todo: { tone: "muted" },
 };
 
-export function StatePill({ state, risk = false }: { state: FeatureStatus; risk?: boolean }) {
+function StatePill({ state, risk = false }: { state: FeatureStatus; risk?: boolean }) {
   if (risk)
     return (
       <Pill tone="amber" icon={TriangleAlert}>

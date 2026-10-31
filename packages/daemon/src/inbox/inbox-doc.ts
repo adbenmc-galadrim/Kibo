@@ -12,7 +12,6 @@ export const INBOX_META: ProjectMeta = {
   color: "#64748B",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,

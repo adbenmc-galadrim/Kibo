@@ -1,19 +1,20 @@
-import type { Tab, TabsState } from "@kibo/schema";
+import type { Tab, TabsState, TabTarget } from "@kibo/schema";
 import { useMemo } from "react";
-import { isExecutionTarget } from "../shell/nav/execution-visibility";
-import { useExecutionShown } from "../state/use-app-settings";
+import { retiredRoute } from "../shell/retired-routes";
 import type { TabsAction } from "./tabs-model";
+import { targetToHash } from "./target-hash";
 import type { TabsApi } from "./use-tabs";
 
-const hiddenTab = (state: TabsState) => (tab: Tab) =>
-  tab.id !== state.activeId && isExecutionTarget(tab.target);
+const isRetiredTab = (target: TabTarget): boolean => retiredRoute(targetToHash(target)) !== null;
 
-export function withoutExecutionTabs(state: TabsState): TabsState {
+const hiddenTab = (state: TabsState) => (tab: Tab) => tab.id !== state.activeId && isRetiredTab(tab.target);
+
+function withoutExecutionTabs(state: TabsState): TabsState {
   const hidden = hiddenTab(state);
   return {
     ...state,
     tabs: state.tabs.filter((t) => !hidden(t)),
-    recents: state.recents.filter((r) => !isExecutionTarget(r)),
+    recents: state.recents.filter((r) => !isRetiredTab(r)),
   };
 }
 
@@ -39,14 +40,12 @@ function shownAction(all: TabsState, shown: TabsState, action: TabsAction): Tabs
 }
 
 export function useShownTabs(tabs: TabsApi): TabsApi {
-  const executionShown = useExecutionShown();
   return useMemo(() => {
-    if (executionShown) return tabs;
     const state = withoutExecutionTabs(tabs.state);
     const dispatch = (action: TabsAction) => {
       const next = shownAction(tabs.state, state, action);
       if (next) tabs.dispatch(next);
     };
     return { ...tabs, state, dispatch };
-  }, [tabs, executionShown]);
+  }, [tabs]);
 }

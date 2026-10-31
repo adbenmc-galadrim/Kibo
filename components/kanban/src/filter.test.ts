@@ -20,7 +20,6 @@ const t = (
 ): TicketView => ({
   id: key,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title: key,

@@ -13,7 +13,7 @@ export type Surface = {
 
 type Props = { surface: Surface; size: Size; zoom: ZoomState; onNaturalSize?(size: Size): void };
 
-export const storyView = (frame: DesignFrame): EmbedView => ({
+const storyView = (frame: DesignFrame): EmbedView => ({
   url: frame.url,
   kind: "storybook",
   ...EMBED_ATTRIBUTES.storybook,

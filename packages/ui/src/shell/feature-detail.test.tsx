@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
-import type { AgentExecution, ProjectSnapshot, RpcRequest, Spotlight } from "@kibo/schema";
+import type { ProjectSnapshot, RpcRequest, Spotlight } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -12,7 +12,6 @@ import { type Host, HostProvider } from "./Host";
 const calls: RpcRequest[] = [];
 
 const answer = (req: RpcRequest): unknown => {
-  if (req.method === "deliver") return { kind: "parent", items: [] };
   if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
   if (req.method === "listCiRuns") return [];
   if (req.method === "getProjectAgent") return viewFixture({ batches: [] });
@@ -40,7 +39,6 @@ const views: (Spotlight | undefined)[] = [];
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: (d) => void created.push(d),
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: (_id, _project, question) => void views.push(question),
   openTarget: () => undefined,
@@ -72,7 +70,6 @@ const renderFeature = (project: ProjectSnapshot = siloFeatureProject(), opened: 
         project={project}
         ticket={feature}
         now={NOW}
-        execution="hidden"
         onOpenFile={() => undefined}
         onOpenTicket={(id) => opened.push(id)}
       />
@@ -93,7 +90,6 @@ test("the sprint card counts on the day of the daemon, not of the browser", asyn
       <FeatureDetail
         project={project}
         ticket={feature}
-        execution="hidden"
         onOpenFile={() => undefined}
         onOpenTicket={() => undefined}
       />
@@ -217,50 +213,6 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   ).toBeTruthy();
 });
 
-test("a read-only project hides the editing actions", () => {
-  const project = siloFeatureProject();
-  renderFeature({ ...project, sync: { ...project.sync, access: "read-only" } });
-  expect(screen.queryByRole("button", { name: "Ajouter une étape" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Déplacer en S43" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Modifier le résultat attendu" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Choisir le sprint" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Dépendance" })).toBeNull();
-});
-
-const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
-
-const renderWithSetting = (agentExecution: "hidden" | "shown") => {
-  const project = withStartableE34(siloFeatureProject());
-  const feature = project.tickets.find((t) => t.id === "f5");
-  if (!feature) throw new Error("fixture without F5");
-  render(
-    <AppSettingsProvider store={fixedStore({ agentExecution })}>
-      <HostProvider host={host}>
-        <FeatureDetail
-          project={project}
-          ticket={feature}
-          now={NOW}
-          onOpenFile={() => undefined}
-          onOpenTicket={() => undefined}
-        />
-      </HostProvider>
-    </AppSettingsProvider>,
-  );
-};
-
-test("without an explicit mode, the next step follows the agent execution setting", async () => {
-  const user = userEvent.setup();
-  renderWithSetting("shown");
-  await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
-  expect(calls.some((c) => c.method === "deliver")).toBe(true);
-  cleanup();
-  calls.length = 0;
-  renderWithSetting("hidden");
-  await user.click(screen.getByRole("button", { name: "Copier la commande" }));
-  expect(await navigator.clipboard.readText()).toMatch(/^\/full-delivery SILO-/);
-  expect(calls.some((c) => c.method === "deliver")).toBe(false);
-});
-
 const menuOf = (extra: MenuEntry[]) => (
   <ul aria-label="Menu de la fiche">
     {extra.flatMap((e) =>
@@ -277,7 +229,7 @@ const menuOf = (extra: MenuEntry[]) => (
   </ul>
 );
 
-const renderWithMenu = (execution: AgentExecution) => {
+const renderWithMenu = () => {
   const project = siloFeatureProject();
   const feature = project.tickets.find((t) => t.id === "f5");
   if (!feature) throw new Error("fixture without F5");
@@ -287,7 +239,6 @@ const renderWithMenu = (execution: AgentExecution) => {
         project={project}
         ticket={feature}
         now={NOW}
-        execution={execution}
         actions={menuOf}
         onOpenFile={() => undefined}
         onOpenTicket={() => undefined}
@@ -296,16 +247,8 @@ const renderWithMenu = (execution: AgentExecution) => {
   );
 };
 
-test("execution shown, the header menu delivers the sub-tickets through the grouped dialog", async () => {
-  renderWithMenu("shown");
-  const menu = within(screen.getByRole("list", { name: "Menu de la fiche" }));
-  await userEvent.click(menu.getByRole("button", { name: "Livrer les sous-tickets" }));
-  expect(calls).toContainEqual({ method: "deliver", projectId: "silo", ticketId: "f5" });
-  expect(await screen.findByRole("dialog", { name: "Livrer les sous-tickets de SILO-30" })).toBeTruthy();
-});
-
-test("execution hidden, the header menu offers no delivery", () => {
-  renderWithMenu("hidden");
+test("the header menu offers no delivery", () => {
+  renderWithMenu();
   const menu = within(screen.getByRole("list", { name: "Menu de la fiche" }));
   expect(menu.queryByRole("button", { name: "Livrer les sous-tickets" })).toBeNull();
 });

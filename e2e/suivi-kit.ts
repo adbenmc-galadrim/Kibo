@@ -41,18 +41,12 @@ export async function openAgentList(panel: Locator): Promise<Locator> {
 }
 
 export async function sayToAgent(panel: Locator, message: string): Promise<void> {
-  await panel.getByRole("combobox", { name: "Message à l'agent de projet" }).fill(message);
+  await panel.getByRole("textbox", { name: "Message à l'agent de projet" }).fill(message);
   await panel.getByRole("button", { name: "Envoyer" }).click();
 }
 
 export const userBubbles = (panel: Locator, text: string): Locator =>
   panel.getByRole("listitem", { name: /^Toi · / }).filter({ hasText: text });
-
-export const ticketRow = (page: Page, keyLabel: string): Locator =>
-  page
-    .getByRole("listitem")
-    .filter({ has: page.getByText(keyLabel, { exact: true }) })
-    .last();
 
 export function sprintFeatures(info: TestInfo, code: string): readonly string[] {
   const sprints: unknown = JSON.parse(

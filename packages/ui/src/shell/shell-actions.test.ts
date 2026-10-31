@@ -9,7 +9,6 @@ function paletteDeps(activeProjectId: string | null) {
   const deps = {
     activeProjectId,
     set: mock((patch: Partial<DialogsState>) => calls.push(`set ${JSON.stringify(patch)}`)),
-    setFocusRun: mock((id: string | null) => calls.push(`focus ${id}`)),
     go: mock((target: TabTarget | null) => calls.push(`go ${JSON.stringify(target)}`)),
     cycleTheme: mock(() => calls.push("theme")),
   };
@@ -22,13 +21,10 @@ test("newProject opens the new project dialog", () => {
   expect(calls).toEqual(['set {"newProject":true}']);
 });
 
-test("theme, reply and assign need no navigation", () => {
+test("theme needs no navigation", () => {
   const { deps, calls } = paletteDeps(null);
-  const handle = paletteActionHandler(deps);
-  handle({ kind: "toggleTheme" });
-  handle({ kind: "reply", runId: "r1" });
-  handle({ kind: "assign", projectId: "p2", ticketId: "t1" });
-  expect(calls).toEqual(["theme", "focus r1", 'set {"assign":{"projectId":null,"ticketId":"t1"}}']);
+  paletteActionHandler(deps)({ kind: "toggleTheme" });
+  expect(calls).toEqual(["theme"]);
 });
 
 test("newTicket on another project opens that project first and creates the ticket there", () => {
@@ -70,7 +66,7 @@ test("help actions open their dialog alone, without navigation", () => {
   paletteActionHandler(deps)({ kind: "about" });
   paletteActionHandler(deps)({ kind: "whatsNew" });
   expect(calls).toEqual([
-    'set {"shortcutsHelp":false,"tutorial":false,"whatsNew":false,"report":false,"about":true}',
-    'set {"shortcutsHelp":false,"tutorial":false,"whatsNew":true,"report":false,"about":false}',
+    'set {"shortcutsHelp":false,"whatsNew":false,"report":false,"about":true}',
+    'set {"shortcutsHelp":false,"whatsNew":true,"report":false,"about":false}',
   ]);
 });

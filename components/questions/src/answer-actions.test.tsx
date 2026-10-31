@@ -20,7 +20,6 @@ const mount = (opts: MockSdkOptions = {}) => {
     seed,
     surface: "view",
     config: { scope: "all" },
-    agentExecution: "shown",
     ...opts,
   });
   render(
@@ -169,14 +168,6 @@ test("an imported answer stays editable", async () => {
   mount({ seed: seedImported });
   const card = await screen.findByRole("article", { name: "Arbitrage importé ?" });
   expect(within(card).getByRole("button", { name: "Modifier la réponse" })).toBeTruthy();
-});
-
-test("read-only projects show no edit, menu nor restore button", async () => {
-  const m = mount();
-  act(() => m.setAccess("read-only"));
-  const card = await screen.findByRole("article", { name: ANSWERED });
-  for (const name of ["Modifier la réponse", "Retirer la réponse", /^Actions de /, "Restaurer"])
-    expect(within(card).queryByRole("button", { name })).toBeNull();
 });
 
 test("« Archiver » hides the question, « Archivées » shows it with « Restaurer »", async () => {

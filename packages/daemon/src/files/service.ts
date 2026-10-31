@@ -35,7 +35,7 @@ export type FilesService = {
   open(token: string): Promise<OpenedFile | null>;
   close(): Promise<void>;
 };
-export type FilesServiceDeps = {
+type FilesServiceDeps = {
   db: Database;
   home: string;
   project(id: string): { id: string; key: string; folder: string | null };

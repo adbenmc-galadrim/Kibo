@@ -1,5 +1,4 @@
 import {
-  type AgentExecution,
   atRisk,
   type CiRun,
   type CiTone,
@@ -7,26 +6,21 @@ import {
   type FeatureStep,
   featureSteps,
   isSprintOver,
-  isTerminal,
   liveReview,
   nextDeliverableStep,
   type ProjectSnapshot,
   prCiTone,
-  type RunView,
   type SprintView,
   type StartReason,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
 
-export type StepRun = Pick<RunView, "ticketId" | "state" | "agentName" | "startedAt" | "createdAt">;
 export type StepSession = { agent: string; minutes: number };
 export type StepModel = FeatureStep & { index: number; session: StepSession | null; ci: CiTone | null };
 export type StepFacts = {
-  runs: readonly StepRun[];
   ciRuns: readonly CiRun[];
   now: number;
-  execution: AgentExecution;
 };
 
 const minutesSince = (since: number, now: number): number => Math.max(0, Math.floor((now - since) / 60_000));
@@ -34,11 +28,7 @@ const minutesSince = (since: number, now: number): number => Math.max(0, Math.fl
 function sessionOf(ticket: Pick<TicketView, "id" | "session">, facts: StepFacts): StepSession | null {
   if (ticket.session)
     return { agent: ticket.session.tool, minutes: minutesSince(ticket.session.startedAt, facts.now) };
-  if (facts.execution !== "shown") return null;
-  const run = facts.runs.find((r) => r.ticketId === ticket.id && !isTerminal(r.state));
-  return run
-    ? { agent: run.agentName, minutes: minutesSince(run.startedAt ?? run.createdAt, facts.now) }
-    : null;
+  return null;
 }
 
 export function stepModels(
@@ -71,7 +61,7 @@ export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][num
 };
 
 type Startability = Pick<TicketView, "id" | "startable" | "startReason">;
-export type NextStartable<S> = { step: S; reason: StartReason | null };
+type NextStartable<S> = { step: S; reason: StartReason | null };
 
 const isTouchUp = (s: Pick<FeatureStep, "statusId" | "pr">): boolean =>
   s.statusId === "in_review" && s.pr !== null && liveReview(s.pr) === "changes_requested";
@@ -95,7 +85,7 @@ export type SprintFacts = {
   warning: SprintWarning | null;
 };
 
-export type SprintClock = { today: string; steps: readonly FeatureStep[] };
+type SprintClock = { today: string; steps: readonly FeatureStep[] };
 
 function warningOf(sprint: SprintView, state: FeatureState | null, clock: SprintClock): SprintWarning | null {
   if (state === null || state.status === "delivered") return null;

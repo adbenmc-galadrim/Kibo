@@ -2,8 +2,8 @@ import { expect, mock, test } from "bun:test";
 import type { ProjectSummary, RpcRequest, TrackingSettings } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { projectsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { projectsFixture } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>
@@ -14,7 +14,6 @@ mock.module("../api", () =>
       subscribeEvents: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "overlaps.ignored") return [];
         return null;
       },
     },
@@ -63,7 +62,7 @@ test("saving the project dialog sends updateProject with the tracking settings",
   if (!first) throw new Error("expected a project");
   const project: ProjectSummary = { ...first, folder: null, tracking: null };
   const user = userEvent.setup();
-  render(<EditProjectDialog project={project} onClose={() => {}} remote />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   await pick(user, "4");
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   await waitFor(() =>

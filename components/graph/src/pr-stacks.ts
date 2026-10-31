@@ -34,7 +34,7 @@ export type PrStack = {
 };
 export type PrCounts = { open: number; stacks: number; waiting: number; changes: number };
 export type PrStacksModel = { stacks: PrStack[]; rail: string | null; counts: PrCounts };
-export type PrStacksInput = { tickets: readonly TicketView[]; live: ReadonlySet<string> };
+type PrStacksInput = { tickets: readonly TicketView[] };
 
 type LivePr = { pr: GithubPrRef; ticket: TicketView };
 type ById = ReadonlyMap<string, TicketView>;
@@ -123,7 +123,7 @@ function cutCycles(prs: readonly LivePr[], parents: Map<string, LivePr | null>):
   }
 }
 
-type Context = { byId: ById; live: ReadonlySet<string>; children: ReadonlyMap<string, LivePr[]> };
+type Context = { byId: ById; children: ReadonlyMap<string, LivePr[]> };
 
 function nodeOf(p: LivePr, ctx: Context): PrNode {
   const root = featureRootOf(p.ticket, ctx.byId);
@@ -139,7 +139,7 @@ function nodeOf(p: LivePr, ctx: Context): PrNode {
     head: p.pr.head,
     base: p.pr.base,
     late: root?.feature?.status === "late",
-    session: p.ticket.session !== null || ctx.live.has(p.ticket.id),
+    session: p.ticket.session !== null,
     children: (ctx.children.get(p.pr.url) ?? []).map((c) => nodeOf(c, ctx)),
   };
 }
@@ -175,7 +175,7 @@ export function prStacks(input: PrStacksInput): PrStacksModel {
     const parent = parents.get(p.pr.url) ?? null;
     if (parent !== null) children.set(parent.pr.url, [...(children.get(parent.pr.url) ?? []), p]);
   }
-  const ctx: Context = { byId: new Map(input.tickets.map((t) => [t.id, t])), live: input.live, children };
+  const ctx: Context = { byId: new Map(input.tickets.map((t) => [t.id, t])), children };
   const roots = prs.filter((p) => (parents.get(p.pr.url) ?? null) === null).map((p) => nodeOf(p, ctx));
   const rail = railOf(roots);
   const nodes = roots.flatMap(flatten);

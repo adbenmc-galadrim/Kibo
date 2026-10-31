@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ComponentSummary, ConfigSchema, Instance } from "@kibo/schema";
+import type { ConfigSchema, Instance } from "@kibo/schema";
 import { frWidgets } from "../i18n/fr-widgets";
 import {
   configFields,
@@ -61,56 +61,12 @@ const instance = (component: string): Instance => ({
   config: {},
   componentHash: null,
 });
-const third = (configSchema: ConfigSchema | undefined): ComponentSummary[] => [
-  {
-    id: "pr-queue",
-    title: "PR en attente",
-    builtin: false,
-    versions: [
-      {
-        version: "0.3.0",
-        hash: "c".repeat(64),
-        trust: "sandboxed",
-        origin: "ai",
-        active: true,
-        tampered: false,
-        manifest: {
-          id: "pr-queue",
-          version: "0.3.0",
-          kind: "widget",
-          title: "PR en attente",
-          reads: ["ticket"],
-          writes: [],
-          data: false,
-          net: [],
-          secrets: [],
-          mcp: [],
-          capabilities: [],
-          embeds: [],
-          selection: false,
-          configVersion: 0,
-          changes: [],
-          sdk: 1,
-          ...(configSchema && { configSchema }),
-        },
-        usages: [],
-        revoked: null,
-        backend: false,
-      },
-    ],
-  },
-];
-
-test("the schema comes from the registry for a built-in, from the installed version for a third party, null when empty", () => {
-  expect(configSchemaOf(instance("kanban@1.0.0"), null)).toEqual({
+test("the schema comes from the registry for a built-in, null for any other ref", () => {
+  expect(configSchemaOf(instance("kanban@1.0.0"))).toEqual({
     filter: { enum: ["mine-and-agents", "all"], default: "all" },
   });
-  expect(configSchemaOf(instance("pr-queue@0.3.0"), third({ limit: { type: "number" } }))).toEqual({
-    limit: { type: "number" },
-  });
-  expect(configSchemaOf(instance("pr-queue@0.3.0"), third({}))).toBeNull();
-  expect(configSchemaOf(instance("pr-queue@0.3.0"), third(undefined))).toBeNull();
-  expect(configSchemaOf(instance("pr-queue@0.9.0"), third({ limit: { type: "number" } }))).toBeNull();
+  expect(configSchemaOf(instance("pr-queue@0.3.0"))).toBeNull();
+  expect(configSchemaOf(instance("kanban@9.9.9"))).toBeNull();
 });
 
 test("labels come from the manifest first, bounds reach the input, asset fields have their own kind", () => {

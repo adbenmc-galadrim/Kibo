@@ -4,15 +4,12 @@ import {
   isAnswered,
   isArchived,
   isOpen,
-  isTerminal,
-  type MemberInfo,
   openCountByRecipient,
   type Question,
   type QuestionRecipient,
-  type TicketRun,
   type TicketView,
 } from "@kibo/schema";
-import { memberName } from "@kibo/sdk";
+import { humanName } from "@kibo/sdk";
 import { fr } from "./fr";
 
 export type Scope = "open" | "answered" | "all" | "archived";
@@ -31,12 +28,10 @@ const inScope = (q: Question, scope: Scope): boolean => SCOPE_TEST[scope](q);
 
 export const scopeFor = (q: Question): Scope => (isArchived(q) ? "archived" : "all");
 
-const activeRun = (run: TicketRun | null): boolean => run !== null && !isTerminal(run.state);
-
-export function canArchive(q: Question, viewer: string, run: TicketRun | null): boolean {
+export function canArchive(q: Question, viewer: string): boolean {
   if (isArchived(q)) return false;
   if (!isOpen(q)) return true;
-  return q.createdBy.kind === "human" && q.createdBy.ref === viewer && !activeRun(run);
+  return q.createdBy.kind === "human" && q.createdBy.ref === viewer;
 }
 
 export type RecipientCounts = { total: number; byRecipient: Map<string, number> };
@@ -87,7 +82,7 @@ export function lastExportedAt(q: Question): number | null {
   return exports.length > 0 ? Math.max(...exports) : q.sentAt;
 }
 
-export const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
+const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
 
 const byKey = (a: TicketView, b: TicketView): number =>
   a.keyLabel.localeCompare(b.keyLabel, "fr", { numeric: true });
@@ -148,7 +143,7 @@ export function lastReminder(q: Question): number | null {
   return reminders.length > 0 ? Math.max(...reminders) : null;
 }
 
-export const actorName = (actor: Actor, members: readonly MemberInfo[]): string => {
+export const actorName = (actor: Actor): string => {
   if (actor.kind === "import") return fr.imported(actor.ref);
-  return actor.kind === "human" ? memberName(actor.ref, members, fr.unknownMember) : actor.ref;
+  return actor.kind === "human" ? humanName(actor.ref, fr.unknownMember) : actor.ref;
 };

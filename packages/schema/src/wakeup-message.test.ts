@@ -1,7 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import type { QuestionAnswer } from "./question-fields";
-import { WAKEUP_PREFIX, wakeupCount } from "./signal";
-import { ANSWER_QUOTE_MAX, answeredLine, answerQuote, wakeupAnswers } from "./wakeup-message";
+import {
+  ANSWER_QUOTE_MAX,
+  answeredLine,
+  answerQuote,
+  isWakeupMessage,
+  WAKEUP_PREFIX,
+  wakeupAnswers,
+  wakeupCount,
+} from "./wakeup-message";
 
 const answer = (over: Partial<QuestionAnswer>): QuestionAnswer => ({
   kind: "text",
@@ -74,4 +81,12 @@ describe("wakeupAnswers", () => {
       ),
     ).toBe(2);
   });
+});
+
+test("a past wake-up message is recognised by its prefix and gives its signal count", () => {
+  expect(isWakeupMessage(`${WAKEUP_PREFIX}2 signaux à traiter (1 blocage)`)).toBe(true);
+  expect(wakeupCount(`${WAKEUP_PREFIX}2 signaux à traiter (1 blocage)`)).toBe(2);
+  expect(wakeupCount(`${WAKEUP_PREFIX}1 signal à traiter (1 ticket à créer)`)).toBe(1);
+  expect(wakeupCount(`${WAKEUP_PREFIX}rien`)).toBeNull();
+  expect(isWakeupMessage("Bonjour")).toBe(false);
 });

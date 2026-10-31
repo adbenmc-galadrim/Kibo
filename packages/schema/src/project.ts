@@ -1,13 +1,12 @@
 import { z } from "zod";
 import { ProjectDelivery } from "./delivery";
 import { ProjectKey } from "./ids";
-import { DuplicationSettings } from "./overlap-settings";
 import { StorybookSettings } from "./storybook";
 import { TrackingSettings } from "./tracking-settings";
 import { WorktreeSettings } from "./worktree";
 
 export const PROJECT_DESCRIPTION_MAX = 200;
-export const ProjectDescription = z.string().trim().max(PROJECT_DESCRIPTION_MAX);
+const ProjectDescription = z.string().trim().max(PROJECT_DESCRIPTION_MAX);
 export const PROJECT_CLIENT_MAX = 60;
 export const ProjectClient = z.string().trim().min(1).max(PROJECT_CLIENT_MAX);
 
@@ -19,7 +18,6 @@ export const ProjectMeta = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   worktree: WorktreeSettings.nullable().default(null),
   storybook: StorybookSettings.nullable().default(null),
-  duplication: DuplicationSettings.nullable().default(null),
   delivery: ProjectDelivery.nullable().default(null),
   tracking: TrackingSettings.nullable().default(null),
   description: ProjectDescription.nullable().default(null),
@@ -34,7 +32,6 @@ export const ProjectPatch = z
     folder: z.string().min(1).max(4096).nullable().optional(),
     worktree: WorktreeSettings.nullable().optional(),
     storybook: StorybookSettings.nullable().optional(),
-    duplication: DuplicationSettings.nullable().optional(),
     delivery: ProjectDelivery.nullable().optional(),
     tracking: TrackingSettings.nullable().optional(),
     description: ProjectDescription.nullable().optional(),

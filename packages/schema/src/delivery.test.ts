@@ -10,7 +10,6 @@ import {
   deliveryStepLabel,
   EMPTY_DELIVERY,
   ProjectDelivery,
-  runDeliverySteps,
 } from "./delivery";
 
 test("an empty delivery setting is valid and strict", () => {
@@ -72,13 +71,6 @@ test("the delivery agent is the project's choice, else the global full-delivery 
 
 test("the delivery brief is written by Kibo", () => {
   expect(deliveryBrief("SILO-15")).toBe("/full-delivery SILO-15");
-});
-
-test("delivery steps of active runs default to an empty list", () => {
-  expect(runDeliverySteps({})).toEqual([]);
-  expect(runDeliverySteps({ delivery: [{ runId: "r1", step: 7, note: "" }] })).toEqual([
-    { runId: "r1", step: 7, note: "" },
-  ]);
 });
 
 test("the delivery agent info gives its ref and name, or null", () => {

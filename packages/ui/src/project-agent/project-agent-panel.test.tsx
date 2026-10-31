@@ -2,9 +2,9 @@ import { beforeEach, expect, test } from "bun:test";
 import { WAKEUP_PREFIX } from "@kibo/schema";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { NOW } from "../agents/fixtures";
-import { formatClock } from "../agents/format";
+import { NOW } from "../lib/fixtures";
 import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, viewFixture } from "./fixtures";
+import { formatClock } from "./format";
 import { harness, mockPanelApi, panel, resetHarness, rpcs, showPanel } from "./panel-harness";
 
 mockPanelApi();
@@ -77,7 +77,7 @@ test("the agent's markdown never injects HTML", async () => {
 
 test("Shift+Enter adds a line, Enter and ⌘↵ send the message", async () => {
   show();
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Écris à l'agent de projet…");
   const user = userEvent.setup();
   await user.type(box, "Bonjour{Shift>}{Enter}{/Shift}la suite");
@@ -98,7 +98,7 @@ test("without a session the box invites to ask about the project, with no state 
   harness.current = emptyView();
   harness.log = [];
   show();
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Silo…"));
   expect(panel().getByText("Aucun message pour l'instant.")).toBeTruthy();
   expect(panel().queryByRole("status")).toBeNull();
@@ -179,7 +179,7 @@ test("a wakeup on an answer shows as a discreet line, never as a bubble from Ada
   expect(panel().getAllByRole("listitem", { name: /^Toi · / })).toHaveLength(1);
 });
 
-test("a batch after a wakeup says so, names the source of each action and groups dismissals", async () => {
+test("a batch after a wakeup says so, and an old dismissal shows as retired", async () => {
   harness.log = [
     {
       id: 1,
@@ -196,7 +196,9 @@ test("a batch after a wakeup says so, names the source of each action and groups
   expect(await panel().findByText("Réveil automatique · 3 signaux")).toBeTruthy();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   expect(card.getByText("2 actions · après réveil")).toBeTruthy();
-  expect(await card.findByText("signal Ticket à créer de")).toBeTruthy();
-  expect(card.getByRole("button", { name: /opus-dev-2/ })).toBeTruthy();
-  expect(card.getByText("Signal sig:3 : sans suite")).toBeTruthy();
+  expect(card.getByText("Créer le ticket « Tests »")).toBeTruthy();
+  expect(card.queryByRole("button", { name: /opus-dev-2/ })).toBeNull();
+  expect(card.getByText("Action retirée : Kibo ne lance plus d'agent de ticket")).toBeTruthy();
+  expect(card.queryByText("Signal sig:3 : sans suite")).toBeNull();
+  expect(card.getAllByRole("checkbox")).toHaveLength(1);
 });

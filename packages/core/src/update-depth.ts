@@ -68,7 +68,7 @@ function treeTooDeep(tree: LoroTree): boolean {
   return false;
 }
 
-export function depthViolation(before: LoroDoc, after: LoroDoc): string | null {
+function depthViolation(before: LoroDoc, after: LoroDoc): string | null {
   for (const id of changedContainers(before, after)) {
     const container = after.getContainerById(id);
     if (!container) continue;

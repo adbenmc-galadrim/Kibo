@@ -11,7 +11,7 @@ import {
 import { NOW, siloHeldProject } from "./fixture";
 
 const project = siloHeldProject();
-const facts: StepFacts = { runs: [], ciRuns: [], now: NOW, execution: "hidden" };
+const facts: StepFacts = { ciRuns: [], now: NOW };
 const ticket = (id: string) => {
   const t = project.tickets.find((x) => x.id === id);
   if (!t) throw new Error(`fixture without ${id}`);

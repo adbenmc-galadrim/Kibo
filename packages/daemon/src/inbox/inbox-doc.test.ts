@@ -50,7 +50,6 @@ test("a stored inbox that describes another project is refused as corrupt", () =
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,

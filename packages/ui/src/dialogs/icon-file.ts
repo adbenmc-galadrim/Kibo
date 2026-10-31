@@ -1,6 +1,6 @@
 import { ICON_MIMES, type IconInput, type IconMime, MAX_ICON_BYTES } from "@kibo/schema";
 
-export type IconFileRefusal = "too-large" | "format";
+type IconFileRefusal = "too-large" | "format";
 
 export class IconFileError extends Error {
   constructor(readonly reason: IconFileRefusal) {
@@ -16,7 +16,7 @@ const startsWith = (bytes: Uint8Array, signature: readonly number[], offset = 0)
 
 const ascii = (text: string): number[] => [...text].map((c) => c.charCodeAt(0));
 
-export function sniffIconMime(bytes: Uint8Array): IconMime | null {
+function sniffIconMime(bytes: Uint8Array): IconMime | null {
   if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
   if (startsWith(bytes, ascii("RIFF")) && startsWith(bytes, ascii("WEBP"), 8)) return "image/webp";

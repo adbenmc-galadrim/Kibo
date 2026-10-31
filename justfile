@@ -65,7 +65,7 @@ restart build="1":
     [[ "{{ build }}" == "0" ]] && flags+=(--no-build)
     {{ just }} up "${flags[@]}"
 
-# Affiche l'état du démon et du serveur de sync
+# Affiche l'état du démon
 [group("app")]
 status:
     #!/usr/bin/env bash
@@ -80,20 +80,14 @@ status:
     else
       echo "Démon : arrêté"
     fi
-    if alive {{ quote(state / "sync.pid") }}; then
-      echo "Sync : lancé (pid $(cat {{ quote(state / "sync.pid") }})), $(grep -h 'écoute sur' {{ quote(state / "sync.log") }} | tail -1)"
-    else
-      echo "Sync : arrêté"
-    fi
 
-# Suit le journal du démon (--sync pour celui du serveur de sync)
+# Suit le journal du démon
 [arg("lines", long="lines")]
-[arg("which", long="sync", value="sync")]
 [group("app")]
-logs lines="50" which="daemon":
+logs lines="50":
     #!/usr/bin/env bash
     set -euo pipefail
-    log={{ quote(state) }}/{{ which }}.log
+    log={{ quote(state) }}/daemon.log
     [[ -f "$log" ]] || { echo "Aucun journal : lance d'abord just up." >&2; exit 1; }
     exec tail -n {{ quote(lines) }} -f "$log"
 
@@ -146,15 +140,10 @@ desktop-debug: _ui
     bun run --cwd apps/desktop build:debug
     @echo "Binaire : {{ target_dir }}/debug/kibo"
 
-# Compile le démon, kibo-hook et l'agent de démo pour l'hôte
+# Compile le démon et kibo-hook pour l'hôte
 [group("desktop")]
 sidecar:
     bun run --cwd apps/desktop sidecar
-
-# Copie la chaîne d'outils des composants dans le bundle
-[group("desktop")]
-toolchain:
-    bun run --cwd apps/desktop toolchain
 
 # Smoke test de l'app de bureau (construit le debug s'il manque)
 [group("desktop")]
@@ -166,11 +155,6 @@ desktop-smoke: _ui
 desktop-test:
     cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
     bun test apps/desktop/scripts
-
-# Smoke test de la commande kibo installée par le démon compilé
-[group("desktop")]
-cli-smoke:
-    bun apps/desktop/scripts/cli-smoke.ts
 
 # Paquet .dmg macOS (contient le .app)
 [arg("arch", long="arch")]
@@ -239,36 +223,10 @@ budget: _ui
 [group("qualité")]
 ci desktop="":
     bun install --frozen-lockfile
-    {{ just }} check typecheck sync-build
-    packages/sync-server/dist/kibo-sync invite account --name CI --data "$(mktemp -d)"
-    {{ just }} budget cli-smoke test
+    {{ just }} check typecheck
+    {{ just }} budget test
     KIBO_E2E_THEME=dark bun run --cwd e2e test
     {{ if desktop == "1" { just + " desktop-debug desktop-test desktop-smoke" } else { "true" } }}
-
-# Lance kibo-sync en arrière-plan sur 127.0.0.1 (données dans .kibo-dev/sync)
-[arg("data", long="data")]
-[arg("port", long="port")]
-[group("sync")]
-sync-up port="8443" data=(state / "sync"):
-    mkdir -p {{ quote(data) }}
-    {{ just }} _bg-start sync "écoute sur" bun packages/sync-server/src/cli.ts serve --data {{ quote(data) }} --port {{ quote(port) }}
-    @echo "Données : {{ data }} · arrêter : just sync-down"
-
-# Arrête kibo-sync lancé par just sync-up
-[group("sync")]
-sync-down:
-    @{{ just }} _bg-stop sync
-
-# Compile le binaire kibo-sync
-[group("sync")]
-sync-build:
-    bun run --cwd packages/sync-server build
-
-# Crée un code d'invitation de compte sur le kibo-sync local
-[arg("data", long="data")]
-[group("sync")]
-sync-invite name data=(state / "sync"):
-    bun packages/sync-server/src/cli.ts invite account --name {{ quote(name) }} --data {{ quote(data) }}
 
 # Lance Penpot (http://localhost:9010)
 [group("design")]
@@ -327,7 +285,7 @@ install:
 dogfood home=kibo_home:
     bun scripts/dogfood/seed-kibo.ts --home {{ quote(home) }} --folder {{ quote(root) }}
 
-# Lance la commande kibo des sources (ex. just kibo component new x)
+# Lance la commande kibo des sources (ex. just kibo tickets list --project SILO)
 [group("divers")]
 [positional-arguments]
 kibo *args:
@@ -341,7 +299,7 @@ clean rust="":
     set -euo pipefail
     shopt -s nullglob
     paths=(packages/*/dist components/*/dist apps/*/dist e2e/test-results e2e/playwright-report test-results playwright-report
-      apps/desktop/src-tauri/binaries apps/desktop/src-tauri/toolchain apps/desktop/src-tauri/builtin apps/desktop/src-tauri/gen)
+      apps/desktop/src-tauri/binaries apps/desktop/src-tauri/gen)
     [[ "{{ rust }}" == "1" ]] && paths+=(apps/desktop/src-tauri/target)
     while IFS= read -r f; do paths+=("$f"); done < <(find packages components apps e2e scripts -name node_modules -prune -o \( -name '*.tsbuildinfo' -o -name dist-types \) -print)
     for p in "${paths[@]}"; do
@@ -363,12 +321,12 @@ _package os bundles arch:
     fi
     [[ "$host" != other ]] || { echo "Plateforme non prise en charge : $(uname)." >&2; exit 1; }
     if [[ "{{ arch }}" != "{{ host_arch }}" ]]; then
-      echo "Architecture {{ arch }} impossible ici : le sidecar (bun --compile) et la chaîne d'outils native" >&2
-      echo "ne se construisent que pour l'hôte ({{ host_arch }}). La release utilise un runner par architecture." >&2
+      echo "Architecture {{ arch }} impossible ici : le sidecar (bun --compile) ne se construit" >&2
+      echo "que pour l'hôte ({{ host_arch }}). La release utilise un runner par architecture." >&2
       exit 1
     fi
     target="{{ arch }}-$suffix"
-    {{ just }} _ui sidecar toolchain
+    {{ just }} _ui sidecar
     flags=(--target "$target" --config '{"bundle":{"createUpdaterArtifacts":false}}')
     [[ -n "{{ bundles }}" ]] && flags+=(--bundles "{{ bundles }}")
     (cd apps/desktop && env -u TAURI_SIGNING_PRIVATE_KEY -u TAURI_SIGNING_PRIVATE_KEY_PASSWORD NO_STRIP=true bun run tauri build "${flags[@]}")

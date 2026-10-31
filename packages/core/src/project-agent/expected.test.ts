@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ProposeBatchInput, ProposedAction } from "@kibo/schema";
-import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
+import { answered, link, project, question, run, ticket } from "./test-kit";
 import {
   type BatchContext,
   captureExpected,
@@ -30,11 +30,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
     run({ id: "r3", projectId: "other", ticketId: "x", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
   ...p,
 });
 
@@ -66,15 +62,6 @@ describe("captureExpected", () => {
     });
     expect(capture({ id: 1, why, type: "updateNote", path: "a.md", content: "" })).toEqual({ hash: "h1" });
     expect(capture({ id: 1, why, type: "createNote", path: "b.md", content: "" })).toEqual({ exists: false });
-    expect(capture({ id: 1, why, type: "cancelRun", runId: "r1" })).toEqual({ terminal: false });
-    expect(capture({ id: 1, why, type: "deliverAnswers", ticket: "SILO-3" })).toEqual({
-      undelivered: ["q2"],
-    });
-    expect(
-      capture({ id: 1, why, type: "assignAgent", ticket: "SILO-2", profileId: "global:opus-dev" }),
-    ).toEqual({
-      activeRun: "r1",
-    });
     expect(capture({ id: 1, why, type: "link", from: "SILO-1", to: "SILO-3", kind: "blocks" })).toEqual({});
     expect(capture({ id: 1, why, type: "createTicket", ref: "new:1", title: "x" })).toEqual({});
   });

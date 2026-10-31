@@ -11,8 +11,8 @@ import { type RpcExtension, requireLocal } from "../rpc-extensions";
 import { recordStopped, startedEvent } from "./session-events";
 import type { SessionStore } from "./session-store";
 
-export type SetTicketSessionInput = Extract<TrackingRpcRequest, { method: "setTicketSession" }>;
-export type SessionRpcDeps = {
+type SetTicketSessionInput = Extract<TrackingRpcRequest, { method: "setTicketSession" }>;
+type SessionRpcDeps = {
   store: SessionStore;
   tickets(projectId: string): readonly TicketView[];
   branchAt(cwd: string): Promise<string | null>;
@@ -39,7 +39,7 @@ async function ticketOf(deps: SessionRpcDeps, req: SetTicketSessionInput, ticket
 const sessionOf = (row: { tool: string; startedAt: number } | null): TicketSession | null =>
   row === null ? null : { tool: row.tool, startedAt: row.startedAt };
 
-export async function setTicketSession(
+async function setTicketSession(
   deps: SessionRpcDeps,
   req: SetTicketSessionInput,
 ): Promise<TicketSession | null> {

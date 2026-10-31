@@ -3,7 +3,7 @@ import { KiboError, PLAN_ACTIONS_MAX, PlanAction } from "@kibo/schema";
 import type { ZodIssue } from "zod";
 
 export type PlanFile = { summary: string | null; actions: PlanAction[] };
-export type PlanFormat = "yaml" | "json";
+type PlanFormat = "yaml" | "json";
 
 export const formatOf = (path: string): PlanFormat =>
   extname(path).toLowerCase() === ".json" ? "json" : "yaml";

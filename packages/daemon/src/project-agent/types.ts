@@ -4,7 +4,6 @@ import type {
   AgentMcpRequest,
   AgentSummary,
   Batch,
-  DeliveryResult,
   Guideline,
   KeyForecast,
   ProjectAgentTool,
@@ -12,18 +11,15 @@ import type {
   ProjectSnapshot,
   RunView,
 } from "@kibo/schema";
-import type { Orchestrator } from "../agents/orchestrator-types";
-import type { SignalService } from "../signals/service";
+import type { Orchestrator } from "../runs/orchestrator-types";
 
 export type ProjectAgentDataPort = {
   project(projectId: string): ProjectSnapshot;
   projectName(projectId: string): string;
   projectFolder(projectId: string): string | null;
-  assertWritable(projectId: string): void;
   viewer(projectId: string): string;
   agents(projectId: string): AgentSummary[];
   guidelines(projectId: string): Guideline[];
-  isDemoProject(projectId: string): boolean;
   notes(projectId: string): Promise<{ path: string; title: string; hash: string }[]>;
   readNote(projectId: string, path: string): Promise<string | null>;
   writeNote(projectId: string, path: string, content: string, mode: "create" | "update"): Promise<void>;
@@ -33,8 +29,8 @@ export type ProjectAgentDataPort = {
 
 export type ProjectAgentAgentsPort = Pick<
   Orchestrator,
-  "startProjectRun" | "answer" | "cancel" | "assign" | "state" | "log" | "ticketExecution"
-> & { deliverAnswers(projectId: string, ticketId: string): DeliveryResult };
+  "startProjectRun" | "answer" | "cancel" | "state" | "log"
+>;
 
 export type ProjectAgentOps = {
   tool(run: RunView, tool: ProjectAgentTool, input: unknown): Promise<string>;
@@ -46,8 +42,3 @@ export type AgentMcpSink = {
   run(runId: string): RunView | null;
   call(run: RunView, tool: AgentMcpRequest["tool"], input: unknown): Promise<string>;
 };
-
-export type ProjectAgentSignalsPort = Pick<
-  SignalService,
-  "markRead" | "openRefs" | "openCount" | "settle" | "list"
->;

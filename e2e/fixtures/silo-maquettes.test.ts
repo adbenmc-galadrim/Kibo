@@ -213,20 +213,16 @@ test("workspace, projects, description and pages of the mockups", () => {
   expect(today.pages.map((p) => p.title)).toEqual([
     "Vue d'ensemble",
     "Planning",
-    "Tickets",
     "Kanban",
     "Graphe",
-    "Notes",
     "Questions",
   ]);
   const componentOf = (pageId: string) => today.instances.find((i) => i.pageId === pageId)?.component;
   expect(today.pages.map((p) => componentOf(p.id))).toEqual([
     "overview@1.0.0",
     "planning@1.0.0",
-    "tickets@1.0.0",
     "kanban@1.0.0",
     "graph@1.0.0",
-    "notes@1.0.0",
     "questions@1.0.0",
   ]);
 });

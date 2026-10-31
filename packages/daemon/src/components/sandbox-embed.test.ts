@@ -22,13 +22,12 @@ function relayServer(withRelay = true) {
   const s = startSandboxServer({
     port: 0,
     uiPort: 4317,
-    assets: () => null,
     ...(withRelay && { embeds }),
   });
   servers.push(s);
   origin = s.url;
   const pathOf = (title = "itch.io", instanceId = "w1") =>
-    new URL(embeds.open(instanceId, "game", TARGET, title).url).pathname;
+    new URL(embeds.open(instanceId, "storybook", TARGET, title).url).pathname;
   const advance = (ms: number) => {
     now += ms;
   };
@@ -55,7 +54,7 @@ describe("relay route", () => {
     const page = await res.text();
     expect(page.match(/<iframe/g)).toHaveLength(1);
     expect(page).toContain(`src="${TARGET}"`);
-    expect(page).toContain(`sandbox="${EMBED_ATTRIBUTES.game.sandbox}"`);
+    expect(page).toContain(`sandbox="${EMBED_ATTRIBUTES.storybook.sandbox}"`);
     expect(page).toContain('referrerpolicy="no-referrer"');
     expect(page.toLowerCase()).not.toContain("<script");
   });
@@ -102,12 +101,11 @@ describe("relay route", () => {
 });
 
 describe("csp of sandboxed components", () => {
-  test("frame-src 'self' only with design or embed", () => {
+  test("frame-src 'self' only with design", () => {
     const csp = (caps: Parameters<typeof sandboxHeaders>[2]) =>
       sandboxHeaders(4317, [], caps)["content-security-policy"];
     expect(csp(["design"])).toContain("connect-src 'none'; frame-src 'self'; frame-ancestors");
-    expect(csp(["embed"])).toContain("frame-src 'self'");
-    expect(csp(["embed", "design", "assets"])).toContain("connect-src 'self'; frame-src 'self';");
+    expect(csp(["design", "assets"])).toContain("connect-src 'self'; frame-src 'self';");
     expect(csp(["webgl"])).not.toContain("frame-src");
     expect(csp([])).not.toContain("frame-src");
   });

@@ -4,7 +4,7 @@ import type { FrameService } from "./frame-service";
 import { parseFrameUrl } from "./frame-url";
 import type { DesignProviderClient } from "./providers/types";
 
-export type LinkDeps = {
+type LinkDeps = {
   host: IntegrationHost;
   service: Pick<FrameService, "metadata">;
   providers: Record<ImageDesignProvider, Pick<DesignProviderClient, "connected">>;

@@ -107,47 +107,11 @@ export const frIntegrations = {
     confirm: "Ajouter et lancer",
     back: "Retour",
   },
-  source: {
-    title: "Source",
-    local: "Locale",
-    localHelp: "Tickets du projet, dans Kibo uniquement.",
-    synced: "Synchronisée · GitHub Issues",
-    syncedHelp: "Aller-retour avec les issues d'un dépôt.",
-    notConnected: "Connecte GitHub dans Paramètres › Intégrations pour synchroniser.",
-    openSettings: "Ouvrir les intégrations",
-    repo: "Dépôt",
-    repoSearch: "Filtrer les dépôts…",
-    repoEmpty: "Aucun dépôt.",
-    project: "Project (facultatif)",
-    noProject: "Aucun Project",
-    statusMap: "Correspondance des statuts",
-    statusMapHelp: "Pré-remplie par libellés identiques. Un statut sans correspondance n'est pas envoyé.",
-    unmapped: "Non envoyé",
-    labels: "Filtrer par libellés",
-    labelsHelp: "Séparés par des virgules ; vide = toutes les issues.",
-    importClosed: "Importer aussi les issues fermées",
-    submit: "Ajouter et synchroniser",
-    progress: (n: number) => `Synchronisation… ${n} ${plural(n, "issue importée", "issues importées")}`,
-    done: (n: number) => `${n} ${plural(n, "issue importée", "issues importées")}`,
-    failed: "La première synchronisation a échoué :",
-    retry: "Réessayer",
-    linked: "déjà synchronisé",
-    alreadyBound: (name: string) => `Ce dépôt est déjà synchronisé dans ce projet par ${name}.`,
-  },
   sheet: {
     issue: (n: number) => `#${n}`,
     openOnGithub: "Ouvrir sur GitHub",
-    pending: "Synchronisation en attente",
-    pendingCreate: "Création de l'issue en attente",
     broken: "Lien GitHub rompu",
     brokenHelp: "L'issue a été supprimée ou transférée.",
-    syncError: "Échec de synchronisation",
-    retry: "Réessayer",
-    drop: "Abandonner",
-    dropTitle: "Abandonner cet envoi ?",
-    dropHelp:
-      "L'issue a peut-être déjà été créée sur GitHub. Dans ce cas, elle sera réimportée comme un second ticket à la prochaine synchronisation.",
-    dropUnlink: "Retirer le lien GitHub",
     ci: "CI",
     ciEmpty: "Aucun run pour les PR de ce ticket.",
     viewLogs: "Voir les logs",
@@ -167,49 +131,11 @@ export const frIntegrations = {
       running: "En cours",
       queued: "En file",
     },
-    dropUpdateHelp:
-      "Cette modification n'est pas envoyée à GitHub : le ticket la garde dans Kibo, et elle repartira avec sa prochaine modification.",
     ciPr: (numbers: number[]) => `PR ${numbers.map((n) => `#${n}`).join(", ")}`,
     logSubtitle: (parts: string[]) => parts.join(" · "),
   },
-  instance: {
-    header: (repo: string) => `GitHub · ${repo}`,
-    sync: "Synchroniser",
-    syncing: "Synchronisation…",
-    lastSync: (time: string) => `Synchronisé à ${time}`,
-    never: "Jamais synchronisé",
-    bindingRemoved: "Liaison supprimée",
-    bindingRemovedHelp:
-      "Ce composant n'est plus synchronisé avec GitHub ; ses tickets restent dans le projet.",
-    disconnected: "GitHub déconnecté",
-    disconnectedHelp: "Synchronisation suspendue.",
-  },
   conflict: (key: string, field: "title" | "description" | "statusId") =>
     `Conflit résolu sur ${key} : ${{ title: "titre", description: "description", statusId: "statut" }[field]} repris de GitHub`,
-  permissions: {
-    secret: (name: string, hosts: string[]) =>
-      name === "github"
-        ? `Utiliser ton compte GitHub (${hosts.join(", ")})`
-        : `Utiliser le secret ${name} (${hosts.join(", ")})`,
-    mcp: (rule: string) => {
-      const [server, tool] = rule.split("/");
-      return tool ? `Appeler l'outil ${tool} du serveur MCP ${server}` : `Appeler le serveur MCP ${server}`;
-    },
-    mcpFromConfig: "Appeler le serveur MCP choisi à l'ajout",
-  },
-  githubErrors: {
-    notFound: (status: number, repo: string) =>
-      `GitHub a répondu ${status}, dépôt ${repo} introuvable pour ce compte.`,
-    unauthorized:
-      "GitHub a répondu 401, connexion GitHub expirée : reconnecte GitHub dans Paramètres › Intégrations.",
-    forbidden: (repo: string) =>
-      `GitHub a répondu 403, accès refusé à ${repo} : vérifie les portées du jeton (repo, project).`,
-    invalid: "GitHub a répondu 422, données refusées par GitHub.",
-    status: (status: number) => `GitHub a répondu ${status}.`,
-    rateLimitedAuto: "Limite GitHub atteinte, reprise automatique.",
-    unavailable: "GitHub est injoignable pour le moment, nouvel essai automatique.",
-    notConnected: "GitHub n'est pas connecté : connecte-le dans Paramètres › Intégrations.",
-  },
   errors: {
     githubStatus: (status: number) => `GitHub a répondu ${status}`,
     githubDetail: (status: number, detail: string) => `GitHub a répondu ${status} : ${detail}`,

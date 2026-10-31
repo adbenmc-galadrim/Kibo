@@ -2,35 +2,35 @@
   "routes": [
     {
       "prompt": "\n- Domaine : ",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/done.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/done.json"
     },
     {
       "prompt": "lot invalide",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-invalid.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-invalid.json"
     },
     {
       "prompt": " refusé : ",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-reject.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-reject.json"
     },
     {
       "prompt": "ranger les questions",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-questions.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-questions.json"
     },
     {
       "prompt": "question transmise",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-questions-invalid.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-questions-invalid.json"
     },
     {
       "prompt": "ordre en tableau",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-table.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-table.json"
     },
     {
       "prompt": "Propose un report",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-sprint-end.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-sprint-end.json"
     },
     {
       "prompt": "sprint invalide",
-      "scenario": "../../../packages/daemon/src/agents/scenarios/project-agent-sprints-invalid.json"
+      "scenario": "../../../packages/daemon/src/runs/scenarios/project-agent-sprints-invalid.json"
     }
   ],
   "fallback": "project-agent-batch.json",

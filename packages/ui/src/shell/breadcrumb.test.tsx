@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type TabTarget } from "@kibo/schema";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 
 const kibo: ProjectSnapshot = {
   ...kiboProject(),
   pages: [{ id: "1@1", title: "Board", kind: "view", parentId: null }],
 };
-const ctx = { project: kibo, branch: null };
+const ctx = { project: kibo };
 
 test("intermediate crumbs open their target; the last one is plain text", () => {
   const opened: TabTarget[] = [];
@@ -73,19 +73,6 @@ test("crumbsFor gives a project target to the project crumb and a page target to
   ]);
 });
 
-test("the Changements crumb opens the changes of the same worktree", () => {
-  const changes: TabTarget = { kind: "changes", projectId: "kibo", worktree: "/w/kib-12" };
-  expect(crumbsFor(changes, { project: kibo, branch: "kib-12" })).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
-    { label: "Changements", target: changes },
-    { label: "kib-12", target: null },
-  ]);
-  expect(crumbsFor(changes, ctx)).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
-    { label: "Changements", target: null },
-  ]);
-});
-
 test("screens and the inbox: settings crumbs stay text, the inbox crumb opens the inbox screen", () => {
   expect(crumbsFor({ kind: "screen", screen: "general" }, ctx)).toEqual([
     { label: "Paramètres", target: null },
@@ -101,25 +88,15 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       color: "#64748B",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
       client: null,
     },
   };
-  expect(
-    crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox, branch: null }),
-  ).toEqual([
+  expect(crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox })).toEqual([
     { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" }, color: "#64748B" },
     { label: "KIB-12", target: null },
-  ]);
-});
-
-test("the Créations screen sits under Composants, whose crumb opens the components screen", () => {
-  expect(crumbsFor({ kind: "screen", screen: "creations" }, ctx)).toEqual([
-    { label: "Composants", target: { kind: "screen", screen: "components" } },
-    { label: "Créations", target: null },
   ]);
 });
 
@@ -141,16 +118,12 @@ test("a feature sits under the Planning page: « Silo / Planning / F5 · title �
     ],
   };
   const project = { kind: "project", projectId: "silo" } as const;
-  expect(
-    crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: silo, branch: null }),
-  ).toEqual([
+  expect(crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: silo })).toEqual([
     { label: "Silo", target: project, color: "#14B8A6" },
     { label: "Planning", target: { kind: "page", projectId: "silo", pageId: "p-plan" } },
     { label: "F5 · Envoyer les photos d'un constat", target: null },
   ]);
-  expect(
-    crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: base, branch: null }),
-  ).toEqual([
+  expect(crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: base })).toEqual([
     { label: "Silo", target: project, color: "#14B8A6" },
     { label: "F5 · Envoyer les photos d'un constat", target: null },
   ]);

@@ -19,9 +19,7 @@ export const NEUTRAL_HOOKS: ComponentIntegrationHooks = {
   aliases: new Map(),
   observe: () => undefined,
   secret: async () => null,
-  mcp: null,
   design: null,
-  embed: null,
   ciRuns: null,
 };
 

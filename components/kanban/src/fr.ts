@@ -1,25 +1,9 @@
-import {
-  DELIVERY_STEP_LABELS,
-  DELIVERY_STEP_MAX,
-  FULL_DELIVERY_AGENT,
-  type RunState,
-  shortReason,
-} from "@kibo/schema";
-
-const RUN_STATES: Record<RunState, string> = {
-  queued: "En file",
-  starting: "Démarrage",
-  running: "En cours",
-  waiting_input: "Attend une réponse",
-  done: "Terminé",
-  failed: "Échec",
-  cancelled: "Annulé",
-};
+import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, FULL_DELIVERY_AGENT, shortReason } from "@kibo/schema";
 
 export const fr = {
   session: (tool: string) => `Session ${tool} en cours`,
   retouch: (step: string) => `retouche · ${step}`,
-  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi" },
+  filter: { label: "Tickets affichés", mine: "Moi" },
   mode: {
     all: "Tous",
     sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
@@ -87,18 +71,6 @@ export const fr = {
   },
   branch: (name: string) => `Branche ${name}`,
   changesShort: "changements",
-  mention: {
-    history: "Voir l'historique",
-    reply: "Répondre",
-    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
-    state: (state: RunState) => RUN_STATES[state],
-    waiting: "Attend une réponse",
-  },
-  run: {
-    queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),
-    waiting: "Attend",
-    failed: "Échec",
-  },
   block: {
     title: (key: string) => `Bloquer ${key}`,
     description: "Un ticket bloqué attend une condition extérieure au projet.",

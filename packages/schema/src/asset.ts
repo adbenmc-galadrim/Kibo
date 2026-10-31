@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { sniffImage } from "./note";
 
-export const PROJECT_ASSET_KINDS = ["model", "image", "audio"] as const;
+const PROJECT_ASSET_KINDS = ["model", "image", "audio"] as const;
 export const ProjectAssetKind = z.enum(PROJECT_ASSET_KINDS);
 export type ProjectAssetKind = z.infer<typeof ProjectAssetKind>;
 

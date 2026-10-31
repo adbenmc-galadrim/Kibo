@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { StarterPage } from "@kibo/schema";
+import { PageKind } from "@kibo/schema";
 import { DOMAINS, PAGES } from "../data/kibo";
 import { TICKETS } from "../data/tickets";
 import { loadDesired } from "./load";
@@ -38,14 +38,11 @@ describe("data", () => {
     for (const t of TICKETS) if (t.domain !== null) expect(names.has(t.domain)).toBe(true);
   });
 
-  test("pages are valid starter pages", () => {
-    for (const p of PAGES)
-      expect(
-        StarterPage.safeParse({
-          title: p.title,
-          kind: p.kind,
-          components: p.instances.map((i) => ({ id: i.componentId, config: i.config })),
-        }).success,
-      ).toBe(true);
+  test("pages have a title, a kind and components", () => {
+    for (const p of PAGES) {
+      expect(p.title.trim().length).toBeGreaterThan(0);
+      expect(PageKind.safeParse(p.kind).success).toBe(true);
+      expect(p.instances.length).toBeGreaterThan(0);
+    }
   });
 });

@@ -5,7 +5,6 @@ import {
   Frame,
   GitCommitHorizontal,
   GitPullRequestArrow,
-  ListTodo,
   type LucideIcon,
   PenTool,
   Plug,
@@ -30,7 +29,6 @@ export type RowView = {
 const ICONS: Record<IntegrationId, LucideIcon> = {
   git: GitCommitHorizontal,
   github: GitPullRequestArrow,
-  "github-issues": ListTodo,
   "github-actions": SquareTerminal,
   figma: Frame,
   penpot: PenTool,
@@ -42,7 +40,6 @@ const ICONS: Record<IntegrationId, LucideIcon> = {
 const MENUS: Record<IntegrationId, RowMenuItem[]> = {
   git: [],
   github: ["configure", "test", "disconnect"],
-  "github-issues": ["configure", "test"],
   "github-actions": ["configure", "test"],
   figma: ["configure", "test", "disconnect"],
   penpot: ["configure", "test", "disconnect"],
@@ -50,7 +47,7 @@ const MENUS: Record<IntegrationId, RowMenuItem[]> = {
   markdown: ["test"],
   mcp: ["configure", "test", "disconnect"],
 };
-const GITHUB_ROWS: ReadonlySet<IntegrationId> = new Set(["github", "github-issues", "github-actions"]);
+const GITHUB_ROWS: ReadonlySet<IntegrationId> = new Set(["github", "github-actions"]);
 
 const errorAction = (s: IntegrationStatus): RowAction =>
   s.error?.code === "TOKEN_IGNORED" || (GITHUB_ROWS.has(s.id) && s.error?.code === "NOT_CONNECTED")

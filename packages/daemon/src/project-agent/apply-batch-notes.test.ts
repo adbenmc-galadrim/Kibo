@@ -18,12 +18,7 @@ test("a note is applied without calling the agents port once the context is read
     if (calls > 1) throw new KiboError("INTERNAL", "agents are not ready");
     return h.agents;
   };
-  const results = await applyBatch(
-    { data: h.data, agents, signals: h.signals },
-    { ...batch, chosen: null },
-    new Set([1]),
-    HUMAN,
-  );
+  const results = await applyBatch({ data: h.data, agents }, { ...batch, chosen: null }, new Set([1]), HUMAN);
   expect(results).toEqual([{ actionId: 1, outcome: "applied", detail: null, created: null }]);
   expect(calls).toBe(1);
   expect((await h.data.notes(h.project.id)).map((n) => n.path)).toEqual(["a.md"]);

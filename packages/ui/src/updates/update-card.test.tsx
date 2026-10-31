@@ -2,8 +2,8 @@ import { describe, expect, mock, test } from "bun:test";
 import type { RpcRequest, Topic } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { agentsFixture } from "../lib/fixtures";
 import type { UpdateInfo, UpdateStatus } from "./update-state";
 import { createUpdateStore, type UpdaterPort, type UpdateSnapshot } from "./update-store";
 

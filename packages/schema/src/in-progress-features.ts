@@ -1,7 +1,7 @@
 import type { FeatureState } from "./feature-state";
 
-export type InProgressLevel = "under" | "reached" | "over";
-export type InProgressFeatures<F> = {
+type InProgressLevel = "under" | "reached" | "over";
+type InProgressFeatures<F> = {
   inProgress: F[];
   count: number;
   limit: number;

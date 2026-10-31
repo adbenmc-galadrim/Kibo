@@ -20,7 +20,6 @@ import {
   setInstanceLayout,
   setPageLayout,
 } from "./instances";
-import { localSyncInfo } from "./keys";
 import { addLink, listLinks, removeLink } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
@@ -247,7 +246,6 @@ export function readProject(
     rules: readRules(doc),
     bindings: listBindings(doc),
     nextTicketKey: peekTicketKey(doc),
-    sync: localSyncInfo(doc),
     domains: listProjectDomains(doc),
     sprints: sprintViews(sprints, tickets, today),
   };

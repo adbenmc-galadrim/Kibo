@@ -1,55 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
-import { createPage, pairAndCreateProject } from "./helpers";
-import { E2E_GH_TOKEN, fakeGithubPort, fakeMcpPort } from "./token";
-
-const auth = { authorization: `Bearer ${E2E_GH_TOKEN}`, "content-type": "application/json" };
-const githubOf = (baseURL: string | undefined) =>
-  `http://127.0.0.1:${fakeGithubPort(Number(new URL(baseURL ?? "").port))}`;
+import { pairAndCreateProject } from "./helpers";
+import { E2E_GH_TOKEN, fakeMcpPort } from "./token";
 
 const mcpOf = (baseURL: string | undefined) =>
   `http://127.0.0.1:${fakeMcpPort(Number(new URL(baseURL ?? "").port))}/mcp`;
-
-type Issue = { number: number; title: string };
-
-const isIssue = (v: unknown): v is Issue =>
-  typeof v === "object" &&
-  v !== null &&
-  "number" in v &&
-  typeof v.number === "number" &&
-  "title" in v &&
-  typeof v.title === "string";
-
-async function issueOf(res: Response): Promise<Issue> {
-  const body: unknown = await res.json();
-  if (!isIssue(body)) throw new Error(`unexpected issue: ${JSON.stringify(body)}`);
-  return body;
-}
-
-async function ghIssues(gh: string): Promise<Issue[]> {
-  const res = await fetch(`${gh}/repos/adam/kibo/issues?state=all&per_page=100`, { headers: auth });
-  const body: unknown = await res.json();
-  if (!Array.isArray(body) || !body.every(isIssue))
-    throw new Error(`unexpected issues: ${JSON.stringify(body)}`);
-  return body;
-}
-
-async function ghCreate(gh: string, title: string): Promise<number> {
-  const res = await fetch(`${gh}/repos/adam/kibo/issues`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ title }),
-  });
-  return (await issueOf(res)).number;
-}
-
-async function ghRename(gh: string, n: number, title: string): Promise<void> {
-  const res = await fetch(`${gh}/repos/adam/kibo/issues/${n}`, {
-    method: "PATCH",
-    headers: auth,
-    body: JSON.stringify({ title }),
-  });
-  expect(res.ok).toBe(true);
-}
 
 async function openIntegrations(page: Page) {
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();
@@ -75,8 +29,7 @@ function watchLeaks(page: Page): string[] {
   return leaked;
 }
 
-test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ page, baseURL }, info) => {
-  const gh = githubOf(baseURL);
+test("écran 16, connexion GitHub sans fuite du jeton", async ({ page }, info) => {
   const leaked = watchLeaks(page);
   const key = info.project.name.endsWith("dark") ? "SYD" : "SYL";
   await pairAndCreateProject(page, info, key);
@@ -93,37 +46,6 @@ test("écran 16, connexion GitHub, Kanban synchronisé aller-retour", async ({ p
   await dialog.getByRole("button", { name: "Connecter" }).click();
   await expect(page.getByText("Connecté en tant que adam")).toBeVisible();
   await expect(github.getByText("compte adam")).toBeVisible();
-
-  const imported = "Issue e2e";
-  const n = await ghCreate(gh, imported);
-
-  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-  await createPage(page, "Kanban GitHub", "Vue");
-  await page.getByRole("button", { name: "Ajouter un composant" }).click();
-  await page.getByRole("radio", { name: "Kanban", exact: true }).click();
-  await page.getByRole("radio", { name: "Synchronisée · GitHub Issues" }).click();
-  await page.getByRole("radio", { name: "adam/kibo" }).click();
-  await page.getByRole("button", { name: "Ajouter et synchroniser" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
-
-  await expect(page.getByText("GitHub · adam/kibo")).toBeVisible();
-  await expect(page.getByText(imported)).toBeVisible();
-
-  const local = "Ticket e2e";
-  await page.getByRole("button", { name: "Nouveau ticket dans À faire", exact: true }).click();
-  await page.getByLabel("Titre", { exact: true }).fill(local);
-  await page.getByRole("button", { name: "Créer le ticket" }).click();
-  await expect(page.getByText(local)).toBeVisible();
-  await page.getByRole("button", { name: "Synchroniser" }).click();
-  await expect.poll(async () => (await ghIssues(gh)).some((i) => i.title === local)).toBe(true);
-
-  const renamed = "Renommée e2e";
-  await ghRename(gh, n, renamed);
-  await page.getByRole("button", { name: "Synchroniser" }).click();
-  await expect(page.getByText(renamed)).toBeVisible();
-
-  await page.getByText(renamed).click();
-  await expect(page.getByRole("link", { name: `#${n}` })).toBeVisible();
 
   expect(leaked).toEqual([]);
 });

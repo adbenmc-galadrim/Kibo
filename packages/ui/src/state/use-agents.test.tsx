@@ -1,8 +1,9 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type Topic } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
-import { agentsFixture, configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { agentsFixture, configFixture } from "../lib/fixtures";
+import { useRunLog } from "./use-run-log";
 
 const calls: string[] = [];
 const topics = new Map<Topic, Set<() => void>>();
@@ -34,9 +35,7 @@ mock.module("../api", () =>
 );
 
 const unmockedModule = "./use-agents?unmocked";
-const { useAgents, useConfig, useDaemonOnline, useRunLog }: typeof import("./use-agents") = await import(
-  unmockedModule
-);
+const { useAgents, useConfig, useDaemonOnline }: typeof import("./use-agents") = await import(unmockedModule);
 
 beforeEach(() => {
   calls.length = 0;

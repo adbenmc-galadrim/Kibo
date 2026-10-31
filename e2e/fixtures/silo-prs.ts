@@ -1,7 +1,4 @@
-import { SILO_PRS } from "../pixel-settings";
 import type { PrChecksSpec, PrReviewSpec } from "./silo-maquettes";
-
-export { SILO_PRS };
 
 export type PrSeed = {
   n: number;

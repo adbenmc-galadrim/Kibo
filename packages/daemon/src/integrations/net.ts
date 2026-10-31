@@ -25,7 +25,7 @@ export const GITHUB_LOG_RULES: InternalRule[] = [
   { host: "actions.githubusercontent.com", suffix: true, auth: false },
 ];
 
-export const BEARER_AUTH: AuthHeader = { header: "authorization", prefix: "Bearer " };
+const BEARER_AUTH: AuthHeader = { header: "authorization", prefix: "Bearer " };
 export const FIGMA_AUTH: AuthHeader = { header: "x-figma-token", prefix: "" };
 export const PENPOT_AUTH: AuthHeader = { header: "authorization", prefix: "Token " };
 export const FIGMA_API = "api.figma.com";
@@ -62,7 +62,7 @@ const MAX_HOPS = 3;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024;
 
-export type IntegrationFetchDeps = {
+type IntegrationFetchDeps = {
   aliases: Map<string, URL>;
   resolve?: Resolver;
   transport?: Transport;
@@ -88,7 +88,7 @@ export function parseTestOrigins(values: string[]): Map<string, URL> {
   return new Map(values.map(testOrigin));
 }
 
-export function hostMatches(rule: InternalRule, host: string): boolean {
+function hostMatches(rule: InternalRule, host: string): boolean {
   return rule.suffix ? host.endsWith(`.${rule.host}`) : host === rule.host;
 }
 

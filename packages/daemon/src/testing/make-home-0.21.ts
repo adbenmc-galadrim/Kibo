@@ -6,8 +6,8 @@ import { WORKSPACE_DOC_ID } from "../projects/doc-ids";
 import { openStore } from "../store";
 
 export const FIXTURE_HOME_021 = join(import.meta.dir, "fixtures", "kibo-home-0.21");
-export const FIXTURE_PROJECT_ID = "5d1c2b3a-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
-export const FIXTURE_PROFILE_IDS = {
+const FIXTURE_PROJECT_ID = "5d1c2b3a-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+const FIXTURE_PROFILE_IDS = {
   "sonnet-review": "7a0e9c1d-2b3f-4c5d-8e6f-0a1b2c3d4e5f",
   "haiku-tests": "8b1f0d2e-3c4a-4d6e-9f7a-1b2c3d4e5f60",
   opus: "9c2a1e3f-4d5b-4e7f-a08b-2c3d4e5f6071",
@@ -161,7 +161,7 @@ function writeRuns(home: string): void {
   db.close();
 }
 
-export function makeHome021(home: string): void {
+function makeHome021(home: string): void {
   rmSync(home, { recursive: true, force: true });
   mkdirSync(home, { recursive: true, mode: 0o700 });
   writeWorkspace(home);

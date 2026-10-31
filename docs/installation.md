@@ -31,6 +31,12 @@ Le script choisit le paquet de ta distribution (`.deb` avec `apt`, `.rpm` avec `
 Depuis les sources, avec [Bun](https://bun.sh) : `bun install` puis `bun run start`.
 <!-- release-end -->
 
+## L'accès au trousseau sur macOS
+
+Kibo range tes jetons (GitHub, Figma, Penpot) dans le trousseau de macOS, qui n'autorise que l'application qui les a créés. Une release construite sans le certificat de signature reste signée ad hoc : macOS la voit comme une nouvelle application et redemande l'accès après chaque mise à jour.
+
+La chaîne de release sait signer avec un certificat stable, « Kibo Code Signing », quand ce certificat est configuré sur le dépôt. Avec une release ainsi signée, choisis « Toujours autoriser » à la première demande ; les mises à jour suivantes signées par le même certificat ne devraient plus rien demander. Ce certificat n'est pas délivré par Apple : la première ouverture se fait toujours comme décrit plus haut. Le détail est dans [la procédure de signature](release-signing.md).
+
 ## Vérifier un téléchargement
 
 Chaque release publie `SHA256SUMS`, la somme de tous ses fichiers. Dans le dossier du téléchargement, avec `SHA256SUMS` à côté :
@@ -45,16 +51,16 @@ Les sommes SHA256SUMS protègent d'un téléchargement corrompu, pas d'une relea
 
 ## Où sont tes données
 
-Tout vit dans `~/.kibo` : bases `kibo.db` et `runs.db`, composants (`components/`), notes (`notes/`), fichiers des projets (`files/`). Rien n'est envoyé ailleurs, sauf ce que tu partages par la synchronisation et les appels aux agents.
+Tout vit dans `~/.kibo` : bases `kibo.db` et `runs.db`, notes (`notes/`), fichiers des projets (`files/`). Rien n'est envoyé ailleurs, sauf les appels aux agents.
 
 ## Sauvegardes et restauration
 
-Kibo sauvegarde `~/.kibo` une fois par jour au plus et avant chaque mise à jour, dans `~/.kibo/backups` par défaut (dossier modifiable dans Paramètres › Général › Sauvegardes). Une sauvegarde contient `kibo.db`, `runs.db`, `components/` et `notes/` ; jamais le jeton, l'accès distant ni les fichiers des projets (`files/`).
+Kibo sauvegarde `~/.kibo` une fois par jour au plus et avant chaque mise à jour, dans `~/.kibo/backups` par défaut (dossier modifiable dans Paramètres › Général › Sauvegardes). Une sauvegarde contient `kibo.db`, `runs.db` et `notes/` ; jamais le jeton ni les fichiers des projets (`files/`).
 
 Restaurer se fait à la main :
 
 1. Quitte Kibo.
-2. Dans `~/.kibo`, remplace `kibo.db`, `runs.db`, `components/` et `notes/` par ceux du dossier de la sauvegarde choisie.
+2. Dans `~/.kibo`, remplace `kibo.db`, `runs.db` et `notes/` par ceux du dossier de la sauvegarde choisie.
 3. Relance Kibo.
 
 ## Désinstaller

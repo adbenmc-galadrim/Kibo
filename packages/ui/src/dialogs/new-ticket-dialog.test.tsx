@@ -31,7 +31,6 @@ const { NewTicketDialog } = await import("./NewTicketDialog");
 const ticket = (id: string, key: string, title: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title,
@@ -70,7 +69,6 @@ const silo: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -92,13 +90,11 @@ const silo: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "SILO-12",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 const host: Host & { openTicket: ReturnType<typeof mock> } = {
   openTicket: mock((_id: string) => {}),
   openNewTicket: () => {},
-  openAssign: () => {},
   openFile: () => {},
   openView: () => {},
   openTarget: () => {},

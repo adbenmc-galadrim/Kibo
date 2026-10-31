@@ -1,54 +1,19 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
-  DEFAULT_DUPLICATION_SETTINGS,
   DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
-  type DeliveryImportCandidate,
-  EMPTY_DELIVERY,
   KiboError,
-  type ProjectAccess,
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
-  type TabTarget,
 } from "@kibo/schema";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render as renderPlain,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
-import { summaryFixture } from "../agents/catalog/fixtures";
-import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { appInfoFixture } from "../lib/app-info-fixture";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
-const IMPORTED: DeliveryImportCandidate = {
-  name: "kibo",
-  repo: "/Users/adam/code/kibo",
-  remote: null,
-  matched: "kibo",
-  preview: {
-    worktree: { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: null, recipe: null },
-    delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/kibo" },
-  },
-  notices: [],
-};
 let fail: KiboError | null = null;
-let access: ProjectAccess = "write";
 const snapshot = (): ProjectSnapshot => ({
   meta: {
     id: "kibo",
@@ -58,7 +23,6 @@ const snapshot = (): ProjectSnapshot => ({
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -75,7 +39,6 @@ const snapshot = (): ProjectSnapshot => ({
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access, members: [] },
 });
 mock.module("../api", () =>
   apiMock({
@@ -84,20 +47,9 @@ mock.module("../api", () =>
       subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         if (req.method === "getProject") return snapshot();
-        if (req.method === "overlaps.ignored") return [];
         if (req.method === "getAppInfo") return appInfoFixture("/Users/adam");
-        if (req.method === "agents.list")
-          return { agents: [summaryFixture({ name: "full-delivery" })], notices: [], partialWatch: false };
         calls.push(req);
         if (fail) throw fail;
-        if (req.method === "projects.importDelivery")
-          return { registryPath: "/r.json", candidates: [IMPORTED] };
-        if (req.method === "projects.applyDeliveryImport")
-          return {
-            ...snapshot().meta,
-            worktree: IMPORTED.preview.worktree,
-            delivery: IMPORTED.preview.delivery,
-          };
         if (req.method === "updateProject")
           return {
             id: "kibo",
@@ -107,7 +59,6 @@ mock.module("../api", () =>
             color: "#6366F1",
             worktree: null,
             storybook: null,
-            duplication: null,
             delivery: null,
             tracking: null,
             description: null,
@@ -128,7 +79,6 @@ const project: ProjectSummary = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -143,47 +93,27 @@ const saveButton = () => screen.getByRole("button", { name: "Enregistrer" });
 beforeEach(() => {
   calls.length = 0;
   fail = null;
-  access = "write";
-});
-
-test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
-  const closed = mock(() => {});
-  const go = mock((_target: TabTarget) => {});
-  render(
-    <EditProjectDialog project={project} remote={false} onClose={closed} config={configFixture()} go={go} />,
-  );
-  expect(screen.getByText("6 fichiers .md · 2 domaines")).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
-  expect(closed).toHaveBeenCalledTimes(1);
-  expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
 });
 
 test("asked on its folder field, the dialog puts the focus there instead of the name", () => {
-  render(<EditProjectDialog project={project} remote={false} focus="folder" onClose={() => {}} />);
+  render(<EditProjectDialog project={project} focus="folder" onClose={() => {}} />);
   expect(document.activeElement).toBe(screen.getByLabelText("Dossier"));
 });
 
 test("without the configuration the guidelines section is not shown", () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(screen.queryByRole("heading", { name: "Guidelines" })).toBeNull();
 });
 
 test("a writable project shows its question recipients (screen 187d)", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(await screen.findByRole("list", { name: "Destinataires des questions" })).toBeTruthy();
   expect(screen.getByText("Moi (technique)")).toBeTruthy();
 });
 
-test("a read-only project hides the question recipients", async () => {
-  access = "read-only";
-  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  await act(() => new Promise((r) => setTimeout(r, 20)));
-  expect(screen.queryByText("Destinataires des questions")).toBeNull();
-});
-
 test("shows the current values and saves only the changed fields, then the icon (screen 107)", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   expect(screen.getByRole("dialog", { name: "Modifier le projet" })).toBeTruthy();
   expect((screen.getByLabelText("Nom") as HTMLInputElement).value).toBe("Kibo");
   expect((screen.getByLabelText("Dossier") as HTMLInputElement).value).toBe("/Users/adam/code/kibo");
@@ -215,7 +145,7 @@ test("shows the current values and saves only the changed fields, then the icon 
 
 test("removing the image alone sends only setIcon with null", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Retirer l'image" }));
   await user.click(saveButton());
@@ -224,7 +154,7 @@ test("removing the image alone sends only setIcon with null", async () => {
 });
 
 test("nothing changed keeps the button disabled; a blank name is refused before any call", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(saveButton().hasAttribute("disabled")).toBe(true);
   const user = userEvent.setup();
   await user.clear(screen.getByLabelText("Nom"));
@@ -237,7 +167,7 @@ test("nothing changed keeps the button disabled; a blank name is refused before 
 test("a busy folder explains itself and keeps the dialog open with the old name on screen", async () => {
   fail = new KiboError("CONFLICT", "project kibo has active runs");
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Dossier"), "2");
   await user.click(saveButton());
@@ -263,20 +193,9 @@ test("a busy folder explains itself and keeps the dialog open with the old name 
   expect(closed).not.toHaveBeenCalled();
 });
 
-test("a remote session has no folder field and never sends a folder", async () => {
-  const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote onClose={closed} />);
-  expect(screen.queryByLabelText("Dossier")).toBeNull();
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Nom"), " 2");
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { name: "Kibo 2" } }]);
-});
-
 test("a folder picker error then a save error leave a single alert, the latest one", async () => {
   const pick = mock(() => Promise.reject(new Error("dialog plugin down")));
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} canBrowse pick={pick} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} canBrowse pick={pick} />);
   const user = userEvent.setup({ applyAccept: false });
   await user.click(screen.getByRole("button", { name: "Parcourir…" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'ouvrir le sélecteur de dossier.");
@@ -299,181 +218,27 @@ test("a folder picker error then a save error leave a single alert, the latest o
   expect(screen.getAllByRole("alert")).toHaveLength(1);
 });
 
-const worktreeSection = () => screen.queryByRole("group", { name: "Worktrees des agents" });
 const field = (name: string) => screen.getByLabelText(name) as HTMLInputElement;
-
-test("the worktree section needs a local folder and a local session (screen 167)", () => {
-  const { unmount } = render(
-    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
-  );
-  expect(worktreeSection()).toBeNull();
-  unmount();
-  const remote = render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(worktreeSection()).toBeNull();
-  remote.unmount();
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  expect(worktreeSection()).toBeTruthy();
-  expect([field("Base").value, field("Chemin").value, field("Commande de préparation").value]).toEqual([
-    "main",
-    ".kibo/worktrees/{slug}",
-    "",
-  ]);
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
-
-test("saving the worktree section sends the local settings only", async () => {
-  const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
-  const user = userEvent.setup();
-  await user.clear(field("Base"));
-  await user.type(field("Base"), "origin/dev");
-  await user.clear(field("Chemin"));
-  await user.type(field("Chemin"), "../silo-{{slug}");
-  await user.type(field("Commande de préparation"), "pnpm worktree {{branch}");
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([
-    {
-      method: "updateProject",
-      projectId: "kibo",
-      patch: {
-        worktree: {
-          baseRef: "origin/dev",
-          pathTemplate: "../silo-{slug}",
-          setup: "pnpm worktree {branch}",
-          recipe: null,
-        },
-      },
-    },
-  ]);
-});
-
-test("a path out of the repository is explained and blocks the save", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  const user = userEvent.setup();
-  await user.clear(field("Chemin"));
-  await user.type(field("Chemin"), "/tmp/{{slug}");
-  expect(screen.getByText("Le chemin doit rester dans le dépôt ou à côté de lui.")).toBeTruthy();
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-  await user.clear(field("Chemin"));
-  await user.type(field("Chemin"), "../x");
-  await user.clear(field("Base"));
-  await user.type(field("Base"), "origin/");
-  expect(
-    screen.getByText("La base doit être une branche (main) ou une branche distante (origin/dev)."),
-  ).toBeTruthy();
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
-
-test("a variable between single quotes is explained and blocks the save", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  const user = userEvent.setup();
-  await user.type(field("Commande de préparation"), "pnpm worktree '{{branch}'");
-  expect(
-    screen.getByText(
-      "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
-    ),
-  ).toBeTruthy();
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
-
-test("clearing the three fields forgets the settings", async () => {
-  const closed = mock(() => {});
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: "make wt", recipe: null };
-  render(<EditProjectDialog project={{ ...project, worktree }} remote={false} onClose={closed} />);
-  expect(field("Commande de préparation").value).toBe("make wt");
-  const user = userEvent.setup();
-  for (const name of ["Base", "Chemin", "Commande de préparation"]) await user.clear(field(name));
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { worktree: null } }]);
-});
-
-const deliverySection = () => screen.queryByRole("group", { name: "Livraison" });
-
-test("screen 215: the delivery section needs a local folder and a local session", async () => {
-  const { unmount } = render(
-    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
-  );
-  expect(deliverySection()).toBeNull();
-  unmount();
-  const remote = render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(deliverySection()).toBeNull();
-  remote.unmount();
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  expect(deliverySection()).toBeTruthy();
-  expect(await screen.findByRole("combobox", { name: "Agent de livraison" })).toBeTruthy();
-});
-
-test("saving the delivery section sends absolute paths, the tilde expanded", async () => {
-  const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
-  const root = await screen.findByLabelText("Dossier de travail du skill");
-  fireEvent.change(root, { target: { value: "~/Documents/silo" } });
-  await userEvent.setup().click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([
-    {
-      method: "updateProject",
-      projectId: "kibo",
-      patch: { delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/silo" } },
-    },
-  ]);
-});
-
-test("screen 215b: importing from full-delivery fills the worktree and delivery fields", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Importer depuis full-delivery" }));
-  const dialog = await screen.findByRole("dialog", { name: "Importer depuis full-delivery" });
-  await screen.findByText("correspond à ce projet");
-  await user.click(within(dialog).getByRole("button", { name: "Importer" }));
-  await waitFor(() => expect(field("Base").value).toBe("origin/dev"));
-  expect(((await screen.findByLabelText("Dossier de travail du skill")) as HTMLInputElement).value).toBe(
-    "~/Documents/kibo",
-  );
-  expect(calls).toContainEqual({
-    method: "projects.applyDeliveryImport",
-    projectId: "kibo",
-    name: "kibo",
-    registryPath: "/r.json",
-  });
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
-
-test("a refused recipe or delivery field blocks the save", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  fireEvent.change(field("Fichiers à copier"), { target: { value: "../.env" } });
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-  fireEvent.change(field("Fichiers à copier"), { target: { value: ".env" } });
-  expect(saveButton().hasAttribute("disabled")).toBe(false);
-  fireEvent.change(await screen.findByLabelText("TODO"), { target: { value: "TODO.md" } });
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
 
 const storybookSection = () => screen.queryByRole("group", { name: "Storybook" });
 const ORIGIN = "Adresse";
 const PORT_ENV = "Variable du port dans .env des worktrees";
 
-test("the storybook section shows the defaults, never remote (screen 182)", () => {
-  const local = render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+test("the storybook section shows the defaults (screen 182)", () => {
+  const local = render(<EditProjectDialog project={project} onClose={() => {}} />);
   expect(storybookSection()).toBeTruthy();
   expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["http://localhost:6006", "STORYBOOK_PORT"]);
   expect(saveButton().hasAttribute("disabled")).toBe(true);
   local.unmount();
-  const noFolder = render(
-    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
-  );
+  const noFolder = render(<EditProjectDialog project={{ ...project, folder: null }} onClose={() => {}} />);
   expect(field(ORIGIN).value).toBe("http://localhost:6006");
   expect(screen.queryByLabelText(PORT_ENV)).toBeNull();
   noFolder.unmount();
-  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(storybookSection()).toBeNull();
 });
 
 test("a deployed storybook is saved with the default port variable", async () => {
   const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={project} onClose={closed} />);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "https://sb.example.com");
@@ -489,7 +254,7 @@ test("a deployed storybook is saved with the default port variable", async () =>
 });
 
 test("an insecure address or a bad variable name is explained and blocks the save", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "http://sb.example.com");
@@ -511,7 +276,7 @@ test("an insecure address or a bad variable name is explained and blocks the sav
 test("clearing both storybook fields forgets the settings", async () => {
   const closed = mock(() => {});
   const storybook = { origin: "https://sb.example.com", portEnv: "SB_PORT" };
-  render(<EditProjectDialog project={{ ...project, storybook }} remote={false} onClose={closed} />);
+  render(<EditProjectDialog project={{ ...project, storybook }} onClose={closed} />);
   expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["https://sb.example.com", "SB_PORT"]);
   const user = userEvent.setup();
   await user.clear(field(ORIGIN));
@@ -522,65 +287,17 @@ test("clearing both storybook fields forgets the settings", async () => {
 });
 
 test("the defaults typed back over an empty setting send no patch", async () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   const user = userEvent.setup();
   await user.clear(field(PORT_ENV));
   await user.type(field(PORT_ENV), "STORYBOOK_PORT");
   expect(saveButton().hasAttribute("disabled")).toBe(true);
 });
 
-const duplicationSection = () => screen.queryByRole("group", { name: "Doublons entre agents" });
-const detection = () => screen.getByRole("switch", { name: "Détecter les doublons entre agents" });
-
-test("the duplication section follows storybook in a local project (screen 201)", () => {
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  const section = duplicationSection();
-  const storybook = storybookSection();
-  expect(section && storybook && storybook.compareDocumentPosition(section)).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  expect(detection().getAttribute("aria-checked")).toBe("true");
-  expect(saveButton().hasAttribute("disabled")).toBe(true);
-});
-
-test("turning detection off saves the duplication settings only", async () => {
-  const closed = mock(() => {});
-  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
-  const user = userEvent.setup();
-  await user.click(detection());
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([
-    {
-      method: "updateProject",
-      projectId: "kibo",
-      patch: { duplication: { ...DEFAULT_DUPLICATION_SETTINGS, enabled: false } },
-    },
-  ]);
-});
-
-test("settings brought back to the defaults are saved as null", async () => {
-  const closed = mock(() => {});
-  const duplication = { ...DEFAULT_DUPLICATION_SETTINGS, enabled: false };
-  render(<EditProjectDialog project={{ ...project, duplication }} remote={false} onClose={closed} />);
-  const user = userEvent.setup();
-  await user.click(detection());
-  await user.click(saveButton());
-  await waitFor(() => expect(closed).toHaveBeenCalled());
-  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { duplication: null } }]);
-});
-
-test("a remote session greys the duplication section and never sends it", () => {
-  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(duplicationSection()).toBeTruthy();
-  expect(detection().hasAttribute("disabled")).toBe(true);
-  expect(screen.getByText("Réglage local : il se modifie sur l'ordinateur où tourne Kibo.")).toBeTruthy();
-});
-
-test("the description is saved trimmed, and emptied it is saved as null (remote too)", async () => {
+test("the description is saved trimmed, and emptied it is saved as null", async () => {
   const closed = mock(() => {});
   const described = { ...project, description: "App terrain des chefs de centre" };
-  render(<EditProjectDialog project={described} remote onClose={closed} />);
+  render(<EditProjectDialog project={described} onClose={closed} />);
   const field = screen.getByLabelText("Description") as HTMLInputElement;
   expect(field.value).toBe("App terrain des chefs de centre");
   expect(field.maxLength).toBe(200);
@@ -592,7 +309,7 @@ test("the description is saved trimmed, and emptied it is saved as null (remote 
   expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { description: null } }]);
   cleanup();
   calls.length = 0;
-  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   await user.type(screen.getByLabelText("Description"), "  Suivi des contrats ");
   await user.click(saveButton());
   await waitFor(() =>
@@ -602,24 +319,13 @@ test("the description is saved trimmed, and emptied it is saved as null (remote 
   );
 });
 
-const sections = async (execution: "hidden" | "shown") => {
-  const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
-  render(
-    <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
-      <EditProjectDialog project={project} remote={false} onClose={() => {}} />
-    </AppSettingsProvider>,
-  );
+const sections = () => {
+  render(<EditProjectDialog project={project} onClose={() => {}} />);
   return Array.from(document.querySelectorAll("fieldset > legend"), (l) => l.textContent ?? "");
 };
 
-test("hidden execution: the project settings have no agent worktrees nor Livraison section", async () => {
-  const titles = await sections("hidden");
+test("the project settings have no agent worktrees nor Livraison section", () => {
+  const titles = sections();
   expect(titles.some((t) => t.includes("Livraison"))).toBe(false);
   expect(titles.some((t) => t.includes("Worktrees des agents"))).toBe(false);
-});
-
-test("shown execution: the agent worktrees and Livraison sections come back", async () => {
-  const titles = await sections("shown");
-  expect(titles.some((t) => t.includes("Livraison"))).toBe(true);
-  expect(titles.some((t) => t.includes("Worktrees des agents"))).toBe(true);
 });

@@ -10,22 +10,6 @@ export const ALL_DAEMONS = [
   { name: "screens-dark", scheme: "dark", port: 4398, spec: /screens\.spec\.ts/, scenario: "routes" },
   { name: "screens-light", scheme: "light", port: 4399, spec: /screens\.spec\.ts/, scenario: "routes" },
   {
-    name: "catalog-dark",
-    scheme: "dark",
-    port: 4400,
-    spec: /catalog\.spec\.ts/,
-    scenario: "question",
-    drafts: "hello",
-  },
-  {
-    name: "catalog-light",
-    scheme: "light",
-    port: 4401,
-    spec: /catalog\.spec\.ts/,
-    scenario: "question",
-    drafts: "hello",
-  },
-  {
     name: "integrations-dark",
     scheme: "dark",
     port: 4402,
@@ -41,8 +25,6 @@ export const ALL_DAEMONS = [
     scenario: "question",
     integrations: true,
   },
-  { name: "ia-dark", scheme: "dark", port: 4404, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
-  { name: "ia-light", scheme: "light", port: 4405, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
   { name: "menus-dark", scheme: "dark", port: 4415, spec: /menus\.spec\.ts/, scenario: "question" },
   { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
   { name: "projects-dark", scheme: "dark", port: 4417, spec: /projects\.spec\.ts/, scenario: "question" },
@@ -53,28 +35,10 @@ export const ALL_DAEMONS = [
   { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
   { name: "layout-dark", scheme: "dark", port: 4423, spec: /layout\.spec\.ts/, scenario: "question" },
   { name: "layout-light", scheme: "light", port: 4424, spec: /layout\.spec\.ts/, scenario: "question" },
-  { name: "notes-dark", scheme: "dark", port: 4431, spec: /notes\.spec\.ts/, scenario: "question" },
-  { name: "notes-light", scheme: "light", port: 4432, spec: /notes\.spec\.ts/, scenario: "question" },
-  {
-    name: "creations-dark",
-    scheme: "dark",
-    port: 4425,
-    spec: /creations\.spec\.ts/,
-    scenario: "ai/creations-routes",
-  },
-  {
-    name: "creations-light",
-    scheme: "light",
-    port: 4426,
-    spec: /creations\.spec\.ts/,
-    scenario: "ai/creations-routes",
-  },
   { name: "widgets-dark", scheme: "dark", port: 4429, spec: /widgets\.spec\.ts/, scenario: "question" },
   { name: "widgets-light", scheme: "light", port: 4430, spec: /widgets\.spec\.ts/, scenario: "question" },
   { name: "graph-dark", scheme: "dark", port: 4433, spec: /graph\.spec\.ts/, scenario: "question" },
   { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
-  { name: "viewer-dark", scheme: "dark", port: 4437, spec: /viewer\.spec\.ts/, scenario: "question" },
-  { name: "viewer-light", scheme: "light", port: 4438, spec: /viewer\.spec\.ts/, scenario: "question" },
   { name: "kanban-dark", scheme: "dark", port: 4455, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
   { name: "kanban-light", scheme: "light", port: 4456, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
   {
@@ -111,7 +75,6 @@ export const ALL_DAEMONS = [
     port: 4435,
     spec: /files\.spec\.ts/,
     scenario: "question",
-    drafts: "viewer",
   },
   {
     name: "files-light",
@@ -119,48 +82,15 @@ export const ALL_DAEMONS = [
     port: 4436,
     spec: /files\.spec\.ts/,
     scenario: "question",
-    drafts: "viewer",
   },
   { name: "retired-dark", scheme: "dark", port: 4439, spec: /retired\.spec\.ts/, scenario: "question" },
   { name: "retired-light", scheme: "light", port: 4440, spec: /retired\.spec\.ts/, scenario: "question" },
-  {
-    name: "add-component-dark",
-    scheme: "dark",
-    port: 4463,
-    spec: /add-component\.spec\.ts/,
-    scenario: "question",
-  },
-  {
-    name: "add-component-light",
-    scheme: "light",
-    port: 4464,
-    spec: /add-component\.spec\.ts/,
-    scenario: "question",
-  },
-  {
-    name: "onboarding-dark",
-    scheme: "dark",
-    port: 4443,
-    spec: /onboarding\.spec\.ts/,
-    scenario: "question",
-    noGh: true,
-  },
-  {
-    name: "onboarding-light",
-    scheme: "light",
-    port: 4444,
-    spec: /onboarding\.spec\.ts/,
-    scenario: "question",
-    noGh: true,
-  },
   { name: "about-dark", scheme: "dark", port: 4449, spec: /about\.spec\.ts/, scenario: "question" },
   { name: "about-light", scheme: "light", port: 4450, spec: /about\.spec\.ts/, scenario: "question" },
   { name: "help-dark", scheme: "dark", port: 4451, spec: /help\.spec\.ts/, scenario: "question" },
   { name: "help-light", scheme: "light", port: 4452, spec: /help\.spec\.ts/, scenario: "question" },
   { name: "backups-dark", scheme: "dark", port: 4447, spec: /backups\.spec\.ts/, scenario: "question" },
   { name: "backups-light", scheme: "light", port: 4448, spec: /backups\.spec\.ts/, scenario: "question" },
-  { name: "tutorial-dark", scheme: "dark", port: 4445, spec: /tutorial\.spec\.ts/, scenario: "question" },
-  { name: "tutorial-light", scheme: "light", port: 4446, spec: /tutorial\.spec\.ts/, scenario: "question" },
   {
     name: "design-dark",
     scheme: "dark",
@@ -193,22 +123,6 @@ export const ALL_DAEMONS = [
     scenario: "question",
     embeds: true,
   },
-  {
-    name: "visibility-dark",
-    scheme: "dark",
-    port: 4465,
-    spec: /visibility\.spec\.ts/,
-    scenario: "progress-routes",
-  },
-  {
-    name: "visibility-light",
-    scheme: "light",
-    port: 4466,
-    spec: /visibility\.spec\.ts/,
-    scenario: "progress-routes",
-  },
-  { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
-  { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
   {
     name: "suivi-dark",
     scheme: "dark",
@@ -267,7 +181,6 @@ type ServedDaemon = {
   embeds?: boolean;
   agentScenario?: string;
   answerWakeGraceMs?: number;
-  drafts?: string;
 };
 
 export const serveCommand = (d: ServedDaemon): string =>
@@ -281,7 +194,6 @@ export const serveCommand = (d: ServedDaemon): string =>
     "embeds" in d ? "--embeds" : "",
     "agentScenario" in d ? `--agent-scenario ${d.agentScenario}` : "",
     "answerWakeGraceMs" in d ? `--answer-wake-grace-ms ${d.answerWakeGraceMs}` : "",
-    "drafts" in d ? d.drafts : "",
   ]
     .filter((part) => part !== "")
     .join(" ");

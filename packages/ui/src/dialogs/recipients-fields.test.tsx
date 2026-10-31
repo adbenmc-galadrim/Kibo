@@ -7,7 +7,7 @@ import {
   type Question,
   type RpcRequest,
 } from "@kibo/schema";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
@@ -45,7 +45,6 @@ const base: ProjectSnapshot = {
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -62,7 +61,6 @@ const base: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 const commands: RpcRequest[] = [];
@@ -158,11 +156,4 @@ test("a recipient over the quota is explained", async () => {
   await user.type(await screen.findByRole("textbox", { name: "Nouveau destinataire" }), "Juridique");
   await user.click(screen.getByRole("button", { name: "Ajouter" }));
   expect((await screen.findByRole("alert")).textContent).toBe("20 destinataires au plus.");
-});
-
-test("a read-only project shows no recipient section", async () => {
-  snapshot = { ...base, sync: { ...base.sync, access: "read-only" } };
-  const { container } = render(<RecipientsFields projectId="kibo" />);
-  await act(() => new Promise((r) => setTimeout(r, 20)));
-  expect(container.textContent).toBe("");
 });

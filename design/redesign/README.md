@@ -105,7 +105,7 @@ et « En ce moment » de la piste C, et « une case par étape » de la piste B.
 | P1 · Vue d'ensemble | fonctionnalités livrées 3/9 (une case par fonctionnalité), sprint en cours, ouvertes 2/2, PR en review, questions ; « En ce moment » (sessions T3 Code) ; échéances par sprint avec glissement de F5 ; carte du sprint S42 ; « Prochaine à finir » avec `/full-delivery SILO-45` ; activité ; agent de projet (lot n° 7 : reporter F5, planifier F9, relancer Q14) |
 | P2 · Planning | sprints S41 à S44 en colonnes et réserve « À planifier » ; cartes de fonctionnalité avec leurs étapes en cases ; F5 en retard ; F9 glissée vers la zone de dépôt de S44 ; limite d'ouvertes dans l'en-tête |
 | P3 · Fonctionnalité | F5 « Envoyer les photos d'un constat » : résultat attendu, parcours A→Z en frise verticale (ticket, état git et PR, étape full-delivery, session), « Livrer la prochaine étape » (`/full-delivery SILO-34`), sprint et proposition de report, dépendances, questions, activité |
-| P4 · Tickets | liste à plat filtrée par sprint (S42), puce de fonctionnalité, terminés du sprint repliables, « Hors fonctionnalité » |
+| P4 · Tickets | retiré en phase 33 (composant `tickets` retiré) |
 | P5 · Graphe | fonctionnalités en cadres placés dans la colonne de leur sprint, étapes listées, dépendances entre fonctionnalités, retard et blocage |
 
 Données : 9 fonctionnalités F1 à F9 (SILO-1 à SILO-93), sprints S41 « Accès », S42 « Saisie hors ligne » (en cours, finit
@@ -194,7 +194,6 @@ Exports : `exports/choix-<n>-<slug>-{dark,light}.png` (`await storage.exportChoi
 | P1 bis · Vue d'ensemble | `exports/proposition-vue-ensemble-v2-{dark,light}.png` | 1 440 × 1 260 px |
 | P2 · Planning | `exports/proposition-planning-{dark,light}.png` | 1 440 × 1 000 px |
 | P3 · Fonctionnalité | `exports/proposition-fonctionnalite-{dark,light}.png` | 1 440 × 1 000 px |
-| P4 · Tickets | `exports/proposition-tickets-{dark,light}.png` | 1 440 × 1 000 px |
 | P5b · Graphe, Fonctionnalités | `exports/proposition-graphe-fonctionnalites-{dark,light}.png` (référence pixel de « graphe » ; exports P5 retirés en phase 30, P5 reste page 35 du fichier « Kibo ») | 1 440 × 1 000 px |
 
 P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. Les tableaux de choix font 1 200 × 560 px.
@@ -465,3 +464,18 @@ crashed », rendu à 2,3 Go) sur la page « Proposition » chargée ; d'où le v
 au 18 oct. » manquait au fichier : il est refait depuis son clair par `S.darkFromLightAC` (couleur du nœud de même chemin dans la paire
 P1 bis v3, sinon la table des jetons), à l'identique de l'ancien export hors du volet. Un nom avec `/` devient `a / b` : chercher
 `icon-button / list` en retirant les espaces.
+## Phase 33 : barre du haut sans sync, barre latérale sans Tickets ni Notes (2026-10-29)
+
+Spec §49.5 et §49.11 (composants `tickets` et `notes` retirés, décision du 2026-10-29). Sur la page « Proposition » (et sur les pistes A et C
+pour la puce) : puce « Synchronisé · il y a 1 min » de la barre du haut retirée (`S.syncChip` supprimé de `10-shell.js` et de ses appels) ;
+entrées « Tickets » et « Notes » retirées de la barre latérale du projet et du menu des pages de la barre repliée (`S.PAGES_P` : Vue d'ensemble,
+Planning, Kanban, Graphe, Questions, comme §39.2) ; boards « P4 · Tickets » (sombre et clair) retirés avec leurs exports et `S.draw["p-tickets"]`.
+Retrait en place dans Penpot (formes supprimées, mise en page flex recalculée), sans redessin.
+
+Exports : les boards de Penpot ne rendent plus exactement les anciens PNG (textes remesurés à chaque chargement). Les exports
+`proposition-*` ne sont donc pas refaits en entier : seule la zone qui change est recopiée du nouveau rendu dans l'ancien PNG (puce : sa
+boîte élargie de 3 px, barre latérale : x 0 à 240 sur toute la hauteur, barre repliée : x 0 à 340, y 150 à 580 pour le menu et son ombre).
+Hors de ces zones, aucun pixel ne change (vérifié par différence). Cotes : lignes de la puce et des deux entrées retirées de `cotes.md`,
+positions des entrées suivantes de la barre latérale remontées de 32 px par entrée retirée (vérifié sur les positions Penpot), section P4 retirée.
+Les pistes historiques (A2, B2, C2 « Tickets », pages « Styles » et « Choix ») restent en archive dans Penpot ; seules leurs listes de
+navigation sont alignées dans les scripts.

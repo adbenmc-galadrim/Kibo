@@ -39,7 +39,6 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     color: "#71717A",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,

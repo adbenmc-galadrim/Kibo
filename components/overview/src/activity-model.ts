@@ -30,7 +30,7 @@ export type ActivityInput = {
   events: readonly ProjectEvent[];
   workflow: readonly Pick<Status, "id" | "label">[];
 };
-export type ActivityQuery = { sources: readonly ProjectEventSource[]; limit: number };
+type ActivityQuery = { sources: readonly ProjectEventSource[]; limit: number };
 
 export function activityRows(input: ActivityInput, query: ActivityQuery): ActivityRow[] {
   const byId = new Map(input.tickets.map((t) => [t.id, t]));

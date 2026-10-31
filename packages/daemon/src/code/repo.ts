@@ -5,7 +5,7 @@ import { parseWorktrees } from "./parse-status";
 import { createGit, type Env, type Git } from "./run";
 
 export type WorktreeHandle = { path: string; git: Git; gitDir: string; commonDir: string; env: Env };
-export type Repo = {
+type Repo = {
   root: string;
   worktrees(): Promise<Worktree[]>;
   open(path: string): Promise<WorktreeHandle>;

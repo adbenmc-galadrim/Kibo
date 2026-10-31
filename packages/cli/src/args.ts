@@ -4,17 +4,7 @@ export type FlagValue = string | true | string[];
 export type Parsed = { positional: string[]; flags: Record<string, FlagValue> };
 
 const VALUED = new Set([
-  "kind",
-  "port",
-  "to",
-  "publisher",
-  "out",
-  "dir",
-  "key",
-  "id",
   "name",
-  "verify",
-  "template",
   "project",
   "status",
   "sprint",

@@ -1,35 +1,9 @@
-import {
-  DEFAULT_DUPLICATION_SETTINGS,
-  DEFAULT_WORKFLOW,
-  DUPLICATION_SHARED_GLOBS,
-  type DuplicationSettings,
-  type EffectiveDuplication,
-  formatTicketKey,
-  ProjectMeta,
-  ProjectPatch,
-  type Status,
-} from "@kibo/schema";
+import { DEFAULT_WORKFLOW, formatTicketKey, ProjectMeta, ProjectPatch, type Status } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
-import { z } from "zod";
 import { stored, valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
-export const LOCAL_ONLY_META: ReadonlySet<string> = new Set([
-  "worktree",
-  "storybook",
-  "duplication",
-  "delivery",
-]);
-
-const hasShared = (settings: DuplicationSettings): settings is EffectiveDuplication =>
-  settings.shared !== undefined;
-
-export function effectiveDuplication(meta: {
-  duplication: DuplicationSettings | null;
-}): EffectiveDuplication {
-  const settings = meta.duplication ?? DEFAULT_DUPLICATION_SETTINGS;
-  return hasShared(settings) ? settings : { ...settings, shared: [...DUPLICATION_SHARED_GLOBS] };
-}
+export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook", "delivery"]);
 
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
   Object.entries(meta).filter(([key]) => !LOCAL_ONLY_META.has(key));
@@ -56,7 +30,6 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     color: m.get("color") as string,
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
     description: stored(
@@ -67,7 +40,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
   };
 }
 
-export type DocProjectPatch = RegisteredProjectPatch & {
+type DocProjectPatch = RegisteredProjectPatch & {
   description?: string | null;
   client?: string | null;
 };
@@ -92,12 +65,9 @@ export function getWorkflow(doc: LoroDoc): Status[] {
 const upcomingSeq = (doc: LoroDoc): number =>
   ((doc.getMap("meta").get("ticketSeq") as number | undefined) ?? 0) + 1;
 
-export function peekTicketKey(doc: LoroDoc): string | null {
-  if (doc.getMap("meta").get("keyAllocator") === "server") return null;
+export function peekTicketKey(doc: LoroDoc): string {
   return formatTicketKey(getProjectMeta(doc).key, upcomingSeq(doc));
 }
-
-export const FeatureSeq = z.number().int().nonnegative().optional();
 
 export const featureSeqOf = (doc: LoroDoc): number =>
   (doc.getMap("meta").get("featureSeq") as number | undefined) ?? 0;
@@ -105,8 +75,6 @@ export const featureSeqOf = (doc: LoroDoc): number =>
 export const setFeatureSeq = (doc: LoroDoc, seq: number): void => {
   doc.getMap("meta").set("featureSeq", seq);
 };
-
-export const QuestionSeq = z.number().int().nonnegative().optional();
 
 export function nextQuestionSeq(doc: LoroDoc): number {
   const meta = doc.getMap("meta");

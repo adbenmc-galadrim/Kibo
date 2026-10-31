@@ -1,4 +1,3 @@
-import type { AgentSettingsPatch } from "@kibo/schema";
 import type { DesiredPage, DesiredProject } from "../src/desired";
 
 export const PROJECT: DesiredProject = { name: "Kibo", key: "KIB", color: "#6366F1" };
@@ -17,23 +16,17 @@ export const PAGES: DesiredPage[] = [
     kind: "dashboard",
     instances: [
       { componentId: "kanban", config: {}, layout: { x: 0, y: 0, w: 6, h: 6 } },
-      { componentId: "tickets", config: { filter: "mine" }, layout: { x: 6, y: 0, w: 6, h: 6 } },
       { componentId: "graph", config: {}, layout: { x: 0, y: 6, w: 6, h: 6 } },
     ],
   },
   view("Kanban", "kanban"),
-  view("Tickets", "tickets"),
   view("Graphe", "graph"),
-  view("Notes", "notes"),
 ];
 
 export const DOMAINS: { name: string; file: string }[] = [
-  { name: "Sync", file: "sync.md" },
-  { name: "Marketplace", file: "marketplace.md" },
   { name: "UI", file: "ui.md" },
   { name: "Démon", file: "demon.md" },
   { name: "Sécurité", file: "securite.md" },
-  { name: "Devkit et SDK", file: "devkit-sdk.md" },
   { name: "Desktop", file: "desktop.md" },
   { name: "Agents", file: "agents.md" },
   { name: "CI", file: "ci.md" },
@@ -43,10 +36,3 @@ export const GUIDELINE_PATHS = {
   workspace: "conventions.md",
   project: "kibo.md",
 } as const;
-
-export const AGENT_SETTINGS: Record<string, AgentSettingsPatch> = {
-  "kibo-lead": { permissionMode: "default", workspace: "worktree", maxParallel: 1 },
-  "kibo-dev": { permissionMode: "acceptEdits", workspace: "worktree", maxParallel: 2 },
-  "kibo-reviewer": { permissionMode: "plan", workspace: "worktree", maxParallel: 2 },
-  "kibo-runner": { permissionMode: "acceptEdits", workspace: "worktree", maxParallel: 2 },
-};

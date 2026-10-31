@@ -2,14 +2,14 @@ import { z } from "zod";
 import type { ExternalRef } from "./external-ref";
 import { mcpUrlAllowed, WebUrl } from "./integrations";
 
-export const DESIGN_PROVIDERS = ["figma", "penpot", "storybook"] as const;
+const DESIGN_PROVIDERS = ["figma", "penpot", "storybook"] as const;
 export const DesignProvider = z.enum(DESIGN_PROVIDERS);
 export type DesignProvider = z.infer<typeof DesignProvider>;
 export const IMAGE_DESIGN_PROVIDERS = ["figma", "penpot"] as const;
 export type ImageDesignProvider = (typeof IMAGE_DESIGN_PROVIDERS)[number];
 export const Uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 export const PenpotInstanceUrl = z.string().url().refine(mcpUrlAllowed, "https required unless loopback");
-export const FigmaFrameKey = z.object({
+const FigmaFrameKey = z.object({
   provider: z.literal("figma"),
   fileKey: z.string().regex(/^[A-Za-z0-9]{6,64}$/),
   nodeId: z.string().regex(/^\d+:\d+$/),

@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createProjectDoc, readProject } from "@kibo/core";
-import { type ComponentCall, ComponentManifest, type DesignFrame, type TicketRun } from "@kibo/schema";
-import { defineMigrations } from "./migrations";
+import { type ComponentCall, ComponentManifest, type DesignFrame } from "@kibo/schema";
 import { createSdk } from "./sdk";
-import { defineServer } from "./server";
 import type { ProjectBackend, SdkContext, SdkMode } from "./types";
 
 const ctx: SdkContext = {
@@ -18,14 +16,6 @@ const ctx: SdkContext = {
   openView: () => undefined,
 };
 
-const run: TicketRun = {
-  ticketId: "1@1",
-  runId: "r1",
-  label: "opus-dev-1",
-  state: "running",
-  position: null,
-};
-
 function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
   const doc = createProjectDoc({
     id: "p",
@@ -35,7 +25,6 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     color: "#71717A",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -55,8 +44,6 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
       return c.kind === "data.keys" ? ["a"] : [];
     },
     subscribe: () => () => undefined,
-    runs: async () => [run],
-    subscribeRuns: () => () => undefined,
   };
   const manifest = ComponentManifest.parse({
     id: "probe",
@@ -71,12 +58,10 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
 }
 
 describe("builtin mode", () => {
-  test("entities come from the snapshot, notes from componentCall", async () => {
-    const { sdk, calls } = setup({ reads: ["status", "note", "run"] });
+  test("entities come from the snapshot", async () => {
+    const { sdk, calls } = setup({ reads: ["status"] });
     expect((await sdk.list("status")).length).toBe(6);
-    expect(await sdk.list("run")).toEqual([run]);
-    await sdk.list("note");
-    expect(calls).toEqual([{ kind: "list", entity: "note" }]);
+    expect(calls).toEqual([]);
     expect(sdk.surface).toBe("widget");
   });
   test("run goes to the command bus", async () => {
@@ -89,11 +74,10 @@ describe("builtin mode", () => {
 
 describe("gated mode", () => {
   test("list and run go through componentCall", async () => {
-    const { sdk, calls, runs } = setup({ reads: ["ticket", "run"], writes: ["ticket"] }, "gated");
+    const { sdk, calls, runs } = setup({ reads: ["ticket"], writes: ["ticket"] }, "gated");
     await sdk.list("ticket");
-    await sdk.list("run");
     await sdk.run({ method: "createTicket", title: "A" });
-    expect(calls.map((c) => c.kind)).toEqual(["list", "list", "run"]);
+    expect(calls.map((c) => c.kind)).toEqual(["list", "run"]);
     expect(runs).toEqual([]);
   });
 });
@@ -119,15 +103,6 @@ describe("new capabilities", () => {
         init: { method: "POST", headers: {}, body: "{}" },
       },
     ]);
-  });
-  test("notes need read or write note", async () => {
-    const reader = setup({ reads: ["note"] });
-    await reader.sdk.notes.read("a.md");
-    await reader.sdk.notes.search("loro");
-    await reader.sdk.notes.info();
-    await expect(reader.sdk.notes.write("a.md", "x", null)).rejects.toThrow("PERMISSION_DENIED");
-    await expect(reader.sdk.notes.create("a.md", "x")).rejects.toThrow("PERMISSION_DENIED");
-    expect(reader.calls.map((c) => c.kind)).toEqual(["notes.read", "notes.search", "notes.info"]);
   });
   test("actions always reach the backend, reserved commands never do", async () => {
     const { sdk, calls } = setup({ writes: ["ticket"] }, "gated");
@@ -187,8 +162,6 @@ describe("design", () => {
       return FRAME;
     },
     subscribe: () => () => undefined,
-    runs: async () => [],
-    subscribeRuns: () => () => undefined,
   });
   const manifestWith = (capabilities: string[]) =>
     ComponentManifest.parse({
@@ -215,13 +188,4 @@ describe("design", () => {
     ]);
     expect(sdk.capabilities).toEqual(["design"]);
   });
-});
-
-test("defineServer and defineMigrations validate their shape", () => {
-  expect(() => defineServer({ jobs: { sync: { everyMinutes: 0, run: async () => undefined } } })).toThrow(
-    "INVALID_INPUT",
-  );
-  expect(defineServer({ actions: { ping: async () => "pong" } }).actions?.ping).toBeDefined();
-  expect(() => defineMigrations({ 0: {} })).toThrow("INVALID_INPUT");
-  expect(Object.keys(defineMigrations({ 1: {}, 2: {} }))).toEqual(["1", "2"]);
 });

@@ -11,10 +11,9 @@ export function sortDomains(domains: readonly Domain[]): Domain[] {
 }
 
 export function domainsOf(input: {
-  project: { domains: readonly Domain[]; shared: boolean };
+  project: { domains: readonly Domain[] };
   workspace: readonly Domain[];
 }): Domain[] {
   const own = sortDomains(input.project.domains);
-  if (input.project.shared) return own;
   return [...own, ...sortDomains(input.workspace).filter((w) => !own.some((d) => d.id === w.id))];
 }

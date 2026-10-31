@@ -5,11 +5,10 @@ import {
   validateBatch,
 } from "@kibo/core/project-agent/validate";
 import { KiboError, ProposeBatchInput, type RunView } from "@kibo/schema";
-import { batchNotice } from "../agents/notifier";
-import { guarded } from "../agents/orchestrator-support";
+import { batchNotice } from "../runs/notifier";
+import { guarded } from "../runs/orchestrator-support";
 import type { AgentContext } from "./context";
 import { projectOfRun } from "./sessions";
-import { signalRefs } from "./signal-refs";
 
 function batchContext(ctx: AgentContext, run: RunView, projectId: string): BatchContext {
   const notes = ctx.turnNotes.get(run.id);
@@ -18,11 +17,7 @@ function batchContext(ctx: AgentContext, run: RunView, projectId: string): Batch
     project: ctx.data.project(projectId),
     runs: ctx.agents().state().runs,
     notes,
-    agents: ctx.data.agents(projectId),
-    demoProject: ctx.data.isDemoProject(projectId),
     viewer: ctx.data.viewer(projectId),
-    ...signalRefs(ctx.signals, projectId),
-    agentExecution: ctx.agentExecution(),
   };
 }
 

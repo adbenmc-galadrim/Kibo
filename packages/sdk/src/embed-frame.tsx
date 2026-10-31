@@ -2,7 +2,7 @@ import type { EmbedView } from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { cn } from "./lib/utils";
 
-export type EmbedFrameProps = {
+type EmbedFrameProps = {
   view: EmbedView;
   title: string;
   className?: string;

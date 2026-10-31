@@ -129,18 +129,6 @@ test("a failed wake-up is logged and tried again on the next pass", () => {
   expect(store.has(s1)).toBe(true);
 });
 
-test("a read-only project is not woken", () => {
-  const { service, sprint, feature, store, watch, sent } = setup();
-  const s1 = sprint("S1", "2026-10-12", "2026-10-16");
-  feature("Saisir hors ligne", s1, ["todo"]);
-  service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only project");
-  });
-  watch.pass();
-  expect(sent).toEqual([]);
-  expect(store.has(s1)).toBe(false);
-});
-
 test("the wake-up moves nothing", () => {
   const { service, project, sprint, feature, watch } = setup();
   const s1 = sprint("S1", "2026-10-12", "2026-10-16");

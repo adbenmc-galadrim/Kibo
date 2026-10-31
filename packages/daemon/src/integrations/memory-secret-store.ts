@@ -1,4 +1,5 @@
 import { KiboError, type SecretName, SecretNameSchema } from "@kibo/schema";
+import { isOrphanSecretName } from "../migrations/legacy-secrets";
 import type { Redactor } from "./redact";
 import type { SecretStore } from "./types";
 
@@ -33,7 +34,7 @@ export function createMemorySecretStore(
       values.set(name, value);
     },
     delete: async (name) => {
-      check(name);
+      if (!isOrphanSecretName(name)) check(name);
       values.delete(name);
     },
     dump: () => new Map(values),

@@ -2,11 +2,7 @@ import {
   DEFAULT_RECIPIENTS,
   type EntityType,
   KiboError,
-  type MemberInfo,
-  type PresencePeer,
-  type ProjectSyncInfo,
   type QuestionRecipient,
-  type RunPeek,
   type Selection,
   type Spotlight,
 } from "@kibo/schema";
@@ -26,7 +22,7 @@ export function useSdk(): KiboSdk {
   return sdk;
 }
 
-export type EntitiesState<T extends EntityType> = {
+type EntitiesState<T extends EntityType> = {
   data: EntityMap[T][];
   error: KiboError | null;
   loading: boolean;
@@ -46,7 +42,7 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
         },
       );
     void load();
-    const off = sdk.subscribe(() => void load(), type);
+    const off = sdk.subscribe(() => void load());
     return () => {
       alive = false;
       off();
@@ -55,42 +51,12 @@ export function useEntities<T extends EntityType>(type: T): EntitiesState<T> {
   return state;
 }
 
-const EMPTY_SHARING: ProjectSyncInfo = {
-  shared: false,
-  keyAllocator: "local",
-  role: null,
-  access: "write",
-  members: [],
-};
-
-const readPresence: Read<PresencePeer[]> = (sdk) => sdk.presence.list();
-const watchPresence: Watch = (sdk, l) => sdk.presence.subscribe(l);
-const readSharing: Read<ProjectSyncInfo> = (sdk) => sdk.sharing();
-const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
-const NO_PEERS: PresencePeer[] = [];
-
-export function usePresence(): PresencePeer[] {
-  return useSdkValue(useSdk(), readPresence, watchPresence, NO_PEERS);
-}
-
-export function useSharing(): ProjectSyncInfo {
-  return useSdkValue(useSdk(), readSharing, watchProject, EMPTY_SHARING);
-}
-
-export function useMembers(): MemberInfo[] {
-  return useSharing().members;
-}
-
-export function useReadOnly(): boolean {
-  return useSharing().access !== "write";
-}
-
 export function useVisible(): boolean {
   const { visibility } = useSdk();
   return useSyncExternalStore(visibility.subscribe, visibility.visible, visibility.visible);
 }
 
-export type FocusMode = { active: boolean; available: boolean; request(): void; exit(): void };
+type FocusMode = { active: boolean; available: boolean; request(): void; exit(): void };
 
 export function useFocusMode(): FocusMode {
   const sdk = useSdk();
@@ -113,13 +79,7 @@ export function useSelection(): [Selection | null, (selection: Selection | null)
   return [useSyncExternalStore(selection.subscribe, selection.get, selection.get), selection.set];
 }
 
-export type AgentMentionHandlers = { peek(runId: string): Promise<RunPeek>; onOpen(runId: string): void };
-
-export function useAgentMention(): AgentMentionHandlers {
-  const sdk = useSdk();
-  return { peek: sdk.runs.peek, onOpen: sdk.openRun };
-}
-
+const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
 const readRecipients: Read<QuestionRecipient[]> = (sdk) => sdk.questions.recipients();
 const FIRST_RECIPIENTS: QuestionRecipient[] = [...DEFAULT_RECIPIENTS];
 

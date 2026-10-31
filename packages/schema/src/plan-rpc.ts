@@ -7,7 +7,7 @@ export const PLAN_RPC = [
   z.object({ method: z.literal("applyPlan"), projectId: z.string().min(1), actions: PlanActions }),
 ] as const;
 
-export type PlanRpcRequest = z.infer<(typeof PLAN_RPC)[number]>;
+type PlanRpcRequest = z.infer<(typeof PLAN_RPC)[number]>;
 
 export type PlanRpcResult = { previewPlan: PlanPreview; applyPlan: PlanOutcome };
 

@@ -5,7 +5,6 @@ import { fr } from "../i18n/fr";
 import { useOptionalHost } from "../shell/Host";
 import { GithubLinkNote } from "../shell/sheet/lazy-sections";
 import { TicketDetail } from "../shell/TicketDetail";
-import { canEdit } from "../state/access";
 import { AssigneeSelect } from "./AssigneeSelect";
 import { TicketTabs, useTicketTab } from "./activity/TicketTabs";
 import { TicketTimeline } from "./activity/TicketTimeline";
@@ -26,7 +25,6 @@ type Props = {
   ticket: TicketView;
   domains?: Domain[];
   viewer: string;
-  notice?: ReactNode;
   heading(title: ReactNode, label: string): ReactNode;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
@@ -37,7 +35,6 @@ export function TicketBody({
   ticket: t,
   domains,
   viewer,
-  notice,
   heading,
   onOpenFile,
   onOpenTicket,
@@ -48,12 +45,10 @@ export function TicketBody({
   const ciRuns = useTicketCiRuns(project.meta.id, t.id);
   const journal = useTicketJournal(project.meta.id, t);
   const [tab, setTab] = useTicketTab();
-  const editable = canEdit(project);
   const host = useOptionalHost();
   const label = stepTitle(t, project.tickets.find((x) => x.id === t.parentId) ?? null);
   return (
     <div className="grid grid-cols-1 gap-4 px-6 pt-[18px] pb-6">
-      {notice}
       <BlockedBanner
         ticket={t}
         questions={project.questions}
@@ -65,7 +60,7 @@ export function TicketBody({
         <TicketTitle
           title={t.title}
           label={label}
-          editable={editable}
+          editable
           error={titleCommand.error}
           onSave={(title) => titleCommand.run({ method: "updateTicket", ticketId: t.id, title })}
           onCancel={titleCommand.clearError}
@@ -73,16 +68,10 @@ export function TicketBody({
         label,
       )}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <StatusSelect ticket={t} workflow={project.workflow} editable={editable} command={fieldCommand} />
-        <AssigneeSelect
-          ticket={t}
-          viewer={viewer}
-          members={project.sync.members}
-          editable={editable}
-          command={fieldCommand}
-        />
-        <SprintField ticket={t} sprints={project.sprints} editable={editable} command={fieldCommand} />
-        <OptionalToggle ticket={t} editable={editable} command={fieldCommand} />
+        <StatusSelect ticket={t} workflow={project.workflow} editable command={fieldCommand} />
+        <AssigneeSelect ticket={t} viewer={viewer} editable command={fieldCommand} />
+        <SprintField ticket={t} sprints={project.sprints} editable command={fieldCommand} />
+        <OptionalToggle ticket={t} editable command={fieldCommand} />
       </div>
       {fieldCommand.error && (
         <p role="alert" className="text-sm text-destructive">
@@ -95,13 +84,13 @@ export function TicketBody({
           {t.blockedReason}
         </p>
       )}
-      <LabelsField ticket={t} editable={editable} command={labelsCommand} />
+      <LabelsField ticket={t} editable command={labelsCommand} />
       <GithubLinkNote ticket={t} />
       <HoldBanner
         projectId={project.meta.id}
         ticket={t}
         tickets={project.tickets}
-        editable={editable}
+        editable
         onOpenTicket={onOpenTicket}
       />
       <TrackingBanner ticket={t} ciRuns={ciRuns} />
@@ -119,15 +108,7 @@ export function TicketBody({
             onOpenTicket={onOpenTicket}
           />
         }
-        activity={
-          <TicketTimeline
-            project={project}
-            ticket={t}
-            journal={journal}
-            ciRuns={ciRuns}
-            onOpenFile={onOpenFile}
-          />
-        }
+        activity={<TicketTimeline project={project} ticket={t} journal={journal} ciRuns={ciRuns} />}
       />
     </div>
   );

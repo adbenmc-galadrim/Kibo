@@ -1,14 +1,11 @@
 import type { Page, ProjectSnapshot, Spotlight } from "@kibo/schema";
-import { lazyPanel, readSource } from "@kibo/sdk";
+import { lazyPanel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
 import { compactInstances } from "../lib/format-grid";
-import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
-import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
 import { PageBoundary } from "./PageBoundary";
 import { PageContext, usePageState } from "./PageContext";
@@ -27,44 +24,28 @@ const NewTicketAction = lazyPanel(
   { fallback: "sr-only" },
 );
 const EditLayout = lazyPanel(() => import("./EditLayout").then((m) => m.EditLayout), fr.lazy);
-const PublishDialog = lazyPanel(
-  () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
-  fr.lazy,
-  { fallback: "sr-only" },
-);
 
 type Props = { project: ProjectSnapshot; page: Page; viewer: string; spotlight?: Spotlight | null };
 export function PageView({ project, page, viewer, spotlight = null }: Props) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [publishing, setPublishing] = useState<string | null>(null);
   const wide = useWideGrid();
   const projectId = project.meta.id;
   const instances = project.instances.filter((i) => i.pageId === page.id);
   const [first] = instances;
-  const editable = canEdit(project);
-  const addButton = (page.kind === "dashboard" || !first) && editable && (
+  const addButton = (page.kind === "dashboard" || !first) && (
     <Button variant="outline" onClick={() => setAdding(true)}>
       <Plus className="size-4" /> {fr.page.addComponent}
     </Button>
   );
-  const layoutMode = editable && wide && page.kind === "dashboard" && first !== undefined;
+  const layoutMode = wide && page.kind === "dashboard" && first !== undefined;
   const grid = page.kind === "dashboard" && first !== undefined && !(editing && layoutMode);
   const target = usePageSpotlight(page.id, spotlight);
   const state = usePageState(grid ? instances.map((i) => i.id) : [], target);
   return (
     <PageContext.Provider value={state}>
       <div className="flex h-full min-h-0 flex-col">
-        {project.sync.shared && (
-          <PageActions>
-            <PresenceAvatars
-              project={{ id: projectId, name: project.meta.name }}
-              pages={project.pages}
-              pageId={page.id}
-            />
-          </PageActions>
-        )}
-        {editable && <NewTicketAction pageId={page.id} instances={instances} />}
+        <NewTicketAction pageId={page.id} instances={instances} />
         {layoutMode && !editing && (
           <PageActions>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
@@ -80,14 +61,11 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             </div>
           </div>
         ) : page.kind === "view" ? (
-          <>
-            {readSource(first.config) && <SourceHeader project={project} instance={first} />}
-            <div data-view-body className="flex min-h-0 flex-1 flex-col">
-              <PageBoundary resetKey={first.id}>
-                <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
-              </PageBoundary>
-            </div>
-          </>
+          <div data-view-body className="flex min-h-0 flex-1 flex-col">
+            <PageBoundary resetKey={first.id}>
+              <ViewInstance projectId={projectId} instance={first} viewer={viewer} editable />
+            </PageBoundary>
+          </div>
         ) : editing && layoutMode ? (
           <EditLayout
             projectId={projectId}
@@ -111,16 +89,14 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
                   instance={i}
                   layout={layout}
                   viewer={viewer}
-                  editable={editable}
+                  editable
                 />
               </PageBoundary>
             )}
             trailing={
               <div className="flex flex-wrap items-center gap-3">
                 {addButton}
-                {editable && !wide && (
-                  <p className="text-xs text-muted-foreground">{fr.page.editLayoutNarrow}</p>
-                )}
+                {!wide && <p className="text-xs text-muted-foreground">{fr.page.editLayoutNarrow}</p>}
               </div>
             }
           />
@@ -132,12 +108,8 @@ export function PageView({ project, page, viewer, spotlight = null }: Props) {
             taken={instances.map((i) => i.layout)}
             open
             onOpenChange={setAdding}
-            onPublishDraft={(id) => setPublishing(id)}
-            workflow={project.workflow}
-            linked={linkedRepos(project)}
           />
         )}
-        {publishing && <PublishDialog id={publishing} open onOpenChange={(o) => !o && setPublishing(null)} />}
       </div>
     </PageContext.Provider>
   );

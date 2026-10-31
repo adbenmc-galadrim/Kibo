@@ -16,7 +16,7 @@ import {
   ticketKeyLabel,
 } from "@kibo/schema";
 
-export type StartSource = {
+type StartSource = {
   projectKey: string;
   today: string;
   openLimit: number;
@@ -27,7 +27,7 @@ export type StartSource = {
   blockingQuestions: ReadonlyMap<string, Question>;
 };
 export type HeldTicket = Ticket & { onHold: OnHold | null };
-export type StartCandidate = {
+type StartCandidate = {
   ticket: HeldTicket;
   isGroup: boolean;
   blockers: readonly Ticket[];

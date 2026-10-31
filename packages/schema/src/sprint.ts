@@ -6,7 +6,7 @@ export const SprintDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const SprintName = z.string().trim().min(1).max(60);
 export const SprintCode = z.string().trim().min(1).max(8);
 
-export const SprintFields = z.object({
+const SprintFields = z.object({
   id: NodeId,
   code: SprintCode,
   name: SprintName,

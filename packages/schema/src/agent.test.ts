@@ -33,10 +33,10 @@ const UUID = "0d3c7a8e-2b1f-4c5d-9e6a-7b8c9d0e1f2a";
 
 describe("agent refs", () => {
   test("accept the three scopes and refuse anything else", () => {
-    for (const ok of ["global:review-pr", `project:${UUID}:review-pr`, "system:demo"]) {
+    for (const ok of ["global:review-pr", `project:${UUID}:review-pr`, "system:project-agent"]) {
       expect(AgentRef.safeParse(ok).success).toBe(true);
     }
-    for (const ko of ["global:Review", "system:dev", "project:x:review"]) {
+    for (const ko of ["global:Review", "system:dev", "system:demo", "project:x:review"]) {
       expect(AgentRef.safeParse(ko).success).toBe(false);
     }
   });
@@ -53,10 +53,11 @@ describe("agent refs", () => {
     expect(agentRef("project", UUID, "a")).toBe(`project:${UUID}:a`);
     expect(agentRef("global", null, "a")).toBe("global:a");
     expect(systemAgentRef("project-agent")).toBe("system:project-agent");
-    expect(systemAgentName("generateur")).toBe("kibo-generateur");
+    expect(systemAgentName("project-agent")).toBe("kibo-project-agent");
   });
   test("the names of the Kibo agents are reserved, other kibo- names are not", () => {
-    expect(isReservedAgentName("kibo-demo")).toBe(true);
+    expect(isReservedAgentName("kibo-project-agent")).toBe(true);
+    expect(isReservedAgentName("kibo-demo")).toBe(false);
     expect(isReservedAgentName("kibo-dev")).toBe(false);
     expect(systemIdOfName("kibo-project-agent")).toBe("project-agent");
     expect(systemIdOfName("kibo-dev")).toBeNull();
@@ -101,25 +102,15 @@ describe("agent settings", () => {
     expect(AgentSettingsPatch.parse({ allSubagents: true })).toEqual({ allSubagents: true });
     expect(AgentSettingsPatch.safeParse({ model: "opus" }).success).toBe(false);
   });
-  test("the project agent may use every skill, its subagents stay closed", () => {
-    const projectAgent = systemAgentSettings("project-agent", { skills: { mode: "list", ids: [] } });
-    expect(projectAgent.skills).toEqual({ mode: "all" });
+  test("the project agent has no skill and no subagent, and keeps its fixed settings", () => {
+    const projectAgent = systemAgentSettings({ skills: { mode: "all" }, allSubagents: true, maxParallel: 9 });
+    expect(projectAgent.skills).toEqual({ mode: "list", ids: [] });
     expect(projectAgent.subagents).toEqual([]);
     expect(projectAgent.genericSubagents).toBe(false);
-  });
-  test("the Kibo agents keep their fixed settings", () => {
-    expect(systemAgentSettings("demo", { maxParallel: 3 }).maxParallel).toBe(1);
-    const generator = systemAgentSettings("generateur", { maxParallel: 9 });
-    expect(generator.maxParallel).toBe(4);
-    expect(generator.skills).toEqual({ mode: "list", ids: [] });
-    expect(generator.genericSubagents).toBe(false);
-    expect(systemAgentSettings("assistant", { allSubagents: true }).allSubagents).toBe(false);
-    expect(generator.subagents).toEqual([]);
-    expect(generator.workspace).toBe("isolated");
-    expect(generator.permissionMode).toBe("acceptEdits");
-    expect(systemAgentSettings("assistant", {}).skills).toEqual({ mode: "list", ids: [] });
-    expect(systemAgentSettings("demo", {}).skills).toEqual({ mode: "list", ids: [] });
-    expect(systemAgentSettings("assistant", { enabled: false, permissionMode: "auto" })).toMatchObject({
+    expect(projectAgent.allSubagents).toBe(false);
+    expect(projectAgent.maxParallel).toBe(4);
+    expect(projectAgent.workspace).toBe("isolated");
+    expect(systemAgentSettings({ enabled: false, permissionMode: "auto" })).toMatchObject({
       enabled: false,
       permissionMode: "default",
     });
@@ -227,27 +218,7 @@ describe("runs and hooks", () => {
     expect(RunEvent.parse(spawned)).toEqual(spawned);
     expect(RunEvent.parse({ ...spawned, sessionId: "s2" })).toEqual({ ...spawned, sessionId: "s2" });
   });
-  test("assignAgent starts from the main session unless asked to start fresh", () => {
-    const assign = {
-      method: "assignAgent",
-      projectId: "p",
-      ticketId: "1@1",
-      profileId: "global:p1",
-      brief: "",
-    };
-    expect(RpcRequest.parse(assign)).toMatchObject({ fresh: false });
-    expect(RpcRequest.parse({ ...assign, fresh: true })).toMatchObject({ fresh: true });
-  });
   test("agent rpc requests are validated", () => {
-    const assign = {
-      method: "assignAgent",
-      projectId: "p",
-      ticketId: "1@1",
-      profileId: "global:p1",
-      brief: "",
-    };
-    expect(RpcRequest.safeParse(assign).success).toBe(true);
-    expect(RpcRequest.safeParse({ ...assign, profileId: "p1" }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "answerRun", runId: "r", text: "" }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "setHost", patch: { cpuThreshold: 5 } }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "moveRun", runId: "r", index: -1 }).success).toBe(false);

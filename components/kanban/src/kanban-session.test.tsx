@@ -16,13 +16,10 @@ const renderCard = (patch: Partial<TicketView>) => {
       <KanbanCardContent
         ticket={{ ...base, ...patch }}
         group={null}
-        run={null}
         ciRuns={[]}
         blocked={false}
         blocking={null}
-        members={[]}
-        remote={[]}
-        questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
+        questions={{ questions: [], recipients: [], onOpen: () => {} }}
         menu={null}
         title={<span>{base.title}</span>}
       />

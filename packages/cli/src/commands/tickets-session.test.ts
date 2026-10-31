@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { KiboError, type ProjectMeta, type RpcRequest } from "@kibo/schema";
 import { parseArgs } from "../args";
 import type { DaemonClient } from "../daemon-client";
@@ -203,7 +202,7 @@ test("kibo tickets session without a daemon: code 1 and the stable message", asy
   const home = mkdtempSync(join(tmpdir(), "kibo-cli-session-"));
   try {
     const err: string[] = [];
-    const cliIo = { home, toolchain: DEV_TOOLCHAIN, out: () => {}, err: (l: string) => err.push(l) };
+    const cliIo = { home, out: () => {}, err: (l: string) => err.push(l) };
     expect(await runCli(["tickets", "session", "SILO-33", "start"], cliIo)).toBe(1);
     expect(err).toEqual(["Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie."]);
   } finally {

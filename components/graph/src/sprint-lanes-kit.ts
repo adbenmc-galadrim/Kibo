@@ -160,7 +160,6 @@ const sprintIdOf = (code: string | null) => (code === null ? null : code.toLower
 export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "title">): TicketView {
   return {
     key: over.id,
-    pendingSeq: null,
     hold: null,
     description: "",
     statusId: "todo",
@@ -292,7 +291,6 @@ export const kitInput = (over: Partial<SprintLanesInput> = {}): SprintLanesInput
   links: KIT_LINKS,
   sprints: KIT_SPRINTS,
   questions: KIT_QUESTIONS,
-  live: new Set(),
   today: KIT_TODAY,
   ...over,
 });

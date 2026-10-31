@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { McpServerInput } from "@kibo/schema";
 import { z } from "zod";
 
-export type StoredServer = { server: McpServerInput; enabled: boolean; commandLine: string };
+type StoredServer = { server: McpServerInput; enabled: boolean; commandLine: string };
 type Row = {
   id: string;
   name: string;
@@ -90,4 +90,3 @@ export function createMcpConfigStore(db: Database) {
     },
   };
 }
-export type McpConfigStore = ReturnType<typeof createMcpConfigStore>;

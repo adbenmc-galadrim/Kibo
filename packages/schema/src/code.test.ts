@@ -166,7 +166,7 @@ describe("tabs contracts", () => {
   });
 
   test("a screen outside any project is a target", () => {
-    expect(TabTarget.safeParse({ kind: "screen", screen: "queue" }).success).toBe(true);
+    expect(TabTarget.safeParse({ kind: "screen", screen: "inbox" }).success).toBe(true);
     expect(TabTarget.safeParse({ kind: "screen", screen: "elsewhere" }).success).toBe(false);
   });
 

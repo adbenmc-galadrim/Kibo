@@ -36,12 +36,7 @@ function holdEntry(p: Props, actions: HoldActions): MenuEntry[] {
   return ticket.statusId === "done" ? [] : [{ label: frHold.menu, icon: Pause, onSelect: actions.hold }];
 }
 
-export function ticketMenuEntries(
-  p: Props,
-  copy: () => void,
-  remove: () => void,
-  hold: HoldActions,
-): MenuEntry[] {
+function ticketMenuEntries(p: Props, copy: () => void, remove: () => void, hold: HoldActions): MenuEntry[] {
   const extra = p.extra ?? [];
   const entries: MenuEntry[] = extra.length > 0 ? [...extra, { separator: true }] : [];
   if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });

@@ -2,8 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type ProjectSnapshot, type ProjectSummary, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
@@ -28,7 +28,6 @@ const project: ProjectSummary = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -36,17 +35,9 @@ const project: ProjectSummary = {
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const local = (): ProjectSnapshot => kiboProject();
-const shared = (
-  role: "owner" | "editor",
-  access: ProjectSnapshot["sync"]["access"] = "write",
-): ProjectSnapshot => ({
-  ...kiboProject(),
-  sync: { shared: true, keyAllocator: "server", role, access, members: [] },
-});
 const handlers = () => ({
   onClose: mock(() => {}),
   onDeleted: mock(() => {}),
-  onShare: mock(() => {}),
 });
 beforeEach(() => {
   calls.length = 0;
@@ -93,36 +84,6 @@ test("active runs block the deletion; nothing leads to the retired Agents screen
   expect(calls).toEqual([]);
 });
 
-test("the owner of a shared project is sent to the sharing dialog", async () => {
-  const h = handlers();
-  render(<DeleteProjectDialog project={project} snapshot={shared("owner")} activeRuns={0} {...h} />);
-  expect(screen.getByRole("dialog", { name: "Ce projet est partagé" })).toBeTruthy();
-  expect(screen.getByText(/Tu en es propriétaire/)).toBeTruthy();
-  expect(screen.queryByRole("textbox")).toBeNull();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le partage" }));
-  expect(h.onShare).toHaveBeenCalled();
-  expect(calls).toEqual([]);
-});
-
-test("a member or a revoked owner leaves the project", async () => {
-  for (const snapshot of [shared("editor"), shared("owner", "revoked")]) {
-    const h = handlers();
-    const view = render(<DeleteProjectDialog project={project} snapshot={snapshot} activeRuns={0} {...h} />);
-    expect(screen.getByRole("dialog", { name: "Quitter le projet Kibo ?" })).toBeTruthy();
-    expect(screen.getByText(/Ta copie locale sera supprimée/)).toBeTruthy();
-    expect(screen.queryByText(/seront supprimés/)).toBeNull();
-    const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Tape Kibo pour confirmer"), "Kibo");
-    await user.click(screen.getByRole("button", { name: "Quitter le projet" }));
-    await waitFor(() => expect(h.onDeleted).toHaveBeenCalledWith("kibo"));
-    view.unmount();
-  }
-  expect(calls).toEqual([
-    { method: "deleteProject", projectId: "kibo" },
-    { method: "deleteProject", projectId: "kibo" },
-  ]);
-});
-
 test("without a snapshot the generic text shows; daemon refusals are explained", async () => {
   fail = new KiboError("CONFLICT", "project kibo has active runs");
   const h = handlers();
@@ -136,7 +97,7 @@ test("without a snapshot the generic text shows; daemon refusals are explained",
   await user.type(screen.getByLabelText("Tape Kibo pour confirmer"), "Kibo");
   await user.click(screen.getByRole("button", { name: "Supprimer" }));
   expect((await screen.findByRole("alert")).textContent).toBe(
-    "Impossible de supprimer le projet. Un run du projet est en cours, ou tu en es propriétaire alors qu'il est partagé : arrête les runs ou le partage d'abord.",
+    "Impossible de supprimer le projet. Un run du projet est en cours : arrête-le d'abord.",
   );
   fail = new KiboError("FORBIDDEN", "local session required");
   await user.click(screen.getByRole("button", { name: "Supprimer" }));
@@ -163,36 +124,4 @@ test("a 120-character folder wraps instead of overflowing (screen 108)", async (
   expect(folder).toHaveLength(120);
   expect(text.className).toContain("break-all");
   expect(text.closest("[data-slot=dialog-description]")?.className).toContain("min-w-0");
-});
-
-const demo: ProjectSummary = {
-  ...project,
-  id: "demo",
-  key: "DEMO",
-  name: "Démo Kibo",
-  folder: null,
-  demo: true,
-};
-
-test("the demo project is deleted in one click, without typing its name", async () => {
-  const h = handlers();
-  render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={0} {...h} />);
-  expect(screen.getByRole("dialog", { name: "Supprimer le projet de démonstration ?" })).toBeTruthy();
-  expect(screen.queryByRole("textbox")).toBeNull();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Supprimer la démo" }));
-  await waitFor(() => expect(h.onDeleted).toHaveBeenCalledWith("demo"));
-  expect(calls).toEqual([{ method: "deleteProject", projectId: "demo" }]);
-});
-
-test("active runs still block the demo deletion, and a refusal is explained", async () => {
-  const h = handlers();
-  const { unmount } = render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={1} {...h} />);
-  expect(screen.getByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Supprimer la démo" })).toBeNull();
-  unmount();
-  fail = new KiboError("CONFLICT", "runs");
-  render(<DeleteProjectDialog project={demo} snapshot={local()} activeRuns={0} {...h} />);
-  await userEvent.setup().click(screen.getByRole("button", { name: "Supprimer la démo" }));
-  expect((await screen.findByRole("alert")).textContent).toStartWith("Impossible de supprimer le projet.");
-  expect(h.onDeleted).not.toHaveBeenCalled();
 });

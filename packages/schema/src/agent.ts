@@ -6,21 +6,16 @@ import { SkillId } from "./skill-id";
 export const PermissionMode = z.enum(["default", "acceptEdits", "plan", "auto"]);
 export type PermissionMode = z.infer<typeof PermissionMode>;
 
-export const WorkspaceStrategy = z.enum(["worktree", "repo", "isolated"]);
-export type WorkspaceStrategy = z.infer<typeof WorkspaceStrategy>;
+const WorkspaceStrategy = z.enum(["worktree", "repo", "isolated"]);
+const ModelName = z.string().regex(/^[a-z0-9][a-z0-9.-]{0,63}$/);
 
-export const AgentModel = z.enum(["opus", "sonnet", "haiku"]);
-export type AgentModel = z.infer<typeof AgentModel>;
-export const ModelName = z.string().regex(/^[a-z0-9][a-z0-9.-]{0,63}$/);
-
-export const AGENT_SCOPES = ["global", "project", "system"] as const;
+const AGENT_SCOPES = ["global", "project", "system"] as const;
 export const AgentScope = z.enum(AGENT_SCOPES);
 export type AgentScope = z.infer<typeof AgentScope>;
 
-export const AgentName = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
-export type AgentName = z.infer<typeof AgentName>;
+const AgentName = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
 
-export const SYSTEM_AGENT_IDS = ["assistant", "generateur", "demo", "project-agent"] as const;
+export const SYSTEM_AGENT_IDS = ["project-agent"] as const;
 export type SystemAgentId = (typeof SYSTEM_AGENT_IDS)[number];
 
 const NAME = "[a-z0-9][a-z0-9-]{0,63}";
@@ -31,7 +26,7 @@ export const AgentRef = z
   );
 export type AgentRef = z.infer<typeof AgentRef>;
 
-export type ParsedAgentRef =
+type ParsedAgentRef =
   | { scope: "global"; name: string }
   | { scope: "project"; projectId: string; name: string }
   | { scope: "system"; id: SystemAgentId };
@@ -56,22 +51,21 @@ export function agentRef(scope: AgentScope, projectId: string | null, name: stri
 
 export const systemAgentRef = (id: SystemAgentId): AgentRef => `system:${id}`;
 export const systemAgentName = (id: SystemAgentId): string => `kibo-${id}`;
-export const SYSTEM_AGENT_NAMES: readonly string[] = SYSTEM_AGENT_IDS.map(systemAgentName);
+const SYSTEM_AGENT_NAMES: readonly string[] = SYSTEM_AGENT_IDS.map(systemAgentName);
 export const isReservedAgentName = (name: string): boolean => SYSTEM_AGENT_NAMES.includes(name);
 export const systemIdOfName = (name: string): SystemAgentId | null =>
   SYSTEM_AGENT_IDS.find((id) => systemAgentName(id) === name) ?? null;
 
 export const PROJECT_AGENT_REF: AgentRef = systemAgentRef("project-agent");
-export const DEMO_AGENT_REF: AgentRef = systemAgentRef("demo");
-export const LEGACY_DEMO_ASSIGNEE = "demo";
+const LEGACY_DEMO_ASSIGNEE = "demo";
 export const assigneeName = (assignee: { kind: "human" | "agent"; ref: string }): string =>
-  assignee.kind === "agent" && assignee.ref === LEGACY_DEMO_ASSIGNEE ? systemAgentName("demo") : assignee.ref;
+  assignee.kind === "agent" && assignee.ref === LEGACY_DEMO_ASSIGNEE ? "kibo-demo" : assignee.ref;
 
 export const AGENT_BODY_MAX = 100_000;
-export const AGENT_DESCRIPTION_MAX = 1_024;
+const AGENT_DESCRIPTION_MAX = 1_024;
 export const SUBAGENTS_MAX = 20;
-export const ALLOWED_SKILLS_MAX = 50;
-export const SYSTEM_MAX_PARALLEL = 4;
+const ALLOWED_SKILLS_MAX = 50;
+const SYSTEM_MAX_PARALLEL = 4;
 
 export const AgentFrontmatter = z.object({
   name: AgentName,
@@ -124,35 +118,22 @@ export const AgentSettingsPatch = z.object(SETTINGS_SHAPE).partial().strict();
 export type AgentSettingsPatch = z.infer<typeof AgentSettingsPatch>;
 export const DEFAULT_AGENT_SETTINGS: AgentSettings = AgentSettings.parse({});
 
-const SYSTEM_PERMISSION: Record<SystemAgentId, PermissionMode> = {
-  assistant: "default",
-  generateur: "acceptEdits",
-  demo: "acceptEdits",
-  "project-agent": "default",
-};
-const SYSTEM_DEFAULT_PARALLEL: Record<SystemAgentId, number> = {
-  assistant: 1,
-  generateur: 2,
-  demo: 1,
-  "project-agent": 1,
-};
-
-function systemParallel(id: SystemAgentId, stored: number | undefined): number {
-  if (id === "demo" || stored === undefined) return SYSTEM_DEFAULT_PARALLEL[id];
+function systemParallel(stored: number | undefined): number {
+  if (stored === undefined) return 1;
   return Math.min(Math.max(1, stored), SYSTEM_MAX_PARALLEL);
 }
 
-export function systemAgentSettings(id: SystemAgentId, stored: Partial<AgentSettings>): AgentSettings {
+export function systemAgentSettings(stored: Partial<AgentSettings>): AgentSettings {
   return {
     ...DEFAULT_AGENT_SETTINGS,
     workspace: "isolated",
-    permissionMode: SYSTEM_PERMISSION[id],
-    maxParallel: systemParallel(id, stored.maxParallel),
+    permissionMode: "default",
+    maxParallel: systemParallel(stored.maxParallel),
     enabled: stored.enabled ?? true,
     subagents: [],
     genericSubagents: false,
     allSubagents: false,
-    skills: id === "project-agent" ? { mode: "all" } : { mode: "list", ids: [] },
+    skills: { mode: "list", ids: [] },
   };
 }
 
@@ -180,8 +161,7 @@ export type AgentSummary = Omit<Agent, "file"> & {
 };
 
 export const AGENT_TEMPLATES = ["blank", "delivery", "review", "seo", "conductor"] as const;
-export const AgentTemplate = z.enum(AGENT_TEMPLATES);
-export type AgentTemplate = z.infer<typeof AgentTemplate>;
+const AgentTemplate = z.enum(AGENT_TEMPLATES);
 
 export const AgentCreateInput = z.object({
   scope: z.enum(["global", "project"]),
@@ -192,26 +172,3 @@ export const AgentCreateInput = z.object({
   template: AgentTemplate.default("blank"),
 });
 export type AgentCreateInput = z.infer<typeof AgentCreateInput>;
-
-export type SettingOrigin = "agent" | "project";
-
-export type AgentPreview = {
-  levels: { label: string; path: string; tokens: number }[];
-  systemPrompt: string;
-  brief: string;
-  agentsJson: string;
-  command: {
-    model: string;
-    permissionMode: PermissionMode;
-    tools: string[] | null;
-    disallowedTools: string[] | null;
-    allow: string[];
-    allowOrigins: { rule: string; origin: SettingOrigin }[];
-    addDirs: { dir: string; origin: SettingOrigin }[];
-    subagents: string[];
-    allSubagents: boolean;
-    skills: SkillsRule;
-  };
-};
-
-export type MigrationNotice = { profileName: string; text: string };

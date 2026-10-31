@@ -4,7 +4,7 @@ import { signalGroup, tryKill } from "../process-group";
 export type Env = Record<string, string>;
 export type RunResult = { code: number; stdout: string; bytes: Uint8Array; stderr: string };
 type FailCode = "GIT_FAILED" | "GH_UNAVAILABLE";
-export type RunOptions = {
+type RunOptions = {
   cwd: string;
   stdin?: string;
   env?: Env;
@@ -19,7 +19,7 @@ export type Git = {
   ok(args: string[], opts?: GitRunOptions): Promise<string>;
 };
 
-export const READ_TIMEOUT_MS = 30_000;
+const READ_TIMEOUT_MS = 30_000;
 export const WRITE_TIMEOUT_MS = 300_000;
 export const NETWORK_TIMEOUT_MS = 120_000;
 export const MAX_STDOUT_BYTES = 50_000_000;

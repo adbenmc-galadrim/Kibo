@@ -12,18 +12,17 @@ import {
   type ProjectFingerprint,
   type RunView,
 } from "@kibo/schema";
-import type { ProjectTurnPort } from "../agents/orchestrator-types";
 import type { RpcExtension } from "../rpc-extensions";
-import { formatClock } from "../signals/clock";
+import type { ProjectTurnPort } from "../runs/orchestrator-types";
 import type { AgentContext, ProjectAgentDeps } from "./context";
 import { type DecideInput, decideBatch } from "./decide";
 import { proposeBatch } from "./propose";
 import { projectAgentRpc } from "./rpc";
 import { currentRun, pastSessions, projectOfRun, safeLog, summaryOf, withDigest } from "./sessions";
 import { createTurnPort } from "./turns";
-import type { AgentMcpSink, ProjectAgentSignalsPort } from "./types";
+import type { AgentMcpSink } from "./types";
 
-export type { ProjectAgentAgents, ProjectAgentDeps } from "./context";
+export type { ProjectAgentAgents } from "./context";
 
 export type ProjectAgentService = {
   view(projectId: string, runId?: string): ProjectAgentView;
@@ -35,13 +34,11 @@ export type ProjectAgentService = {
   propose(run: RunView, input: unknown): string;
   turns: ProjectTurnPort;
   mcp: AgentMcpSink;
-  signals: ProjectAgentSignalsPort;
   rpc: RpcExtension;
 };
 export type ProjectAgentCore = Omit<ProjectAgentService, "rpc">;
 
 function view(ctx: AgentContext, projectId: string, runId?: string): ProjectAgentView {
-  ctx.data.assertWritable(projectId);
   const sessions = ctx.store.sessions(projectId);
   const session =
     runId === undefined ? ctx.store.openSession(projectId) : sessions.find((s) => s.runId === runId);
@@ -58,7 +55,6 @@ function view(ctx: AgentContext, projectId: string, runId?: string): ProjectAgen
 }
 
 function send(ctx: AgentContext, projectId: string, text: string): RunView {
-  ctx.data.assertWritable(projectId);
   const open = ctx.store.openSession(projectId);
   if (open) {
     const answered = ctx.agents().answer(open.runId, text);
@@ -72,7 +68,6 @@ function send(ctx: AgentContext, projectId: string, text: string): RunView {
 }
 
 function reset(ctx: AgentContext, projectId: string): ProjectAgentView {
-  ctx.data.assertWritable(projectId);
   const open = ctx.store.openSession(projectId);
   if (open) {
     const at = ctx.now();
@@ -131,9 +126,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
   const ctx: AgentContext = {
     ...deps,
     now: deps.now ?? Date.now,
-    formatTime: deps.formatTime ?? formatClock,
     agentBody: deps.agentBody ?? (() => ""),
-    agentExecution: deps.agentExecution ?? (() => "hidden"),
     turnNotes: new Map(),
     baselines: new Map(),
   };
@@ -147,7 +140,6 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     propose: (run, input) => proposeBatch(ctx, run, input),
     turns: createTurnPort(ctx),
     mcp: mcpSink(ctx),
-    signals: deps.signals,
   };
   return { ...core, rpc: projectAgentRpc(core) };
 }

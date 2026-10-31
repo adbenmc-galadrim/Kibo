@@ -14,14 +14,13 @@ import {
   type RunView,
   type TicketView,
 } from "@kibo/schema";
-import { NOW, runFixture } from "../agents/fixtures";
+import { NOW, runFixture } from "../lib/fixtures";
 
 const MIN = 60_000;
 
 const ticket = (id: string, key: string, title: string, statusId: TicketView["statusId"]): TicketView => ({
   id,
   key,
-  pendingSeq: null,
   hold: null,
   keyLabel: key,
   title,
@@ -50,7 +49,7 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   feature: null,
 });
 
-export function siloProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
+export function siloProject(): ProjectSnapshot {
   return {
     meta: {
       id: "silo",
@@ -60,7 +59,6 @@ export function siloProject(access: "write" | "read-only" = "write"): ProjectSna
       color: "#0EA5E9",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
@@ -80,13 +78,6 @@ export function siloProject(access: "write" | "read-only" = "write"): ProjectSna
     bindings: [],
     nextTicketKey: "SILO-13",
     sprints: [],
-    sync: {
-      shared: access !== "write",
-      keyAllocator: access === "write" ? "local" : "server",
-      role: access === "write" ? null : "viewer",
-      access,
-      members: [],
-    },
   };
 }
 
@@ -177,7 +168,7 @@ const actions: ProposedAction[] = [
     title: "Export CSV des factures",
     why: "Titre plus précis",
   },
-  { id: 4, type: "assignAgent", ticket: "SILO-12", profileId: "opus", why: "Personne n'y travaille" },
+  { id: 4, type: "setStatus", ticket: "SILO-12", statusId: "in_progress", why: "Quelqu'un s'y met" },
   {
     id: 5,
     type: "createQuestion",

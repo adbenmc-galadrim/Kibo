@@ -1,8 +1,8 @@
 # Cotes du redesign
 
-Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Silo » du fichier « Kibo » (écrans 210 à 214). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.
+Relevé automatique des boards validés (P1 bis, P2, P3, P5 ; P4 · Tickets retiré en phase 33) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Silo » du fichier « Kibo » (écrans 210 à 214, sans 213). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.
 
-Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Synchronisé · il y a 1 min », « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.
+Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.
 
 Règles générales : écrans de 1 440 px de large ; barre latérale 240 px ; panneau de l'agent 340 px (P1 bis) ; barre du haut 48 px ; polices Geist et Geist Mono ; icônes Lucide, trait **2 px à la taille affichée** : le SVG 24 × 24 (trait 2) est importé dans Penpot puis redimensionné sans mise à l'échelle du trait, donc une icône de 11 à 14 px garde un trait de 2 px réels (rendu plus gras qu'un Lucide par défaut) ; côté interface, `absoluteStrokeWidth` de `lucide-react` (ou `strokeWidth = 48 / taille`). Les blocs sans fond, bordure ni enfant (espaceurs) sont omis : les positions des voisins en tiennent compte.
 
@@ -116,182 +116,178 @@ Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 1183)
-25. « AB » (x 21, y 1222)
-26. « Adam Ben Mchichi » (x 48, y 1220,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 671, y 16,5)
-31. « Nouveau ticket » (x 844, y 16,5)
-32. « Agent de projet » (x 982, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « Location de box » (x 265, y 100)
-35. « · » (x 368, y 100)
-36. « silo-labs/silo-location » (x 400, y 100,5)
-37. « Fonctionnalités » (x 303, y 142)
-38. « 3 » (x 283, y 162)
-39. « livrées sur 9 » (x 307, y 174)
-40. « Sprint en cours » (x 465,2, y 142)
-41. « S42 » (x 445,2, y 162)
-42. « finit ce soir » (x 505,2, y 174)
-43. « Saisie hors ligne » (x 445,2, y 195,5)
-44. « Ouvertes » (x 627,4, y 142)
-45. « 2 » (x 607,4, y 162)
-46. « sur 2 max » (x 631,4, y 174)
-47. « limite atteinte » (x 620,4, y 195,5)
-48. « En review » (x 789,6, y 142)
-49. « 3 » (x 769,6, y 162)
-50. « PR » (x 793,6, y 174)
-51. « #20 · #22 · #23 » (x 769,6, y 195,5)
-52. « Questions » (x 951,8, y 142)
-53. « 3 » (x 931,8, y 162)
-54. « ouvertes » (x 955,8, y 174)
-55. « Q14 bloque F6 » (x 944,8, y 195,5)
-56. « En ce moment » (x 302, y 261,5)
-57. « 2 sessions T3 Code » (x 281, y 281,5)
-58. « F5 » (x 454, y 252,5)
-59. « SILO-33 » (x 488, y 252,5)
-60. « Écran d'envoi hors ligne » (x 547, y 252)
-61. « 7 · Porte qualité » (x 859, y 252,5)
-62. « 42 min » (x 1020, y 252,5)
-63. « F4 » (x 454, y 289,5)
-64. « SILO-45 » (x 488, y 289,5)
-65. « Conflits de saisie » (x 547, y 289)
-66. « 9 · Review » (x 859, y 289,5)
-67. « 18 min » (x 1023, y 289,5)
-68. « Échéances » (x 304, y 349,5)
-69. « fonctionnalités par sprint » (x 916, y 350,5)
-70. « S42 » (x 525, y 390)
-71. « 12 oct. » (x 553, y 390)
-72. « S43 » (x 664, y 390)
-73. « 19 oct. » (x 692, y 390)
-74. « S44 » (x 803, y 390)
-75. « 26 oct. » (x 831, y 390)
-76. « S45 » (x 942, y 390)
-77. « 2 nov. » (x 970, y 390)
-78. « F4 » (x 281, y 419)
-79. « Saisir un constat hors ligne » (x 304, y 419)
-80. « F5 » (x 281, y 449)
-81. « Envoyer les photos d'un constat » (x 304, y 449)
-82. « glisse en S43 » (x 783,6, y 449)
-83. « bloquée · Q14 » (x 828, y 480)
-84. « F6 » (x 281, y 479)
-85. « Importer les box depuis Excel » (x 304, y 479)
-86. « F8 » (x 281, y 509)
-87. « Valider les contrats par lot » (x 304, y 509)
-88. « F7 » (x 281, y 539)
-89. « Rapport de centre journalier » (x 304, y 539)
-90. « aujourd'hui » (x 616,4, y 544)
-91. « étape livrée » (x 299, y 578)
-92. « en review » (x 397, y 578)
-93. « en cours » (x 484, y 578)
-94. « bloquée » (x 565, y 578)
-95. « à faire » (x 644, y 578)
-96. « glissement prévu » (x 713, y 578)
-97. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
-98. « 12–16 oct. » (x 589, y 631,5)
-99. « 2/2 ouvertes » (x 662, y 631,5)
-100. « F3 » (x 281, y 673,5)
-101. « Réaffecter un box » (x 317, y 673)
-102. « livrée » (x 566, y 673,5)
-103. « 4/4 » (x 720, y 673,5)
-104. « F4 » (x 281, y 712,5)
-105. « Saisir un constat hors ligne » (x 317, y 712)
-106. « ouverte » (x 549, y 712,5)
-107. « 3/5 » (x 720, y 712,5)
-108. « F5 » (x 281, y 751,5)
-109. « Envoyer les photos d'un constat » (x 317, y 751)
-110. « en retard » (x 566, y 751,5)
-111. « 1/5 » (x 720, y 751,5)
-112. « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-113. « Prochaine à finir » (x 304, y 841,5)
-114. « la plus avancée du sprint » (x 601, y 842,5)
-115. « F4 » (x 281, y 875,5)
-116. « Saisir un constat hors ligne » (x 306, y 874)
-117. « 3/5 » (x 720, y 875,5)
-118. « SILO-45 » (x 297, y 902,5)
-119. « Conflits de saisie » (x 356, y 902)
-120. « changements demandés » (x 466, y 902,5)
-121. « SILO-46 » (x 297, y 924,5)
-122. « Démo client » (x 356, y 924)
-123. « Étape suivante » (x 293, y 963)
-124. « /full-delivery SILO-45 » (x 387, y 963)
-125. « Copier » (x 685, y 963)
-126. « Activité » (x 304, y 1032,5)
-127. « git » (x 633, y 1033,5)
-128. « full-delivery » (x 668, y 1033,5)
-129. « 15:04 » (x 281, y 1075,5)
-130. « PR #22 ouverte » (x 355, y 1075)
-131. « SILO-32 » (x 643, y 1075,5)
-132. « F5 » (x 722, y 1075,5)
-133. « 14:51 » (x 281, y 1114,5)
-134. « Étape 7 · Porte qualité » (x 355, y 1114)
-135. « SILO-33 » (x 643, y 1114,5)
-136. « F5 » (x 722, y 1114,5)
-137. « 14:40 » (x 281, y 1153,5)
-138. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
-139. « Agent de projet » (x 658, y 1153,5)
-140. « 14:36 » (x 281, y 1192,5)
-141. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-142. « SILO-21 » (x 643, y 1192,5)
-143. « F3 » (x 722, y 1192,5)
-144. « En review » (x 814, y 630,5)
-145. « 3 » (x 894, y 631,5)
-146. « #22 » (x 818, y 672)
-147. « Route d'envoi des photos » (x 848, y 672)
-148. « SILO-32 » (x 818, y 693)
-149. « F5 » (x 897, y 693)
-150. « CI verte » (x 836, y 713)
-151. « #20 » (x 818, y 749)
-152. « Conflits de saisie » (x 848, y 749)
-153. « SILO-45 » (x 818, y 770)
-154. « F4 » (x 897, y 770)
-155. « changements demandés » (x 836, y 790)
-156. « #23 » (x 818, y 826)
-157. « Passage à Expo SDK 54 » (x 848, y 826)
-158. « SILO-61 » (x 818, y 846)
-159. « CI en cours » (x 835, y 865)
-160. « Questions » (x 814, y 917,5)
-161. « 3 » (x 898, y 918,5)
-162. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 959)
-163. « F6 » (x 813, y 984)
-164. « Q14 · Client · il y a 3 j » (x 840, y 984)
-165. « bloquante » (x 965, y 984)
-166. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1022)
-167. « F5 » (x 813, y 1046)
-168. « Q16 · Produit · hier » (x 840, y 1046)
-169. « Un rapport par chef de centre ou par client ? » (x 791, y 1083)
-170. « F7 » (x 813, y 1107)
-171. « Q17 · Client · il y a 2 h » (x 840, y 1107)
-172. « Agent de projet » (x 1158, y 13)
-173. « Suivi à jour · il y a 4 min » (x 1158, y 32)
-174. « Résumé du jour » (x 1118, y 79)
-175. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
-176. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
-177. « À valider » (x 1118, y 229)
-178. « Lot n° 7 » (x 1132, y 264)
-179. « 3 actions » (x 1357, y 264,5)
-180. « Reporter F5 en S43 » (x 1158, y 302)
-181. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 321)
-182. « Planifier F9 en S44 » (x 1158, y 359)
-183. « seule fonctionnalité à planifier » (x 1158, y 378)
-184. « Relancer le client sur Q14 » (x 1158, y 416)
-185. « bloque F6, prévue en S43 » (x 1158, y 435)
-186. « Valider (3) » (x 1142, y 479)
-187. « Refuser » (x 1227, y 479)
-188. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
-189. « Demander à l'agent de projet… » (x 1130, y 1217)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 1183)
+22. « AB » (x 21, y 1222)
+23. « Adam Ben Mchichi » (x 48, y 1220,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 844, y 16,5)
+28. « Agent de projet » (x 982, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « Location de box » (x 265, y 100)
+31. « · » (x 368, y 100)
+32. « silo-labs/silo-location » (x 400, y 100,5)
+33. « Fonctionnalités » (x 303, y 142)
+34. « 3 » (x 283, y 162)
+35. « livrées sur 9 » (x 307, y 174)
+36. « Sprint en cours » (x 465,2, y 142)
+37. « S42 » (x 445,2, y 162)
+38. « finit ce soir » (x 505,2, y 174)
+39. « Saisie hors ligne » (x 445,2, y 195,5)
+40. « Ouvertes » (x 627,4, y 142)
+41. « 2 » (x 607,4, y 162)
+42. « sur 2 max » (x 631,4, y 174)
+43. « limite atteinte » (x 620,4, y 195,5)
+44. « En review » (x 789,6, y 142)
+45. « 3 » (x 769,6, y 162)
+46. « PR » (x 793,6, y 174)
+47. « #20 · #22 · #23 » (x 769,6, y 195,5)
+48. « Questions » (x 951,8, y 142)
+49. « 3 » (x 931,8, y 162)
+50. « ouvertes » (x 955,8, y 174)
+51. « Q14 bloque F6 » (x 944,8, y 195,5)
+52. « En ce moment » (x 302, y 261,5)
+53. « 2 sessions T3 Code » (x 281, y 281,5)
+54. « F5 » (x 454, y 252,5)
+55. « SILO-33 » (x 488, y 252,5)
+56. « Écran d'envoi hors ligne » (x 547, y 252)
+57. « 7 · Porte qualité » (x 859, y 252,5)
+58. « 42 min » (x 1020, y 252,5)
+59. « F4 » (x 454, y 289,5)
+60. « SILO-45 » (x 488, y 289,5)
+61. « Conflits de saisie » (x 547, y 289)
+62. « 9 · Review » (x 859, y 289,5)
+63. « 18 min » (x 1023, y 289,5)
+64. « Échéances » (x 304, y 349,5)
+65. « fonctionnalités par sprint » (x 916, y 350,5)
+66. « S42 » (x 525, y 390)
+67. « 12 oct. » (x 553, y 390)
+68. « S43 » (x 664, y 390)
+69. « 19 oct. » (x 692, y 390)
+70. « S44 » (x 803, y 390)
+71. « 26 oct. » (x 831, y 390)
+72. « S45 » (x 942, y 390)
+73. « 2 nov. » (x 970, y 390)
+74. « F4 » (x 281, y 419)
+75. « Saisir un constat hors ligne » (x 304, y 419)
+76. « F5 » (x 281, y 449)
+77. « Envoyer les photos d'un constat » (x 304, y 449)
+78. « glisse en S43 » (x 783,6, y 449)
+79. « bloquée · Q14 » (x 828, y 480)
+80. « F6 » (x 281, y 479)
+81. « Importer les box depuis Excel » (x 304, y 479)
+82. « F8 » (x 281, y 509)
+83. « Valider les contrats par lot » (x 304, y 509)
+84. « F7 » (x 281, y 539)
+85. « Rapport de centre journalier » (x 304, y 539)
+86. « aujourd'hui » (x 616,4, y 544)
+87. « étape livrée » (x 299, y 578)
+88. « en review » (x 397, y 578)
+89. « en cours » (x 484, y 578)
+90. « bloquée » (x 565, y 578)
+91. « à faire » (x 644, y 578)
+92. « glissement prévu » (x 713, y 578)
+93. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
+94. « 12–16 oct. » (x 589, y 631,5)
+95. « 2/2 ouvertes » (x 662, y 631,5)
+96. « F3 » (x 281, y 673,5)
+97. « Réaffecter un box » (x 317, y 673)
+98. « livrée » (x 566, y 673,5)
+99. « 4/4 » (x 720, y 673,5)
+100. « F4 » (x 281, y 712,5)
+101. « Saisir un constat hors ligne » (x 317, y 712)
+102. « ouverte » (x 549, y 712,5)
+103. « 3/5 » (x 720, y 712,5)
+104. « F5 » (x 281, y 751,5)
+105. « Envoyer les photos d'un constat » (x 317, y 751)
+106. « en retard » (x 566, y 751,5)
+107. « 1/5 » (x 720, y 751,5)
+108. « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+109. « Prochaine à finir » (x 304, y 841,5)
+110. « la plus avancée du sprint » (x 601, y 842,5)
+111. « F4 » (x 281, y 875,5)
+112. « Saisir un constat hors ligne » (x 306, y 874)
+113. « 3/5 » (x 720, y 875,5)
+114. « SILO-45 » (x 297, y 902,5)
+115. « Conflits de saisie » (x 356, y 902)
+116. « changements demandés » (x 466, y 902,5)
+117. « SILO-46 » (x 297, y 924,5)
+118. « Démo client » (x 356, y 924)
+119. « Étape suivante » (x 293, y 963)
+120. « /full-delivery SILO-45 » (x 387, y 963)
+121. « Copier » (x 685, y 963)
+122. « Activité » (x 304, y 1032,5)
+123. « git » (x 633, y 1033,5)
+124. « full-delivery » (x 668, y 1033,5)
+125. « 15:04 » (x 281, y 1075,5)
+126. « PR #22 ouverte » (x 355, y 1075)
+127. « SILO-32 » (x 643, y 1075,5)
+128. « F5 » (x 722, y 1075,5)
+129. « 14:51 » (x 281, y 1114,5)
+130. « Étape 7 · Porte qualité » (x 355, y 1114)
+131. « SILO-33 » (x 643, y 1114,5)
+132. « F5 » (x 722, y 1114,5)
+133. « 14:40 » (x 281, y 1153,5)
+134. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
+135. « Agent de projet » (x 658, y 1153,5)
+136. « 14:36 » (x 281, y 1192,5)
+137. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+138. « SILO-21 » (x 643, y 1192,5)
+139. « F3 » (x 722, y 1192,5)
+140. « En review » (x 814, y 630,5)
+141. « 3 » (x 894, y 631,5)
+142. « #22 » (x 818, y 672)
+143. « Route d'envoi des photos » (x 848, y 672)
+144. « SILO-32 » (x 818, y 693)
+145. « F5 » (x 897, y 693)
+146. « CI verte » (x 836, y 713)
+147. « #20 » (x 818, y 749)
+148. « Conflits de saisie » (x 848, y 749)
+149. « SILO-45 » (x 818, y 770)
+150. « F4 » (x 897, y 770)
+151. « changements demandés » (x 836, y 790)
+152. « #23 » (x 818, y 826)
+153. « Passage à Expo SDK 54 » (x 848, y 826)
+154. « SILO-61 » (x 818, y 846)
+155. « CI en cours » (x 835, y 865)
+156. « Questions » (x 814, y 917,5)
+157. « 3 » (x 898, y 918,5)
+158. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 959)
+159. « F6 » (x 813, y 984)
+160. « Q14 · Client · il y a 3 j » (x 840, y 984)
+161. « bloquante » (x 965, y 984)
+162. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1022)
+163. « F5 » (x 813, y 1046)
+164. « Q16 · Produit · hier » (x 840, y 1046)
+165. « Un rapport par chef de centre ou par client ? » (x 791, y 1083)
+166. « F7 » (x 813, y 1107)
+167. « Q17 · Client · il y a 2 h » (x 840, y 1107)
+168. « Agent de projet » (x 1158, y 13)
+169. « Suivi à jour · il y a 4 min » (x 1158, y 32)
+170. « Résumé du jour » (x 1118, y 79)
+171. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
+172. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
+173. « À valider » (x 1118, y 229)
+174. « Lot n° 7 » (x 1132, y 264)
+175. « 3 actions » (x 1357, y 264,5)
+176. « Reporter F5 en S43 » (x 1158, y 302)
+177. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 321)
+178. « Planifier F9 en S44 » (x 1158, y 359)
+179. « seule fonctionnalité à planifier » (x 1158, y 378)
+180. « Relancer le client sur Q14 » (x 1158, y 416)
+181. « bloque F6, prévue en S43 » (x 1158, y 435)
+182. « Valider (3) » (x 1142, y 479)
+183. « Refuser » (x 1227, y 479)
+184. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
+185. « Demander à l'agent de projet… » (x 1130, y 1217)
 
 ### Blocs
 
@@ -335,35 +331,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 1176, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 1183,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1183, 69 × 16
@@ -380,9 +369,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 651, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 651, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 671, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 815, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 825, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 844, y 16,5, 85 × 15
@@ -937,106 +923,102 @@ Exports : `exports/proposition-planning-dark.png` et `exports/proposition-planni
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Planning » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Planning » (x 265, y 67)
-34. « 3 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
-35. « Fonctionnalité » (x 930, y 74)
-36. « Sprint » (x 1059, y 74)
-37. « En cours : 2 / 2 » (x 1143, y 74)
-38. « Colonnes » (x 1282, y 73)
-39. « Bandes » (x 1359, y 73)
-40. « À planifier » (x 297, y 120)
-41. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
-42. « F9 » (x 306, y 178)
-43. « Exporter le dossier client » (x 287, y 200)
-44. « 0/3 étapes » (x 287, y 240)
-45. « suivante : SILO-91 » (x 366, y 240)
-46. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
-47. « S41 » (x 503, y 120)
-48. « Accès » (x 533, y 120)
-49. « 5–9 oct. » (x 503, y 141,5)
-50. « terminé » (x 649, y 142)
-51. « 2/2 livrées » (x 613, y 161)
-52. « 9 étapes prévues · capacité 5 » (x 503, y 179)
-53. « F1 » (x 532, y 217)
-54. « livrée » (x 654, y 217)
-55. « Se connecter avec Microsoft » (x 513, y 239)
-56. « F2 » (x 532, y 301)
-57. « livrée » (x 654, y 301)
-58. « Voir ses box affectés » (x 513, y 323)
-59. « S42 » (x 729, y 120)
-60. « Saisie hors ligne » (x 759, y 120)
-61. « 12–16 oct. » (x 729, y 141,5)
-62. « se termine aujourd'hui » (x 804, y 142)
-63. « 1/3 livrées » (x 839, y 161)
-64. « 14 étapes prévues · capacité 5 » (x 729, y 179)
-65. « F3 » (x 758, y 217)
-66. « livrée » (x 880, y 217)
-67. « Réaffecter un box » (x 739, y 239)
-68. « 4/4 étapes » (x 739, y 279)
-69. « F4 » (x 758, y 324,5)
-70. « à risque » (x 864, y 325)
-71. « Saisir un constat hors ligne » (x 739, y 348)
-72. « 3/5 étapes » (x 739, y 388)
-73. « SILO-45 » (x 862, y 388)
-74. « F5 » (x 758, y 433,5)
-75. « à risque » (x 864, y 434)
-76. « Envoyer les photos d'un constat » (x 739, y 457)
-77. « 1/5 étapes » (x 739, y 513)
-78. « SILO-33 » (x 862, y 513)
-79. « F4 ne tiendra pas : 1 étape restante » (x 754, y 553)
-80. « F5 ne tiendra pas : 4 étapes restantes » (x 754, y 603)
-81. « S43 » (x 955, y 120)
-82. « Import et contrats » (x 985, y 120)
-83. « 19–23 oct. » (x 955, y 140)
-84. « 2 prévues » (x 1093, y 140)
-85. « 8 étapes prévues · capacité 5 » (x 955, y 158)
-86. « F6 » (x 984, y 197,5)
-87. « bloquée · Q14 » (x 1063, y 198)
-88. « Importer les box depuis Excel » (x 965, y 221)
-89. « 0/4 étapes » (x 965, y 277)
-90. « suivante : SILO-51 » (x 1044, y 277)
-91. « F8 » (x 984, y 321)
-92. « Valider les contrats par lot » (x 965, y 343)
-93. « 0/4 étapes » (x 965, y 383)
-94. « suivante : SILO-71 » (x 1045, y 383)
-95. « S44 » (x 1181, y 120)
-96. « Rapports » (x 1211, y 120)
-97. « 26–30 oct. » (x 1181, y 140)
-98. « 1 prévue » (x 1328, y 140)
-99. « 5 étapes prévues · capacité 5 » (x 1181, y 158)
-100. « F7 » (x 1210, y 196)
-101. « Rapport de centre journalier » (x 1191, y 218)
-102. « 0/5 étapes » (x 1191, y 274)
-103. « suivante : SILO-81 » (x 1270, y 274)
-104. « Déposer pour planifier en S44 » (x 1192, y 361,5)
-105. « 26–30 oct. » (x 1248, y 382,5)
-106. « étape livrée » (x 283, y 968)
-107. « en review » (x 377, y 968)
-108. « en cours » (x 460, y 968)
-109. « bloquée » (x 538, y 968)
-110. « à faire » (x 613, y 968)
-111. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
-112. « F9 » (x 1230, y 399)
-113. « Exporter le dossier client » (x 1211, y 421)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Planning » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Planning » (x 265, y 67)
+30. « 3 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
+31. « Fonctionnalité » (x 930, y 74)
+32. « Sprint » (x 1059, y 74)
+33. « En cours : 2 / 2 » (x 1143, y 74)
+34. « Colonnes » (x 1282, y 73)
+35. « Bandes » (x 1359, y 73)
+36. « À planifier » (x 297, y 120)
+37. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
+38. « F9 » (x 306, y 178)
+39. « Exporter le dossier client » (x 287, y 200)
+40. « 0/3 étapes » (x 287, y 240)
+41. « suivante : SILO-91 » (x 366, y 240)
+42. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
+43. « S41 » (x 503, y 120)
+44. « Accès » (x 533, y 120)
+45. « 5–9 oct. » (x 503, y 141,5)
+46. « terminé » (x 649, y 142)
+47. « 2/2 livrées » (x 613, y 161)
+48. « 9 étapes prévues · capacité 5 » (x 503, y 179)
+49. « F1 » (x 532, y 217)
+50. « livrée » (x 654, y 217)
+51. « Se connecter avec Microsoft » (x 513, y 239)
+52. « F2 » (x 532, y 301)
+53. « livrée » (x 654, y 301)
+54. « Voir ses box affectés » (x 513, y 323)
+55. « S42 » (x 729, y 120)
+56. « Saisie hors ligne » (x 759, y 120)
+57. « 12–16 oct. » (x 729, y 141,5)
+58. « se termine aujourd'hui » (x 804, y 142)
+59. « 1/3 livrées » (x 839, y 161)
+60. « 14 étapes prévues · capacité 5 » (x 729, y 179)
+61. « F3 » (x 758, y 217)
+62. « livrée » (x 880, y 217)
+63. « Réaffecter un box » (x 739, y 239)
+64. « 4/4 étapes » (x 739, y 279)
+65. « F4 » (x 758, y 324,5)
+66. « à risque » (x 864, y 325)
+67. « Saisir un constat hors ligne » (x 739, y 348)
+68. « 3/5 étapes » (x 739, y 388)
+69. « SILO-45 » (x 862, y 388)
+70. « F5 » (x 758, y 433,5)
+71. « à risque » (x 864, y 434)
+72. « Envoyer les photos d'un constat » (x 739, y 457)
+73. « 1/5 étapes » (x 739, y 513)
+74. « SILO-33 » (x 862, y 513)
+75. « F4 ne tiendra pas : 1 étape restante » (x 754, y 553)
+76. « F5 ne tiendra pas : 4 étapes restantes » (x 754, y 603)
+77. « S43 » (x 955, y 120)
+78. « Import et contrats » (x 985, y 120)
+79. « 19–23 oct. » (x 955, y 140)
+80. « 2 prévues » (x 1093, y 140)
+81. « 8 étapes prévues · capacité 5 » (x 955, y 158)
+82. « F6 » (x 984, y 197,5)
+83. « bloquée · Q14 » (x 1063, y 198)
+84. « Importer les box depuis Excel » (x 965, y 221)
+85. « 0/4 étapes » (x 965, y 277)
+86. « suivante : SILO-51 » (x 1044, y 277)
+87. « F8 » (x 984, y 321)
+88. « Valider les contrats par lot » (x 965, y 343)
+89. « 0/4 étapes » (x 965, y 383)
+90. « suivante : SILO-71 » (x 1045, y 383)
+91. « S44 » (x 1181, y 120)
+92. « Rapports » (x 1211, y 120)
+93. « 26–30 oct. » (x 1181, y 140)
+94. « 1 prévue » (x 1328, y 140)
+95. « 5 étapes prévues · capacité 5 » (x 1181, y 158)
+96. « F7 » (x 1210, y 196)
+97. « Rapport de centre journalier » (x 1191, y 218)
+98. « 0/5 étapes » (x 1191, y 274)
+99. « suivante : SILO-81 » (x 1270, y 274)
+100. « Déposer pour planifier en S44 » (x 1192, y 361,5)
+101. « 26–30 oct. » (x 1248, y 382,5)
+102. « étape livrée » (x 283, y 968)
+103. « en review » (x 377, y 968)
+104. « en cours » (x 460, y 968)
+105. « bloquée » (x 538, y 968)
+106. « à faire » (x 613, y 968)
+107. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
+108. « F9 » (x 1230, y 399)
+109. « Exporter le dossier client » (x 1211, y 421)
 
 ### Blocs
 
@@ -1080,35 +1062,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `fg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 297, 54 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -1125,9 +1100,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 54 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -1391,104 +1363,100 @@ Exports : `exports/proposition-fonctionnalite-dark.png` et `exports/proposition-
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Planning » (x 323, y 16)
-30. « / » (x 384, y 16)
-31. « F5 · Envoyer les photos d'un constat » (x 399, y 16)
-32. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-33. « Agent de projet » (x 1300, y 16,5)
-34. « 3 » (x 1402, y 17,5)
-35. « Fonctionnalité · F5 » (x 291, y 72)
-36. « S42 » (x 421, y 73)
-37. « ouverte » (x 460, y 73)
-38. « Envoyer les photos d'un constat » (x 269, y 106)
-39. « 1 étape livrée sur 5 » (x 497, y 156)
-40. « Résultat attendu · ce qu'on montrera à la démo » (x 308, y 202)
-41. « Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client. » (x 288, y 223)
-42. « Parcours de A à Z » (x 269, y 311,5)
-43. « étapes libres, dans l'ordre des dépendances » (x 402, y 313)
-44. « Ajouter une étape » (x 953, y 313)
-45. « Stockage des photos sur MinIO » (x 325, y 361)
-46. « SILO-31 » (x 538, y 362,5)
-47. « Terminé » (x 1004, y 362)
-48. « #19 » (x 343, y 385)
-49. « fusionnée » (x 370, y 385)
-50. « hier 18:22 » (x 454, y 385,5)
-51. « 11 · Livré » (x 1006, y 385)
-52. « 2 » (x 279, y 457,5)
-53. « Route d'envoi des photos » (x 325, y 461)
-54. « SILO-32 » (x 498, y 462,5)
-55. « En review » (x 994, y 462)
-56. « #22 » (x 343, y 485)
-57. « 15:04 » (x 394, y 485,5)
-58. « 10 · Démo » (x 996, y 485)
-59. « 3 » (x 279, y 557,5)
-60. « Écran d'envoi hors ligne » (x 325, y 562,5)
-61. « SILO-33 » (x 487, y 564)
-62. « session · T3 Code · 42 min » (x 564, y 564)
-63. « En cours » (x 1000, y 563,5)
-64. « feat/envoi-hors-ligne » (x 343, y 588)
-65. « 14:51 » (x 507, y 588,5)
-66. « 7 · Porte qualité » (x 965, y 588)
-67. « 4 » (x 279, y 657,5)
-68. « Tests E2E de l'envoi » (x 325, y 661)
-69. « SILO-34 » (x 462, y 662,5)
-70. « À faire » (x 1012, y 662)
-71. « attend SILO-33 » (x 342, y 685)
-72. « — » (x 1039, y 685)
-73. « Prochaine étape SILO-34 : attend SILO-33. » (x 325, y 715,5)
-74. « 5 » (x 279, y 757,5)
-75. « Démo client » (x 325, y 761)
-76. « SILO-35 » (x 412, y 762,5)
-77. « À faire » (x 1012, y 762)
-78. « attend SILO-34 » (x 342, y 785)
-79. « — » (x 1039, y 785)
-80. « Sprint » (x 1129, y 83)
-81. « S42 » (x 1127, y 122)
-82. « Saisie hors ligne · 12–16 oct. » (x 1160, y 121)
-83. « 4 étapes restantes : ne tiendra pas dans S42. » (x 1128, y 155)
-84. « Déplacer en S43 » (x 1157, y 181)
-85. « proposé par l'agent » (x 1269, y 181,5)
-86. « Dépendances » (x 1129, y 236)
-87. « Dépendance » (x 1324, y 237)
-88. « Attend » (x 1106, y 274)
-89. « F3 » (x 1170, y 274,5)
-90. « Réaffecter un box » (x 1192, y 274)
-91. « Débloque » (x 1106, y 308)
-92. « F7 » (x 1170, y 308,5)
-93. « Rapport de centre journalier » (x 1192, y 308)
-94. « S44 » (x 1378, y 308,5)
-95. « Questions » (x 1129, y 358)
-96. « 1 » (x 1201, y 358,5)
-97. « Question » (x 1343, y 359)
-98. « Quota par client : 2 Go ou 5 Go ? » (x 1106, y 396)
-99. « Q16 · Produit · hier · SILO-34 » (x 1106, y 413)
-100. « Activité » (x 1129, y 462)
-101. « PR #22 ouverte · SILO-32 » (x 1128, y 498)
-102. « 15:04 » (x 1365, y 498,5)
-103. « Phase 7/12 · Porte qualité · SILO-33 » (x 1128, y 528)
-104. « 14:51 » (x 1365, y 528,5)
-105. « Session T3 Code ouverte · SILO-33 » (x 1128, y 558)
-106. « 14:34 » (x 1365, y 558,5)
-107. « Phase 10/12 · Démo · SILO-32 » (x 1128, y 588)
-108. « hier » (x 1371, y 588,5)
-109. « Phase 11/12 · Livré · SILO-31 » (x 1128, y 618)
-110. « hier » (x 1371, y 618,5)
-111. « Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery. » (x 1113, y 654)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Planning » (x 323, y 16)
+27. « / » (x 384, y 16)
+28. « F5 · Envoyer les photos d'un constat » (x 399, y 16)
+29. « Agent de projet » (x 1300, y 16,5)
+30. « 3 » (x 1402, y 17,5)
+31. « Fonctionnalité · F5 » (x 291, y 72)
+32. « S42 » (x 421, y 73)
+33. « ouverte » (x 460, y 73)
+34. « Envoyer les photos d'un constat » (x 269, y 106)
+35. « 1 étape livrée sur 5 » (x 497, y 156)
+36. « Résultat attendu · ce qu'on montrera à la démo » (x 308, y 202)
+37. « Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client. » (x 288, y 223)
+38. « Parcours de A à Z » (x 269, y 311,5)
+39. « étapes libres, dans l'ordre des dépendances » (x 402, y 313)
+40. « Ajouter une étape » (x 953, y 313)
+41. « Stockage des photos sur MinIO » (x 325, y 361)
+42. « SILO-31 » (x 538, y 362,5)
+43. « Terminé » (x 1004, y 362)
+44. « #19 » (x 343, y 385)
+45. « fusionnée » (x 370, y 385)
+46. « hier 18:22 » (x 454, y 385,5)
+47. « 11 · Livré » (x 1006, y 385)
+48. « 2 » (x 279, y 457,5)
+49. « Route d'envoi des photos » (x 325, y 461)
+50. « SILO-32 » (x 498, y 462,5)
+51. « En review » (x 994, y 462)
+52. « #22 » (x 343, y 485)
+53. « 15:04 » (x 394, y 485,5)
+54. « 10 · Démo » (x 996, y 485)
+55. « 3 » (x 279, y 557,5)
+56. « Écran d'envoi hors ligne » (x 325, y 562,5)
+57. « SILO-33 » (x 487, y 564)
+58. « session · T3 Code · 42 min » (x 564, y 564)
+59. « En cours » (x 1000, y 563,5)
+60. « feat/envoi-hors-ligne » (x 343, y 588)
+61. « 14:51 » (x 507, y 588,5)
+62. « 7 · Porte qualité » (x 965, y 588)
+63. « 4 » (x 279, y 657,5)
+64. « Tests E2E de l'envoi » (x 325, y 661)
+65. « SILO-34 » (x 462, y 662,5)
+66. « À faire » (x 1012, y 662)
+67. « attend SILO-33 » (x 342, y 685)
+68. « — » (x 1039, y 685)
+69. « Prochaine étape SILO-34 : attend SILO-33. » (x 325, y 715,5)
+70. « 5 » (x 279, y 757,5)
+71. « Démo client » (x 325, y 761)
+72. « SILO-35 » (x 412, y 762,5)
+73. « À faire » (x 1012, y 762)
+74. « attend SILO-34 » (x 342, y 785)
+75. « — » (x 1039, y 785)
+76. « Sprint » (x 1129, y 83)
+77. « S42 » (x 1127, y 122)
+78. « Saisie hors ligne · 12–16 oct. » (x 1160, y 121)
+79. « 4 étapes restantes : ne tiendra pas dans S42. » (x 1128, y 155)
+80. « Déplacer en S43 » (x 1157, y 181)
+81. « proposé par l'agent » (x 1269, y 181,5)
+82. « Dépendances » (x 1129, y 236)
+83. « Dépendance » (x 1324, y 237)
+84. « Attend » (x 1106, y 274)
+85. « F3 » (x 1170, y 274,5)
+86. « Réaffecter un box » (x 1192, y 274)
+87. « Débloque » (x 1106, y 308)
+88. « F7 » (x 1170, y 308,5)
+89. « Rapport de centre journalier » (x 1192, y 308)
+90. « S44 » (x 1378, y 308,5)
+91. « Questions » (x 1129, y 358)
+92. « 1 » (x 1201, y 358,5)
+93. « Question » (x 1343, y 359)
+94. « Quota par client : 2 Go ou 5 Go ? » (x 1106, y 396)
+95. « Q16 · Produit · hier · SILO-34 » (x 1106, y 413)
+96. « Activité » (x 1129, y 462)
+97. « PR #22 ouverte · SILO-32 » (x 1128, y 498)
+98. « 15:04 » (x 1365, y 498,5)
+99. « Phase 7/12 · Porte qualité · SILO-33 » (x 1128, y 528)
+100. « 14:51 » (x 1365, y 528,5)
+101. « Session T3 Code ouverte · SILO-33 » (x 1128, y 558)
+102. « 14:34 » (x 1365, y 558,5)
+103. « Phase 10/12 · Démo · SILO-32 » (x 1128, y 588)
+104. « hier » (x 1371, y 588,5)
+105. « Phase 11/12 · Livré · SILO-31 » (x 1128, y 618)
+106. « hier » (x 1371, y 618,5)
+107. « Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery. » (x 1113, y 654)
 
 ### Blocs
 
@@ -1532,35 +1500,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `fg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 297, 54 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -1579,9 +1540,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 323, y 16, 53 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 384, y 16, 7 × 16
           - « F5 · Envoyer les photos d'un constat » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 399, y 16, 219 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -1852,613 +1810,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - icône `lock` 13 px, `dim` — x 1092, y 654, 13 × 13
             - « Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery. » — Geist 11,5 / 400, interligne 1,45, couleur `dim` — x 1113, y 654, 299 × 34
 
-## P4 · Tickets
-
-Board `P4 · Tickets` (sombre) et `P4 · Tickets (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign » ; écran 213 de la page « 35 · Redesign Silo » du fichier « Kibo ».
-Exports : `exports/proposition-tickets-dark.png` et `exports/proposition-tickets-light.png`, 1440 × 1000 px (échelle 1).
-
-### Données affichées (ordre de lecture)
-
-1. « Galadrim » (x 46, y 21)
-2. « Rechercher » (x 40, y 55,5)
-3. « ⌘K » (x 205, y 57)
-4. « Accueil » (x 41, y 97)
-5. « Mes tickets » (x 41, y 129)
-6. « 6 » (x 215, y 130)
-7. « Boîte de réception » (x 41, y 161)
-8. « 2 » (x 215, y 162)
-9. « Projets » (x 18, y 205)
-10. « Silo » (x 55, y 233)
-11. « Vue d'ensemble » (x 59, y 265)
-12. « Planning » (x 59, y 297)
-13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Tickets » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tickets » (x 265, y 67)
-34. « sprint S42 · 14 tickets dans 3 fonctionnalités » (x 352, y 79)
-35. « Nouveau ticket » (x 1321, y 74)
-36. « Tous les sprints » (x 277, y 112)
-37. « S41 » (x 390, y 112)
-38. « S42 » (x 452, y 112)
-39. « S43 » (x 497, y 112)
-40. « S44 » (x 542, y 112)
-41. « À planifier » (x 587, y 112)
-42. « Ouverts » (x 1098, y 112)
-43. « Fonctionnalité » (x 1190, y 112)
-44. « Activité récente » (x 1317, y 112)
-45. « Clé » (x 279, y 154)
-46. « Titre » (x 365, y 154)
-47. « Fonctionnalité » (x 582, y 154)
-48. « État » (x 820, y 154)
-49. « Git et PR » (x 936, y 154)
-50. « Livraison » (x 1144, y 154)
-51. « Mis à jour » (x 1324, y 154)
-52. « SILO-33 » (x 279, y 190,5)
-53. « Écran d'envoi hors ligne » (x 365, y 190)
-54. « F5 · Envoyer les photos d'un constat » (x 603, y 191,5)
-55. « En cours » (x 835, y 190,5)
-56. « feat/envoi-hors-ligne » (x 954, y 190,5)
-57. « 7 · Porte qualité » (x 1216,5, y 190,5)
-58. « il y a 9 min » (x 1324, y 190,5)
-59. « SILO-45 » (x 279, y 231,5)
-60. « Conflits de saisie » (x 365, y 231)
-61. « F4 · Saisir un constat hors ligne » (x 603, y 232,5)
-62. « En review » (x 835, y 231,5)
-63. « #20 » (x 954, y 231,5)
-64. « changements demandés » (x 981, y 231,5)
-65. « 9 · Review » (x 1216,5, y 231,5)
-66. « il y a 18 min » (x 1324, y 231,5)
-67. « SILO-32 » (x 279, y 272,5)
-68. « Route d'envoi des photos » (x 365, y 272)
-69. « F5 · Envoyer les photos d'un constat » (x 603, y 273,5)
-70. « En review » (x 835, y 272,5)
-71. « #22 » (x 954, y 272,5)
-72. « 10 · Démo » (x 1216,5, y 272,5)
-73. « il y a 1 h » (x 1324, y 272,5)
-74. « SILO-34 » (x 279, y 313,5)
-75. « Tests E2E de l'envoi » (x 365, y 313)
-76. « F5 · Envoyer les photos d'un constat » (x 603, y 314,5)
-77. « À faire » (x 835, y 313,5)
-78. « attend SILO-33 » (x 953, y 313,5)
-79. « — » (x 1144, y 313,5)
-80. « hier » (x 1324, y 313,5)
-81. « SILO-35 » (x 279, y 354,5)
-82. « Démo client » (x 365, y 354)
-83. « F5 · Envoyer les photos d'un constat » (x 603, y 355,5)
-84. « À faire » (x 835, y 354,5)
-85. « attend SILO-34 » (x 953, y 354,5)
-86. « — » (x 1144, y 354,5)
-87. « hier » (x 1324, y 354,5)
-88. « SILO-46 » (x 279, y 395,5)
-89. « Démo client » (x 365, y 395)
-90. « F4 · Saisir un constat hors ligne » (x 603, y 396,5)
-91. « À faire » (x 835, y 395,5)
-92. « — » (x 936, y 395,5)
-93. « — » (x 1144, y 395,5)
-94. « lun. » (x 1324, y 395,5)
-95. « Terminés dans S42 » (x 316, y 432,5)
-96. « 8 » (x 431, y 433)
-97. « SILO-21 » (x 279, y 469,5)
-98. « Démo client » (x 365, y 469)
-99. « F3 · Réaffecter un box » (x 603, y 470,5)
-100. « Terminé » (x 835, y 469,5)
-101. « #18 » (x 954, y 469,5)
-102. « fusionnée » (x 981, y 469,5)
-103. « 11 · Livré » (x 1216,5, y 469,5)
-104. « il y a 2 h » (x 1324, y 469,5)
-105. « SILO-31 » (x 279, y 510,5)
-106. « Stockage des photos sur MinIO » (x 365, y 510)
-107. « F5 · Envoyer les photos d'un constat » (x 603, y 511,5)
-108. « Terminé » (x 835, y 510,5)
-109. « #19 » (x 954, y 510,5)
-110. « fusionnée » (x 981, y 510,5)
-111. « 11 · Livré » (x 1216,5, y 510,5)
-112. « hier » (x 1324, y 510,5)
-113. « SILO-43 » (x 279, y 551,5)
-114. « Synchro au retour du réseau » (x 365, y 551)
-115. « F4 · Saisir un constat hors ligne » (x 603, y 552,5)
-116. « Terminé » (x 835, y 551,5)
-117. « #16 » (x 954, y 551,5)
-118. « fusionnée » (x 981, y 551,5)
-119. « 11 · Livré » (x 1216,5, y 551,5)
-120. « mer. » (x 1324, y 551,5)
-121. « SILO-42 » (x 279, y 592,5)
-122. « Formulaire de saisie » (x 365, y 592)
-123. « F4 · Saisir un constat hors ligne » (x 603, y 593,5)
-124. « Terminé » (x 835, y 592,5)
-125. « #14 » (x 954, y 592,5)
-126. « fusionnée » (x 981, y 592,5)
-127. « 11 · Livré » (x 1216,5, y 592,5)
-128. « mar. » (x 1324, y 592,5)
-129. « Hors fonctionnalité » (x 300, y 629,5)
-130. « 1 » (x 415, y 630)
-131. « États tirés de git : branche poussée ⇒ En cours, PR ouverte ⇒ En review, PR fusionnée ⇒ Terminé. Étapes posées par kibo tickets step. » (x 286, y 665)
-
-### Blocs
-
-Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
-
-- **P4 · Tickets** (bloc) · x 0, y 0, 1440 × 1000 · fond `bg`
-  - **root** (bloc) · x 0, y 0, 1440 × 1000 · flex ligne, espacement 0, marges internes 0, alignement stretch/start
-    - **sidebar** (bloc) · x 0, y 0, 240 × 1000 · flex colonne, espacement 2, marges internes 12 10 12 10, alignement start/start · fond `panel` · dimension fixe/remplit
-      - **box** (bloc) · x 10, y 12, 220 × 34 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - icône `logo` 22 px, `border` — x 16, y 18, 22 × 22
-        - « Galadrim » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 46, y 21, 57 × 16
-        - icône `chevDown` 13 px, `dim` — x 111, y 22,5, 13 × 13
-        - icône `panelRight` 15 px, `dim` — x 209, y 21,5, 15 × 15
-      - **box** (bloc) · x 10, y 48, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
-        - icône `search` 14 px, `dim` — x 18, y 56, 14 × 14
-        - « Rechercher » — Geist 12,5 / 400, interligne 1,2, couleur `dim` — x 40, y 55,5, 66 × 15
-        - **chip** (bloc) · x 201, y 56, 21 × 14 · flex ligne, espacement 4, marges internes 1 4 1 4, alignement center/start · bordure 1 `border` · rayon 4
-          - « ⌘K » — Geist Mono 10 / 400, interligne 1,2, couleur `dim` — x 205, y 57, 13 × 12
-      - **nav / Accueil** (bloc) · x 10, y 90, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `home` 15 px, `mfg` — x 18, y 97,5, 15 × 15
-        - « Accueil » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 97, 44 × 16
-      - **nav / Mes tickets** (bloc) · x 10, y 122, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `ticket` 15 px, `mfg` — x 18, y 129,5, 15 × 15
-        - « Mes tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 129, 69 × 16
-        - « 6 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 130, 7 × 14
-      - **nav / Boîte de réception** (bloc) · x 10, y 154, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `inbox` 15 px, `mfg` — x 18, y 161,5, 15 × 15
-        - « Boîte de réception » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 161, 109 × 16
-        - « 2 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 162, 7 × 14
-      - **box** (bloc) · x 10, y 200, 220 × 24 · flex ligne, espacement 0, marges internes 0 8 0 8, alignement center/start · dimension remplit/fixe
-        - « Projets » — Geist 11 / 500, interligne 1,2, couleur `dim`, interlettrage 0,4, majuscules — x 18, y 205, 52 × 14
-        - icône `plus` 13 px, `dim` — x 209, y 205,5, 13 × 13
-      - **nav / Silo** (bloc) · x 10, y 226, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevDown` 13 px, `dim` — x 18, y 234,5, 13 × 13
-        - **dot** (pastille) · x 39, y 237, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
-        - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 233, 23 × 16
-      - **nav / Vue d'ensemble** (bloc) · x 10, y 258, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `dashboard` 15 px, `mfg` — x 36, y 265,5, 15 × 15
-        - « Vue d'ensemble » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 265, 94 × 16
-      - **nav / Planning** (bloc) · x 10, y 290, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
-        - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
-        - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `fg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 44 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
-      - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
-        - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
-      - **box** (bloc) · x 10, y 948, 220 × 40 · flex ligne, espacement 8, marges internes 0 6 0 6, alignement center/start · dimension remplit/fixe
-        - **avatar** (bloc) · x 16, y 956, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 12 · dimension fixe/fixe
-          - « AB » — Geist 10 / 600, interligne 1,2, couleur `fg` — x 21, y 962, 14 × 12
-        - « Adam Ben Mchichi » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 48, y 960,5, 107 × 15
-        - icône `more` 14 px, `dim` — x 210, y 961, 14 × 14
-    - **vline** (bloc) · x 240, y 0, 1 × 1000 · fond `soft` · dimension fixe/remplit
-    - **main** (bloc) · x 241, y 0, 1199 × 1000 · flex colonne, espacement 0, marges internes 0, alignement start/start · dimension remplit/remplit
-      - **topbar** (bloc) · x 241, y 0, 1199 × 48 · flex ligne, espacement 12, marges internes 0 16 0 20, alignement center/start · dimension remplit/fixe
-        - **box** (bloc) · x 261, y 16, 106 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start
-          - **dot** (pastille) · x 261, y 20, 8 × 8 · fond `#14B8A6` · dimension fixe/fixe
-          - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
-          - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
-          - « Tickets » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
-        - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
-          - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
-          - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
-          - **box** (bloc) · x 1397, y 17,5, 17 × 13 · flex ligne, espacement 0, marges internes 0 5 0 5, alignement center/start · fond `brandBtn` · rayon 8
-            - « 3 » — Geist Mono 10,5 / 600, interligne 1,2, couleur `#FFFFFF` — x 1402, y 17,5, 7 × 13
-      - **line** (bloc) · x 241, y 48, 1199 × 1 · fond `soft` · dimension remplit/fixe
-      - **box** (bloc) · x 241, y 49, 1199 × 951 · flex colonne, espacement 12, marges internes 18 24 18 24, alignement start/start · dimension remplit/remplit
-        - **box** (bloc) · x 265, y 67, 1151 × 27 · flex ligne, espacement 10, marges internes 0, alignement end/start · dimension remplit/auto
-          - « Tickets » — Geist 22 / 600, interligne 1,2, couleur `fg` — x 265, y 67, 77 × 27
-          - « sprint S42 · 14 tickets dans 3 fonctionnalités » — Geist 12,5 / 400, interligne 1,2, couleur `dim` — x 352, y 79, 252 × 15
-          - **Button / default** (bloc) · x 1292, y 69, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `primary` · rayon 6
-            - icône `plus` 13 px, `pfg` — x 1302, y 75, 13 × 13
-            - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `pfg` — x 1321, y 74, 85 × 15
-        - **box** (bloc) · x 265, y 106, 1151 × 27 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-          - **box** (bloc) · x 265, y 106, 394 × 27 · flex ligne, espacement 2, marges internes 2, alignement center/start · fond `muted` · rayon 7
-            - **box** (bloc) · x 267, y 108, 111 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · rayon 5
-              - « Tous les sprints » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 277, y 112, 91 × 15
-            - **box** (bloc) · x 380, y 108, 43 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · rayon 5
-              - « S41 » — Geist Mono 12,5 / 500, interligne 1,2, couleur `mfg` — x 390, y 112, 23 × 15
-            - **box** (bloc) · x 425, y 108, 60 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · fond `bg` · bordure 1 `border` · rayon 5
-              - icône `sprint` 12 px, `fg` — x 435, y 113,5, 12 × 12
-              - « S42 » — Geist Mono 12,5 / 500, interligne 1,2, couleur `fg` — x 452, y 112, 23 × 15
-            - **box** (bloc) · x 487, y 108, 43 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · rayon 5
-              - « S43 » — Geist Mono 12,5 / 500, interligne 1,2, couleur `mfg` — x 497, y 112, 23 × 15
-            - **box** (bloc) · x 532, y 108, 43 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · rayon 5
-              - « S44 » — Geist Mono 12,5 / 500, interligne 1,2, couleur `mfg` — x 542, y 112, 23 × 15
-            - **box** (bloc) · x 577, y 108, 80 × 23 · flex ligne, espacement 5, marges internes 4 10 4 10, alignement center/start · rayon 5
-              - « À planifier » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 587, y 112, 60 × 15
-          - **Button / outline** (bloc) · x 1069, y 107, 84 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
-            - icône `circleCheck` 13 px, `fg` — x 1079, y 113, 13 × 13
-            - « Ouverts » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1098, y 112, 45 × 15
-          - **Button / outline** (bloc) · x 1161, y 107, 119 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
-            - icône `package` 13 px, `fg` — x 1171, y 113, 13 × 13
-            - « Fonctionnalité » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1190, y 112, 80 × 15
-          - **Button / outline** (bloc) · x 1288, y 107, 128 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
-            - icône `sort` 13 px, `fg` — x 1298, y 113, 13 × 13
-            - « Activité récente » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1317, y 112, 89 × 15
-        - **box** (bloc) · x 265, y 145, 1151 × 508 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 8 · dimension remplit/auto
-          - **box** (bloc) · x 265, y 145, 1151 × 32 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 154, 74 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « Clé » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 279, y 154, 18 × 14
-            - **box** (bloc) · x 365, y 154, 205 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Titre » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 365, y 154, 25 × 14
-            - **box** (bloc) · x 582, y 154, 226 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « Fonctionnalité » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 582, y 154, 77 × 14
-            - **box** (bloc) · x 820, y 154, 104 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « État » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 820, y 154, 22 × 14
-            - **box** (bloc) · x 936, y 154, 196 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « Git et PR » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 936, y 154, 48 × 14
-            - **box** (bloc) · x 1144, y 154, 168 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « Livraison » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 1144, y 154, 49 × 14
-            - **box** (bloc) · x 1324, y 154, 78 × 14 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « Mis à jour » — Geist 11,5 / 500, interligne 1,2, couleur `dim` — x 1324, y 154, 53 × 14
-          - **line** (bloc) · x 265, y 177, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 178, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 190,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 190,5, 51 × 15
-            - **box** (bloc) · x 365, y 190, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Écran d'envoi hors ligne » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 190, 140 × 16
-              - **dot** (pastille) · x 513, y 194,5, 7 × 7 · fond `brand` · dimension fixe/fixe · masqué en comparaison pixel (`PIXEL_MASKS.tickets`, x 509, y 191, 14 × 14 : sessions T3 Code, phase 26)
-            - **box** (bloc) · x 582, y 190,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 190,5, 204 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 192,5, 11 × 11
-                - « F5 · Envoyer les photos d'un constat » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 191,5, 177 × 13
-            - **box** (bloc) · x 820, y 190,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 194, 8 × 8 · fond `blue` · dimension fixe/fixe
-              - « En cours » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 190,5, 50 × 15
-            - **box** (bloc) · x 936, y 190,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 190,5, 170 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `branch` 13 px, `blue` — x 936, y 191,5, 13 × 13
-                - « feat/envoi-hors-ligne » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 190,5, 152 × 15
-            - **box** (bloc) · x 1144, y 190,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 193, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 193, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 193, 4 × 10 · fond `brand` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 193, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 193, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 193, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 193, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-              - « 7 · Porte qualité » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 190,5, 85 × 15
-            - **box** (bloc) · x 1324, y 190,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « il y a 9 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 190,5, 59 × 15
-          - **line** (bloc) · x 265, y 218, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 219, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 231,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 231,5, 51 × 15
-            - **box** (bloc) · x 365, y 231, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Conflits de saisie » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 231, 102 × 16
-              - **dot** (pastille) · x 475, y 235,5, 7 × 7 · fond `brand` · dimension fixe/fixe · masqué en comparaison pixel (`PIXEL_MASKS.tickets`, x 471, y 232, 14 × 14 : sessions T3 Code, phase 26)
-            - **box** (bloc) · x 582, y 231,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 231,5, 181 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 233,5, 11 × 11
-                - « F4 · Saisir un constat hors ligne » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 232,5, 154 × 13
-            - **box** (bloc) · x 820, y 231,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 235, 8 × 8 · fond `purple` · dimension fixe/fixe
-              - « En review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 231,5, 56 × 15
-            - **box** (bloc) · x 936, y 231,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 231,5, 197 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `pr` 13 px, `amber` — x 936, y 232,5, 13 × 13
-                - « #20 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 231,5, 22 × 15
-                - « changements demandés » — Geist 12 / 400, interligne 1,2, couleur `amber` — x 981, y 231,5, 135 × 15
-                - icône `circleX` 12 px, `red` — x 1121, y 233, 12 × 12
-            - **box** (bloc) · x 1144, y 231,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 234, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 234, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 234, 4 × 10 · fond `brand` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 234, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 234, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-              - « 9 · Review » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 231,5, 56 × 15
-            - **box** (bloc) · x 1324, y 231,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « il y a 18 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 231,5, 64 × 15
-          - **line** (bloc) · x 265, y 259, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 260, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 272,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-32 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 272,5, 51 × 15
-            - **box** (bloc) · x 365, y 272, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Route d'envoi des photos » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 272, 149 × 16
-            - **box** (bloc) · x 582, y 272,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 272,5, 204 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 274,5, 11 × 11
-                - « F5 · Envoyer les photos d'un constat » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 273,5, 177 × 13
-            - **box** (bloc) · x 820, y 272,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 276, 8 × 8 · fond `purple` · dimension fixe/fixe
-              - « En review » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 272,5, 56 × 15
-            - **box** (bloc) · x 936, y 272,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 272,5, 57 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `pr` 13 px, `purple` — x 936, y 273,5, 13 × 13
-                - « #22 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 272,5, 22 × 15
-                - icône `circleCheck` 12 px, `green` — x 981, y 274, 12 × 12
-            - **box** (bloc) · x 1144, y 272,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 275, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 275, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 275, 4 × 10 · fond `brand` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 275, 4 × 10 · fond `border` · rayon 1 · dimension fixe/fixe
-              - « 10 · Démo » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 272,5, 54 × 15
-            - **box** (bloc) · x 1324, y 272,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « il y a 1 h » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 272,5, 43 × 15
-          - **line** (bloc) · x 265, y 300, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 301, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 313,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-34 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 313,5, 51 × 15
-            - **box** (bloc) · x 365, y 313, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Tests E2E de l'envoi » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 313, 117 × 16
-            - **box** (bloc) · x 582, y 313,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 313,5, 204 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 315,5, 11 × 11
-                - « F5 · Envoyer les photos d'un constat » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 314,5, 177 × 13
-            - **box** (bloc) · x 820, y 313,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **ring** (pastille) · x 820, y 317, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-              - « À faire » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 313,5, 38 × 15
-            - **box** (bloc) · x 936, y 313,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 313,5, 101 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `link` 12 px, `dim` — x 936, y 315, 12 × 12
-                - « attend SILO-33 » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 953, y 313,5, 84 × 15
-            - **box** (bloc) · x 1144, y 313,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - « — » — Geist 12 / 400, interligne 1,2, couleur `faint` — x 1144, y 313,5, 11 × 15
-            - **box** (bloc) · x 1324, y 313,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « hier » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 313,5, 21 × 15
-          - **line** (bloc) · x 265, y 341, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 342, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 354,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-35 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 354,5, 51 × 15
-            - **box** (bloc) · x 365, y 354, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Démo client » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 354, 72 × 16
-            - **box** (bloc) · x 582, y 354,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 354,5, 204 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 356,5, 11 × 11
-                - « F5 · Envoyer les photos d'un constat » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 355,5, 177 × 13
-            - **box** (bloc) · x 820, y 354,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **ring** (pastille) · x 820, y 358, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-              - « À faire » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 354,5, 38 × 15
-            - **box** (bloc) · x 936, y 354,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 354,5, 101 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `link` 12 px, `dim` — x 936, y 356, 12 × 12
-                - « attend SILO-34 » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 953, y 354,5, 84 × 15
-            - **box** (bloc) · x 1144, y 354,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - « — » — Geist 12 / 400, interligne 1,2, couleur `faint` — x 1144, y 354,5, 11 × 15
-            - **box** (bloc) · x 1324, y 354,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « hier » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 354,5, 21 × 15
-          - **line** (bloc) · x 265, y 382, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 383, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 395,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-46 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 395,5, 51 × 15
-            - **box** (bloc) · x 365, y 395, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Démo client » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 395, 72 × 16
-            - **box** (bloc) · x 582, y 395,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 395,5, 181 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 397,5, 11 × 11
-                - « F4 · Saisir un constat hors ligne » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 396,5, 154 × 13
-            - **box** (bloc) · x 820, y 395,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **ring** (pastille) · x 820, y 399, 8 × 8 · bordure 1,5 `dim` · dimension fixe/fixe
-              - « À faire » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 835, y 395,5, 38 × 15
-            - **box** (bloc) · x 936, y 395,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 395,5, 11 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - « — » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 936, y 395,5, 11 × 15
-            - **box** (bloc) · x 1144, y 395,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - « — » — Geist 12 / 400, interligne 1,2, couleur `faint` — x 1144, y 395,5, 11 × 15
-            - **box** (bloc) · x 1324, y 395,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « lun. » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 395,5, 20 × 15
-          - **line** (bloc) · x 265, y 423, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 424, 1151 × 32 · flex ligne, espacement 8, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
-            - icône `chevDown` 13 px, `dim` — x 279, y 433,5, 13 × 13
-            - **dot** (pastille) · x 300, y 436, 8 × 8 · fond `green` · dimension fixe/fixe
-            - « Terminés dans S42 » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 316, y 432,5, 107 × 15
-            - « 8 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 431, y 433, 7 × 14
-          - **line** (bloc) · x 265, y 456, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 457, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 469,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-21 » — Geist Mono 12 / 400, interligne 1,2, couleur `dim` — x 279, y 469,5, 51 × 15
-            - **box** (bloc) · x 365, y 469, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Démo client » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 365, y 469, 72 × 16
-            - **box** (bloc) · x 582, y 469,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 469,5, 135 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 471,5, 11 × 11
-                - « F3 · Réaffecter un box » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 470,5, 108 × 13
-            - **box** (bloc) · x 820, y 469,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 473, 8 × 8 · fond `green` · dimension fixe/fixe
-              - « Terminé » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 835, y 469,5, 46 × 15
-            - **box** (bloc) · x 936, y 469,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 469,5, 100 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `merge` 13 px, `green` — x 936, y 470,5, 13 × 13
-                - « #18 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 469,5, 22 × 15
-                - « fusionnée » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 981, y 469,5, 55 × 15
-            - **box** (bloc) · x 1144, y 469,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 472, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 472, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 472, 4 × 10 · fond `green` · rayon 1 · dimension fixe/fixe
-              - « 11 · Livré » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 469,5, 44 × 15
-            - **box** (bloc) · x 1324, y 469,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « il y a 2 h » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 469,5, 46 × 15
-          - **line** (bloc) · x 265, y 497, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 498, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 510,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-31 » — Geist Mono 12 / 400, interligne 1,2, couleur `dim` — x 279, y 510,5, 51 × 15
-            - **box** (bloc) · x 365, y 510, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Stockage des photos sur MinIO » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 365, y 510, 186 × 16
-            - **box** (bloc) · x 582, y 510,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 510,5, 204 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 512,5, 11 × 11
-                - « F5 · Envoyer les photos d'un constat » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 511,5, 177 × 13
-            - **box** (bloc) · x 820, y 510,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 514, 8 × 8 · fond `green` · dimension fixe/fixe
-              - « Terminé » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 835, y 510,5, 46 × 15
-            - **box** (bloc) · x 936, y 510,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 510,5, 117 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `merge` 13 px, `green` — x 936, y 511,5, 13 × 13
-                - « #19 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 510,5, 22 × 15
-                - « fusionnée » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 981, y 510,5, 55 × 15
-                - icône `circleCheck` 12 px, `green` — x 1041, y 512, 12 × 12
-            - **box** (bloc) · x 1144, y 510,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 513, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 513, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 513, 4 × 10 · fond `green` · rayon 1 · dimension fixe/fixe
-              - « 11 · Livré » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 510,5, 44 × 15
-            - **box** (bloc) · x 1324, y 510,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « hier » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 510,5, 21 × 15
-          - **line** (bloc) · x 265, y 538, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 539, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 551,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-43 » — Geist Mono 12 / 400, interligne 1,2, couleur `dim` — x 279, y 551,5, 51 × 15
-            - **box** (bloc) · x 365, y 551, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Synchro au retour du réseau » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 365, y 551, 167 × 16
-            - **box** (bloc) · x 582, y 551,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 551,5, 181 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 553,5, 11 × 11
-                - « F4 · Saisir un constat hors ligne » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 552,5, 154 × 13
-            - **box** (bloc) · x 820, y 551,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 555, 8 × 8 · fond `green` · dimension fixe/fixe
-              - « Terminé » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 835, y 551,5, 46 × 15
-            - **box** (bloc) · x 936, y 551,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 551,5, 100 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `merge` 13 px, `green` — x 936, y 552,5, 13 × 13
-                - « #16 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 551,5, 22 × 15
-                - « fusionnée » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 981, y 551,5, 55 × 15
-            - **box** (bloc) · x 1144, y 551,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 554, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 554, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 554, 4 × 10 · fond `green` · rayon 1 · dimension fixe/fixe
-              - « 11 · Livré » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 551,5, 44 × 15
-            - **box** (bloc) · x 1324, y 551,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « mer. » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 551,5, 24 × 15
-          - **line** (bloc) · x 265, y 579, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 580, 1151 × 40 · flex ligne, espacement 12, marges internes 0 14 0 14, alignement center/start · dimension remplit/fixe
-            - **box** (bloc) · x 279, y 592,5, 74 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « SILO-42 » — Geist Mono 12 / 400, interligne 1,2, couleur `dim` — x 279, y 592,5, 51 × 15
-            - **box** (bloc) · x 365, y 592, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-              - « Formulaire de saisie » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 365, y 592, 119 × 16
-            - **box** (bloc) · x 582, y 592,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **fchip** (bloc) · x 582, y 592,5, 181 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
-                - icône `package` 11 px, `dim` — x 588, y 594,5, 11 × 11
-                - « F4 · Saisir un constat hors ligne » — Geist 10,5 / 500, interligne 1,2, couleur `mfg` — x 603, y 593,5, 154 × 13
-            - **box** (bloc) · x 820, y 592,5, 104 × 15 · flex ligne, espacement 7, marges internes 0, alignement center/start · dimension fixe/auto
-              - **dot** (pastille) · x 820, y 596, 8 × 8 · fond `green` · dimension fixe/fixe
-              - « Terminé » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 835, y 592,5, 46 × 15
-            - **box** (bloc) · x 936, y 592,5, 196 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - **box** (bloc) · x 936, y 592,5, 100 × 15 · flex ligne, espacement 5, marges internes 0, alignement center/start
-                - icône `merge` 13 px, `green` — x 936, y 593,5, 13 × 13
-                - « #14 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 954, y 592,5, 22 × 15
-                - « fusionnée » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 981, y 592,5, 55 × 15
-            - **box** (bloc) · x 1144, y 592,5, 168 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension fixe/auto
-              - **segs** (bloc) · x 1144, y 595, 64,5 × 10 · flex ligne, espacement 1,5, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 1144, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1149,5, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1155, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1160,5, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1166, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1171,5, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1177, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1182,5, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1188, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1193,5, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1199, y 595, 4 × 10 · fond `mfg` · rayon 1 · dimension fixe/fixe
-                - **seg** (bloc) · x 1204,5, y 595, 4 × 10 · fond `green` · rayon 1 · dimension fixe/fixe
-              - « 11 · Livré » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1216,5, y 592,5, 44 × 15
-            - **box** (bloc) · x 1324, y 592,5, 78 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-              - « mar. » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1324, y 592,5, 24 × 15
-          - **line** (bloc) · x 265, y 620, 1151 × 1 · fond `soft` · dimension remplit/fixe
-          - **box** (bloc) · x 265, y 621, 1151 × 32 · flex ligne, espacement 8, marges internes 0 14 0 14, alignement center/start · fond `panel` · dimension remplit/fixe
-            - icône `chevRight` 13 px, `dim` — x 279, y 630,5, 13 × 13
-            - « Hors fonctionnalité » — Geist 12 / 500, interligne 1,2, couleur `mfg` — x 300, y 629,5, 107 × 15
-            - « 1 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 415, y 630, 7 × 14
-        - **box** (bloc) · x 265, y 665, 1151 × 14 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-          - icône `refresh` 13 px, `dim` — x 265, y 665,5, 13 × 13
-          - « États tirés de git : branche poussée ⇒ En cours, PR ouverte ⇒ En review, PR fusionnée ⇒ Terminé. Étapes posées par kibo tickets step. » — Geist 11,5 / 400, interligne 1,2, couleur `dim` — x 286, y 665, 703 × 14
-
 ## P5 · Graphe
 
 Board `P5 · Graphe` (sombre) et `P5 · Graphe (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign » ; écran 214 de la page « 35 · Redesign Silo » du fichier « Kibo ».
@@ -2479,105 +1830,101 @@ Exports : retirés en phase 30 (spec §44.5) ; P5 reste à la page 35 du fichier
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 314, y 16)
-29. « Graphe » (x 329, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Regrouper : Fonctionnalités » (x 286, y 64,5)
-34. « Colonnes : Sprints » (x 488, y 64,5)
-35. « Livrées repliées » (x 638, y 64,5)
-36. « Options » (x 773, y 64,5)
-37. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
-38. « S41 » (x 273, y 108)
-39. « Accès » (x 301, y 108)
-40. « terminé » (x 255, y 125)
-41. « S42 » (x 423, y 108)
-42. « Saisie hors ligne » (x 451, y 108)
-43. « en cours » (x 405, y 125)
-44. « S43 » (x 713, y 108)
-45. « Import et contrats » (x 741, y 108)
-46. « prévu » (x 695, y 125)
-47. « S44 » (x 973, y 108)
-48. « Rapports » (x 1001, y 108)
-49. « prévu » (x 955, y 125)
-50. « À planifier » (x 1223, y 108)
-51. « F1 » (x 263, y 176)
-52. « 4/4 » (x 331, y 176)
-53. « Se connecter avec Microsoft » (x 263, y 196)
-54. « F3 » (x 415, y 176)
-55. « 4/4 » (x 619, y 176)
-56. « Réaffecter un box » (x 415, y 196)
-57. « F6 » (x 705, y 176)
-58. « 0/4 » (x 897, y 176)
-59. « Importer les box depuis Excel » (x 705, y 196)
-60. « Lecture du fichier Excel » (x 726, y 233)
-61. « Contrôle des numéros » (x 726, y 263)
-62. « Écran d'import » (x 726, y 293)
-63. « Démo client » (x 726, y 323)
-64. « bloquée par Q14 » (x 722, y 348)
-65. « F7 » (x 965, y 176)
-66. « 0/5 » (x 1147, y 176)
-67. « Rapport de centre journalier » (x 965, y 196)
-68. « Modèle du rapport » (x 986, y 233)
-69. « Génération PDF » (x 986, y 263)
-70. « Photos dans le rapport » (x 986, y 293)
-71. « Envoi le soir » (x 986, y 323)
-72. « Démo client » (x 986, y 353)
-73. « F9 » (x 1215, y 176)
-74. « 0/3 » (x 1357, y 176)
-75. « Exporter le dossier client » (x 1215, y 196)
-76. « Format du dossier » (x 1236, y 233)
-77. « Archive ZIP » (x 1236, y 263)
-78. « Démo client » (x 1236, y 293)
-79. « F4 » (x 415, y 272)
-80. « 3/5 » (x 637, y 272)
-81. « Saisir un constat hors ligne » (x 415, y 292)
-82. « Schéma local des constats » (x 436, y 329)
-83. « Formulaire de saisie » (x 436, y 359)
-84. « Synchro au retour du réseau » (x 436, y 389)
-85. « Conflits de saisie » (x 436, y 419)
-86. « Démo client » (x 436, y 449)
-87. « F2 » (x 263, y 287)
-88. « 5/5 » (x 331, y 287)
-89. « Voir ses box affectés » (x 263, y 307)
-90. « F8 » (x 705, y 412)
-91. « 0/4 » (x 897, y 412)
-92. « Valider les contrats par lot » (x 705, y 432)
-93. « Statuts de contrat » (x 726, y 469)
-94. « Sélection multiple » (x 726, y 499)
-95. « Validation par lot » (x 726, y 529)
-96. « Démo client » (x 726, y 559)
-97. « F5 » (x 415, y 518)
-98. « 1/5 » (x 637, y 518)
-99. « Envoyer les photos d'un constat » (x 415, y 538)
-100. « Stockage des photos sur MinIO » (x 436, y 575)
-101. « Route d'envoi des photos » (x 436, y 605)
-102. « Écran d'envoi hors ligne » (x 436, y 635)
-103. « Tests E2E de l'envoi » (x 436, y 665)
-104. « Démo client » (x 436, y 695)
-105. « en retard · glisse en S43 » (x 432, y 720)
-106. « À faire » (x 283, y 960)
-107. « En cours » (x 346, y 960)
-108. « En review » (x 420, y 960)
-109. « Bloqué » (x 499, y 960)
-110. « Fonctionnalité » (x 570, y 960)
-111. « Colonne = sprint » (x 677, y 960)
-112. « Session active » (x 790, y 960)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 314, y 16)
+26. « Graphe » (x 329, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Regrouper : Fonctionnalités » (x 286, y 64,5)
+30. « Colonnes : Sprints » (x 488, y 64,5)
+31. « Livrées repliées » (x 638, y 64,5)
+32. « Options » (x 773, y 64,5)
+33. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
+34. « S41 » (x 273, y 108)
+35. « Accès » (x 301, y 108)
+36. « terminé » (x 255, y 125)
+37. « S42 » (x 423, y 108)
+38. « Saisie hors ligne » (x 451, y 108)
+39. « en cours » (x 405, y 125)
+40. « S43 » (x 713, y 108)
+41. « Import et contrats » (x 741, y 108)
+42. « prévu » (x 695, y 125)
+43. « S44 » (x 973, y 108)
+44. « Rapports » (x 1001, y 108)
+45. « prévu » (x 955, y 125)
+46. « À planifier » (x 1223, y 108)
+47. « F1 » (x 263, y 176)
+48. « 4/4 » (x 331, y 176)
+49. « Se connecter avec Microsoft » (x 263, y 196)
+50. « F3 » (x 415, y 176)
+51. « 4/4 » (x 619, y 176)
+52. « Réaffecter un box » (x 415, y 196)
+53. « F6 » (x 705, y 176)
+54. « 0/4 » (x 897, y 176)
+55. « Importer les box depuis Excel » (x 705, y 196)
+56. « Lecture du fichier Excel » (x 726, y 233)
+57. « Contrôle des numéros » (x 726, y 263)
+58. « Écran d'import » (x 726, y 293)
+59. « Démo client » (x 726, y 323)
+60. « bloquée par Q14 » (x 722, y 348)
+61. « F7 » (x 965, y 176)
+62. « 0/5 » (x 1147, y 176)
+63. « Rapport de centre journalier » (x 965, y 196)
+64. « Modèle du rapport » (x 986, y 233)
+65. « Génération PDF » (x 986, y 263)
+66. « Photos dans le rapport » (x 986, y 293)
+67. « Envoi le soir » (x 986, y 323)
+68. « Démo client » (x 986, y 353)
+69. « F9 » (x 1215, y 176)
+70. « 0/3 » (x 1357, y 176)
+71. « Exporter le dossier client » (x 1215, y 196)
+72. « Format du dossier » (x 1236, y 233)
+73. « Archive ZIP » (x 1236, y 263)
+74. « Démo client » (x 1236, y 293)
+75. « F4 » (x 415, y 272)
+76. « 3/5 » (x 637, y 272)
+77. « Saisir un constat hors ligne » (x 415, y 292)
+78. « Schéma local des constats » (x 436, y 329)
+79. « Formulaire de saisie » (x 436, y 359)
+80. « Synchro au retour du réseau » (x 436, y 389)
+81. « Conflits de saisie » (x 436, y 419)
+82. « Démo client » (x 436, y 449)
+83. « F2 » (x 263, y 287)
+84. « 5/5 » (x 331, y 287)
+85. « Voir ses box affectés » (x 263, y 307)
+86. « F8 » (x 705, y 412)
+87. « 0/4 » (x 897, y 412)
+88. « Valider les contrats par lot » (x 705, y 432)
+89. « Statuts de contrat » (x 726, y 469)
+90. « Sélection multiple » (x 726, y 499)
+91. « Validation par lot » (x 726, y 529)
+92. « Démo client » (x 726, y 559)
+93. « F5 » (x 415, y 518)
+94. « 1/5 » (x 637, y 518)
+95. « Envoyer les photos d'un constat » (x 415, y 538)
+96. « Stockage des photos sur MinIO » (x 436, y 575)
+97. « Route d'envoi des photos » (x 436, y 605)
+98. « Écran d'envoi hors ligne » (x 436, y 635)
+99. « Tests E2E de l'envoi » (x 436, y 665)
+100. « Démo client » (x 436, y 695)
+101. « en retard · glisse en S43 » (x 432, y 720)
+102. « À faire » (x 283, y 960)
+103. « En cours » (x 346, y 960)
+104. « En review » (x 420, y 960)
+105. « Bloqué » (x 499, y 960)
+106. « Fonctionnalité » (x 570, y 960)
+107. « Colonne = sprint » (x 677, y 960)
+108. « Session active » (x 790, y 960)
 
 ### Blocs
 
@@ -2621,35 +1968,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `fg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 44 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `fg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 44 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 43 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 43 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 35 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 35 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -2666,9 +2006,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 29 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 314, y 16, 7 × 16
           - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 329, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -2962,182 +2299,178 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298,5)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330,5)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458,5)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 1183)
-25. « AB » (x 21, y 1222)
-26. « Adam Ben Mchichi » (x 48, y 1220,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 671, y 16,5)
-31. « Nouveau ticket » (x 844, y 16,5)
-32. « Agent de projet » (x 982, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « client Silo SA » (x 286, y 100)
-35. « · » (x 373, y 100)
-36. « Location de box » (x 384, y 100)
-37. « · » (x 487, y 100)
-38. « silo-labs/silo-location » (x 519, y 101)
-39. « Fonctionnalités » (x 303, y 142)
-40. « 3 » (x 283, y 162)
-41. « livrées sur 9 » (x 307, y 174)
-42. « 2 à risque » (x 364, y 195,5)
-43. « Sprint en cours » (x 465,2, y 142)
-44. « S42 » (x 445,2, y 162)
-45. « Saisie ho… » (x 505,2, y 174)
-46. « se termine aujourd'hui » (x 445,2, y 195,5)
-47. « En cours » (x 627,4, y 142)
-48. « 2 » (x 607,4, y 162)
-49. « / 2 » (x 631,4, y 174)
-50. « limite · bloquée : F6 » (x 620,4, y 195,5)
-51. « En review » (x 789,6, y 142)
-52. « 3 » (x 769,6, y 162)
-53. « PR » (x 793,6, y 174)
-54. « #20 · #22 · #23 » (x 769,6, y 195,5)
-55. « Questions » (x 951,8, y 142)
-56. « 3 » (x 931,8, y 162)
-57. « ouvertes » (x 955,8, y 174)
-58. « Q14 bloque F6 » (x 944,8, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 253)
-62. « SILO-33 » (x 488, y 253)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 859, y 252,5)
-65. « 42 min » (x 1020, y 252,5)
-66. « F4 » (x 454, y 290)
-67. « SILO-45 » (x 488, y 290)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 859, y 289,5)
-70. « 18 min » (x 1023, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 916, y 350,5)
-73. « S42 » (x 525, y 390,5)
-74. « 12 oct. » (x 553, y 390)
-75. « S43 » (x 664, y 390,5)
-76. « 19 oct. » (x 692, y 390)
-77. « S44 » (x 803, y 390,5)
-78. « 26 oct. » (x 831, y 390)
-79. « S45 » (x 942, y 390,5)
-80. « 2 nov. » (x 970, y 390)
-81. « F4 » (x 281, y 419,5)
-82. « Saisir un constat hors ligne » (x 304, y 419)
-83. « F5 » (x 281, y 449,5)
-84. « Envoyer les photos d'un constat » (x 304, y 449)
-85. « bloquée · Q14 » (x 828, y 480)
-86. « F6 » (x 281, y 479,5)
-87. « Importer les box depuis Excel » (x 304, y 479)
-88. « F8 » (x 281, y 509,5)
-89. « Valider les contrats par lot » (x 304, y 509)
-90. « F7 » (x 281, y 539,5)
-91. « Rapport de centre journalier » (x 304, y 539)
-92. « aujourd'hui » (x 616,4, y 544)
-93. « étape livrée » (x 299, y 578)
-94. « en review » (x 397, y 578)
-95. « en cours » (x 484, y 578)
-96. « bloquée » (x 565, y 578)
-97. « à faire » (x 644, y 578)
-98. « glissement prévu » (x 713, y 578)
-99. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
-100. « 12–16 oct. » (x 686, y 631,5)
-101. « F3 » (x 281, y 674)
-102. « Réaffecter un box » (x 317, y 673)
-103. « livrée » (x 566, y 673,5)
-104. « 4/4 » (x 720, y 673,5)
-105. « F4 » (x 281, y 713)
-106. « Saisir un constat hors ligne » (x 317, y 712)
-107. « à risque » (x 566, y 712,5)
-108. « 3/5 » (x 720, y 712,5)
-109. « F5 » (x 281, y 752)
-110. « Envoyer les photos d'un constat » (x 317, y 751)
-111. « à risque » (x 566, y 751,5)
-112. « 1/5 » (x 720, y 751,5)
-113. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-114. « Prochaine à finir » (x 304, y 841,5)
-115. « la plus avancée du sprint » (x 601, y 842,5)
-116. « F4 » (x 281, y 876)
-117. « Saisir un constat hors ligne » (x 306, y 874)
-118. « 3/5 » (x 720, y 875,5)
-119. « SILO-45 » (x 297, y 903)
-120. « Conflits de saisie » (x 356, y 902)
-121. « changements demandés » (x 466, y 902,5)
-122. « SILO-46 » (x 297, y 925)
-123. « Démo client » (x 356, y 924)
-124. « Étape suivante » (x 293, y 963)
-125. « /full-delivery SILO-45 » (x 387, y 963)
-126. « Copier » (x 685, y 963)
-127. « Activité » (x 304, y 1032,5)
-128. « git » (x 633, y 1033,5)
-129. « full-delivery » (x 668, y 1033,5)
-130. « 15:04 » (x 281, y 1076)
-131. « PR #22 ouverte » (x 355, y 1075)
-132. « SILO-32 » (x 643, y 1076)
-133. « F5 » (x 722, y 1076)
-134. « 14:51 » (x 281, y 1115)
-135. « Phase 7/12 · Porte qualité » (x 355, y 1114)
-136. « SILO-33 » (x 643, y 1115)
-137. « F5 » (x 722, y 1115)
-138. « 14:40 » (x 281, y 1154)
-139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
-140. « Agent de projet » (x 658, y 1153,5)
-141. « 14:36 » (x 281, y 1193)
-142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-143. « SILO-21 » (x 643, y 1193)
-144. « F3 » (x 722, y 1193)
-145. « En review » (x 814, y 630,5)
-146. « 3 » (x 894, y 632)
-147. « #22 » (x 818, y 672)
-148. « Route d'envoi des photos » (x 848, y 672)
-149. « SILO-32 » (x 818, y 693)
-150. « F5 » (x 897, y 693)
-151. « CI verte » (x 836, y 712)
-152. « #20 » (x 818, y 748)
-153. « Conflits de saisie » (x 848, y 748)
-154. « SILO-45 » (x 818, y 769)
-155. « F4 » (x 897, y 769)
-156. « changements demandés » (x 836, y 788)
-157. « #23 » (x 818, y 824)
-158. « Passage à Expo SDK 54 » (x 848, y 824)
-159. « SILO-61 » (x 818, y 844)
-160. « CI en cours » (x 835, y 862)
-161. « Questions » (x 814, y 914,5)
-162. « 3 » (x 898, y 916)
-163. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 956)
-164. « F6 » (x 813, y 981,5)
-165. « Q14 · Client · il y a 3 j » (x 840, y 981)
-166. « bloquante » (x 965, y 981)
-167. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1019)
-168. « F5 » (x 813, y 1043)
-169. « Q16 · Produit · hier » (x 840, y 1042,5)
-170. « Un rapport par chef de centre ou par client ? » (x 791, y 1079)
-171. « F7 » (x 813, y 1103)
-172. « Q17 · Client · il y a 2 h » (x 840, y 1102,5)
-173. « Agent de projet · Silo » (x 1154, y 20)
-174. « Fais le point du jour » (x 1194, y 83)
-175. « 14:38 » (x 1194, y 106)
-176. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
-177. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
-178. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
-179. « Lot n° 7 » (x 1132, y 282)
-180. « 3 actions » (x 1357, y 282,5)
-181. « Reporter F5 en S43 » (x 1158, y 319)
-182. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
-183. « Planifier F9 en S44 » (x 1158, y 374)
-184. « seule fonctionnalité à planifier » (x 1158, y 393)
-185. « Relancer le client sur Q14 » (x 1158, y 429)
-186. « bloque F6, prévue en S43 » (x 1158, y 448)
-187. « Valider (3) » (x 1142, y 491)
-188. « Refuser » (x 1227, y 491)
-189. « Écris à l'agent de projet… » (x 1130, y 1218)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394,5)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 1183)
+22. « AB » (x 21, y 1222)
+23. « Adam Ben Mchichi » (x 48, y 1220,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 844, y 16,5)
+28. « Agent de projet » (x 982, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « client Silo SA » (x 286, y 100)
+31. « · » (x 373, y 100)
+32. « Location de box » (x 384, y 100)
+33. « · » (x 487, y 100)
+34. « silo-labs/silo-location » (x 519, y 101)
+35. « Fonctionnalités » (x 303, y 142)
+36. « 3 » (x 283, y 162)
+37. « livrées sur 9 » (x 307, y 174)
+38. « 2 à risque » (x 364, y 195,5)
+39. « Sprint en cours » (x 465,2, y 142)
+40. « S42 » (x 445,2, y 162)
+41. « Saisie ho… » (x 505,2, y 174)
+42. « se termine aujourd'hui » (x 445,2, y 195,5)
+43. « En cours » (x 627,4, y 142)
+44. « 2 » (x 607,4, y 162)
+45. « / 2 » (x 631,4, y 174)
+46. « limite · bloquée : F6 » (x 620,4, y 195,5)
+47. « En review » (x 789,6, y 142)
+48. « 3 » (x 769,6, y 162)
+49. « PR » (x 793,6, y 174)
+50. « #20 · #22 · #23 » (x 769,6, y 195,5)
+51. « Questions » (x 951,8, y 142)
+52. « 3 » (x 931,8, y 162)
+53. « ouvertes » (x 955,8, y 174)
+54. « Q14 bloque F6 » (x 944,8, y 195,5)
+55. « En ce moment » (x 302, y 261,5)
+56. « 2 sessions T3 Code » (x 281, y 281,5)
+57. « F5 » (x 454, y 253)
+58. « SILO-33 » (x 488, y 253)
+59. « Écran d'envoi hors ligne » (x 547, y 252)
+60. « 7 · Porte qualité » (x 859, y 252,5)
+61. « 42 min » (x 1020, y 252,5)
+62. « F4 » (x 454, y 290)
+63. « SILO-45 » (x 488, y 290)
+64. « Conflits de saisie » (x 547, y 289)
+65. « 9 · Review » (x 859, y 289,5)
+66. « 18 min » (x 1023, y 289,5)
+67. « Échéances » (x 304, y 349,5)
+68. « fonctionnalités par sprint » (x 916, y 350,5)
+69. « S42 » (x 525, y 390,5)
+70. « 12 oct. » (x 553, y 390)
+71. « S43 » (x 664, y 390,5)
+72. « 19 oct. » (x 692, y 390)
+73. « S44 » (x 803, y 390,5)
+74. « 26 oct. » (x 831, y 390)
+75. « S45 » (x 942, y 390,5)
+76. « 2 nov. » (x 970, y 390)
+77. « F4 » (x 281, y 419,5)
+78. « Saisir un constat hors ligne » (x 304, y 419)
+79. « F5 » (x 281, y 449,5)
+80. « Envoyer les photos d'un constat » (x 304, y 449)
+81. « bloquée · Q14 » (x 828, y 480)
+82. « F6 » (x 281, y 479,5)
+83. « Importer les box depuis Excel » (x 304, y 479)
+84. « F8 » (x 281, y 509,5)
+85. « Valider les contrats par lot » (x 304, y 509)
+86. « F7 » (x 281, y 539,5)
+87. « Rapport de centre journalier » (x 304, y 539)
+88. « aujourd'hui » (x 616,4, y 544)
+89. « étape livrée » (x 299, y 578)
+90. « en review » (x 397, y 578)
+91. « en cours » (x 484, y 578)
+92. « bloquée » (x 565, y 578)
+93. « à faire » (x 644, y 578)
+94. « glissement prévu » (x 713, y 578)
+95. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
+96. « 12–16 oct. » (x 686, y 631,5)
+97. « F3 » (x 281, y 674)
+98. « Réaffecter un box » (x 317, y 673)
+99. « livrée » (x 566, y 673,5)
+100. « 4/4 » (x 720, y 673,5)
+101. « F4 » (x 281, y 713)
+102. « Saisir un constat hors ligne » (x 317, y 712)
+103. « à risque » (x 566, y 712,5)
+104. « 3/5 » (x 720, y 712,5)
+105. « F5 » (x 281, y 752)
+106. « Envoyer les photos d'un constat » (x 317, y 751)
+107. « à risque » (x 566, y 751,5)
+108. « 1/5 » (x 720, y 751,5)
+109. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+110. « Prochaine à finir » (x 304, y 841,5)
+111. « la plus avancée du sprint » (x 601, y 842,5)
+112. « F4 » (x 281, y 876)
+113. « Saisir un constat hors ligne » (x 306, y 874)
+114. « 3/5 » (x 720, y 875,5)
+115. « SILO-45 » (x 297, y 903)
+116. « Conflits de saisie » (x 356, y 902)
+117. « changements demandés » (x 466, y 902,5)
+118. « SILO-46 » (x 297, y 925)
+119. « Démo client » (x 356, y 924)
+120. « Étape suivante » (x 293, y 963)
+121. « /full-delivery SILO-45 » (x 387, y 963)
+122. « Copier » (x 685, y 963)
+123. « Activité » (x 304, y 1032,5)
+124. « git » (x 633, y 1033,5)
+125. « full-delivery » (x 668, y 1033,5)
+126. « 15:04 » (x 281, y 1076)
+127. « PR #22 ouverte » (x 355, y 1075)
+128. « SILO-32 » (x 643, y 1076)
+129. « F5 » (x 722, y 1076)
+130. « 14:51 » (x 281, y 1115)
+131. « Phase 7/12 · Porte qualité » (x 355, y 1114)
+132. « SILO-33 » (x 643, y 1115)
+133. « F5 » (x 722, y 1115)
+134. « 14:40 » (x 281, y 1154)
+135. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
+136. « Agent de projet » (x 658, y 1153,5)
+137. « 14:36 » (x 281, y 1193)
+138. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+139. « SILO-21 » (x 643, y 1193)
+140. « F3 » (x 722, y 1193)
+141. « En review » (x 814, y 630,5)
+142. « 3 » (x 894, y 632)
+143. « #22 » (x 818, y 672)
+144. « Route d'envoi des photos » (x 848, y 672)
+145. « SILO-32 » (x 818, y 693)
+146. « F5 » (x 897, y 693)
+147. « CI verte » (x 836, y 712)
+148. « #20 » (x 818, y 748)
+149. « Conflits de saisie » (x 848, y 748)
+150. « SILO-45 » (x 818, y 769)
+151. « F4 » (x 897, y 769)
+152. « changements demandés » (x 836, y 788)
+153. « #23 » (x 818, y 824)
+154. « Passage à Expo SDK 54 » (x 848, y 824)
+155. « SILO-61 » (x 818, y 844)
+156. « CI en cours » (x 835, y 862)
+157. « Questions » (x 814, y 914,5)
+158. « 3 » (x 898, y 916)
+159. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 956)
+160. « F6 » (x 813, y 981,5)
+161. « Q14 · Client · il y a 3 j » (x 840, y 981)
+162. « bloquante » (x 965, y 981)
+163. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1019)
+164. « F5 » (x 813, y 1043)
+165. « Q16 · Produit · hier » (x 840, y 1042,5)
+166. « Un rapport par chef de centre ou par client ? » (x 791, y 1079)
+167. « F7 » (x 813, y 1103)
+168. « Q17 · Client · il y a 2 h » (x 840, y 1102,5)
+169. « Agent de projet · Silo » (x 1154, y 20)
+170. « Fais le point du jour » (x 1194, y 83)
+171. « 14:38 » (x 1194, y 106)
+172. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
+173. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
+174. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
+175. « Lot n° 7 » (x 1132, y 282)
+176. « 3 actions » (x 1357, y 282,5)
+177. « Reporter F5 en S43 » (x 1158, y 319)
+178. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
+179. « Planifier F9 en S44 » (x 1158, y 374)
+180. « seule fonctionnalité à planifier » (x 1158, y 393)
+181. « Relancer le client sur Q14 » (x 1158, y 429)
+182. « bloque F6, prévue en S43 » (x 1158, y 448)
+183. « Valider (3) » (x 1142, y 491)
+184. « Refuser » (x 1227, y 491)
+185. « Écris à l'agent de projet… » (x 1130, y 1218)
 
 ### Blocs
 
@@ -3181,35 +2514,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298,5, 20 × 13
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330,5, 14 × 13
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458,5, 7 × 13
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394,5, 7 × 13
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 1176, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 1183,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1183, 69 × 16
@@ -3226,9 +2552,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 651, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 651, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 671, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 815, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 825, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 844, y 16,5, 85 × 15
@@ -3785,192 +3108,188 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 1283)
-25. « AB » (x 21, y 1322)
-26. « Adam Ben Mchichi » (x 48, y 1320,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 671, y 16,5)
-31. « Nouveau ticket » (x 844, y 16,5)
-32. « Agent de projet » (x 982, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « client Silo SA » (x 286, y 100)
-35. « · » (x 373, y 100)
-36. « Location de box » (x 384, y 100)
-37. « · » (x 487, y 100)
-38. « silo-labs/silo-location » (x 519, y 100,5)
-39. « Fonctionnalités » (x 303, y 142)
-40. « 3 » (x 283, y 162)
-41. « livrées sur 9 » (x 307, y 174)
-42. « 1 en retard » (x 301, y 195,5)
-43. « Sprint en cours » (x 465,2, y 142)
-44. « S42 » (x 445,2, y 162)
-45. « Saisie ho… » (x 505,2, y 174)
-46. « terminé le 16 oct. · reste 2 » (x 445,2, y 195,5)
-47. « En cours » (x 627,4, y 142)
-48. « 2 » (x 607,4, y 162)
-49. « / 2 » (x 631,4, y 174)
-50. « limite · bloquée : F6 » (x 620,4, y 195,5)
-51. « En review » (x 789,6, y 142)
-52. « 3 » (x 769,6, y 162)
-53. « PR » (x 793,6, y 174)
-54. « #20 · #22 · #23 » (x 769,6, y 195,5)
-55. « Questions » (x 951,8, y 142)
-56. « 3 » (x 931,8, y 162)
-57. « ouvertes » (x 955,8, y 174)
-58. « Q14 bloque F6 » (x 944,8, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 252,5)
-62. « SILO-33 » (x 488, y 252,5)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 859, y 252,5)
-65. « 42 min » (x 1020, y 252,5)
-66. « F4 » (x 454, y 289,5)
-67. « SILO-45 » (x 488, y 289,5)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 859, y 289,5)
-70. « 18 min » (x 1023, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 916, y 350,5)
-73. « S42 » (x 525, y 390)
-74. « 12 oct. » (x 553, y 390)
-75. « S43 » (x 664, y 390)
-76. « 19 oct. » (x 692, y 390)
-77. « S44 » (x 803, y 390)
-78. « 26 oct. » (x 831, y 390)
-79. « S45 » (x 942, y 390)
-80. « 2 nov. » (x 970, y 390)
-81. « F4 » (x 281, y 419)
-82. « Saisir un constat hors ligne » (x 304, y 419)
-83. « F5 » (x 281, y 449)
-84. « Envoyer les photos d'un constat » (x 304, y 449)
-85. « glisse en S43 » (x 783,6, y 449)
-86. « bloquée · Q14 » (x 828, y 480)
-87. « F6 » (x 281, y 479)
-88. « Importer les box depuis Excel » (x 304, y 479)
-89. « F8 » (x 281, y 509)
-90. « Valider les contrats par lot » (x 304, y 509)
-91. « F7 » (x 281, y 539)
-92. « Rapport de centre journalier » (x 304, y 539)
-93. « aujourd'hui » (x 656,1, y 544)
-94. « étape livrée » (x 299, y 578)
-95. « en review » (x 397, y 578)
-96. « en cours » (x 484, y 578)
-97. « bloquée » (x 565, y 578)
-98. « à faire » (x 644, y 578)
-99. « glissement prévu » (x 713, y 578)
-100. « En retard » (x 304, y 630,5)
-101. « 1 » (x 381, y 631,5)
-102. « sprint terminé, étapes obligatoires restantes » (x 807, y 631,5)
-103. « F5 » (x 281, y 673,5)
-104. « Envoyer les photos d'un constat » (x 317, y 673)
-105. « S42 » (x 655, y 673,5)
-106. « · terminé le 16 oct. » (x 683, y 673,5)
-107. « reste 4 étapes » (x 832, y 673,5)
-108. « 1/5 » (x 1036, y 673,5)
-109. « Dernier sprint · S42 terminé » (x 304, y 727,5)
-110. « S43 commence lun. 19 oct. » (x 590, y 728,5)
-111. « F3 » (x 281, y 770,5)
-112. « Réaffecter un box » (x 317, y 770)
-113. « livrée » (x 566, y 770,5)
-114. « 4/4 » (x 720, y 770,5)
-115. « F4 » (x 281, y 809,5)
-116. « Saisir un constat hors ligne » (x 317, y 809)
-117. « en cours » (x 549, y 809,5)
-118. « 3/5 » (x 720, y 809,5)
-119. « F5 » (x 281, y 848,5)
-120. « Envoyer les photos d'un constat » (x 317, y 848)
-121. « en retard » (x 566, y 848,5)
-122. « 1/5 » (x 720, y 848,5)
-123. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 886)
-124. « Prochaine à finir » (x 304, y 938,5)
-125. « la plus avancée du sprint » (x 601, y 939,5)
-126. « F4 » (x 281, y 972,5)
-127. « Saisir un constat hors ligne » (x 306, y 971)
-128. « 3/5 » (x 720, y 972,5)
-129. « SILO-45 » (x 297, y 999,5)
-130. « Conflits de saisie » (x 356, y 999)
-131. « changements demandés » (x 466, y 999,5)
-132. « SILO-46 » (x 297, y 1021,5)
-133. « Démo client » (x 356, y 1021)
-134. « Étape suivante » (x 293, y 1060)
-135. « /full-delivery SILO-45 » (x 387, y 1060)
-136. « Copier » (x 685, y 1060)
-137. « Activité » (x 304, y 1129,5)
-138. « git » (x 633, y 1130,5)
-139. « full-delivery » (x 668, y 1130,5)
-140. « 15:04 » (x 281, y 1172,5)
-141. « PR #22 ouverte » (x 355, y 1172)
-142. « SILO-32 » (x 643, y 1172,5)
-143. « F5 » (x 722, y 1172,5)
-144. « 14:51 » (x 281, y 1211,5)
-145. « Phase 7/12 · Porte qualité » (x 355, y 1211)
-146. « SILO-33 » (x 643, y 1211,5)
-147. « F5 » (x 722, y 1211,5)
-148. « 14:40 » (x 281, y 1250,5)
-149. « Agent de projet · lot n° 7 proposé » (x 355, y 1250)
-150. « Agent de projet » (x 658, y 1250,5)
-151. « 14:36 » (x 281, y 1289,5)
-152. « PR #18 fusionnée · F3 livrée » (x 355, y 1289)
-153. « SILO-21 » (x 643, y 1289,5)
-154. « F3 » (x 722, y 1289,5)
-155. « En review » (x 814, y 727,5)
-156. « 3 » (x 894, y 728,5)
-157. « #22 » (x 818, y 769)
-158. « Route d'envoi des photos » (x 848, y 769)
-159. « SILO-32 » (x 818, y 790)
-160. « F5 » (x 897, y 790)
-161. « CI verte » (x 836, y 810)
-162. « #20 » (x 818, y 846)
-163. « Conflits de saisie » (x 848, y 846)
-164. « SILO-45 » (x 818, y 867)
-165. « F4 » (x 897, y 867)
-166. « changements demandés » (x 836, y 887)
-167. « #23 » (x 818, y 923)
-168. « Passage à Expo SDK 54 » (x 848, y 923)
-169. « SILO-61 » (x 818, y 943)
-170. « CI en cours » (x 835, y 962)
-171. « Questions » (x 814, y 1014,5)
-172. « 3 » (x 898, y 1015,5)
-173. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 1056)
-174. « F6 » (x 813, y 1081)
-175. « Q14 · Client · il y a 3 j » (x 840, y 1081)
-176. « bloquante » (x 965, y 1081)
-177. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1119)
-178. « F5 » (x 813, y 1143)
-179. « Q16 · Produit · hier » (x 840, y 1143)
-180. « Un rapport par chef de centre ou par client ? » (x 791, y 1180)
-181. « F7 » (x 813, y 1204)
-182. « Q17 · Client · il y a 2 h » (x 840, y 1204)
-183. « Agent de projet · Silo » (x 1154, y 20)
-184. « Fais le point du jour » (x 1194, y 83)
-185. « 16 oct. · 14:38 » (x 1194, y 106)
-186. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
-187. « S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
-188. « Lu : Planning, F5, journal des étapes » (x 1152, y 263)
-189. « Lot n° 7 » (x 1132, y 302)
-190. « 3 actions » (x 1357, y 302,5)
-191. « Reporter F5 en S43 » (x 1158, y 339)
-192. « 4 étapes restantes, S42 terminé le 16 oct. » (x 1158, y 358)
-193. « Planifier F9 en S44 » (x 1158, y 394)
-194. « seule fonctionnalité à planifier » (x 1158, y 413)
-195. « Relancer le client sur Q14 » (x 1158, y 449)
-196. « bloque F6, prévue en S43 » (x 1158, y 468)
-197. « Valider (3) » (x 1142, y 511)
-198. « Refuser » (x 1227, y 511)
-199. « Écris à l'agent de projet… » (x 1130, y 1318)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 1283)
+22. « AB » (x 21, y 1322)
+23. « Adam Ben Mchichi » (x 48, y 1320,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 844, y 16,5)
+28. « Agent de projet » (x 982, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « client Silo SA » (x 286, y 100)
+31. « · » (x 373, y 100)
+32. « Location de box » (x 384, y 100)
+33. « · » (x 487, y 100)
+34. « silo-labs/silo-location » (x 519, y 100,5)
+35. « Fonctionnalités » (x 303, y 142)
+36. « 3 » (x 283, y 162)
+37. « livrées sur 9 » (x 307, y 174)
+38. « 1 en retard » (x 301, y 195,5)
+39. « Sprint en cours » (x 465,2, y 142)
+40. « S42 » (x 445,2, y 162)
+41. « Saisie ho… » (x 505,2, y 174)
+42. « terminé le 16 oct. · reste 2 » (x 445,2, y 195,5)
+43. « En cours » (x 627,4, y 142)
+44. « 2 » (x 607,4, y 162)
+45. « / 2 » (x 631,4, y 174)
+46. « limite · bloquée : F6 » (x 620,4, y 195,5)
+47. « En review » (x 789,6, y 142)
+48. « 3 » (x 769,6, y 162)
+49. « PR » (x 793,6, y 174)
+50. « #20 · #22 · #23 » (x 769,6, y 195,5)
+51. « Questions » (x 951,8, y 142)
+52. « 3 » (x 931,8, y 162)
+53. « ouvertes » (x 955,8, y 174)
+54. « Q14 bloque F6 » (x 944,8, y 195,5)
+55. « En ce moment » (x 302, y 261,5)
+56. « 2 sessions T3 Code » (x 281, y 281,5)
+57. « F5 » (x 454, y 252,5)
+58. « SILO-33 » (x 488, y 252,5)
+59. « Écran d'envoi hors ligne » (x 547, y 252)
+60. « 7 · Porte qualité » (x 859, y 252,5)
+61. « 42 min » (x 1020, y 252,5)
+62. « F4 » (x 454, y 289,5)
+63. « SILO-45 » (x 488, y 289,5)
+64. « Conflits de saisie » (x 547, y 289)
+65. « 9 · Review » (x 859, y 289,5)
+66. « 18 min » (x 1023, y 289,5)
+67. « Échéances » (x 304, y 349,5)
+68. « fonctionnalités par sprint » (x 916, y 350,5)
+69. « S42 » (x 525, y 390)
+70. « 12 oct. » (x 553, y 390)
+71. « S43 » (x 664, y 390)
+72. « 19 oct. » (x 692, y 390)
+73. « S44 » (x 803, y 390)
+74. « 26 oct. » (x 831, y 390)
+75. « S45 » (x 942, y 390)
+76. « 2 nov. » (x 970, y 390)
+77. « F4 » (x 281, y 419)
+78. « Saisir un constat hors ligne » (x 304, y 419)
+79. « F5 » (x 281, y 449)
+80. « Envoyer les photos d'un constat » (x 304, y 449)
+81. « glisse en S43 » (x 783,6, y 449)
+82. « bloquée · Q14 » (x 828, y 480)
+83. « F6 » (x 281, y 479)
+84. « Importer les box depuis Excel » (x 304, y 479)
+85. « F8 » (x 281, y 509)
+86. « Valider les contrats par lot » (x 304, y 509)
+87. « F7 » (x 281, y 539)
+88. « Rapport de centre journalier » (x 304, y 539)
+89. « aujourd'hui » (x 656,1, y 544)
+90. « étape livrée » (x 299, y 578)
+91. « en review » (x 397, y 578)
+92. « en cours » (x 484, y 578)
+93. « bloquée » (x 565, y 578)
+94. « à faire » (x 644, y 578)
+95. « glissement prévu » (x 713, y 578)
+96. « En retard » (x 304, y 630,5)
+97. « 1 » (x 381, y 631,5)
+98. « sprint terminé, étapes obligatoires restantes » (x 807, y 631,5)
+99. « F5 » (x 281, y 673,5)
+100. « Envoyer les photos d'un constat » (x 317, y 673)
+101. « S42 » (x 655, y 673,5)
+102. « · terminé le 16 oct. » (x 683, y 673,5)
+103. « reste 4 étapes » (x 832, y 673,5)
+104. « 1/5 » (x 1036, y 673,5)
+105. « Dernier sprint · S42 terminé » (x 304, y 727,5)
+106. « S43 commence lun. 19 oct. » (x 590, y 728,5)
+107. « F3 » (x 281, y 770,5)
+108. « Réaffecter un box » (x 317, y 770)
+109. « livrée » (x 566, y 770,5)
+110. « 4/4 » (x 720, y 770,5)
+111. « F4 » (x 281, y 809,5)
+112. « Saisir un constat hors ligne » (x 317, y 809)
+113. « en cours » (x 549, y 809,5)
+114. « 3/5 » (x 720, y 809,5)
+115. « F5 » (x 281, y 848,5)
+116. « Envoyer les photos d'un constat » (x 317, y 848)
+117. « en retard » (x 566, y 848,5)
+118. « 1/5 » (x 720, y 848,5)
+119. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 886)
+120. « Prochaine à finir » (x 304, y 938,5)
+121. « la plus avancée du sprint » (x 601, y 939,5)
+122. « F4 » (x 281, y 972,5)
+123. « Saisir un constat hors ligne » (x 306, y 971)
+124. « 3/5 » (x 720, y 972,5)
+125. « SILO-45 » (x 297, y 999,5)
+126. « Conflits de saisie » (x 356, y 999)
+127. « changements demandés » (x 466, y 999,5)
+128. « SILO-46 » (x 297, y 1021,5)
+129. « Démo client » (x 356, y 1021)
+130. « Étape suivante » (x 293, y 1060)
+131. « /full-delivery SILO-45 » (x 387, y 1060)
+132. « Copier » (x 685, y 1060)
+133. « Activité » (x 304, y 1129,5)
+134. « git » (x 633, y 1130,5)
+135. « full-delivery » (x 668, y 1130,5)
+136. « 15:04 » (x 281, y 1172,5)
+137. « PR #22 ouverte » (x 355, y 1172)
+138. « SILO-32 » (x 643, y 1172,5)
+139. « F5 » (x 722, y 1172,5)
+140. « 14:51 » (x 281, y 1211,5)
+141. « Phase 7/12 · Porte qualité » (x 355, y 1211)
+142. « SILO-33 » (x 643, y 1211,5)
+143. « F5 » (x 722, y 1211,5)
+144. « 14:40 » (x 281, y 1250,5)
+145. « Agent de projet · lot n° 7 proposé » (x 355, y 1250)
+146. « Agent de projet » (x 658, y 1250,5)
+147. « 14:36 » (x 281, y 1289,5)
+148. « PR #18 fusionnée · F3 livrée » (x 355, y 1289)
+149. « SILO-21 » (x 643, y 1289,5)
+150. « F3 » (x 722, y 1289,5)
+151. « En review » (x 814, y 727,5)
+152. « 3 » (x 894, y 728,5)
+153. « #22 » (x 818, y 769)
+154. « Route d'envoi des photos » (x 848, y 769)
+155. « SILO-32 » (x 818, y 790)
+156. « F5 » (x 897, y 790)
+157. « CI verte » (x 836, y 810)
+158. « #20 » (x 818, y 846)
+159. « Conflits de saisie » (x 848, y 846)
+160. « SILO-45 » (x 818, y 867)
+161. « F4 » (x 897, y 867)
+162. « changements demandés » (x 836, y 887)
+163. « #23 » (x 818, y 923)
+164. « Passage à Expo SDK 54 » (x 848, y 923)
+165. « SILO-61 » (x 818, y 943)
+166. « CI en cours » (x 835, y 962)
+167. « Questions » (x 814, y 1014,5)
+168. « 3 » (x 898, y 1015,5)
+169. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 1056)
+170. « F6 » (x 813, y 1081)
+171. « Q14 · Client · il y a 3 j » (x 840, y 1081)
+172. « bloquante » (x 965, y 1081)
+173. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1119)
+174. « F5 » (x 813, y 1143)
+175. « Q16 · Produit · hier » (x 840, y 1143)
+176. « Un rapport par chef de centre ou par client ? » (x 791, y 1180)
+177. « F7 » (x 813, y 1204)
+178. « Q17 · Client · il y a 2 h » (x 840, y 1204)
+179. « Agent de projet · Silo » (x 1154, y 20)
+180. « Fais le point du jour » (x 1194, y 83)
+181. « 16 oct. · 14:38 » (x 1194, y 106)
+182. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
+183. « S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
+184. « Lu : Planning, F5, journal des étapes » (x 1152, y 263)
+185. « Lot n° 7 » (x 1132, y 302)
+186. « 3 actions » (x 1357, y 302,5)
+187. « Reporter F5 en S43 » (x 1158, y 339)
+188. « 4 étapes restantes, S42 terminé le 16 oct. » (x 1158, y 358)
+189. « Planifier F9 en S44 » (x 1158, y 394)
+190. « seule fonctionnalité à planifier » (x 1158, y 413)
+191. « Relancer le client sur Q14 » (x 1158, y 449)
+192. « bloque F6, prévue en S43 » (x 1158, y 468)
+193. « Valider (3) » (x 1142, y 511)
+194. « Refuser » (x 1227, y 511)
+195. « Écris à l'agent de projet… » (x 1130, y 1318)
 
 ### Blocs
 
@@ -4014,35 +3333,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 1276, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 1283,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1283, 69 × 16
@@ -4059,9 +3371,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 651, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 651, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 671, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 815, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 825, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 844, y 16,5, 85 × 15
@@ -4656,61 +3965,60 @@ Exports : `exports/proposition-vue-ensemble-v3-pour-commencer-dark.png` et `expo
 22. « Silo » (x 277, y 16)
 23. « / » (x 308, y 16)
 24. « Vue d'ensemble » (x 323, y 16)
-25. « Synchronisé · il y a 1 min » (x 1012, y 16,5)
-26. « Nouveau ticket » (x 1185, y 16,5)
-27. « Agent de projet » (x 1323, y 16,5)
-28. « Silo » (x 265, y 67)
-29. « client Silo SA » (x 286, y 100)
-30. « · » (x 373, y 100)
-31. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 384, y 100)
-32. « Fonctionnalités » (x 303, y 142)
-33. « 0 » (x 283, y 162)
-34. « livrées sur 0 » (x 308, y 174)
-35. « aucune pour l'instant » (x 283, y 195,5)
-36. « Sprint en cours » (x 533,4, y 142)
-37. « — » (x 513,4, y 162)
-38. « S1 commence le lun. 19 oct. » (x 513,4, y 195,5)
-39. « En cours » (x 763,8, y 142)
-40. « 0 » (x 743,8, y 162)
-41. « / 2 » (x 768,8, y 174)
-42. « aucune en cours » (x 743,8, y 195,5)
-43. « En review » (x 994,2, y 142)
-44. « 0 » (x 974,2, y 162)
-45. « PR » (x 999,2, y 174)
-46. « aucune PR » (x 974,2, y 195,5)
-47. « Questions » (x 1224,6, y 142)
-48. « 0 » (x 1204,6, y 162)
-49. « ouvertes » (x 1229,6, y 174)
-50. « aucune question » (x 1204,6, y 195,5)
-51. « Pour commencer » (x 304, y 249,5)
-52. « 0/2 » (x 433, y 250,5)
-53. « deux étapes pour suivre le projet » (x 897, y 250,5)
-54. « Relier le dépôt » (x 311, y 295)
-55. « Choisis le dossier du dépôt : branches, PR et CI remontent seuls. » (x 311, y 316)
-56. « Choisir le dossier » (x 977, y 300)
-57. « Créer une fonctionnalité » (x 311, y 363)
-58. « Elle se livre de A à Z ; ses étapes deviennent SILO-1, SILO-2… » (x 311, y 384)
-59. « Nouvelle fonctionnalité » (x 944, y 368)
-60. « Sprints » (x 1155, y 249,5)
-61. « 6 » (x 1219, y 250,5)
-62. « S1 » (x 1132, y 292,5)
-63. « Sprint 1 » (x 1168, y 292)
-64. « 19–23 oct. » (x 1340, y 292,5)
-65. « S2 » (x 1132, y 331,5)
-66. « Sprint 2 » (x 1168, y 331)
-67. « 26–30 oct. » (x 1337, y 331,5)
-68. « S3 » (x 1132, y 370,5)
-69. « Sprint 3 » (x 1168, y 370)
-70. « 2–6 nov. » (x 1351, y 370,5)
-71. « S4 » (x 1132, y 409,5)
-72. « Sprint 4 » (x 1168, y 409)
-73. « 9–13 nov. » (x 1347, y 409,5)
-74. « S5 » (x 1132, y 448,5)
-75. « Sprint 5 » (x 1168, y 448)
-76. « 16–20 nov. » (x 1338, y 448,5)
-77. « S6 » (x 1132, y 487,5)
-78. « Sprint 6 » (x 1168, y 487)
-79. « 23–27 nov. » (x 1338, y 487,5)
+25. « Nouveau ticket » (x 1185, y 16,5)
+26. « Agent de projet » (x 1323, y 16,5)
+27. « Silo » (x 265, y 67)
+28. « client Silo SA » (x 286, y 100)
+29. « · » (x 373, y 100)
+30. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 384, y 100)
+31. « Fonctionnalités » (x 303, y 142)
+32. « 0 » (x 283, y 162)
+33. « livrées sur 0 » (x 308, y 174)
+34. « aucune pour l'instant » (x 283, y 195,5)
+35. « Sprint en cours » (x 533,4, y 142)
+36. « — » (x 513,4, y 162)
+37. « S1 commence le lun. 19 oct. » (x 513,4, y 195,5)
+38. « En cours » (x 763,8, y 142)
+39. « 0 » (x 743,8, y 162)
+40. « / 2 » (x 768,8, y 174)
+41. « aucune en cours » (x 743,8, y 195,5)
+42. « En review » (x 994,2, y 142)
+43. « 0 » (x 974,2, y 162)
+44. « PR » (x 999,2, y 174)
+45. « aucune PR » (x 974,2, y 195,5)
+46. « Questions » (x 1224,6, y 142)
+47. « 0 » (x 1204,6, y 162)
+48. « ouvertes » (x 1229,6, y 174)
+49. « aucune question » (x 1204,6, y 195,5)
+50. « Pour commencer » (x 304, y 249,5)
+51. « 0/2 » (x 433, y 250,5)
+52. « deux étapes pour suivre le projet » (x 897, y 250,5)
+53. « Relier le dépôt » (x 311, y 295)
+54. « Choisis le dossier du dépôt : branches, PR et CI remontent seuls. » (x 311, y 316)
+55. « Choisir le dossier » (x 977, y 300)
+56. « Créer une fonctionnalité » (x 311, y 363)
+57. « Elle se livre de A à Z ; ses étapes deviennent SILO-1, SILO-2… » (x 311, y 384)
+58. « Nouvelle fonctionnalité » (x 944, y 368)
+59. « Sprints » (x 1155, y 249,5)
+60. « 6 » (x 1219, y 250,5)
+61. « S1 » (x 1132, y 292,5)
+62. « Sprint 1 » (x 1168, y 292)
+63. « 19–23 oct. » (x 1340, y 292,5)
+64. « S2 » (x 1132, y 331,5)
+65. « Sprint 2 » (x 1168, y 331)
+66. « 26–30 oct. » (x 1337, y 331,5)
+67. « S3 » (x 1132, y 370,5)
+68. « Sprint 3 » (x 1168, y 370)
+69. « 2–6 nov. » (x 1351, y 370,5)
+70. « S4 » (x 1132, y 409,5)
+71. « Sprint 4 » (x 1168, y 409)
+72. « 9–13 nov. » (x 1347, y 409,5)
+73. « S5 » (x 1132, y 448,5)
+74. « Sprint 5 » (x 1168, y 448)
+75. « 16–20 nov. » (x 1338, y 448,5)
+76. « S6 » (x 1132, y 487,5)
+77. « Sprint 6 » (x 1168, y 487)
+78. « 23–27 nov. » (x 1338, y 487,5)
 
 ### Blocs
 
@@ -4790,9 +4098,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 992, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 992, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1012, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 1156, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 1166, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1185, y 16,5, 85 × 15
@@ -4954,218 +4259,214 @@ Exports : `exports/proposition-nouveau-projet-dark.png` et `exports/proposition-
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298,5)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330,5)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458,5)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 671, y 16,5)
-31. « Nouveau ticket » (x 844, y 16,5)
-32. « Agent de projet » (x 982, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « client Silo SA » (x 286, y 100)
-35. « · » (x 373, y 100)
-36. « Location de box » (x 384, y 100)
-37. « · » (x 487, y 100)
-38. « silo-labs/silo-location » (x 519, y 101)
-39. « Fonctionnalités » (x 303, y 142)
-40. « 3 » (x 283, y 162)
-41. « livrées sur 9 » (x 307, y 174)
-42. « 2 à risque » (x 364, y 195,5)
-43. « Sprint en cours » (x 465,2, y 142)
-44. « S42 » (x 445,2, y 162)
-45. « Saisie ho… » (x 505,2, y 174)
-46. « se termine aujourd'hui » (x 445,2, y 195,5)
-47. « En cours » (x 627,4, y 142)
-48. « 2 » (x 607,4, y 162)
-49. « / 2 » (x 631,4, y 174)
-50. « limite · bloquée : F6 » (x 620,4, y 195,5)
-51. « En review » (x 789,6, y 142)
-52. « 3 » (x 769,6, y 162)
-53. « PR » (x 793,6, y 174)
-54. « #20 · #22 · #23 » (x 769,6, y 195,5)
-55. « Questions » (x 951,8, y 142)
-56. « 3 » (x 931,8, y 162)
-57. « ouvertes » (x 955,8, y 174)
-58. « Q14 bloque F6 » (x 944,8, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 253)
-62. « SILO-33 » (x 488, y 253)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 859, y 252,5)
-65. « 42 min » (x 1020, y 252,5)
-66. « F4 » (x 454, y 290)
-67. « SILO-45 » (x 488, y 290)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 859, y 289,5)
-70. « 18 min » (x 1023, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 916, y 350,5)
-73. « S42 » (x 525, y 390,5)
-74. « 12 oct. » (x 553, y 390)
-75. « S43 » (x 664, y 390,5)
-76. « 19 oct. » (x 692, y 390)
-77. « S44 » (x 803, y 390,5)
-78. « 26 oct. » (x 831, y 390)
-79. « S45 » (x 942, y 390,5)
-80. « 2 nov. » (x 970, y 390)
-81. « F4 » (x 281, y 419,5)
-82. « Saisir un constat hors ligne » (x 304, y 419)
-83. « F5 » (x 281, y 449,5)
-84. « Envoyer les photos d'un constat » (x 304, y 449)
-85. « bloquée · Q14 » (x 828, y 480)
-86. « F6 » (x 281, y 479,5)
-87. « Importer les box depuis Excel » (x 304, y 479)
-88. « F8 » (x 281, y 509,5)
-89. « Valider les contrats par lot » (x 304, y 509)
-90. « F7 » (x 281, y 539,5)
-91. « Rapport de centre journalier » (x 304, y 539)
-92. « aujourd'hui » (x 616,4, y 544)
-93. « étape livrée » (x 299, y 578)
-94. « en review » (x 397, y 578)
-95. « en cours » (x 484, y 578)
-96. « bloquée » (x 565, y 578)
-97. « à faire » (x 644, y 578)
-98. « glissement prévu » (x 713, y 578)
-99. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
-100. « 12–16 oct. » (x 686, y 631,5)
-101. « F3 » (x 281, y 674)
-102. « Réaffecter un box » (x 317, y 673)
-103. « livrée » (x 566, y 673,5)
-104. « 4/4 » (x 720, y 673,5)
-105. « F4 » (x 281, y 713)
-106. « Saisir un constat hors ligne » (x 317, y 712)
-107. « à risque » (x 566, y 712,5)
-108. « 3/5 » (x 720, y 712,5)
-109. « F5 » (x 281, y 752)
-110. « Envoyer les photos d'un constat » (x 317, y 751)
-111. « à risque » (x 566, y 751,5)
-112. « 1/5 » (x 720, y 751,5)
-113. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-114. « Prochaine à finir » (x 304, y 841,5)
-115. « la plus avancée du sprint » (x 601, y 842,5)
-116. « F4 » (x 281, y 876)
-117. « Saisir un constat hors ligne » (x 306, y 874)
-118. « 3/5 » (x 720, y 875,5)
-119. « SILO-45 » (x 297, y 903)
-120. « Conflits de saisie » (x 356, y 902)
-121. « changements demandés » (x 466, y 902,5)
-122. « SILO-46 » (x 297, y 925)
-123. « Démo client » (x 356, y 924)
-124. « Étape suivante » (x 293, y 963)
-125. « /full-delivery SILO-45 » (x 387, y 963)
-126. « Copier » (x 685, y 963)
-127. « Activité » (x 304, y 1032,5)
-128. « git » (x 633, y 1033,5)
-129. « full-delivery » (x 668, y 1033,5)
-130. « 15:04 » (x 281, y 1076)
-131. « PR #22 ouverte » (x 355, y 1075)
-132. « SILO-32 » (x 643, y 1076)
-133. « F5 » (x 722, y 1076)
-134. « 14:51 » (x 281, y 1115)
-135. « Phase 7/12 · Porte qualité » (x 355, y 1114)
-136. « SILO-33 » (x 643, y 1115)
-137. « F5 » (x 722, y 1115)
-138. « 14:40 » (x 281, y 1154)
-139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
-140. « Agent de projet » (x 658, y 1153,5)
-141. « 14:36 » (x 281, y 1193)
-142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-143. « SILO-21 » (x 643, y 1193)
-144. « F3 » (x 722, y 1193)
-145. « En review » (x 814, y 630,5)
-146. « 3 » (x 894, y 632)
-147. « #22 » (x 818, y 672)
-148. « Route d'envoi des photos » (x 848, y 672)
-149. « SILO-32 » (x 818, y 693)
-150. « F5 » (x 897, y 693)
-151. « CI verte » (x 836, y 712)
-152. « #20 » (x 818, y 748)
-153. « Conflits de saisie » (x 848, y 748)
-154. « SILO-45 » (x 818, y 769)
-155. « F4 » (x 897, y 769)
-156. « changements demandés » (x 836, y 788)
-157. « #23 » (x 818, y 824)
-158. « Passage à Expo SDK 54 » (x 848, y 824)
-159. « SILO-61 » (x 818, y 844)
-160. « CI en cours » (x 835, y 862)
-161. « Questions » (x 814, y 914,5)
-162. « 3 » (x 898, y 916)
-163. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 956)
-164. « F6 » (x 813, y 981,5)
-165. « Q14 · Client · il y a 3 j » (x 840, y 981)
-166. « bloquante » (x 965, y 981)
-167. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1019)
-168. « F5 » (x 813, y 1043)
-169. « Q16 · Produit · hier » (x 840, y 1042,5)
-170. « Un rapport par chef de centre ou par client ? » (x 791, y 1079)
-171. « F7 » (x 813, y 1103)
-172. « Q17 · Client · il y a 2 h » (x 840, y 1102,5)
-173. « Agent de projet · Silo » (x 1154, y 20)
-174. « Fais le point du jour » (x 1194, y 83)
-175. « 14:38 » (x 1194, y 106)
-176. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
-177. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
-178. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
-179. « Lot n° 7 » (x 1132, y 282)
-180. « 3 actions » (x 1357, y 282,5)
-181. « Reporter F5 en S43 » (x 1158, y 319)
-182. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
-183. « Planifier F9 en S44 » (x 1158, y 374)
-184. « seule fonctionnalité à planifier » (x 1158, y 393)
-185. « Relancer le client sur Q14 » (x 1158, y 429)
-186. « bloque F6, prévue en S43 » (x 1158, y 448)
-187. « Valider (3) » (x 1142, y 491)
-188. « Refuser » (x 1227, y 491)
-189. « Écris à l'agent de projet… » (x 1130, y 958)
-190. « Nouveau projet » (x 484, y 193)
-191. « Un projet suivi : ses pages et ses sprints sont créés aussitôt. » (x 484, y 221)
-192. « Nom » (x 484, y 255)
-193. « Silo » (x 496, y 287)
-194. « Clé » (x 484, y 331)
-195. « SILO » (x 496, y 363)
-196. « 2 à 6 lettres majuscules, unique. » (x 484, y 395)
-197. « Client » (x 686, y 331)
-198. « Silo SA » (x 698, y 363)
-199. « Facultatif. Destinataire des questions client. » (x 686, y 395)
-200. « Début du premier sprint » (x 484, y 430)
-201. « 19/10/2026 » (x 496, y 462)
-202. « Nombre de sprints » (x 806, y 430)
-203. « 6 » (x 818, y 462)
-204. « Durée d'un sprint » (x 484, y 506)
-205. « 1 semaine » (x 508, y 531)
-206. « 2 semaines » (x 611, y 531)
-207. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 520, y 580)
-208. « S1 » (x 498, y 606,5)
-209. « 19–23 oct. » (x 521, y 606)
-210. « S4 » (x 498, y 629,5)
-211. « 9–13 nov. » (x 521, y 629)
-212. « S2 » (x 647, y 606,5)
-213. « 26–30 oct. » (x 670, y 606)
-214. « S5 » (x 647, y 629,5)
-215. « 16–20 nov. » (x 670, y 629)
-216. « S3 » (x 796, y 606,5)
-217. « 2–6 nov. » (x 819, y 606)
-218. « S6 » (x 796, y 629,5)
-219. « 23–27 nov. » (x 819, y 629)
-220. « Dossier du dépôt » (x 484, y 674)
-221. « Aucun dossier » (x 518, y 706)
-222. « Choisir… » (x 887, y 706,5)
-223. « Facultatif. Sans dossier, pas de suivi git. » (x 484, y 738)
-224. « Annuler » (x 824, y 784)
-225. « Créer » (x 908, y 784)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394,5)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 844, y 16,5)
+28. « Agent de projet » (x 982, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « client Silo SA » (x 286, y 100)
+31. « · » (x 373, y 100)
+32. « Location de box » (x 384, y 100)
+33. « · » (x 487, y 100)
+34. « silo-labs/silo-location » (x 519, y 101)
+35. « Fonctionnalités » (x 303, y 142)
+36. « 3 » (x 283, y 162)
+37. « livrées sur 9 » (x 307, y 174)
+38. « 2 à risque » (x 364, y 195,5)
+39. « Sprint en cours » (x 465,2, y 142)
+40. « S42 » (x 445,2, y 162)
+41. « Saisie ho… » (x 505,2, y 174)
+42. « se termine aujourd'hui » (x 445,2, y 195,5)
+43. « En cours » (x 627,4, y 142)
+44. « 2 » (x 607,4, y 162)
+45. « / 2 » (x 631,4, y 174)
+46. « limite · bloquée : F6 » (x 620,4, y 195,5)
+47. « En review » (x 789,6, y 142)
+48. « 3 » (x 769,6, y 162)
+49. « PR » (x 793,6, y 174)
+50. « #20 · #22 · #23 » (x 769,6, y 195,5)
+51. « Questions » (x 951,8, y 142)
+52. « 3 » (x 931,8, y 162)
+53. « ouvertes » (x 955,8, y 174)
+54. « Q14 bloque F6 » (x 944,8, y 195,5)
+55. « En ce moment » (x 302, y 261,5)
+56. « 2 sessions T3 Code » (x 281, y 281,5)
+57. « F5 » (x 454, y 253)
+58. « SILO-33 » (x 488, y 253)
+59. « Écran d'envoi hors ligne » (x 547, y 252)
+60. « 7 · Porte qualité » (x 859, y 252,5)
+61. « 42 min » (x 1020, y 252,5)
+62. « F4 » (x 454, y 290)
+63. « SILO-45 » (x 488, y 290)
+64. « Conflits de saisie » (x 547, y 289)
+65. « 9 · Review » (x 859, y 289,5)
+66. « 18 min » (x 1023, y 289,5)
+67. « Échéances » (x 304, y 349,5)
+68. « fonctionnalités par sprint » (x 916, y 350,5)
+69. « S42 » (x 525, y 390,5)
+70. « 12 oct. » (x 553, y 390)
+71. « S43 » (x 664, y 390,5)
+72. « 19 oct. » (x 692, y 390)
+73. « S44 » (x 803, y 390,5)
+74. « 26 oct. » (x 831, y 390)
+75. « S45 » (x 942, y 390,5)
+76. « 2 nov. » (x 970, y 390)
+77. « F4 » (x 281, y 419,5)
+78. « Saisir un constat hors ligne » (x 304, y 419)
+79. « F5 » (x 281, y 449,5)
+80. « Envoyer les photos d'un constat » (x 304, y 449)
+81. « bloquée · Q14 » (x 828, y 480)
+82. « F6 » (x 281, y 479,5)
+83. « Importer les box depuis Excel » (x 304, y 479)
+84. « F8 » (x 281, y 509,5)
+85. « Valider les contrats par lot » (x 304, y 509)
+86. « F7 » (x 281, y 539,5)
+87. « Rapport de centre journalier » (x 304, y 539)
+88. « aujourd'hui » (x 616,4, y 544)
+89. « étape livrée » (x 299, y 578)
+90. « en review » (x 397, y 578)
+91. « en cours » (x 484, y 578)
+92. « bloquée » (x 565, y 578)
+93. « à faire » (x 644, y 578)
+94. « glissement prévu » (x 713, y 578)
+95. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
+96. « 12–16 oct. » (x 686, y 631,5)
+97. « F3 » (x 281, y 674)
+98. « Réaffecter un box » (x 317, y 673)
+99. « livrée » (x 566, y 673,5)
+100. « 4/4 » (x 720, y 673,5)
+101. « F4 » (x 281, y 713)
+102. « Saisir un constat hors ligne » (x 317, y 712)
+103. « à risque » (x 566, y 712,5)
+104. « 3/5 » (x 720, y 712,5)
+105. « F5 » (x 281, y 752)
+106. « Envoyer les photos d'un constat » (x 317, y 751)
+107. « à risque » (x 566, y 751,5)
+108. « 1/5 » (x 720, y 751,5)
+109. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+110. « Prochaine à finir » (x 304, y 841,5)
+111. « la plus avancée du sprint » (x 601, y 842,5)
+112. « F4 » (x 281, y 876)
+113. « Saisir un constat hors ligne » (x 306, y 874)
+114. « 3/5 » (x 720, y 875,5)
+115. « SILO-45 » (x 297, y 903)
+116. « Conflits de saisie » (x 356, y 902)
+117. « changements demandés » (x 466, y 902,5)
+118. « SILO-46 » (x 297, y 925)
+119. « Démo client » (x 356, y 924)
+120. « Étape suivante » (x 293, y 963)
+121. « /full-delivery SILO-45 » (x 387, y 963)
+122. « Copier » (x 685, y 963)
+123. « Activité » (x 304, y 1032,5)
+124. « git » (x 633, y 1033,5)
+125. « full-delivery » (x 668, y 1033,5)
+126. « 15:04 » (x 281, y 1076)
+127. « PR #22 ouverte » (x 355, y 1075)
+128. « SILO-32 » (x 643, y 1076)
+129. « F5 » (x 722, y 1076)
+130. « 14:51 » (x 281, y 1115)
+131. « Phase 7/12 · Porte qualité » (x 355, y 1114)
+132. « SILO-33 » (x 643, y 1115)
+133. « F5 » (x 722, y 1115)
+134. « 14:40 » (x 281, y 1154)
+135. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
+136. « Agent de projet » (x 658, y 1153,5)
+137. « 14:36 » (x 281, y 1193)
+138. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+139. « SILO-21 » (x 643, y 1193)
+140. « F3 » (x 722, y 1193)
+141. « En review » (x 814, y 630,5)
+142. « 3 » (x 894, y 632)
+143. « #22 » (x 818, y 672)
+144. « Route d'envoi des photos » (x 848, y 672)
+145. « SILO-32 » (x 818, y 693)
+146. « F5 » (x 897, y 693)
+147. « CI verte » (x 836, y 712)
+148. « #20 » (x 818, y 748)
+149. « Conflits de saisie » (x 848, y 748)
+150. « SILO-45 » (x 818, y 769)
+151. « F4 » (x 897, y 769)
+152. « changements demandés » (x 836, y 788)
+153. « #23 » (x 818, y 824)
+154. « Passage à Expo SDK 54 » (x 848, y 824)
+155. « SILO-61 » (x 818, y 844)
+156. « CI en cours » (x 835, y 862)
+157. « Questions » (x 814, y 914,5)
+158. « 3 » (x 898, y 916)
+159. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 956)
+160. « F6 » (x 813, y 981,5)
+161. « Q14 · Client · il y a 3 j » (x 840, y 981)
+162. « bloquante » (x 965, y 981)
+163. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1019)
+164. « F5 » (x 813, y 1043)
+165. « Q16 · Produit · hier » (x 840, y 1042,5)
+166. « Un rapport par chef de centre ou par client ? » (x 791, y 1079)
+167. « F7 » (x 813, y 1103)
+168. « Q17 · Client · il y a 2 h » (x 840, y 1102,5)
+169. « Agent de projet · Silo » (x 1154, y 20)
+170. « Fais le point du jour » (x 1194, y 83)
+171. « 14:38 » (x 1194, y 106)
+172. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
+173. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
+174. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
+175. « Lot n° 7 » (x 1132, y 282)
+176. « 3 actions » (x 1357, y 282,5)
+177. « Reporter F5 en S43 » (x 1158, y 319)
+178. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
+179. « Planifier F9 en S44 » (x 1158, y 374)
+180. « seule fonctionnalité à planifier » (x 1158, y 393)
+181. « Relancer le client sur Q14 » (x 1158, y 429)
+182. « bloque F6, prévue en S43 » (x 1158, y 448)
+183. « Valider (3) » (x 1142, y 491)
+184. « Refuser » (x 1227, y 491)
+185. « Écris à l'agent de projet… » (x 1130, y 958)
+186. « Nouveau projet » (x 484, y 193)
+187. « Un projet suivi : ses pages et ses sprints sont créés aussitôt. » (x 484, y 221)
+188. « Nom » (x 484, y 255)
+189. « Silo » (x 496, y 287)
+190. « Clé » (x 484, y 331)
+191. « SILO » (x 496, y 363)
+192. « 2 à 6 lettres majuscules, unique. » (x 484, y 395)
+193. « Client » (x 686, y 331)
+194. « Silo SA » (x 698, y 363)
+195. « Facultatif. Destinataire des questions client. » (x 686, y 395)
+196. « Début du premier sprint » (x 484, y 430)
+197. « 19/10/2026 » (x 496, y 462)
+198. « Nombre de sprints » (x 806, y 430)
+199. « 6 » (x 818, y 462)
+200. « Durée d'un sprint » (x 484, y 506)
+201. « 1 semaine » (x 508, y 531)
+202. « 2 semaines » (x 611, y 531)
+203. « 6 sprints d'une semaine · du 19 oct. au 27 nov. 2026 » (x 520, y 580)
+204. « S1 » (x 498, y 606,5)
+205. « 19–23 oct. » (x 521, y 606)
+206. « S4 » (x 498, y 629,5)
+207. « 9–13 nov. » (x 521, y 629)
+208. « S2 » (x 647, y 606,5)
+209. « 26–30 oct. » (x 670, y 606)
+210. « S5 » (x 647, y 629,5)
+211. « 16–20 nov. » (x 670, y 629)
+212. « S3 » (x 796, y 606,5)
+213. « 2–6 nov. » (x 819, y 606)
+214. « S6 » (x 796, y 629,5)
+215. « 23–27 nov. » (x 819, y 629)
+216. « Dossier du dépôt » (x 484, y 674)
+217. « Aucun dossier » (x 518, y 706)
+218. « Choisir… » (x 887, y 706,5)
+219. « Facultatif. Sans dossier, pas de suivi git. » (x 484, y 738)
+220. « Annuler » (x 824, y 784)
+221. « Créer » (x 908, y 784)
 
 ### Blocs
 
@@ -5209,35 +4510,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298,5, 20 × 13
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330,5, 14 × 13
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458,5, 7 × 13
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394,5, 7 × 13
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -5254,9 +4548,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 651, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 651, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 671, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 815, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 825, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 844, y 16,5, 85 × 15
@@ -5902,169 +5193,165 @@ Exports : `exports/proposition-kanban-dark.png` et `exports/proposition-kanban-l
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « Étiquette : toutes » (x 751, y 65,5)
-42. « 41 tickets · Tous » (x 1338, y 65,5)
-43. « Backlog » (x 280, y 124,5)
-44. « 0 » (x 336, y 125)
-45. « À faire » (x 477, y 124,5)
-46. « 19 » (x 524, y 125)
-47. « SILO-46 » (x 470, y 164)
-48. « · » (x 524, y 164)
-49. « F4 » (x 532, y 164)
-50. « Démo · F4 » (x 470, y 186)
-51. « facultative » (x 476, y 212)
-52. « SILO-34 » (x 470, y 256)
-53. « · » (x 524, y 256)
-54. « F5 » (x 532, y 256)
-55. « Tests E2E de l'envoi » (x 470, y 278)
-56. « attend SILO-33 » (x 476, y 304)
-57. « SILO-35 » (x 470, y 348)
-58. « · » (x 524, y 348)
-59. « F5 » (x 532, y 348)
-60. « Démo · F5 » (x 470, y 370)
-61. « attend SILO-34 » (x 476, y 396)
-62. « SILO-52 » (x 470, y 440)
-63. « · » (x 524, y 440)
-64. « F6 » (x 532, y 440)
-65. « Contrôle des numéros » (x 470, y 462)
-66. « sprint S43 » (x 476, y 488)
-67. « SILO-53 » (x 470, y 532)
-68. « · » (x 524, y 532)
-69. « F6 » (x 532, y 532)
-70. « Écran d'import » (x 470, y 554)
-71. « sprint S43 » (x 476, y 580)
-72. « SILO-54 » (x 470, y 624)
-73. « · » (x 524, y 624)
-74. « F6 » (x 532, y 624)
-75. « Démo · F6 » (x 470, y 646)
-76. « sprint S43 » (x 476, y 672)
-77. « SILO-71 » (x 470, y 716)
-78. « · » (x 524, y 716)
-79. « F8 » (x 532, y 716)
-80. « Statuts de contrat » (x 470, y 738)
-81. « sprint S43 » (x 476, y 764)
-82. « SILO-72 » (x 470, y 808)
-83. « · » (x 524, y 808)
-84. « F8 » (x 532, y 808)
-85. « Sélection multiple » (x 470, y 830)
-86. « sprint S43 » (x 476, y 856)
-87. « SILO-73 » (x 470, y 900)
-88. « · » (x 524, y 900)
-89. « F8 » (x 532, y 900)
-90. « Validation par lot » (x 470, y 922)
-91. « sprint S43 » (x 476, y 948)
-92. « SILO-74 » (x 470, y 992)
-93. « · » (x 524, y 992)
-94. « F8 » (x 532, y 992)
-95. « Démo · F8 » (x 470, y 1014)
-96. « sprint S43 » (x 476, y 1040)
-97. « En cours » (x 674, y 124,5)
-98. « 1 » (x 733, y 125)
-99. « SILO-33 » (x 667, y 164)
-100. « · » (x 721, y 164)
-101. « F5 » (x 729, y 164)
-102. « Écran d'envoi hors ligne » (x 667, y 186)
-103. « feat/envoi-hors-… » (x 688, y 212)
-104. « Phase 7/12 · Porte qu… » (x 675, y 235)
-105. « En review » (x 871, y 124,5)
-106. « 3 » (x 936, y 125)
-107. « SILO-45 » (x 864, y 164)
-108. « · » (x 918, y 164)
-109. « F4 » (x 926, y 164)
-110. « Conflits de saisie » (x 864, y 186)
-111. « #20 » (x 885, y 212)
-112. « changements demandés » (x 870, y 235)
-113. « CI cassée » (x 885, y 258)
-114. « Phase 9/12 · Review » (x 872, y 281)
-115. « SILO-32 » (x 864, y 325)
-116. « · » (x 918, y 325)
-117. « F5 » (x 926, y 325)
-118. « Route d'envoi des photos » (x 864, y 347)
-119. « #22 » (x 885, y 389)
-120. « Phase 10/12 · Démo » (x 872, y 412)
-121. « CI » (x 937, y 389)
-122. « SILO-61 » (x 864, y 456)
-123. « Passage à Expo SDK 54 » (x 864, y 478)
-124. « #23 » (x 885, y 504)
-125. « CI en cours » (x 935, y 504)
-126. « Bloqué » (x 1068, y 124,5)
-127. « 1 » (x 1117, y 125)
-128. « SILO-51 » (x 1061, y 164)
-129. « · » (x 1115, y 164)
-130. « F6 » (x 1123, y 164)
-131. « Lecture du fichier Excel » (x 1061, y 186)
-132. « bloqué · Q14 » (x 1082, y 212)
-133. « Phase 3/12 · Questions » (x 1069, y 235)
-134. « Terminé » (x 1265, y 124,5)
-135. « 17 » (x 1320, y 125)
-136. « SILO-21 » (x 1258, y 164)
-137. « · » (x 1312, y 164)
-138. « F3 » (x 1320, y 164)
-139. « Démo · F3 » (x 1258, y 186)
-140. « #18 » (x 1279, y 212)
-141. « SILO-31 » (x 1258, y 256)
-142. « · » (x 1312, y 256)
-143. « F5 » (x 1320, y 256)
-144. « Stockage des photos sur MinIO » (x 1258, y 278)
-145. « #19 » (x 1279, y 320)
-146. « SILO-43 » (x 1258, y 364)
-147. « · » (x 1312, y 364)
-148. « F4 » (x 1320, y 364)
-149. « Synchro au retour du réseau » (x 1258, y 386)
-150. « #16 » (x 1279, y 428)
-151. « SILO-42 » (x 1258, y 472)
-152. « · » (x 1312, y 472)
-153. « F4 » (x 1320, y 472)
-154. « Formulaire de saisie » (x 1258, y 494)
-155. « #14 » (x 1279, y 520)
-156. « SILO-41 » (x 1258, y 564)
-157. « · » (x 1312, y 564)
-158. « F4 » (x 1320, y 564)
-159. « Schéma local des constats » (x 1258, y 586)
-160. « #12 » (x 1279, y 628)
-161. « SILO-20 » (x 1258, y 672)
-162. « · » (x 1312, y 672)
-163. « F3 » (x 1320, y 672)
-164. « Écran de réaffectation » (x 1258, y 694)
-165. « SILO-19 » (x 1258, y 738)
-166. « · » (x 1312, y 738)
-167. « F3 » (x 1320, y 738)
-168. « Route de réaffectation » (x 1258, y 760)
-169. « SILO-18 » (x 1258, y 804)
-170. « · » (x 1312, y 804)
-171. « F3 » (x 1320, y 804)
-172. « Historique des affectations » (x 1258, y 826)
-173. « SILO-14 » (x 1258, y 886)
-174. « · » (x 1312, y 886)
-175. « F2 » (x 1320, y 886)
-176. « Démo · F2 » (x 1258, y 908)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « Étiquette : toutes » (x 751, y 65,5)
+38. « 41 tickets · Tous » (x 1338, y 65,5)
+39. « Backlog » (x 280, y 124,5)
+40. « 0 » (x 336, y 125)
+41. « À faire » (x 477, y 124,5)
+42. « 19 » (x 524, y 125)
+43. « SILO-46 » (x 470, y 164)
+44. « · » (x 524, y 164)
+45. « F4 » (x 532, y 164)
+46. « Démo · F4 » (x 470, y 186)
+47. « facultative » (x 476, y 212)
+48. « SILO-34 » (x 470, y 256)
+49. « · » (x 524, y 256)
+50. « F5 » (x 532, y 256)
+51. « Tests E2E de l'envoi » (x 470, y 278)
+52. « attend SILO-33 » (x 476, y 304)
+53. « SILO-35 » (x 470, y 348)
+54. « · » (x 524, y 348)
+55. « F5 » (x 532, y 348)
+56. « Démo · F5 » (x 470, y 370)
+57. « attend SILO-34 » (x 476, y 396)
+58. « SILO-52 » (x 470, y 440)
+59. « · » (x 524, y 440)
+60. « F6 » (x 532, y 440)
+61. « Contrôle des numéros » (x 470, y 462)
+62. « sprint S43 » (x 476, y 488)
+63. « SILO-53 » (x 470, y 532)
+64. « · » (x 524, y 532)
+65. « F6 » (x 532, y 532)
+66. « Écran d'import » (x 470, y 554)
+67. « sprint S43 » (x 476, y 580)
+68. « SILO-54 » (x 470, y 624)
+69. « · » (x 524, y 624)
+70. « F6 » (x 532, y 624)
+71. « Démo · F6 » (x 470, y 646)
+72. « sprint S43 » (x 476, y 672)
+73. « SILO-71 » (x 470, y 716)
+74. « · » (x 524, y 716)
+75. « F8 » (x 532, y 716)
+76. « Statuts de contrat » (x 470, y 738)
+77. « sprint S43 » (x 476, y 764)
+78. « SILO-72 » (x 470, y 808)
+79. « · » (x 524, y 808)
+80. « F8 » (x 532, y 808)
+81. « Sélection multiple » (x 470, y 830)
+82. « sprint S43 » (x 476, y 856)
+83. « SILO-73 » (x 470, y 900)
+84. « · » (x 524, y 900)
+85. « F8 » (x 532, y 900)
+86. « Validation par lot » (x 470, y 922)
+87. « sprint S43 » (x 476, y 948)
+88. « SILO-74 » (x 470, y 992)
+89. « · » (x 524, y 992)
+90. « F8 » (x 532, y 992)
+91. « Démo · F8 » (x 470, y 1014)
+92. « sprint S43 » (x 476, y 1040)
+93. « En cours » (x 674, y 124,5)
+94. « 1 » (x 733, y 125)
+95. « SILO-33 » (x 667, y 164)
+96. « · » (x 721, y 164)
+97. « F5 » (x 729, y 164)
+98. « Écran d'envoi hors ligne » (x 667, y 186)
+99. « feat/envoi-hors-… » (x 688, y 212)
+100. « Phase 7/12 · Porte qu… » (x 675, y 235)
+101. « En review » (x 871, y 124,5)
+102. « 3 » (x 936, y 125)
+103. « SILO-45 » (x 864, y 164)
+104. « · » (x 918, y 164)
+105. « F4 » (x 926, y 164)
+106. « Conflits de saisie » (x 864, y 186)
+107. « #20 » (x 885, y 212)
+108. « changements demandés » (x 870, y 235)
+109. « CI cassée » (x 885, y 258)
+110. « Phase 9/12 · Review » (x 872, y 281)
+111. « SILO-32 » (x 864, y 325)
+112. « · » (x 918, y 325)
+113. « F5 » (x 926, y 325)
+114. « Route d'envoi des photos » (x 864, y 347)
+115. « #22 » (x 885, y 389)
+116. « Phase 10/12 · Démo » (x 872, y 412)
+117. « CI » (x 937, y 389)
+118. « SILO-61 » (x 864, y 456)
+119. « Passage à Expo SDK 54 » (x 864, y 478)
+120. « #23 » (x 885, y 504)
+121. « CI en cours » (x 935, y 504)
+122. « Bloqué » (x 1068, y 124,5)
+123. « 1 » (x 1117, y 125)
+124. « SILO-51 » (x 1061, y 164)
+125. « · » (x 1115, y 164)
+126. « F6 » (x 1123, y 164)
+127. « Lecture du fichier Excel » (x 1061, y 186)
+128. « bloqué · Q14 » (x 1082, y 212)
+129. « Phase 3/12 · Questions » (x 1069, y 235)
+130. « Terminé » (x 1265, y 124,5)
+131. « 17 » (x 1320, y 125)
+132. « SILO-21 » (x 1258, y 164)
+133. « · » (x 1312, y 164)
+134. « F3 » (x 1320, y 164)
+135. « Démo · F3 » (x 1258, y 186)
+136. « #18 » (x 1279, y 212)
+137. « SILO-31 » (x 1258, y 256)
+138. « · » (x 1312, y 256)
+139. « F5 » (x 1320, y 256)
+140. « Stockage des photos sur MinIO » (x 1258, y 278)
+141. « #19 » (x 1279, y 320)
+142. « SILO-43 » (x 1258, y 364)
+143. « · » (x 1312, y 364)
+144. « F4 » (x 1320, y 364)
+145. « Synchro au retour du réseau » (x 1258, y 386)
+146. « #16 » (x 1279, y 428)
+147. « SILO-42 » (x 1258, y 472)
+148. « · » (x 1312, y 472)
+149. « F4 » (x 1320, y 472)
+150. « Formulaire de saisie » (x 1258, y 494)
+151. « #14 » (x 1279, y 520)
+152. « SILO-41 » (x 1258, y 564)
+153. « · » (x 1312, y 564)
+154. « F4 » (x 1320, y 564)
+155. « Schéma local des constats » (x 1258, y 586)
+156. « #12 » (x 1279, y 628)
+157. « SILO-20 » (x 1258, y 672)
+158. « · » (x 1312, y 672)
+159. « F3 » (x 1320, y 672)
+160. « Écran de réaffectation » (x 1258, y 694)
+161. « SILO-19 » (x 1258, y 738)
+162. « · » (x 1312, y 738)
+163. « F3 » (x 1320, y 738)
+164. « Route de réaffectation » (x 1258, y 760)
+165. « SILO-18 » (x 1258, y 804)
+166. « · » (x 1312, y 804)
+167. « F3 » (x 1320, y 804)
+168. « Historique des affectations » (x 1258, y 826)
+169. « SILO-14 » (x 1258, y 886)
+170. « · » (x 1312, y 886)
+171. « F2 » (x 1320, y 886)
+172. « Démo · F2 » (x 1258, y 908)
 
 ### Blocs
 
@@ -6108,35 +5395,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -6153,9 +5433,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -6516,224 +5793,220 @@ Exports : `exports/proposition-fiche-ticket-dark.png` et `exports/proposition-fi
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « Étiquette : toutes » (x 751, y 65,5)
-42. « 41 tickets · Tous » (x 1338, y 65,5)
-43. « Backlog » (x 280, y 124,5)
-44. « 0 » (x 336, y 125)
-45. « À faire » (x 477, y 124,5)
-46. « 19 » (x 524, y 125)
-47. « SILO-46 » (x 470, y 164)
-48. « · » (x 524, y 164)
-49. « F4 » (x 532, y 164)
-50. « Démo · F4 » (x 470, y 186)
-51. « facultative » (x 476, y 212)
-52. « SILO-34 » (x 470, y 256)
-53. « · » (x 524, y 256)
-54. « F5 » (x 532, y 256)
-55. « Tests E2E de l'envoi » (x 470, y 278)
-56. « attend SILO-33 » (x 476, y 304)
-57. « SILO-35 » (x 470, y 348)
-58. « · » (x 524, y 348)
-59. « F5 » (x 532, y 348)
-60. « Démo · F5 » (x 470, y 370)
-61. « attend SILO-34 » (x 476, y 396)
-62. « SILO-52 » (x 470, y 440)
-63. « · » (x 524, y 440)
-64. « F6 » (x 532, y 440)
-65. « Contrôle des numéros » (x 470, y 462)
-66. « sprint S43 » (x 476, y 488)
-67. « SILO-53 » (x 470, y 532)
-68. « · » (x 524, y 532)
-69. « F6 » (x 532, y 532)
-70. « Écran d'import » (x 470, y 554)
-71. « sprint S43 » (x 476, y 580)
-72. « SILO-54 » (x 470, y 624)
-73. « · » (x 524, y 624)
-74. « F6 » (x 532, y 624)
-75. « Démo · F6 » (x 470, y 646)
-76. « sprint S43 » (x 476, y 672)
-77. « SILO-71 » (x 470, y 716)
-78. « · » (x 524, y 716)
-79. « F8 » (x 532, y 716)
-80. « Statuts de contrat » (x 470, y 738)
-81. « sprint S43 » (x 476, y 764)
-82. « SILO-72 » (x 470, y 808)
-83. « · » (x 524, y 808)
-84. « F8 » (x 532, y 808)
-85. « Sélection multiple » (x 470, y 830)
-86. « sprint S43 » (x 476, y 856)
-87. « SILO-73 » (x 470, y 900)
-88. « · » (x 524, y 900)
-89. « F8 » (x 532, y 900)
-90. « Validation par lot » (x 470, y 922)
-91. « sprint S43 » (x 476, y 948)
-92. « SILO-74 » (x 470, y 992)
-93. « · » (x 524, y 992)
-94. « F8 » (x 532, y 992)
-95. « Démo · F8 » (x 470, y 1014)
-96. « sprint S43 » (x 476, y 1040)
-97. « En cours » (x 674, y 124,5)
-98. « 1 » (x 733, y 125)
-99. « SILO-33 » (x 667, y 164)
-100. « · » (x 721, y 164)
-101. « F5 » (x 729, y 164)
-102. « Écran d'envoi hors ligne » (x 667, y 186)
-103. « feat/envoi-hors-… » (x 688, y 212)
-104. « Phase 7/12 · Porte qu… » (x 675, y 235)
-105. « En review » (x 871, y 124,5)
-106. « 3 » (x 936, y 125)
-107. « SILO-45 » (x 864, y 164)
-108. « · » (x 918, y 164)
-109. « F4 » (x 926, y 164)
-110. « Conflits de saisie » (x 864, y 186)
-111. « #20 » (x 885, y 212)
-112. « changements demandés » (x 870, y 235)
-113. « CI cassée » (x 885, y 258)
-114. « Phase 9/12 · Review » (x 872, y 281)
-115. « SILO-32 » (x 864, y 325)
-116. « · » (x 918, y 325)
-117. « F5 » (x 926, y 325)
-118. « Route d'envoi des photos » (x 864, y 347)
-119. « #22 » (x 885, y 389)
-120. « Phase 10/12 · Démo » (x 872, y 412)
-121. « CI » (x 937, y 389)
-122. « SILO-61 » (x 864, y 456)
-123. « Passage à Expo SDK 54 » (x 864, y 478)
-124. « #23 » (x 885, y 504)
-125. « CI en cours » (x 935, y 504)
-126. « Bloqué » (x 1068, y 124,5)
-127. « 1 » (x 1117, y 125)
-128. « SILO-51 » (x 1061, y 164)
-129. « · » (x 1115, y 164)
-130. « F6 » (x 1123, y 164)
-131. « Lecture du fichier Excel » (x 1061, y 186)
-132. « bloqué · Q14 » (x 1082, y 212)
-133. « Phase 3/12 · Questions » (x 1069, y 235)
-134. « Terminé » (x 1265, y 124,5)
-135. « 17 » (x 1320, y 125)
-136. « SILO-21 » (x 1258, y 164)
-137. « · » (x 1312, y 164)
-138. « F3 » (x 1320, y 164)
-139. « Démo · F3 » (x 1258, y 186)
-140. « #18 » (x 1279, y 212)
-141. « SILO-31 » (x 1258, y 256)
-142. « · » (x 1312, y 256)
-143. « F5 » (x 1320, y 256)
-144. « Stockage des photos sur MinIO » (x 1258, y 278)
-145. « #19 » (x 1279, y 320)
-146. « SILO-43 » (x 1258, y 364)
-147. « · » (x 1312, y 364)
-148. « F4 » (x 1320, y 364)
-149. « Synchro au retour du réseau » (x 1258, y 386)
-150. « #16 » (x 1279, y 428)
-151. « SILO-42 » (x 1258, y 472)
-152. « · » (x 1312, y 472)
-153. « F4 » (x 1320, y 472)
-154. « Formulaire de saisie » (x 1258, y 494)
-155. « #14 » (x 1279, y 520)
-156. « SILO-41 » (x 1258, y 564)
-157. « · » (x 1312, y 564)
-158. « F4 » (x 1320, y 564)
-159. « Schéma local des constats » (x 1258, y 586)
-160. « #12 » (x 1279, y 628)
-161. « SILO-20 » (x 1258, y 672)
-162. « · » (x 1312, y 672)
-163. « F3 » (x 1320, y 672)
-164. « Écran de réaffectation » (x 1258, y 694)
-165. « SILO-19 » (x 1258, y 738)
-166. « · » (x 1312, y 738)
-167. « F3 » (x 1320, y 738)
-168. « Route de réaffectation » (x 1258, y 760)
-169. « SILO-18 » (x 1258, y 804)
-170. « · » (x 1312, y 804)
-171. « F3 » (x 1320, y 804)
-172. « Historique des affectations » (x 1258, y 826)
-173. « SILO-14 » (x 1258, y 886)
-174. « · » (x 1312, y 886)
-175. « F2 » (x 1320, y 886)
-176. « Démo · F2 » (x 1258, y 908)
-177. « SILO-45 » (x 926, y 18,5)
-178. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-179. « Fermer » (x 1374, y 18,5)
-180. « F4 » (x 926, y 72)
-181. « · » (x 953, y 72)
-182. « S42 » (x 980, y 72)
-183. « · » (x 1009, y 72)
-184. « PR #20 » (x 1036, y 72)
-185. « Conflits de saisie » (x 904, y 104)
-186. « En review » (x 928, y 152,5)
-187. « A » (x 1031, y 155)
-188. « Adam (moi) » (x 1050, y 152,5)
-189. « Requise pour livrer » (x 1193, y 152,5)
-190. « Ajouter une étiquette » (x 909, y 193)
-191. « PR #20 » (x 935, y 242)
-192. « · changements demandés » (x 987, y 242)
-193. « · CI cassée » (x 1148, y 242)
-194. « PR » (x 1327, y 242,5)
-195. « Job » (x 1365, y 242,5)
-196. « Détails » (x 920, y 297)
-197. « Activité » (x 996, y 297)
-198. « Suivi » (x 904, y 344)
-199. « remonté de git, des PR et de full-delivery » (x 943, y 344,5)
-200. « Branche » (x 904, y 371,5)
-201. « feat/silo-45 » (x 1029, y 371,5)
-202. « sur » (x 1125, y 371,5)
-203. « dev » (x 1150, y 371,5)
-204. « déclarée » (x 1179, y 371,5)
-205. « PR » (x 904, y 405,5)
-206. « #20 » (x 1029, y 405,5)
-207. « ouverte hier à 16:40 » (x 1058, y 405,5)
-208. « Review » (x 904, y 439,5)
-209. « changements demandés » (x 1016, y 440)
-210. « 13:47 » (x 1155, y 439,5)
-211. « CI » (x 904, y 473,5)
-212. « CI cassée » (x 1031, y 474)
-213. « job e2e · 11:58 » (x 1094, y 473,5)
-214. « Session » (x 904, y 507,5)
-215. « T3 Code · 18 min » (x 1028, y 507,5)
-216. « Livraison » (x 904, y 541,5)
-217. « Phase 9/12 · Review » (x 1098, y 541,5)
-218. « · suivante : Démo » (x 1219, y 541,5)
-219. « Description » (x 904, y 597)
-220. « Modifier » (x 984, y 597,5)
-221. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 623)
-222. « Dépendances » (x 904, y 697)
-223. « Aucune » (x 904, y 725)
-224. « Ajouter une dépendance » (x 935, y 760)
-225. « Questions » (x 904, y 816)
-226. « 0 » (x 976, y 816,5)
-227. « Aucune question sur ce ticket. » (x 904, y 846)
-228. « Domaine » (x 926, y 898)
-229. « Aucun » (x 989, y 898,5)
-230. « Maquettes » (x 926, y 934)
-231. « 0 » (x 1001, y 934,5)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « Étiquette : toutes » (x 751, y 65,5)
+38. « 41 tickets · Tous » (x 1338, y 65,5)
+39. « Backlog » (x 280, y 124,5)
+40. « 0 » (x 336, y 125)
+41. « À faire » (x 477, y 124,5)
+42. « 19 » (x 524, y 125)
+43. « SILO-46 » (x 470, y 164)
+44. « · » (x 524, y 164)
+45. « F4 » (x 532, y 164)
+46. « Démo · F4 » (x 470, y 186)
+47. « facultative » (x 476, y 212)
+48. « SILO-34 » (x 470, y 256)
+49. « · » (x 524, y 256)
+50. « F5 » (x 532, y 256)
+51. « Tests E2E de l'envoi » (x 470, y 278)
+52. « attend SILO-33 » (x 476, y 304)
+53. « SILO-35 » (x 470, y 348)
+54. « · » (x 524, y 348)
+55. « F5 » (x 532, y 348)
+56. « Démo · F5 » (x 470, y 370)
+57. « attend SILO-34 » (x 476, y 396)
+58. « SILO-52 » (x 470, y 440)
+59. « · » (x 524, y 440)
+60. « F6 » (x 532, y 440)
+61. « Contrôle des numéros » (x 470, y 462)
+62. « sprint S43 » (x 476, y 488)
+63. « SILO-53 » (x 470, y 532)
+64. « · » (x 524, y 532)
+65. « F6 » (x 532, y 532)
+66. « Écran d'import » (x 470, y 554)
+67. « sprint S43 » (x 476, y 580)
+68. « SILO-54 » (x 470, y 624)
+69. « · » (x 524, y 624)
+70. « F6 » (x 532, y 624)
+71. « Démo · F6 » (x 470, y 646)
+72. « sprint S43 » (x 476, y 672)
+73. « SILO-71 » (x 470, y 716)
+74. « · » (x 524, y 716)
+75. « F8 » (x 532, y 716)
+76. « Statuts de contrat » (x 470, y 738)
+77. « sprint S43 » (x 476, y 764)
+78. « SILO-72 » (x 470, y 808)
+79. « · » (x 524, y 808)
+80. « F8 » (x 532, y 808)
+81. « Sélection multiple » (x 470, y 830)
+82. « sprint S43 » (x 476, y 856)
+83. « SILO-73 » (x 470, y 900)
+84. « · » (x 524, y 900)
+85. « F8 » (x 532, y 900)
+86. « Validation par lot » (x 470, y 922)
+87. « sprint S43 » (x 476, y 948)
+88. « SILO-74 » (x 470, y 992)
+89. « · » (x 524, y 992)
+90. « F8 » (x 532, y 992)
+91. « Démo · F8 » (x 470, y 1014)
+92. « sprint S43 » (x 476, y 1040)
+93. « En cours » (x 674, y 124,5)
+94. « 1 » (x 733, y 125)
+95. « SILO-33 » (x 667, y 164)
+96. « · » (x 721, y 164)
+97. « F5 » (x 729, y 164)
+98. « Écran d'envoi hors ligne » (x 667, y 186)
+99. « feat/envoi-hors-… » (x 688, y 212)
+100. « Phase 7/12 · Porte qu… » (x 675, y 235)
+101. « En review » (x 871, y 124,5)
+102. « 3 » (x 936, y 125)
+103. « SILO-45 » (x 864, y 164)
+104. « · » (x 918, y 164)
+105. « F4 » (x 926, y 164)
+106. « Conflits de saisie » (x 864, y 186)
+107. « #20 » (x 885, y 212)
+108. « changements demandés » (x 870, y 235)
+109. « CI cassée » (x 885, y 258)
+110. « Phase 9/12 · Review » (x 872, y 281)
+111. « SILO-32 » (x 864, y 325)
+112. « · » (x 918, y 325)
+113. « F5 » (x 926, y 325)
+114. « Route d'envoi des photos » (x 864, y 347)
+115. « #22 » (x 885, y 389)
+116. « Phase 10/12 · Démo » (x 872, y 412)
+117. « CI » (x 937, y 389)
+118. « SILO-61 » (x 864, y 456)
+119. « Passage à Expo SDK 54 » (x 864, y 478)
+120. « #23 » (x 885, y 504)
+121. « CI en cours » (x 935, y 504)
+122. « Bloqué » (x 1068, y 124,5)
+123. « 1 » (x 1117, y 125)
+124. « SILO-51 » (x 1061, y 164)
+125. « · » (x 1115, y 164)
+126. « F6 » (x 1123, y 164)
+127. « Lecture du fichier Excel » (x 1061, y 186)
+128. « bloqué · Q14 » (x 1082, y 212)
+129. « Phase 3/12 · Questions » (x 1069, y 235)
+130. « Terminé » (x 1265, y 124,5)
+131. « 17 » (x 1320, y 125)
+132. « SILO-21 » (x 1258, y 164)
+133. « · » (x 1312, y 164)
+134. « F3 » (x 1320, y 164)
+135. « Démo · F3 » (x 1258, y 186)
+136. « #18 » (x 1279, y 212)
+137. « SILO-31 » (x 1258, y 256)
+138. « · » (x 1312, y 256)
+139. « F5 » (x 1320, y 256)
+140. « Stockage des photos sur MinIO » (x 1258, y 278)
+141. « #19 » (x 1279, y 320)
+142. « SILO-43 » (x 1258, y 364)
+143. « · » (x 1312, y 364)
+144. « F4 » (x 1320, y 364)
+145. « Synchro au retour du réseau » (x 1258, y 386)
+146. « #16 » (x 1279, y 428)
+147. « SILO-42 » (x 1258, y 472)
+148. « · » (x 1312, y 472)
+149. « F4 » (x 1320, y 472)
+150. « Formulaire de saisie » (x 1258, y 494)
+151. « #14 » (x 1279, y 520)
+152. « SILO-41 » (x 1258, y 564)
+153. « · » (x 1312, y 564)
+154. « F4 » (x 1320, y 564)
+155. « Schéma local des constats » (x 1258, y 586)
+156. « #12 » (x 1279, y 628)
+157. « SILO-20 » (x 1258, y 672)
+158. « · » (x 1312, y 672)
+159. « F3 » (x 1320, y 672)
+160. « Écran de réaffectation » (x 1258, y 694)
+161. « SILO-19 » (x 1258, y 738)
+162. « · » (x 1312, y 738)
+163. « F3 » (x 1320, y 738)
+164. « Route de réaffectation » (x 1258, y 760)
+165. « SILO-18 » (x 1258, y 804)
+166. « · » (x 1312, y 804)
+167. « F3 » (x 1320, y 804)
+168. « Historique des affectations » (x 1258, y 826)
+169. « SILO-14 » (x 1258, y 886)
+170. « · » (x 1312, y 886)
+171. « F2 » (x 1320, y 886)
+172. « Démo · F2 » (x 1258, y 908)
+173. « SILO-45 » (x 926, y 18,5)
+174. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+175. « Fermer » (x 1374, y 18,5)
+176. « F4 » (x 926, y 72)
+177. « · » (x 953, y 72)
+178. « S42 » (x 980, y 72)
+179. « · » (x 1009, y 72)
+180. « PR #20 » (x 1036, y 72)
+181. « Conflits de saisie » (x 904, y 104)
+182. « En review » (x 928, y 152,5)
+183. « A » (x 1031, y 155)
+184. « Adam (moi) » (x 1050, y 152,5)
+185. « Requise pour livrer » (x 1193, y 152,5)
+186. « Ajouter une étiquette » (x 909, y 193)
+187. « PR #20 » (x 935, y 242)
+188. « · changements demandés » (x 987, y 242)
+189. « · CI cassée » (x 1148, y 242)
+190. « PR » (x 1327, y 242,5)
+191. « Job » (x 1365, y 242,5)
+192. « Détails » (x 920, y 297)
+193. « Activité » (x 996, y 297)
+194. « Suivi » (x 904, y 344)
+195. « remonté de git, des PR et de full-delivery » (x 943, y 344,5)
+196. « Branche » (x 904, y 371,5)
+197. « feat/silo-45 » (x 1029, y 371,5)
+198. « sur » (x 1125, y 371,5)
+199. « dev » (x 1150, y 371,5)
+200. « déclarée » (x 1179, y 371,5)
+201. « PR » (x 904, y 405,5)
+202. « #20 » (x 1029, y 405,5)
+203. « ouverte hier à 16:40 » (x 1058, y 405,5)
+204. « Review » (x 904, y 439,5)
+205. « changements demandés » (x 1016, y 440)
+206. « 13:47 » (x 1155, y 439,5)
+207. « CI » (x 904, y 473,5)
+208. « CI cassée » (x 1031, y 474)
+209. « job e2e · 11:58 » (x 1094, y 473,5)
+210. « Session » (x 904, y 507,5)
+211. « T3 Code · 18 min » (x 1028, y 507,5)
+212. « Livraison » (x 904, y 541,5)
+213. « Phase 9/12 · Review » (x 1098, y 541,5)
+214. « · suivante : Démo » (x 1219, y 541,5)
+215. « Description » (x 904, y 597)
+216. « Modifier » (x 984, y 597,5)
+217. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 623)
+218. « Dépendances » (x 904, y 697)
+219. « Aucune » (x 904, y 725)
+220. « Ajouter une dépendance » (x 935, y 760)
+221. « Questions » (x 904, y 816)
+222. « 0 » (x 976, y 816,5)
+223. « Aucune question sur ce ticket. » (x 904, y 846)
+224. « Domaine » (x 926, y 898)
+225. « Aucun » (x 989, y 898,5)
+226. « Maquettes » (x 926, y 934)
+227. « 0 » (x 1001, y 934,5)
 
 ### Blocs
 
@@ -6777,35 +6050,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -6822,9 +6088,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -7339,209 +6602,205 @@ Exports : `exports/proposition-fiche-ticket-activite-dark.png` et `exports/propo
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « Étiquette : toutes » (x 751, y 65,5)
-42. « 41 tickets · Tous » (x 1338, y 65,5)
-43. « Backlog » (x 280, y 124,5)
-44. « 0 » (x 336, y 125)
-45. « À faire » (x 477, y 124,5)
-46. « 19 » (x 524, y 125)
-47. « SILO-46 » (x 470, y 164)
-48. « · » (x 524, y 164)
-49. « F4 » (x 532, y 164)
-50. « Démo · F4 » (x 470, y 186)
-51. « facultative » (x 476, y 212)
-52. « SILO-34 » (x 470, y 256)
-53. « · » (x 524, y 256)
-54. « F5 » (x 532, y 256)
-55. « Tests E2E de l'envoi » (x 470, y 278)
-56. « attend SILO-33 » (x 476, y 304)
-57. « SILO-35 » (x 470, y 348)
-58. « · » (x 524, y 348)
-59. « F5 » (x 532, y 348)
-60. « Démo · F5 » (x 470, y 370)
-61. « attend SILO-34 » (x 476, y 396)
-62. « SILO-52 » (x 470, y 440)
-63. « · » (x 524, y 440)
-64. « F6 » (x 532, y 440)
-65. « Contrôle des numéros » (x 470, y 462)
-66. « sprint S43 » (x 476, y 488)
-67. « SILO-53 » (x 470, y 532)
-68. « · » (x 524, y 532)
-69. « F6 » (x 532, y 532)
-70. « Écran d'import » (x 470, y 554)
-71. « sprint S43 » (x 476, y 580)
-72. « SILO-54 » (x 470, y 624)
-73. « · » (x 524, y 624)
-74. « F6 » (x 532, y 624)
-75. « Démo · F6 » (x 470, y 646)
-76. « sprint S43 » (x 476, y 672)
-77. « SILO-71 » (x 470, y 716)
-78. « · » (x 524, y 716)
-79. « F8 » (x 532, y 716)
-80. « Statuts de contrat » (x 470, y 738)
-81. « sprint S43 » (x 476, y 764)
-82. « SILO-72 » (x 470, y 808)
-83. « · » (x 524, y 808)
-84. « F8 » (x 532, y 808)
-85. « Sélection multiple » (x 470, y 830)
-86. « sprint S43 » (x 476, y 856)
-87. « SILO-73 » (x 470, y 900)
-88. « · » (x 524, y 900)
-89. « F8 » (x 532, y 900)
-90. « Validation par lot » (x 470, y 922)
-91. « sprint S43 » (x 476, y 948)
-92. « SILO-74 » (x 470, y 992)
-93. « · » (x 524, y 992)
-94. « F8 » (x 532, y 992)
-95. « Démo · F8 » (x 470, y 1014)
-96. « sprint S43 » (x 476, y 1040)
-97. « En cours » (x 674, y 124,5)
-98. « 1 » (x 733, y 125)
-99. « SILO-33 » (x 667, y 164)
-100. « · » (x 721, y 164)
-101. « F5 » (x 729, y 164)
-102. « Écran d'envoi hors ligne » (x 667, y 186)
-103. « feat/envoi-hors-… » (x 688, y 212)
-104. « Phase 7/12 · Porte qu… » (x 675, y 235)
-105. « En review » (x 871, y 124,5)
-106. « 3 » (x 936, y 125)
-107. « SILO-45 » (x 864, y 164)
-108. « · » (x 918, y 164)
-109. « F4 » (x 926, y 164)
-110. « Conflits de saisie » (x 864, y 186)
-111. « #20 » (x 885, y 212)
-112. « changements demandés » (x 870, y 235)
-113. « CI cassée » (x 885, y 258)
-114. « Phase 9/12 · Review » (x 872, y 281)
-115. « SILO-32 » (x 864, y 325)
-116. « · » (x 918, y 325)
-117. « F5 » (x 926, y 325)
-118. « Route d'envoi des photos » (x 864, y 347)
-119. « #22 » (x 885, y 389)
-120. « Phase 10/12 · Démo » (x 872, y 412)
-121. « CI » (x 937, y 389)
-122. « SILO-61 » (x 864, y 456)
-123. « Passage à Expo SDK 54 » (x 864, y 478)
-124. « #23 » (x 885, y 504)
-125. « CI en cours » (x 935, y 504)
-126. « Bloqué » (x 1068, y 124,5)
-127. « 1 » (x 1117, y 125)
-128. « SILO-51 » (x 1061, y 164)
-129. « · » (x 1115, y 164)
-130. « F6 » (x 1123, y 164)
-131. « Lecture du fichier Excel » (x 1061, y 186)
-132. « bloqué · Q14 » (x 1082, y 212)
-133. « Phase 3/12 · Questions » (x 1069, y 235)
-134. « Terminé » (x 1265, y 124,5)
-135. « 17 » (x 1320, y 125)
-136. « SILO-21 » (x 1258, y 164)
-137. « · » (x 1312, y 164)
-138. « F3 » (x 1320, y 164)
-139. « Démo · F3 » (x 1258, y 186)
-140. « #18 » (x 1279, y 212)
-141. « SILO-31 » (x 1258, y 256)
-142. « · » (x 1312, y 256)
-143. « F5 » (x 1320, y 256)
-144. « Stockage des photos sur MinIO » (x 1258, y 278)
-145. « #19 » (x 1279, y 320)
-146. « SILO-43 » (x 1258, y 364)
-147. « · » (x 1312, y 364)
-148. « F4 » (x 1320, y 364)
-149. « Synchro au retour du réseau » (x 1258, y 386)
-150. « #16 » (x 1279, y 428)
-151. « SILO-42 » (x 1258, y 472)
-152. « · » (x 1312, y 472)
-153. « F4 » (x 1320, y 472)
-154. « Formulaire de saisie » (x 1258, y 494)
-155. « #14 » (x 1279, y 520)
-156. « SILO-41 » (x 1258, y 564)
-157. « · » (x 1312, y 564)
-158. « F4 » (x 1320, y 564)
-159. « Schéma local des constats » (x 1258, y 586)
-160. « #12 » (x 1279, y 628)
-161. « SILO-20 » (x 1258, y 672)
-162. « · » (x 1312, y 672)
-163. « F3 » (x 1320, y 672)
-164. « Écran de réaffectation » (x 1258, y 694)
-165. « SILO-19 » (x 1258, y 738)
-166. « · » (x 1312, y 738)
-167. « F3 » (x 1320, y 738)
-168. « Route de réaffectation » (x 1258, y 760)
-169. « SILO-18 » (x 1258, y 804)
-170. « · » (x 1312, y 804)
-171. « F3 » (x 1320, y 804)
-172. « Historique des affectations » (x 1258, y 826)
-173. « SILO-14 » (x 1258, y 886)
-174. « · » (x 1312, y 886)
-175. « F2 » (x 1320, y 886)
-176. « Démo · F2 » (x 1258, y 908)
-177. « SILO-45 » (x 926, y 18,5)
-178. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-179. « Fermer » (x 1374, y 18,5)
-180. « F4 » (x 926, y 72)
-181. « · » (x 953, y 72)
-182. « S42 » (x 980, y 72)
-183. « · » (x 1009, y 72)
-184. « PR #20 » (x 1036, y 72)
-185. « Conflits de saisie » (x 904, y 104)
-186. « En review » (x 928, y 152,5)
-187. « A » (x 1031, y 155)
-188. « Adam (moi) » (x 1050, y 152,5)
-189. « Requise pour livrer » (x 1193, y 152,5)
-190. « Ajouter une étiquette » (x 909, y 193)
-191. « PR #20 » (x 935, y 242)
-192. « · changements demandés » (x 987, y 242)
-193. « · CI cassée » (x 1148, y 242)
-194. « PR » (x 1327, y 242,5)
-195. « Job » (x 1365, y 242,5)
-196. « Détails » (x 920, y 297)
-197. « Activité » (x 994, y 297)
-198. « Chronologie » (x 904, y 344)
-199. « journal du ticket : branche, PR, étapes, sessions, statut » (x 988, y 344,5)
-200. « Session T3 Code ouverte » (x 940, y 373)
-201. « 14:34 » (x 1386, y 373,5)
-202. « Changements demandés sur PR #20 » (x 940, y 407)
-203. « 13:47 » (x 1387, y 407,5)
-204. « CI cassée sur PR #20 » (x 940, y 441)
-205. « 11:58 » (x 1388, y 441,5)
-206. « job e2e · voir le journal » (x 940, y 460)
-207. « Étape 9 · Review » (x 940, y 492)
-208. « hier 17:12 » (x 1366, y 492,5)
-209. « PR #20 ouverte » (x 940, y 526)
-210. « hier 16:40 » (x 1361, y 526,5)
-211. « statut ⇒ En review » (x 940, y 545)
-212. « Branche feat/silo-45 poussée » (x 940, y 577)
-213. « mer. 10:05 » (x 1358, y 577,5)
-214. « statut ⇒ En cours » (x 940, y 596)
-215. « Anciens runs » (x 926, y 658)
-216. « runs d'agents d'avant la phase 27, en lecture seule » (x 1015, y 658,5)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « Étiquette : toutes » (x 751, y 65,5)
+38. « 41 tickets · Tous » (x 1338, y 65,5)
+39. « Backlog » (x 280, y 124,5)
+40. « 0 » (x 336, y 125)
+41. « À faire » (x 477, y 124,5)
+42. « 19 » (x 524, y 125)
+43. « SILO-46 » (x 470, y 164)
+44. « · » (x 524, y 164)
+45. « F4 » (x 532, y 164)
+46. « Démo · F4 » (x 470, y 186)
+47. « facultative » (x 476, y 212)
+48. « SILO-34 » (x 470, y 256)
+49. « · » (x 524, y 256)
+50. « F5 » (x 532, y 256)
+51. « Tests E2E de l'envoi » (x 470, y 278)
+52. « attend SILO-33 » (x 476, y 304)
+53. « SILO-35 » (x 470, y 348)
+54. « · » (x 524, y 348)
+55. « F5 » (x 532, y 348)
+56. « Démo · F5 » (x 470, y 370)
+57. « attend SILO-34 » (x 476, y 396)
+58. « SILO-52 » (x 470, y 440)
+59. « · » (x 524, y 440)
+60. « F6 » (x 532, y 440)
+61. « Contrôle des numéros » (x 470, y 462)
+62. « sprint S43 » (x 476, y 488)
+63. « SILO-53 » (x 470, y 532)
+64. « · » (x 524, y 532)
+65. « F6 » (x 532, y 532)
+66. « Écran d'import » (x 470, y 554)
+67. « sprint S43 » (x 476, y 580)
+68. « SILO-54 » (x 470, y 624)
+69. « · » (x 524, y 624)
+70. « F6 » (x 532, y 624)
+71. « Démo · F6 » (x 470, y 646)
+72. « sprint S43 » (x 476, y 672)
+73. « SILO-71 » (x 470, y 716)
+74. « · » (x 524, y 716)
+75. « F8 » (x 532, y 716)
+76. « Statuts de contrat » (x 470, y 738)
+77. « sprint S43 » (x 476, y 764)
+78. « SILO-72 » (x 470, y 808)
+79. « · » (x 524, y 808)
+80. « F8 » (x 532, y 808)
+81. « Sélection multiple » (x 470, y 830)
+82. « sprint S43 » (x 476, y 856)
+83. « SILO-73 » (x 470, y 900)
+84. « · » (x 524, y 900)
+85. « F8 » (x 532, y 900)
+86. « Validation par lot » (x 470, y 922)
+87. « sprint S43 » (x 476, y 948)
+88. « SILO-74 » (x 470, y 992)
+89. « · » (x 524, y 992)
+90. « F8 » (x 532, y 992)
+91. « Démo · F8 » (x 470, y 1014)
+92. « sprint S43 » (x 476, y 1040)
+93. « En cours » (x 674, y 124,5)
+94. « 1 » (x 733, y 125)
+95. « SILO-33 » (x 667, y 164)
+96. « · » (x 721, y 164)
+97. « F5 » (x 729, y 164)
+98. « Écran d'envoi hors ligne » (x 667, y 186)
+99. « feat/envoi-hors-… » (x 688, y 212)
+100. « Phase 7/12 · Porte qu… » (x 675, y 235)
+101. « En review » (x 871, y 124,5)
+102. « 3 » (x 936, y 125)
+103. « SILO-45 » (x 864, y 164)
+104. « · » (x 918, y 164)
+105. « F4 » (x 926, y 164)
+106. « Conflits de saisie » (x 864, y 186)
+107. « #20 » (x 885, y 212)
+108. « changements demandés » (x 870, y 235)
+109. « CI cassée » (x 885, y 258)
+110. « Phase 9/12 · Review » (x 872, y 281)
+111. « SILO-32 » (x 864, y 325)
+112. « · » (x 918, y 325)
+113. « F5 » (x 926, y 325)
+114. « Route d'envoi des photos » (x 864, y 347)
+115. « #22 » (x 885, y 389)
+116. « Phase 10/12 · Démo » (x 872, y 412)
+117. « CI » (x 937, y 389)
+118. « SILO-61 » (x 864, y 456)
+119. « Passage à Expo SDK 54 » (x 864, y 478)
+120. « #23 » (x 885, y 504)
+121. « CI en cours » (x 935, y 504)
+122. « Bloqué » (x 1068, y 124,5)
+123. « 1 » (x 1117, y 125)
+124. « SILO-51 » (x 1061, y 164)
+125. « · » (x 1115, y 164)
+126. « F6 » (x 1123, y 164)
+127. « Lecture du fichier Excel » (x 1061, y 186)
+128. « bloqué · Q14 » (x 1082, y 212)
+129. « Phase 3/12 · Questions » (x 1069, y 235)
+130. « Terminé » (x 1265, y 124,5)
+131. « 17 » (x 1320, y 125)
+132. « SILO-21 » (x 1258, y 164)
+133. « · » (x 1312, y 164)
+134. « F3 » (x 1320, y 164)
+135. « Démo · F3 » (x 1258, y 186)
+136. « #18 » (x 1279, y 212)
+137. « SILO-31 » (x 1258, y 256)
+138. « · » (x 1312, y 256)
+139. « F5 » (x 1320, y 256)
+140. « Stockage des photos sur MinIO » (x 1258, y 278)
+141. « #19 » (x 1279, y 320)
+142. « SILO-43 » (x 1258, y 364)
+143. « · » (x 1312, y 364)
+144. « F4 » (x 1320, y 364)
+145. « Synchro au retour du réseau » (x 1258, y 386)
+146. « #16 » (x 1279, y 428)
+147. « SILO-42 » (x 1258, y 472)
+148. « · » (x 1312, y 472)
+149. « F4 » (x 1320, y 472)
+150. « Formulaire de saisie » (x 1258, y 494)
+151. « #14 » (x 1279, y 520)
+152. « SILO-41 » (x 1258, y 564)
+153. « · » (x 1312, y 564)
+154. « F4 » (x 1320, y 564)
+155. « Schéma local des constats » (x 1258, y 586)
+156. « #12 » (x 1279, y 628)
+157. « SILO-20 » (x 1258, y 672)
+158. « · » (x 1312, y 672)
+159. « F3 » (x 1320, y 672)
+160. « Écran de réaffectation » (x 1258, y 694)
+161. « SILO-19 » (x 1258, y 738)
+162. « · » (x 1312, y 738)
+163. « F3 » (x 1320, y 738)
+164. « Route de réaffectation » (x 1258, y 760)
+165. « SILO-18 » (x 1258, y 804)
+166. « · » (x 1312, y 804)
+167. « F3 » (x 1320, y 804)
+168. « Historique des affectations » (x 1258, y 826)
+169. « SILO-14 » (x 1258, y 886)
+170. « · » (x 1312, y 886)
+171. « F2 » (x 1320, y 886)
+172. « Démo · F2 » (x 1258, y 908)
+173. « SILO-45 » (x 926, y 18,5)
+174. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+175. « Fermer » (x 1374, y 18,5)
+176. « F4 » (x 926, y 72)
+177. « · » (x 953, y 72)
+178. « S42 » (x 980, y 72)
+179. « · » (x 1009, y 72)
+180. « PR #20 » (x 1036, y 72)
+181. « Conflits de saisie » (x 904, y 104)
+182. « En review » (x 928, y 152,5)
+183. « A » (x 1031, y 155)
+184. « Adam (moi) » (x 1050, y 152,5)
+185. « Requise pour livrer » (x 1193, y 152,5)
+186. « Ajouter une étiquette » (x 909, y 193)
+187. « PR #20 » (x 935, y 242)
+188. « · changements demandés » (x 987, y 242)
+189. « · CI cassée » (x 1148, y 242)
+190. « PR » (x 1327, y 242,5)
+191. « Job » (x 1365, y 242,5)
+192. « Détails » (x 920, y 297)
+193. « Activité » (x 994, y 297)
+194. « Chronologie » (x 904, y 344)
+195. « journal du ticket : branche, PR, étapes, sessions, statut » (x 988, y 344,5)
+196. « Session T3 Code ouverte » (x 940, y 373)
+197. « 14:34 » (x 1386, y 373,5)
+198. « Changements demandés sur PR #20 » (x 940, y 407)
+199. « 13:47 » (x 1387, y 407,5)
+200. « CI cassée sur PR #20 » (x 940, y 441)
+201. « 11:58 » (x 1388, y 441,5)
+202. « job e2e · voir le journal » (x 940, y 460)
+203. « Étape 9 · Review » (x 940, y 492)
+204. « hier 17:12 » (x 1366, y 492,5)
+205. « PR #20 ouverte » (x 940, y 526)
+206. « hier 16:40 » (x 1361, y 526,5)
+207. « statut ⇒ En review » (x 940, y 545)
+208. « Branche feat/silo-45 poussée » (x 940, y 577)
+209. « mer. 10:05 » (x 1358, y 577,5)
+210. « statut ⇒ En cours » (x 940, y 596)
+211. « Anciens runs » (x 926, y 658)
+212. « runs d'agents d'avant la phase 27, en lecture seule » (x 1015, y 658,5)
 
 ### Blocs
 
@@ -7585,35 +6844,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -7630,9 +6882,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -8121,90 +7370,86 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Questions » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Ouvertes » (x 269, y 67,5)
-34. « Répondues » (x 345, y 67,5)
-35. « Toutes » (x 433, y 67,5)
-36. « Archivées » (x 495, y 67,5)
-37. « Tous » (x 583, y 67,5)
-38. « 3 » (x 617, y 68)
-39. « Silo SA » (x 648, y 67,5)
-40. « 2 » (x 696, y 68)
-41. « Produit » (x 727, y 67,5)
-42. « 1 » (x 776, y 68)
-43. « Exporter pour le client (2) » (x 1123, y 67,5)
-44. « Nouvelle question » (x 1312, y 67,5)
-45. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
-46. « SILO-51 » (x 265, y 156)
-47. « Lecture du fichier Excel » (x 324, y 155,5)
-48. « F6 » (x 501, y 156)
-49. « Q14 » (x 279, y 194)
-50. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
-51. « bloquante » (x 600, y 194)
-52. « Pour : Silo SA » (x 304, y 224)
-53. « posée par » (x 411, y 224)
-54. « AB » (x 478, y 227)
-55. « Adam · il y a 3 j » (x 500, y 224)
-56. « Votre réponse… » (x 291, y 262)
-57. « Répondre » (x 1337, y 262,5)
-58. « SILO-34 » (x 265, y 321)
-59. « Tests E2E de l'envoi » (x 324, y 320,5)
-60. « F5 » (x 477, y 321)
-61. « Q16 » (x 279, y 358)
-62. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
-63. « Pour : Produit » (x 304, y 387)
-64. « posée par » (x 411, y 387)
-65. « AB » (x 478, y 390)
-66. « Adam · hier » (x 500, y 387)
-67. « Votre réponse… » (x 291, y 425)
-68. « Répondre » (x 1337, y 425,5)
-69. « SILO-81 » (x 265, y 484)
-70. « Modèle du rapport » (x 324, y 483,5)
-71. « F7 » (x 469, y 484)
-72. « Q17 » (x 279, y 521)
-73. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
-74. « Pour : Silo SA » (x 304, y 550)
-75. « posée par » (x 411, y 550)
-76. « AB » (x 478, y 553)
-77. « Adam · il y a 2 h » (x 500, y 550)
-78. « Votre réponse… » (x 291, y 588)
-79. « Répondre » (x 1337, y 588,5)
-80. « Texte exporté » (x 868, y 108)
-81. « 2 questions client » (x 1162, y 108,5)
-82. « Questions pour Silo SA · 16 oct. 2026 » (x 880, y 144)
-83. «   » (x 880, y 165)
-84. « Q14 · Un box réaffecté garde-t-il ses photos ? » (x 880, y 186)
-85. «    bloque « Importer les box depuis Excel », » (x 880, y 207)
-86. « prévue semaine du 19 oct. · réponse souhaitée » (x 880, y 228)
-87. « avant le 19 oct. » (x 880, y 249)
-88. «   » (x 880, y 270)
-89. « Q17 · Un rapport par chef de centre ou par » (x 880, y 291)
-90. « client ? » (x 880, y 312)
-91. «    pour « Rapport de centre journalier », prévue » (x 880, y 333)
-92. « semaine du 26 oct. · réponse souhaitée avant le 26 » (x 880, y 354)
-93. « oct. » (x 880, y 375)
-94. « Les questions exportées sont marquées envoyées. » (x 868, y 415)
-95. « Copier » (x 1212, y 415)
-96. « 2 questions marquées envoyées » (x 1115, y 938,5)
-97. « Annuler » (x 1331, y 939)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Questions » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Ouvertes » (x 269, y 67,5)
+30. « Répondues » (x 345, y 67,5)
+31. « Toutes » (x 433, y 67,5)
+32. « Archivées » (x 495, y 67,5)
+33. « Tous » (x 583, y 67,5)
+34. « 3 » (x 617, y 68)
+35. « Silo SA » (x 648, y 67,5)
+36. « 2 » (x 696, y 68)
+37. « Produit » (x 727, y 67,5)
+38. « 1 » (x 776, y 68)
+39. « Exporter pour le client (2) » (x 1123, y 67,5)
+40. « Nouvelle question » (x 1312, y 67,5)
+41. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
+42. « SILO-51 » (x 265, y 156)
+43. « Lecture du fichier Excel » (x 324, y 155,5)
+44. « F6 » (x 501, y 156)
+45. « Q14 » (x 279, y 194)
+46. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
+47. « bloquante » (x 600, y 194)
+48. « Pour : Silo SA » (x 304, y 224)
+49. « posée par » (x 411, y 224)
+50. « AB » (x 478, y 227)
+51. « Adam · il y a 3 j » (x 500, y 224)
+52. « Votre réponse… » (x 291, y 262)
+53. « Répondre » (x 1337, y 262,5)
+54. « SILO-34 » (x 265, y 321)
+55. « Tests E2E de l'envoi » (x 324, y 320,5)
+56. « F5 » (x 477, y 321)
+57. « Q16 » (x 279, y 358)
+58. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
+59. « Pour : Produit » (x 304, y 387)
+60. « posée par » (x 411, y 387)
+61. « AB » (x 478, y 390)
+62. « Adam · hier » (x 500, y 387)
+63. « Votre réponse… » (x 291, y 425)
+64. « Répondre » (x 1337, y 425,5)
+65. « SILO-81 » (x 265, y 484)
+66. « Modèle du rapport » (x 324, y 483,5)
+67. « F7 » (x 469, y 484)
+68. « Q17 » (x 279, y 521)
+69. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
+70. « Pour : Silo SA » (x 304, y 550)
+71. « posée par » (x 411, y 550)
+72. « AB » (x 478, y 553)
+73. « Adam · il y a 2 h » (x 500, y 550)
+74. « Votre réponse… » (x 291, y 588)
+75. « Répondre » (x 1337, y 588,5)
+76. « Texte exporté » (x 868, y 108)
+77. « 2 questions client » (x 1162, y 108,5)
+78. « Questions pour Silo SA · 16 oct. 2026 » (x 880, y 144)
+79. «   » (x 880, y 165)
+80. « Q14 · Un box réaffecté garde-t-il ses photos ? » (x 880, y 186)
+81. «    bloque « Importer les box depuis Excel », » (x 880, y 207)
+82. « prévue semaine du 19 oct. · réponse souhaitée » (x 880, y 228)
+83. « avant le 19 oct. » (x 880, y 249)
+84. «   » (x 880, y 270)
+85. « Q17 · Un rapport par chef de centre ou par » (x 880, y 291)
+86. « client ? » (x 880, y 312)
+87. «    pour « Rapport de centre journalier », prévue » (x 880, y 333)
+88. « semaine du 26 oct. · réponse souhaitée avant le 26 » (x 880, y 354)
+89. « oct. » (x 880, y 375)
+90. « Les questions exportées sont marquées envoyées. » (x 868, y 415)
+91. « Copier » (x 1212, y 415)
+92. « 2 questions marquées envoyées » (x 1115, y 938,5)
+93. « Annuler » (x 1331, y 939)
 
 ### Blocs
 
@@ -8248,35 +7493,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `fg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 457, 62 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `fg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 62 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -8293,9 +7531,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 62 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -8466,184 +7701,180 @@ Exports : `exports/proposition-attente-vue-ensemble-dark.png` et `exports/propos
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 1183)
-25. « AB » (x 21, y 1222)
-26. « Adam Ben Mchichi » (x 48, y 1220,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 671, y 16,5)
-31. « Nouveau ticket » (x 844, y 16,5)
-32. « Agent de projet » (x 982, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « client Silo SA » (x 286, y 100)
-35. « · » (x 373, y 100)
-36. « Location de box » (x 384, y 100)
-37. « · » (x 487, y 100)
-38. « silo-labs/silo-location » (x 519, y 100,5)
-39. « Fonctionnalités » (x 303, y 142)
-40. « 4 » (x 283, y 162)
-41. « livrées sur 9 » (x 307, y 174)
-42. « 3 en attente » (x 301, y 195,5)
-43. « Sprint en cours » (x 465,2, y 142)
-44. « S42 » (x 445,2, y 162)
-45. « Saisie ho… » (x 505,2, y 174)
-46. « se termine aujourd'hui » (x 445,2, y 195,5)
-47. « En cours » (x 627,4, y 142)
-48. « 1 » (x 607,4, y 162)
-49. « / 2 » (x 625,4, y 174)
-50. « bloquée : F6 » (x 620,4, y 195,5)
-51. « En review » (x 789,6, y 142)
-52. « 3 » (x 769,6, y 162)
-53. « PR » (x 793,6, y 174)
-54. « #20 · #22 · #23 » (x 769,6, y 195,5)
-55. « Questions » (x 951,8, y 142)
-56. « 3 » (x 931,8, y 162)
-57. « ouvertes » (x 955,8, y 174)
-58. « Q14 bloque F6 » (x 944,8, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 252,5)
-62. « SILO-33 » (x 488, y 252,5)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 859, y 252,5)
-65. « 42 min » (x 1020, y 252,5)
-66. « F4 » (x 454, y 289,5)
-67. « SILO-45 » (x 488, y 289,5)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 859, y 289,5)
-70. « 18 min » (x 1023, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 916, y 350,5)
-73. « S42 » (x 525, y 390)
-74. « 12 oct. » (x 553, y 390)
-75. « S43 » (x 664, y 390)
-76. « 19 oct. » (x 692, y 390)
-77. « S44 » (x 803, y 390)
-78. « 26 oct. » (x 831, y 390)
-79. « S45 » (x 942, y 390)
-80. « 2 nov. » (x 970, y 390)
-81. « F5 » (x 281, y 419)
-82. « Envoyer les photos d'un constat » (x 304, y 419)
-83. « bloquée · Q14 » (x 828, y 450)
-84. « F6 » (x 281, y 449)
-85. « Importer les box depuis Excel » (x 304, y 449)
-86. « F8 » (x 281, y 479)
-87. « Valider les contrats par lot » (x 304, y 479)
-88. « F7 » (x 281, y 509)
-89. « Rapport de centre journalier » (x 304, y 509)
-90. « aujourd'hui » (x 616,4, y 514)
-91. « étape livrée » (x 299, y 548)
-92. « en review » (x 397, y 548)
-93. « en cours » (x 484, y 548)
-94. « bloquée » (x 565, y 548)
-95. « à faire » (x 644, y 548)
-96. « glissement prévu » (x 713, y 548)
-97. « En attente » (x 304, y 600,5)
-98. « 3 » (x 388, y 601,5)
-99. « étapes mises de côté, par raison · à reprendre depuis le Planning » (x 693, y 601,5)
-100. « Règle de fusion à valider par le client » (x 304, y 643)
-101. « SILO-45 » (x 985, y 643,5)
-102. « Serveur MinIO de recette indisponible » (x 304, y 682)
-103. « SILO-33, SILO-82 » (x 818, y 682,5)
-104. « · 2 en dépendent » (x 944, y 682,5)
-105. « Sprint S42 · Saisie hors ligne » (x 304, y 736,5)
-106. « 12–16 oct. » (x 686, y 737,5)
-107. « F3 » (x 281, y 779,5)
-108. « Réaffecter un box » (x 317, y 779)
-109. « livrée » (x 566, y 779,5)
-110. « 4/4 » (x 720, y 779,5)
-111. « F4 » (x 281, y 818,5)
-112. « Saisir un constat hors ligne » (x 317, y 818)
-113. « 1 » (x 502, y 819)
-114. « livrée » (x 566, y 818,5)
-115. « 3/4 » (x 720, y 818,5)
-116. « F5 » (x 281, y 857,5)
-117. « Envoyer les photos d'un constat » (x 317, y 857)
-118. « 3 » (x 531, y 858)
-119. « en cours » (x 549, y 857,5)
-120. « 1/2 » (x 720, y 857,5)
-121. « Prochaine à finir » (x 304, y 911,5)
-122. « la plus avancée du sprint » (x 601, y 912,5)
-123. « F5 » (x 281, y 945,5)
-124. « Envoyer les photos d'un constat » (x 306, y 944)
-125. « 1/2 » (x 720, y 945,5)
-126. « SILO-32 » (x 297, y 972,5)
-127. « Route d'envoi des photos » (x 356, y 972)
-128. « Activité » (x 304, y 1029,5)
-129. « git » (x 633, y 1030,5)
-130. « full-delivery » (x 668, y 1030,5)
-131. « 15:10 » (x 281, y 1072,5)
-132. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1072)
-133. « SILO-82 » (x 643, y 1072,5)
-134. « F7 » (x 722, y 1072,5)
-135. « 15:10 » (x 281, y 1111,5)
-136. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1111)
-137. « SILO-33 » (x 643, y 1111,5)
-138. « F5 » (x 722, y 1111,5)
-139. « 15:10 » (x 281, y 1150,5)
-140. « Mise en attente · Règle de fusion à valider p… » (x 355, y 1150)
-141. « SILO-45 » (x 643, y 1150,5)
-142. « F4 » (x 722, y 1150,5)
-143. « 15:04 » (x 281, y 1189,5)
-144. « PR #22 ouverte » (x 355, y 1189)
-145. « SILO-32 » (x 643, y 1189,5)
-146. « F5 » (x 722, y 1189,5)
-147. « En review » (x 814, y 736,5)
-148. « 3 » (x 894, y 737,5)
-149. « #22 » (x 818, y 778)
-150. « Route d'envoi des photos » (x 848, y 778)
-151. « SILO-32 » (x 818, y 799)
-152. « F5 » (x 897, y 799)
-153. « CI verte » (x 836, y 819)
-154. « #20 » (x 818, y 855)
-155. « Conflits de saisie » (x 848, y 855)
-156. « SILO-45 » (x 818, y 876)
-157. « F4 » (x 897, y 876)
-158. « changements demandés » (x 836, y 896)
-159. « #23 » (x 818, y 932)
-160. « Passage à Expo SDK 54 » (x 848, y 932)
-161. « SILO-61 » (x 818, y 952)
-162. « CI en cours » (x 835, y 971)
-163. « Questions » (x 814, y 1023,5)
-164. « 3 » (x 898, y 1024,5)
-165. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 1065)
-166. « F6 » (x 813, y 1090)
-167. « Q14 · Client · il y a 3 j » (x 840, y 1090)
-168. « bloquante » (x 965, y 1090)
-169. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1128)
-170. « F5 » (x 813, y 1152)
-171. « Q16 · Produit · hier » (x 840, y 1152)
-172. « Un rapport par chef de centre ou par client ? » (x 791, y 1189)
-173. « F7 » (x 813, y 1213)
-174. « Q17 · Client · il y a 2 h » (x 840, y 1213)
-175. « Agent de projet · Silo » (x 1154, y 20)
-176. « Fais le point du jour » (x 1194, y 83)
-177. « 14:38 » (x 1194, y 106)
-178. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
-179. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
-180. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
-181. « Lot n° 7 » (x 1132, y 282)
-182. « 3 actions » (x 1357, y 282,5)
-183. « Reporter F5 en S43 » (x 1158, y 319)
-184. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
-185. « Planifier F9 en S44 » (x 1158, y 374)
-186. « seule fonctionnalité à planifier » (x 1158, y 393)
-187. « Relancer le client sur Q14 » (x 1158, y 429)
-188. « bloque F6, prévue en S43 » (x 1158, y 448)
-189. « Valider (3) » (x 1142, y 491)
-190. « Refuser » (x 1227, y 491)
-191. « Écris à l'agent de projet… » (x 1130, y 1218)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 1183)
+22. « AB » (x 21, y 1222)
+23. « Adam Ben Mchichi » (x 48, y 1220,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 844, y 16,5)
+28. « Agent de projet » (x 982, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « client Silo SA » (x 286, y 100)
+31. « · » (x 373, y 100)
+32. « Location de box » (x 384, y 100)
+33. « · » (x 487, y 100)
+34. « silo-labs/silo-location » (x 519, y 100,5)
+35. « Fonctionnalités » (x 303, y 142)
+36. « 4 » (x 283, y 162)
+37. « livrées sur 9 » (x 307, y 174)
+38. « 3 en attente » (x 301, y 195,5)
+39. « Sprint en cours » (x 465,2, y 142)
+40. « S42 » (x 445,2, y 162)
+41. « Saisie ho… » (x 505,2, y 174)
+42. « se termine aujourd'hui » (x 445,2, y 195,5)
+43. « En cours » (x 627,4, y 142)
+44. « 1 » (x 607,4, y 162)
+45. « / 2 » (x 625,4, y 174)
+46. « bloquée : F6 » (x 620,4, y 195,5)
+47. « En review » (x 789,6, y 142)
+48. « 3 » (x 769,6, y 162)
+49. « PR » (x 793,6, y 174)
+50. « #20 · #22 · #23 » (x 769,6, y 195,5)
+51. « Questions » (x 951,8, y 142)
+52. « 3 » (x 931,8, y 162)
+53. « ouvertes » (x 955,8, y 174)
+54. « Q14 bloque F6 » (x 944,8, y 195,5)
+55. « En ce moment » (x 302, y 261,5)
+56. « 2 sessions T3 Code » (x 281, y 281,5)
+57. « F5 » (x 454, y 252,5)
+58. « SILO-33 » (x 488, y 252,5)
+59. « Écran d'envoi hors ligne » (x 547, y 252)
+60. « 7 · Porte qualité » (x 859, y 252,5)
+61. « 42 min » (x 1020, y 252,5)
+62. « F4 » (x 454, y 289,5)
+63. « SILO-45 » (x 488, y 289,5)
+64. « Conflits de saisie » (x 547, y 289)
+65. « 9 · Review » (x 859, y 289,5)
+66. « 18 min » (x 1023, y 289,5)
+67. « Échéances » (x 304, y 349,5)
+68. « fonctionnalités par sprint » (x 916, y 350,5)
+69. « S42 » (x 525, y 390)
+70. « 12 oct. » (x 553, y 390)
+71. « S43 » (x 664, y 390)
+72. « 19 oct. » (x 692, y 390)
+73. « S44 » (x 803, y 390)
+74. « 26 oct. » (x 831, y 390)
+75. « S45 » (x 942, y 390)
+76. « 2 nov. » (x 970, y 390)
+77. « F5 » (x 281, y 419)
+78. « Envoyer les photos d'un constat » (x 304, y 419)
+79. « bloquée · Q14 » (x 828, y 450)
+80. « F6 » (x 281, y 449)
+81. « Importer les box depuis Excel » (x 304, y 449)
+82. « F8 » (x 281, y 479)
+83. « Valider les contrats par lot » (x 304, y 479)
+84. « F7 » (x 281, y 509)
+85. « Rapport de centre journalier » (x 304, y 509)
+86. « aujourd'hui » (x 616,4, y 514)
+87. « étape livrée » (x 299, y 548)
+88. « en review » (x 397, y 548)
+89. « en cours » (x 484, y 548)
+90. « bloquée » (x 565, y 548)
+91. « à faire » (x 644, y 548)
+92. « glissement prévu » (x 713, y 548)
+93. « En attente » (x 304, y 600,5)
+94. « 3 » (x 388, y 601,5)
+95. « étapes mises de côté, par raison · à reprendre depuis le Planning » (x 693, y 601,5)
+96. « Règle de fusion à valider par le client » (x 304, y 643)
+97. « SILO-45 » (x 985, y 643,5)
+98. « Serveur MinIO de recette indisponible » (x 304, y 682)
+99. « SILO-33, SILO-82 » (x 818, y 682,5)
+100. « · 2 en dépendent » (x 944, y 682,5)
+101. « Sprint S42 · Saisie hors ligne » (x 304, y 736,5)
+102. « 12–16 oct. » (x 686, y 737,5)
+103. « F3 » (x 281, y 779,5)
+104. « Réaffecter un box » (x 317, y 779)
+105. « livrée » (x 566, y 779,5)
+106. « 4/4 » (x 720, y 779,5)
+107. « F4 » (x 281, y 818,5)
+108. « Saisir un constat hors ligne » (x 317, y 818)
+109. « 1 » (x 502, y 819)
+110. « livrée » (x 566, y 818,5)
+111. « 3/4 » (x 720, y 818,5)
+112. « F5 » (x 281, y 857,5)
+113. « Envoyer les photos d'un constat » (x 317, y 857)
+114. « 3 » (x 531, y 858)
+115. « en cours » (x 549, y 857,5)
+116. « 1/2 » (x 720, y 857,5)
+117. « Prochaine à finir » (x 304, y 911,5)
+118. « la plus avancée du sprint » (x 601, y 912,5)
+119. « F5 » (x 281, y 945,5)
+120. « Envoyer les photos d'un constat » (x 306, y 944)
+121. « 1/2 » (x 720, y 945,5)
+122. « SILO-32 » (x 297, y 972,5)
+123. « Route d'envoi des photos » (x 356, y 972)
+124. « Activité » (x 304, y 1029,5)
+125. « git » (x 633, y 1030,5)
+126. « full-delivery » (x 668, y 1030,5)
+127. « 15:10 » (x 281, y 1072,5)
+128. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1072)
+129. « SILO-82 » (x 643, y 1072,5)
+130. « F7 » (x 722, y 1072,5)
+131. « 15:10 » (x 281, y 1111,5)
+132. « Mise en attente · Serveur MinIO de recette i… » (x 355, y 1111)
+133. « SILO-33 » (x 643, y 1111,5)
+134. « F5 » (x 722, y 1111,5)
+135. « 15:10 » (x 281, y 1150,5)
+136. « Mise en attente · Règle de fusion à valider p… » (x 355, y 1150)
+137. « SILO-45 » (x 643, y 1150,5)
+138. « F4 » (x 722, y 1150,5)
+139. « 15:04 » (x 281, y 1189,5)
+140. « PR #22 ouverte » (x 355, y 1189)
+141. « SILO-32 » (x 643, y 1189,5)
+142. « F5 » (x 722, y 1189,5)
+143. « En review » (x 814, y 736,5)
+144. « 3 » (x 894, y 737,5)
+145. « #22 » (x 818, y 778)
+146. « Route d'envoi des photos » (x 848, y 778)
+147. « SILO-32 » (x 818, y 799)
+148. « F5 » (x 897, y 799)
+149. « CI verte » (x 836, y 819)
+150. « #20 » (x 818, y 855)
+151. « Conflits de saisie » (x 848, y 855)
+152. « SILO-45 » (x 818, y 876)
+153. « F4 » (x 897, y 876)
+154. « changements demandés » (x 836, y 896)
+155. « #23 » (x 818, y 932)
+156. « Passage à Expo SDK 54 » (x 848, y 932)
+157. « SILO-61 » (x 818, y 952)
+158. « CI en cours » (x 835, y 971)
+159. « Questions » (x 814, y 1023,5)
+160. « 3 » (x 898, y 1024,5)
+161. « Un box réaffecté garde-t-il ses photos ? » (x 791, y 1065)
+162. « F6 » (x 813, y 1090)
+163. « Q14 · Client · il y a 3 j » (x 840, y 1090)
+164. « bloquante » (x 965, y 1090)
+165. « Quota par client : 2 Go ou 5 Go ? » (x 791, y 1128)
+166. « F5 » (x 813, y 1152)
+167. « Q16 · Produit · hier » (x 840, y 1152)
+168. « Un rapport par chef de centre ou par client ? » (x 791, y 1189)
+169. « F7 » (x 813, y 1213)
+170. « Q17 · Client · il y a 2 h » (x 840, y 1213)
+171. « Agent de projet · Silo » (x 1154, y 20)
+172. « Fais le point du jour » (x 1194, y 83)
+173. « 14:38 » (x 1194, y 106)
+174. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1152, y 145)
+175. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1152, y 174)
+176. « Lu : Planning, F5, journal des étapes » (x 1152, y 243)
+177. « Lot n° 7 » (x 1132, y 282)
+178. « 3 actions » (x 1357, y 282,5)
+179. « Reporter F5 en S43 » (x 1158, y 319)
+180. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 338)
+181. « Planifier F9 en S44 » (x 1158, y 374)
+182. « seule fonctionnalité à planifier » (x 1158, y 393)
+183. « Relancer le client sur Q14 » (x 1158, y 429)
+184. « bloque F6, prévue en S43 » (x 1158, y 448)
+185. « Valider (3) » (x 1142, y 491)
+186. « Refuser » (x 1227, y 491)
+187. « Écris à l'agent de projet… » (x 1130, y 1218)
 
 ### Blocs
 
@@ -8687,35 +7918,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 1176, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 1183,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1183, 69 × 16
@@ -8732,9 +7956,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 651, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 651, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 671, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 815, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 825, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 844, y 16,5, 85 × 15
@@ -9284,120 +8505,116 @@ Exports : `exports/proposition-attente-planning-dark.png` et `exports/propositio
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Planning » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Planning » (x 265, y 67)
-34. « 4 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
-35. « Fonctionnalité » (x 930, y 74)
-36. « Sprint » (x 1059, y 74)
-37. « En cours : 1 / 2 » (x 1146, y 74)
-38. « Colonnes » (x 1282, y 73)
-39. « Bandes » (x 1359, y 73)
-40. « À planifier » (x 297, y 120)
-41. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
-42. « F9 » (x 306, y 178)
-43. « Exporter le dossier client » (x 287, y 200)
-44. « 0/3 étapes » (x 287, y 240)
-45. « suivante : SILO-91 » (x 366, y 240)
-46. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
-47. « En attente (3) » (x 297, y 651)
-48. « Règle de fusion à valider par le client » (x 277, y 679)
-49. « SILO-45 » (x 287, y 728)
-50. « · » (x 339, y 728)
-51. « F4 » (x 347, y 728)
-52. « Conflits de saisie » (x 287, y 745)
-53. « Serveur MinIO de recette indisponible » (x 277, y 780)
-54. « SILO-33 » (x 287, y 829)
-55. « · » (x 339, y 829)
-56. « F5 » (x 347, y 829)
-57. « Écran d'envoi hors ligne » (x 287, y 846)
-58. « SILO-82 » (x 287, y 882)
-59. « · » (x 339, y 882)
-60. « F7 » (x 347, y 882)
-61. « Génération PDF » (x 287, y 899)
-62. « 2 en dépendent » (x 297, y 928)
-63. « S41 » (x 503, y 120)
-64. « Accès » (x 533, y 120)
-65. « 5–9 oct. » (x 503, y 141,5)
-66. « terminé » (x 649, y 142)
-67. « 2/2 livrées » (x 613, y 161)
-68. « 9 étapes prévues · capacité 5 » (x 503, y 179)
-69. « F1 » (x 532, y 217)
-70. « livrée » (x 654, y 217)
-71. « Se connecter avec Microsoft » (x 513, y 239)
-72. « F2 » (x 532, y 301)
-73. « livrée » (x 654, y 301)
-74. « Voir ses box affectés » (x 513, y 323)
-75. « S42 » (x 729, y 120)
-76. « Saisie hors ligne » (x 759, y 120)
-77. « 12–16 oct. » (x 729, y 141,5)
-78. « se termine aujourd'hui » (x 804, y 142)
-79. « 2/3 livrées » (x 839, y 161)
-80. « 10 étapes prévues · capacité 5 » (x 729, y 179)
-81. « F3 » (x 758, y 217)
-82. « livrée » (x 880, y 217)
-83. « Réaffecter un box » (x 739, y 239)
-84. « 4/4 étapes » (x 739, y 279)
-85. « F4 » (x 758, y 323)
-86. « livrée · 1 en attente » (x 812, y 323)
-87. « Saisir un constat hors ligne » (x 739, y 345)
-88. « 3/4 étapes » (x 739, y 385)
-89. « SILO-45 » (x 862, y 385)
-90. « F5 » (x 758, y 430,5)
-91. « en cours » (x 860, y 431)
-92. « Envoyer les photos d'un constat » (x 739, y 454)
-93. « 1/2 étapes » (x 739, y 510)
-94. « SILO-33 » (x 862, y 510)
-95. « S43 » (x 955, y 120)
-96. « Import et contrats » (x 985, y 120)
-97. « 19–23 oct. » (x 955, y 140)
-98. « 2 prévues » (x 1093, y 140)
-99. « 8 étapes prévues · capacité 5 » (x 955, y 158)
-100. « F6 » (x 984, y 197,5)
-101. « bloquée · Q14 » (x 1063, y 198)
-102. « Importer les box depuis Excel » (x 965, y 221)
-103. « 0/4 étapes » (x 965, y 277)
-104. « suivante : SILO-51 » (x 1044, y 277)
-105. « F8 » (x 984, y 321)
-106. « Valider les contrats par lot » (x 965, y 343)
-107. « 0/4 étapes » (x 965, y 383)
-108. « suivante : SILO-71 » (x 1045, y 383)
-109. « S44 » (x 1181, y 120)
-110. « Rapports » (x 1211, y 120)
-111. « 26–30 oct. » (x 1181, y 140)
-112. « 1 prévue » (x 1328, y 140)
-113. « 4 étapes prévues · capacité 5 » (x 1181, y 158)
-114. « F7 » (x 1210, y 196)
-115. « Rapport de centre journalier » (x 1191, y 218)
-116. « 0/4 étapes » (x 1191, y 274)
-117. « suivante : SILO-81 » (x 1270, y 274)
-118. « Déposer pour planifier en S44 » (x 1192, y 361,5)
-119. « 26–30 oct. » (x 1248, y 382,5)
-120. « étape livrée » (x 283, y 968)
-121. « en review » (x 377, y 968)
-122. « en cours » (x 460, y 968)
-123. « bloquée » (x 538, y 968)
-124. « à faire » (x 613, y 968)
-125. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
-126. « F9 » (x 1230, y 399)
-127. « Exporter le dossier client » (x 1211, y 421)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Planning » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Planning » (x 265, y 67)
+30. « 4 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
+31. « Fonctionnalité » (x 930, y 74)
+32. « Sprint » (x 1059, y 74)
+33. « En cours : 1 / 2 » (x 1146, y 74)
+34. « Colonnes » (x 1282, y 73)
+35. « Bandes » (x 1359, y 73)
+36. « À planifier » (x 297, y 120)
+37. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
+38. « F9 » (x 306, y 178)
+39. « Exporter le dossier client » (x 287, y 200)
+40. « 0/3 étapes » (x 287, y 240)
+41. « suivante : SILO-91 » (x 366, y 240)
+42. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
+43. « En attente (3) » (x 297, y 651)
+44. « Règle de fusion à valider par le client » (x 277, y 679)
+45. « SILO-45 » (x 287, y 728)
+46. « · » (x 339, y 728)
+47. « F4 » (x 347, y 728)
+48. « Conflits de saisie » (x 287, y 745)
+49. « Serveur MinIO de recette indisponible » (x 277, y 780)
+50. « SILO-33 » (x 287, y 829)
+51. « · » (x 339, y 829)
+52. « F5 » (x 347, y 829)
+53. « Écran d'envoi hors ligne » (x 287, y 846)
+54. « SILO-82 » (x 287, y 882)
+55. « · » (x 339, y 882)
+56. « F7 » (x 347, y 882)
+57. « Génération PDF » (x 287, y 899)
+58. « 2 en dépendent » (x 297, y 928)
+59. « S41 » (x 503, y 120)
+60. « Accès » (x 533, y 120)
+61. « 5–9 oct. » (x 503, y 141,5)
+62. « terminé » (x 649, y 142)
+63. « 2/2 livrées » (x 613, y 161)
+64. « 9 étapes prévues · capacité 5 » (x 503, y 179)
+65. « F1 » (x 532, y 217)
+66. « livrée » (x 654, y 217)
+67. « Se connecter avec Microsoft » (x 513, y 239)
+68. « F2 » (x 532, y 301)
+69. « livrée » (x 654, y 301)
+70. « Voir ses box affectés » (x 513, y 323)
+71. « S42 » (x 729, y 120)
+72. « Saisie hors ligne » (x 759, y 120)
+73. « 12–16 oct. » (x 729, y 141,5)
+74. « se termine aujourd'hui » (x 804, y 142)
+75. « 2/3 livrées » (x 839, y 161)
+76. « 10 étapes prévues · capacité 5 » (x 729, y 179)
+77. « F3 » (x 758, y 217)
+78. « livrée » (x 880, y 217)
+79. « Réaffecter un box » (x 739, y 239)
+80. « 4/4 étapes » (x 739, y 279)
+81. « F4 » (x 758, y 323)
+82. « livrée · 1 en attente » (x 812, y 323)
+83. « Saisir un constat hors ligne » (x 739, y 345)
+84. « 3/4 étapes » (x 739, y 385)
+85. « SILO-45 » (x 862, y 385)
+86. « F5 » (x 758, y 430,5)
+87. « en cours » (x 860, y 431)
+88. « Envoyer les photos d'un constat » (x 739, y 454)
+89. « 1/2 étapes » (x 739, y 510)
+90. « SILO-33 » (x 862, y 510)
+91. « S43 » (x 955, y 120)
+92. « Import et contrats » (x 985, y 120)
+93. « 19–23 oct. » (x 955, y 140)
+94. « 2 prévues » (x 1093, y 140)
+95. « 8 étapes prévues · capacité 5 » (x 955, y 158)
+96. « F6 » (x 984, y 197,5)
+97. « bloquée · Q14 » (x 1063, y 198)
+98. « Importer les box depuis Excel » (x 965, y 221)
+99. « 0/4 étapes » (x 965, y 277)
+100. « suivante : SILO-51 » (x 1044, y 277)
+101. « F8 » (x 984, y 321)
+102. « Valider les contrats par lot » (x 965, y 343)
+103. « 0/4 étapes » (x 965, y 383)
+104. « suivante : SILO-71 » (x 1045, y 383)
+105. « S44 » (x 1181, y 120)
+106. « Rapports » (x 1211, y 120)
+107. « 26–30 oct. » (x 1181, y 140)
+108. « 1 prévue » (x 1328, y 140)
+109. « 4 étapes prévues · capacité 5 » (x 1181, y 158)
+110. « F7 » (x 1210, y 196)
+111. « Rapport de centre journalier » (x 1191, y 218)
+112. « 0/4 étapes » (x 1191, y 274)
+113. « suivante : SILO-81 » (x 1270, y 274)
+114. « Déposer pour planifier en S44 » (x 1192, y 361,5)
+115. « 26–30 oct. » (x 1248, y 382,5)
+116. « étape livrée » (x 283, y 968)
+117. « en review » (x 377, y 968)
+118. « en cours » (x 460, y 968)
+119. « bloquée » (x 538, y 968)
+120. « à faire » (x 613, y 968)
+121. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
+122. « F9 » (x 1230, y 399)
+123. « Exporter le dossier client » (x 1211, y 421)
 
 ### Blocs
 
@@ -9441,35 +8658,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `fg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 297, 54 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -9486,9 +8696,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 54 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -9776,97 +8983,93 @@ Exports : `exports/proposition-attente-fonctionnalite-dark.png` et `exports/prop
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Planning » (x 323, y 16)
-30. « / » (x 384, y 16)
-31. « F5 · Envoyer les photos d'un constat » (x 399, y 16)
-32. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-33. « Agent de projet » (x 1300, y 16,5)
-34. « 3 » (x 1402, y 17,5)
-35. « Fonctionnalité · F5 » (x 291, y 72)
-36. « S42 » (x 421, y 73)
-37. « ouverte » (x 460, y 73)
-38. « Envoyer les photos d'un constat » (x 269, y 106)
-39. « 1 étape livrée sur 2 · 3 en attente » (x 497, y 156)
-40. « Résultat attendu · ce qu'on montrera à la démo » (x 308, y 202)
-41. « Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client. » (x 288, y 223)
-42. « Parcours de A à Z » (x 269, y 311,5)
-43. « étapes libres, dans l'ordre des dépendances » (x 402, y 313)
-44. « Ajouter une étape » (x 953, y 313)
-45. « Stockage des photos sur MinIO » (x 325, y 361)
-46. « SILO-31 » (x 538, y 362,5)
-47. « Terminé » (x 1004, y 362)
-48. « #19 » (x 343, y 385)
-49. « fusionnée » (x 370, y 385)
-50. « hier 18:22 » (x 454, y 385,5)
-51. « 11 · Livré » (x 1006, y 385)
-52. « 2 » (x 279, y 457,5)
-53. « Route d'envoi des photos » (x 325, y 461)
-54. « SILO-32 » (x 498, y 462,5)
-55. « En review » (x 994, y 462)
-56. « #22 » (x 343, y 485)
-57. « 15:04 » (x 394, y 485,5)
-58. « 10 · Démo » (x 996, y 485)
-59. « En attente · 3 » (x 294, y 578,5)
-60. « la fonctionnalité avance sans elles » (x 398, y 580)
-61. « Écran d'envoi hors ligne » (x 325, y 622)
-62. « SILO-33 » (x 487, y 623)
-63. « En cours » (x 1000, y 623)
-64. « Serveur MinIO de recette indisponible · depuis le 16 oct. » (x 343, y 651)
-65. « Reprendre » (x 981, y 651)
-66. « Tests E2E de l'envoi » (x 325, y 703)
-67. « SILO-34 » (x 462, y 704)
-68. « À faire » (x 1012, y 704)
-69. « attend SILO-33 » (x 343, y 727)
-70. « Démo client » (x 325, y 774)
-71. « SILO-35 » (x 412, y 775)
-72. « À faire » (x 1012, y 775)
-73. « attend SILO-33 » (x 343, y 798)
-74. « Sprint » (x 1129, y 83)
-75. « S42 » (x 1127, y 122)
-76. « Saisie hors ligne · 12–16 oct. » (x 1160, y 121)
-77. « Déplacer en S43 » (x 1157, y 160)
-78. « proposé par l'agent » (x 1269, y 160,5)
-79. « Dépendances » (x 1129, y 215)
-80. « Dépendance » (x 1324, y 216)
-81. « Attend » (x 1106, y 253)
-82. « F3 » (x 1170, y 253,5)
-83. « Réaffecter un box » (x 1192, y 253)
-84. « Débloque » (x 1106, y 287)
-85. « F7 » (x 1170, y 287,5)
-86. « Rapport de centre journalier » (x 1192, y 287)
-87. « S44 » (x 1378, y 287,5)
-88. « Questions » (x 1129, y 337)
-89. « 1 » (x 1201, y 337,5)
-90. « Question » (x 1343, y 338)
-91. « Quota par client : 2 Go ou 5 Go ? » (x 1106, y 375)
-92. « Q16 · Produit · hier · SILO-34 » (x 1106, y 392)
-93. « Activité » (x 1129, y 441)
-94. « Mise en attente · Serveur MinIO de r… » (x 1128, y 477)
-95. « 15:10 » (x 1365, y 477,5)
-96. « PR #22 ouverte · SILO-32 » (x 1128, y 507)
-97. « 15:04 » (x 1365, y 507,5)
-98. « Phase 7/12 · Porte qualité · SILO-33 » (x 1128, y 537)
-99. « 14:51 » (x 1365, y 537,5)
-100. « Session T3 Code ouverte · SILO-33 » (x 1128, y 567)
-101. « 14:34 » (x 1365, y 567,5)
-102. « Phase 10/12 · Démo · SILO-32 » (x 1128, y 597)
-103. « hier » (x 1371, y 597,5)
-104. « Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery. » (x 1113, y 633)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Planning » (x 323, y 16)
+27. « / » (x 384, y 16)
+28. « F5 · Envoyer les photos d'un constat » (x 399, y 16)
+29. « Agent de projet » (x 1300, y 16,5)
+30. « 3 » (x 1402, y 17,5)
+31. « Fonctionnalité · F5 » (x 291, y 72)
+32. « S42 » (x 421, y 73)
+33. « ouverte » (x 460, y 73)
+34. « Envoyer les photos d'un constat » (x 269, y 106)
+35. « 1 étape livrée sur 2 · 3 en attente » (x 497, y 156)
+36. « Résultat attendu · ce qu'on montrera à la démo » (x 308, y 202)
+37. « Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client. » (x 288, y 223)
+38. « Parcours de A à Z » (x 269, y 311,5)
+39. « étapes libres, dans l'ordre des dépendances » (x 402, y 313)
+40. « Ajouter une étape » (x 953, y 313)
+41. « Stockage des photos sur MinIO » (x 325, y 361)
+42. « SILO-31 » (x 538, y 362,5)
+43. « Terminé » (x 1004, y 362)
+44. « #19 » (x 343, y 385)
+45. « fusionnée » (x 370, y 385)
+46. « hier 18:22 » (x 454, y 385,5)
+47. « 11 · Livré » (x 1006, y 385)
+48. « 2 » (x 279, y 457,5)
+49. « Route d'envoi des photos » (x 325, y 461)
+50. « SILO-32 » (x 498, y 462,5)
+51. « En review » (x 994, y 462)
+52. « #22 » (x 343, y 485)
+53. « 15:04 » (x 394, y 485,5)
+54. « 10 · Démo » (x 996, y 485)
+55. « En attente · 3 » (x 294, y 578,5)
+56. « la fonctionnalité avance sans elles » (x 398, y 580)
+57. « Écran d'envoi hors ligne » (x 325, y 622)
+58. « SILO-33 » (x 487, y 623)
+59. « En cours » (x 1000, y 623)
+60. « Serveur MinIO de recette indisponible · depuis le 16 oct. » (x 343, y 651)
+61. « Reprendre » (x 981, y 651)
+62. « Tests E2E de l'envoi » (x 325, y 703)
+63. « SILO-34 » (x 462, y 704)
+64. « À faire » (x 1012, y 704)
+65. « attend SILO-33 » (x 343, y 727)
+66. « Démo client » (x 325, y 774)
+67. « SILO-35 » (x 412, y 775)
+68. « À faire » (x 1012, y 775)
+69. « attend SILO-33 » (x 343, y 798)
+70. « Sprint » (x 1129, y 83)
+71. « S42 » (x 1127, y 122)
+72. « Saisie hors ligne · 12–16 oct. » (x 1160, y 121)
+73. « Déplacer en S43 » (x 1157, y 160)
+74. « proposé par l'agent » (x 1269, y 160,5)
+75. « Dépendances » (x 1129, y 215)
+76. « Dépendance » (x 1324, y 216)
+77. « Attend » (x 1106, y 253)
+78. « F3 » (x 1170, y 253,5)
+79. « Réaffecter un box » (x 1192, y 253)
+80. « Débloque » (x 1106, y 287)
+81. « F7 » (x 1170, y 287,5)
+82. « Rapport de centre journalier » (x 1192, y 287)
+83. « S44 » (x 1378, y 287,5)
+84. « Questions » (x 1129, y 337)
+85. « 1 » (x 1201, y 337,5)
+86. « Question » (x 1343, y 338)
+87. « Quota par client : 2 Go ou 5 Go ? » (x 1106, y 375)
+88. « Q16 · Produit · hier · SILO-34 » (x 1106, y 392)
+89. « Activité » (x 1129, y 441)
+90. « Mise en attente · Serveur MinIO de r… » (x 1128, y 477)
+91. « 15:10 » (x 1365, y 477,5)
+92. « PR #22 ouverte · SILO-32 » (x 1128, y 507)
+93. « 15:04 » (x 1365, y 507,5)
+94. « Phase 7/12 · Porte qualité · SILO-33 » (x 1128, y 537)
+95. « 14:51 » (x 1365, y 537,5)
+96. « Session T3 Code ouverte · SILO-33 » (x 1128, y 567)
+97. « 14:34 » (x 1365, y 567,5)
+98. « Phase 10/12 · Démo · SILO-32 » (x 1128, y 597)
+99. « hier » (x 1371, y 597,5)
+100. « Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery. » (x 1113, y 633)
 
 ### Blocs
 
@@ -9910,35 +9113,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `fg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 297, 54 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -9957,9 +9153,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 323, y 16, 53 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 384, y 16, 7 × 16
           - « F5 · Envoyer les photos d'un constat » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 399, y 16, 219 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -10219,185 +9412,181 @@ Exports : `exports/proposition-attente-kanban-dark.png` et `exports/proposition-
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269,2, y 65)
-34. « 41 » (x 303,2, y 65,5)
-35. « Sprint courant · S42 » (x 339,6, y 65)
-36. « 15 » (x 462,6, y 65,5)
-37. « Démarrable » (x 499,1, y 65)
-38. « 2 » (x 574,1, y 65,5)
-39. « À reprendre » (x 622,1, y 65)
-40. « 1 » (x 697,1, y 65,5)
-41. « En attente » (x 745,3, y 65)
-42. « 5 » (x 811,3, y 65,5)
-43. « Étiquette : toutes » (x 868,7, y 65)
-44. « 41 tickets · Tous » (x 1338, y 65)
-45. « Backlog » (x 281, y 123)
-46. « 0 » (x 391, y 123)
-47. « À faire » (x 478, y 123)
-48. « 19 » (x 581, y 123)
-49. « SILO-46 » (x 471, y 164)
-50. « · » (x 524, y 164)
-51. « F4 » (x 537, y 164)
-52. « Démo · F4 » (x 471, y 186)
-53. « facultative » (x 478, y 218)
-54. « Adam » (x 554, y 217)
-55. « SILO-34 » (x 471, y 264)
-56. « · » (x 524, y 264)
-57. « F5 » (x 537, y 264)
-58. « Tests E2E de l'envoi » (x 471, y 286)
-59. « attend SILO-33 » (x 493, y 317)
-60. « Adam » (x 480, y 340)
-61. « 1 question » (x 544, y 340)
-62. « SILO-35 » (x 471, y 387)
-63. « · » (x 524, y 387)
-64. « F5 » (x 537, y 387)
-65. « Démo · F5 » (x 471, y 409)
-66. « attend SILO-33 » (x 493, y 440)
-67. « Adam » (x 480, y 463)
-68. « SILO-52 » (x 471, y 510)
-69. « · » (x 524, y 510)
-70. « F6 » (x 537, y 510)
-71. « Contrôle des numéros » (x 471, y 532)
-72. « sprint S43 » (x 480, y 563)
-73. « SILO-53 » (x 471, y 610)
-74. « · » (x 524, y 610)
-75. « F6 » (x 537, y 610)
-76. « Écran d'import » (x 471, y 632)
-77. « sprint S43 » (x 480, y 663)
-78. « SILO-54 » (x 471, y 710)
-79. « · » (x 524, y 710)
-80. « F6 » (x 537, y 710)
-81. « Démo · F6 » (x 471, y 732)
-82. « attend SILO-51, SILO-52, … » (x 480, y 763)
-83. « SILO-62 » (x 471, y 810)
-84. « Journal des erreurs avec Sentry » (x 471, y 832)
-85. « SILO-71 » (x 471, y 910)
-86. « · » (x 524, y 910)
-87. « F8 » (x 537, y 910)
-88. « Statuts de contrat » (x 471, y 932)
-89. « sprint S43 » (x 480, y 963)
-90. « SILO-72 » (x 471, y 1010)
-91. « · » (x 524, y 1010)
-92. « F8 » (x 537, y 1010)
-93. « Sélection multiple » (x 471, y 1032)
-94. « sprint S43 » (x 480, y 1063)
-95. « SILO-73 » (x 471, y 1110)
-96. « · » (x 524, y 1110)
-97. « F8 » (x 537, y 1110)
-98. « Validation par lot » (x 471, y 1132)
-99. « sprint S43 » (x 480, y 1163)
-100. « SILO-74 » (x 471, y 1210)
-101. « · » (x 524, y 1210)
-102. « F8 » (x 537, y 1210)
-103. « Démo · F8 » (x 471, y 1232)
-104. « sprint S43 » (x 480, y 1263)
-105. « En cours » (x 675, y 123)
-106. « 1 » (x 785, y 123)
-107. « SILO-33 » (x 668, y 164)
-108. « · » (x 721, y 164)
-109. « F5 » (x 734, y 164)
-110. « Écran d'envoi hors ligne » (x 668, y 186)
-111. « Serveur MinIO de rec… » (x 690, y 217)
-112. « feat/envoi-hors-… » (x 690, y 240)
-113. « Phase 7/12 · Porte qu… » (x 675, y 263)
-114. « Adam » (x 677, y 288)
-115. « En review » (x 872, y 123)
-116. « 3 » (x 982, y 123)
-117. « SILO-45 » (x 865, y 164)
-118. « · » (x 918, y 164)
-119. « F4 » (x 931, y 164)
-120. « Conflits de saisie » (x 865, y 186)
-121. « Règle de fusion à vali… » (x 887, y 217)
-122. « #20 » (x 887, y 240)
-123. « changements demandés » (x 871, y 263)
-124. « CI cassée » (x 886, y 286)
-125. « Phase 9/12 · Review » (x 872, y 309)
-126. « Adam » (x 874, y 334)
-127. « SILO-32 » (x 865, y 381)
-128. « · » (x 918, y 381)
-129. « F5 » (x 931, y 381)
-130. « Route d'envoi des photos » (x 865, y 403)
-131. « #22 » (x 887, y 454)
-132. « Phase 10/12 · Démo » (x 872, y 477)
-133. « Adam » (x 874, y 502)
-134. « CI » (x 941, y 454)
-135. « SILO-61 » (x 865, y 549)
-136. « Passage à Expo SDK 54 » (x 865, y 571)
-137. « #23 » (x 887, y 602)
-138. « CI en cours » (x 939, y 602)
-139. « Bloqué » (x 1069, y 123)
-140. « 1 » (x 1179, y 123)
-141. « SILO-51 » (x 1062, y 164)
-142. « · » (x 1115, y 164)
-143. « F6 » (x 1128, y 164)
-144. « Lecture du fichier Excel » (x 1062, y 186)
-145. « bloqué · Q14 » (x 1083, y 217)
-146. « Phase 3/12 · Questions » (x 1069, y 240)
-147. « Terminé » (x 1266, y 123)
-148. « 17 » (x 1369, y 123)
-149. « SILO-2 » (x 1259, y 164)
-150. « · » (x 1305, y 164)
-151. « F1 » (x 1318, y 164)
-152. « Application Azure » (x 1259, y 186)
-153. « SILO-3 » (x 1259, y 244)
-154. « · » (x 1305, y 244)
-155. « F1 » (x 1318, y 244)
-156. « Route de connexion » (x 1259, y 266)
-157. « SILO-4 » (x 1259, y 324)
-158. « · » (x 1305, y 324)
-159. « F1 » (x 1318, y 324)
-160. « Écran de connexion » (x 1259, y 346)
-161. « SILO-5 » (x 1259, y 404)
-162. « · » (x 1305, y 404)
-163. « F1 » (x 1318, y 404)
-164. « Démo · F1 » (x 1259, y 426)
-165. « SILO-10 » (x 1259, y 484)
-166. « · » (x 1312, y 484)
-167. « F2 » (x 1325, y 484)
-168. « Modèle des affectations » (x 1259, y 506)
-169. « SILO-11 » (x 1259, y 564)
-170. « · » (x 1312, y 564)
-171. « F2 » (x 1325, y 564)
-172. « Périmètre côté serveur » (x 1259, y 586)
-173. « SILO-12 » (x 1259, y 644)
-174. « · » (x 1312, y 644)
-175. « F2 » (x 1325, y 644)
-176. « Règles de synchro » (x 1259, y 666)
-177. « SILO-13 » (x 1259, y 724)
-178. « · » (x 1312, y 724)
-179. « F2 » (x 1325, y 724)
-180. « Liste des box » (x 1259, y 746)
-181. « SILO-14 » (x 1259, y 804)
-182. « · » (x 1312, y 804)
-183. « F2 » (x 1325, y 804)
-184. « Démo · F2 » (x 1259, y 826)
-185. « SILO-18 » (x 1259, y 884)
-186. « · » (x 1312, y 884)
-187. « F3 » (x 1325, y 884)
-188. « Historique des affectations » (x 1259, y 906)
-189. « SILO-19 » (x 1259, y 984)
-190. « · » (x 1312, y 984)
-191. « F3 » (x 1325, y 984)
-192. « Route de réaffectation » (x 1259, y 1006)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269,2, y 65)
+30. « 41 » (x 303,2, y 65,5)
+31. « Sprint courant · S42 » (x 339,6, y 65)
+32. « 15 » (x 462,6, y 65,5)
+33. « Démarrable » (x 499,1, y 65)
+34. « 2 » (x 574,1, y 65,5)
+35. « À reprendre » (x 622,1, y 65)
+36. « 1 » (x 697,1, y 65,5)
+37. « En attente » (x 745,3, y 65)
+38. « 5 » (x 811,3, y 65,5)
+39. « Étiquette : toutes » (x 868,7, y 65)
+40. « 41 tickets · Tous » (x 1338, y 65)
+41. « Backlog » (x 281, y 123)
+42. « 0 » (x 391, y 123)
+43. « À faire » (x 478, y 123)
+44. « 19 » (x 581, y 123)
+45. « SILO-46 » (x 471, y 164)
+46. « · » (x 524, y 164)
+47. « F4 » (x 537, y 164)
+48. « Démo · F4 » (x 471, y 186)
+49. « facultative » (x 478, y 218)
+50. « Adam » (x 554, y 217)
+51. « SILO-34 » (x 471, y 264)
+52. « · » (x 524, y 264)
+53. « F5 » (x 537, y 264)
+54. « Tests E2E de l'envoi » (x 471, y 286)
+55. « attend SILO-33 » (x 493, y 317)
+56. « Adam » (x 480, y 340)
+57. « 1 question » (x 544, y 340)
+58. « SILO-35 » (x 471, y 387)
+59. « · » (x 524, y 387)
+60. « F5 » (x 537, y 387)
+61. « Démo · F5 » (x 471, y 409)
+62. « attend SILO-33 » (x 493, y 440)
+63. « Adam » (x 480, y 463)
+64. « SILO-52 » (x 471, y 510)
+65. « · » (x 524, y 510)
+66. « F6 » (x 537, y 510)
+67. « Contrôle des numéros » (x 471, y 532)
+68. « sprint S43 » (x 480, y 563)
+69. « SILO-53 » (x 471, y 610)
+70. « · » (x 524, y 610)
+71. « F6 » (x 537, y 610)
+72. « Écran d'import » (x 471, y 632)
+73. « sprint S43 » (x 480, y 663)
+74. « SILO-54 » (x 471, y 710)
+75. « · » (x 524, y 710)
+76. « F6 » (x 537, y 710)
+77. « Démo · F6 » (x 471, y 732)
+78. « attend SILO-51, SILO-52, … » (x 480, y 763)
+79. « SILO-62 » (x 471, y 810)
+80. « Journal des erreurs avec Sentry » (x 471, y 832)
+81. « SILO-71 » (x 471, y 910)
+82. « · » (x 524, y 910)
+83. « F8 » (x 537, y 910)
+84. « Statuts de contrat » (x 471, y 932)
+85. « sprint S43 » (x 480, y 963)
+86. « SILO-72 » (x 471, y 1010)
+87. « · » (x 524, y 1010)
+88. « F8 » (x 537, y 1010)
+89. « Sélection multiple » (x 471, y 1032)
+90. « sprint S43 » (x 480, y 1063)
+91. « SILO-73 » (x 471, y 1110)
+92. « · » (x 524, y 1110)
+93. « F8 » (x 537, y 1110)
+94. « Validation par lot » (x 471, y 1132)
+95. « sprint S43 » (x 480, y 1163)
+96. « SILO-74 » (x 471, y 1210)
+97. « · » (x 524, y 1210)
+98. « F8 » (x 537, y 1210)
+99. « Démo · F8 » (x 471, y 1232)
+100. « sprint S43 » (x 480, y 1263)
+101. « En cours » (x 675, y 123)
+102. « 1 » (x 785, y 123)
+103. « SILO-33 » (x 668, y 164)
+104. « · » (x 721, y 164)
+105. « F5 » (x 734, y 164)
+106. « Écran d'envoi hors ligne » (x 668, y 186)
+107. « Serveur MinIO de rec… » (x 690, y 217)
+108. « feat/envoi-hors-… » (x 690, y 240)
+109. « Phase 7/12 · Porte qu… » (x 675, y 263)
+110. « Adam » (x 677, y 288)
+111. « En review » (x 872, y 123)
+112. « 3 » (x 982, y 123)
+113. « SILO-45 » (x 865, y 164)
+114. « · » (x 918, y 164)
+115. « F4 » (x 931, y 164)
+116. « Conflits de saisie » (x 865, y 186)
+117. « Règle de fusion à vali… » (x 887, y 217)
+118. « #20 » (x 887, y 240)
+119. « changements demandés » (x 871, y 263)
+120. « CI cassée » (x 886, y 286)
+121. « Phase 9/12 · Review » (x 872, y 309)
+122. « Adam » (x 874, y 334)
+123. « SILO-32 » (x 865, y 381)
+124. « · » (x 918, y 381)
+125. « F5 » (x 931, y 381)
+126. « Route d'envoi des photos » (x 865, y 403)
+127. « #22 » (x 887, y 454)
+128. « Phase 10/12 · Démo » (x 872, y 477)
+129. « Adam » (x 874, y 502)
+130. « CI » (x 941, y 454)
+131. « SILO-61 » (x 865, y 549)
+132. « Passage à Expo SDK 54 » (x 865, y 571)
+133. « #23 » (x 887, y 602)
+134. « CI en cours » (x 939, y 602)
+135. « Bloqué » (x 1069, y 123)
+136. « 1 » (x 1179, y 123)
+137. « SILO-51 » (x 1062, y 164)
+138. « · » (x 1115, y 164)
+139. « F6 » (x 1128, y 164)
+140. « Lecture du fichier Excel » (x 1062, y 186)
+141. « bloqué · Q14 » (x 1083, y 217)
+142. « Phase 3/12 · Questions » (x 1069, y 240)
+143. « Terminé » (x 1266, y 123)
+144. « 17 » (x 1369, y 123)
+145. « SILO-2 » (x 1259, y 164)
+146. « · » (x 1305, y 164)
+147. « F1 » (x 1318, y 164)
+148. « Application Azure » (x 1259, y 186)
+149. « SILO-3 » (x 1259, y 244)
+150. « · » (x 1305, y 244)
+151. « F1 » (x 1318, y 244)
+152. « Route de connexion » (x 1259, y 266)
+153. « SILO-4 » (x 1259, y 324)
+154. « · » (x 1305, y 324)
+155. « F1 » (x 1318, y 324)
+156. « Écran de connexion » (x 1259, y 346)
+157. « SILO-5 » (x 1259, y 404)
+158. « · » (x 1305, y 404)
+159. « F1 » (x 1318, y 404)
+160. « Démo · F1 » (x 1259, y 426)
+161. « SILO-10 » (x 1259, y 484)
+162. « · » (x 1312, y 484)
+163. « F2 » (x 1325, y 484)
+164. « Modèle des affectations » (x 1259, y 506)
+165. « SILO-11 » (x 1259, y 564)
+166. « · » (x 1312, y 564)
+167. « F2 » (x 1325, y 564)
+168. « Périmètre côté serveur » (x 1259, y 586)
+169. « SILO-12 » (x 1259, y 644)
+170. « · » (x 1312, y 644)
+171. « F2 » (x 1325, y 644)
+172. « Règles de synchro » (x 1259, y 666)
+173. « SILO-13 » (x 1259, y 724)
+174. « · » (x 1312, y 724)
+175. « F2 » (x 1325, y 724)
+176. « Liste des box » (x 1259, y 746)
+177. « SILO-14 » (x 1259, y 804)
+178. « · » (x 1312, y 804)
+179. « F2 » (x 1325, y 804)
+180. « Démo · F2 » (x 1259, y 826)
+181. « SILO-18 » (x 1259, y 884)
+182. « · » (x 1312, y 884)
+183. « F3 » (x 1325, y 884)
+184. « Historique des affectations » (x 1259, y 906)
+185. « SILO-19 » (x 1259, y 984)
+186. « · » (x 1312, y 984)
+187. « F3 » (x 1325, y 984)
+188. « Route de réaffectation » (x 1259, y 1006)
 
 ### Blocs
 
@@ -10441,35 +9630,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -10486,9 +9668,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -10864,230 +10043,226 @@ Exports : `exports/proposition-attente-fiche-ticket-dark.png` et `exports/propos
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « En attente » (x 742, y 65,5)
-42. « 5 » (x 808, y 66)
-43. « Étiquette : toutes » (x 864, y 65,5)
-44. « 41 tickets · Tous » (x 1338, y 65,5)
-45. « Backlog » (x 280, y 124,5)
-46. « 0 » (x 336, y 125)
-47. « À faire » (x 477, y 124,5)
-48. « 19 » (x 524, y 125)
-49. « SILO-46 » (x 470, y 164)
-50. « · » (x 524, y 164)
-51. « F4 » (x 532, y 164)
-52. « Démo · F4 » (x 470, y 186)
-53. « facultative » (x 476, y 212)
-54. « SILO-34 » (x 470, y 256)
-55. « · » (x 524, y 256)
-56. « F5 » (x 532, y 256)
-57. « Tests E2E de l'envoi » (x 470, y 278)
-58. « attend SILO-33 » (x 492, y 304)
-59. « SILO-35 » (x 470, y 348)
-60. « · » (x 524, y 348)
-61. « F5 » (x 532, y 348)
-62. « Démo · F5 » (x 470, y 370)
-63. « attend SILO-33 » (x 492, y 396)
-64. « SILO-52 » (x 470, y 440)
-65. « · » (x 524, y 440)
-66. « F6 » (x 532, y 440)
-67. « Contrôle des numéros » (x 470, y 462)
-68. « sprint S43 » (x 476, y 488)
-69. « SILO-53 » (x 470, y 532)
-70. « · » (x 524, y 532)
-71. « F6 » (x 532, y 532)
-72. « Écran d'import » (x 470, y 554)
-73. « sprint S43 » (x 476, y 580)
-74. « SILO-54 » (x 470, y 624)
-75. « · » (x 524, y 624)
-76. « F6 » (x 532, y 624)
-77. « Démo · F6 » (x 470, y 646)
-78. « sprint S43 » (x 476, y 672)
-79. « SILO-71 » (x 470, y 716)
-80. « · » (x 524, y 716)
-81. « F8 » (x 532, y 716)
-82. « Statuts de contrat » (x 470, y 738)
-83. « sprint S43 » (x 476, y 764)
-84. « SILO-72 » (x 470, y 808)
-85. « · » (x 524, y 808)
-86. « F8 » (x 532, y 808)
-87. « Sélection multiple » (x 470, y 830)
-88. « sprint S43 » (x 476, y 856)
-89. « SILO-73 » (x 470, y 900)
-90. « · » (x 524, y 900)
-91. « F8 » (x 532, y 900)
-92. « Validation par lot » (x 470, y 922)
-93. « sprint S43 » (x 476, y 948)
-94. « SILO-74 » (x 470, y 992)
-95. « · » (x 524, y 992)
-96. « F8 » (x 532, y 992)
-97. « Démo · F8 » (x 470, y 1014)
-98. « sprint S43 » (x 476, y 1040)
-99. « En cours » (x 674, y 124,5)
-100. « 1 » (x 733, y 125)
-101. « SILO-33 » (x 667, y 164)
-102. « · » (x 721, y 164)
-103. « F5 » (x 729, y 164)
-104. « Écran d'envoi hors ligne » (x 667, y 186)
-105. « Serveur MinIO de recette… » (x 689, y 212)
-106. « feat/envoi-hors-… » (x 688, y 235)
-107. « Phase 7/12 · Porte qu… » (x 675, y 258)
-108. « En review » (x 871, y 124,5)
-109. « 3 » (x 936, y 125)
-110. « SILO-45 » (x 864, y 164)
-111. « · » (x 918, y 164)
-112. « F4 » (x 926, y 164)
-113. « Conflits de saisie » (x 864, y 186)
-114. « Règle de fusion à valide… » (x 886, y 212)
-115. « #20 » (x 885, y 235)
-116. « changements demandés » (x 870, y 258)
-117. « CI cassée » (x 885, y 281)
-118. « Phase 9/12 · Review » (x 872, y 304)
-119. « SILO-32 » (x 864, y 348)
-120. « · » (x 918, y 348)
-121. « F5 » (x 926, y 348)
-122. « Route d'envoi des photos » (x 864, y 370)
-123. « #22 » (x 885, y 412)
-124. « Phase 10/12 · Démo » (x 872, y 435)
-125. « CI » (x 937, y 412)
-126. « SILO-61 » (x 864, y 479)
-127. « Passage à Expo SDK 54 » (x 864, y 501)
-128. « #23 » (x 885, y 527)
-129. « CI en cours » (x 935, y 527)
-130. « Bloqué » (x 1068, y 124,5)
-131. « 1 » (x 1117, y 125)
-132. « SILO-51 » (x 1061, y 164)
-133. « · » (x 1115, y 164)
-134. « F6 » (x 1123, y 164)
-135. « Lecture du fichier Excel » (x 1061, y 186)
-136. « bloqué · Q14 » (x 1082, y 212)
-137. « Phase 3/12 · Questions » (x 1069, y 235)
-138. « Terminé » (x 1265, y 124,5)
-139. « 17 » (x 1320, y 125)
-140. « SILO-21 » (x 1258, y 164)
-141. « · » (x 1312, y 164)
-142. « F3 » (x 1320, y 164)
-143. « Démo · F3 » (x 1258, y 186)
-144. « #18 » (x 1279, y 212)
-145. « SILO-31 » (x 1258, y 256)
-146. « · » (x 1312, y 256)
-147. « F5 » (x 1320, y 256)
-148. « Stockage des photos sur MinIO » (x 1258, y 278)
-149. « #19 » (x 1279, y 320)
-150. « SILO-43 » (x 1258, y 364)
-151. « · » (x 1312, y 364)
-152. « F4 » (x 1320, y 364)
-153. « Synchro au retour du réseau » (x 1258, y 386)
-154. « #16 » (x 1279, y 428)
-155. « SILO-42 » (x 1258, y 472)
-156. « · » (x 1312, y 472)
-157. « F4 » (x 1320, y 472)
-158. « Formulaire de saisie » (x 1258, y 494)
-159. « #14 » (x 1279, y 520)
-160. « SILO-41 » (x 1258, y 564)
-161. « · » (x 1312, y 564)
-162. « F4 » (x 1320, y 564)
-163. « Schéma local des constats » (x 1258, y 586)
-164. « #12 » (x 1279, y 628)
-165. « SILO-20 » (x 1258, y 672)
-166. « · » (x 1312, y 672)
-167. « F3 » (x 1320, y 672)
-168. « Écran de réaffectation » (x 1258, y 694)
-169. « SILO-19 » (x 1258, y 738)
-170. « · » (x 1312, y 738)
-171. « F3 » (x 1320, y 738)
-172. « Route de réaffectation » (x 1258, y 760)
-173. « SILO-18 » (x 1258, y 804)
-174. « · » (x 1312, y 804)
-175. « F3 » (x 1320, y 804)
-176. « Historique des affectations » (x 1258, y 826)
-177. « SILO-14 » (x 1258, y 886)
-178. « · » (x 1312, y 886)
-179. « F2 » (x 1320, y 886)
-180. « Démo · F2 » (x 1258, y 908)
-181. « SILO-45 » (x 926, y 18,5)
-182. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-183. « Fermer » (x 1374, y 18,5)
-184. « F4 » (x 926, y 72)
-185. « · » (x 953, y 72)
-186. « S42 » (x 980, y 72)
-187. « · » (x 1009, y 72)
-188. « PR #20 » (x 1036, y 72)
-189. « Conflits de saisie » (x 904, y 104)
-190. « En review » (x 928, y 152,5)
-191. « A » (x 1031, y 155)
-192. « Adam (moi) » (x 1050, y 152,5)
-193. « Requise pour livrer » (x 1193, y 152,5)
-194. « Ajouter une étiquette » (x 909, y 193)
-195. « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » (x 940, y 239)
-196. « Reprendre » (x 1335, y 250)
-197. « PR #20 » (x 935, y 315)
-198. « · changements demandés » (x 987, y 315)
-199. « · CI cassée » (x 1148, y 315)
-200. « PR » (x 1327, y 315,5)
-201. « Job » (x 1365, y 315,5)
-202. « Détails » (x 920, y 370)
-203. « Activité » (x 996, y 370)
-204. « Suivi » (x 904, y 417)
-205. « remonté de git, des PR et de full-delivery » (x 943, y 417,5)
-206. « Branche » (x 904, y 444,5)
-207. « feat/silo-45 » (x 1029, y 444,5)
-208. « sur » (x 1125, y 444,5)
-209. « dev » (x 1150, y 444,5)
-210. « déclarée » (x 1179, y 444,5)
-211. « PR » (x 904, y 478,5)
-212. « #20 » (x 1029, y 478,5)
-213. « ouverte hier à 16:40 » (x 1058, y 478,5)
-214. « Review » (x 904, y 512,5)
-215. « changements demandés » (x 1016, y 513)
-216. « 13:47 » (x 1155, y 512,5)
-217. « CI » (x 904, y 546,5)
-218. « CI cassée » (x 1031, y 547)
-219. « job e2e · 11:58 » (x 1094, y 546,5)
-220. « Session » (x 904, y 580,5)
-221. « T3 Code · 18 min » (x 1028, y 580,5)
-222. « Livraison » (x 904, y 614,5)
-223. « Phase 9/12 · Review » (x 1098, y 614,5)
-224. « · suivante : Démo » (x 1219, y 614,5)
-225. « Description » (x 904, y 670)
-226. « Modifier » (x 984, y 670,5)
-227. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 696)
-228. « Dépendances » (x 904, y 770)
-229. « Aucune » (x 904, y 798)
-230. « Ajouter une dépendance » (x 935, y 833)
-231. « Questions » (x 904, y 889)
-232. « 0 » (x 976, y 889,5)
-233. « Aucune question sur ce ticket. » (x 904, y 919)
-234. « Domaine » (x 926, y 971)
-235. « Aucun » (x 989, y 971,5)
-236. « Maquettes » (x 926, y 1007)
-237. « 0 » (x 1001, y 1007,5)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « En attente » (x 742, y 65,5)
+38. « 5 » (x 808, y 66)
+39. « Étiquette : toutes » (x 864, y 65,5)
+40. « 41 tickets · Tous » (x 1338, y 65,5)
+41. « Backlog » (x 280, y 124,5)
+42. « 0 » (x 336, y 125)
+43. « À faire » (x 477, y 124,5)
+44. « 19 » (x 524, y 125)
+45. « SILO-46 » (x 470, y 164)
+46. « · » (x 524, y 164)
+47. « F4 » (x 532, y 164)
+48. « Démo · F4 » (x 470, y 186)
+49. « facultative » (x 476, y 212)
+50. « SILO-34 » (x 470, y 256)
+51. « · » (x 524, y 256)
+52. « F5 » (x 532, y 256)
+53. « Tests E2E de l'envoi » (x 470, y 278)
+54. « attend SILO-33 » (x 492, y 304)
+55. « SILO-35 » (x 470, y 348)
+56. « · » (x 524, y 348)
+57. « F5 » (x 532, y 348)
+58. « Démo · F5 » (x 470, y 370)
+59. « attend SILO-33 » (x 492, y 396)
+60. « SILO-52 » (x 470, y 440)
+61. « · » (x 524, y 440)
+62. « F6 » (x 532, y 440)
+63. « Contrôle des numéros » (x 470, y 462)
+64. « sprint S43 » (x 476, y 488)
+65. « SILO-53 » (x 470, y 532)
+66. « · » (x 524, y 532)
+67. « F6 » (x 532, y 532)
+68. « Écran d'import » (x 470, y 554)
+69. « sprint S43 » (x 476, y 580)
+70. « SILO-54 » (x 470, y 624)
+71. « · » (x 524, y 624)
+72. « F6 » (x 532, y 624)
+73. « Démo · F6 » (x 470, y 646)
+74. « sprint S43 » (x 476, y 672)
+75. « SILO-71 » (x 470, y 716)
+76. « · » (x 524, y 716)
+77. « F8 » (x 532, y 716)
+78. « Statuts de contrat » (x 470, y 738)
+79. « sprint S43 » (x 476, y 764)
+80. « SILO-72 » (x 470, y 808)
+81. « · » (x 524, y 808)
+82. « F8 » (x 532, y 808)
+83. « Sélection multiple » (x 470, y 830)
+84. « sprint S43 » (x 476, y 856)
+85. « SILO-73 » (x 470, y 900)
+86. « · » (x 524, y 900)
+87. « F8 » (x 532, y 900)
+88. « Validation par lot » (x 470, y 922)
+89. « sprint S43 » (x 476, y 948)
+90. « SILO-74 » (x 470, y 992)
+91. « · » (x 524, y 992)
+92. « F8 » (x 532, y 992)
+93. « Démo · F8 » (x 470, y 1014)
+94. « sprint S43 » (x 476, y 1040)
+95. « En cours » (x 674, y 124,5)
+96. « 1 » (x 733, y 125)
+97. « SILO-33 » (x 667, y 164)
+98. « · » (x 721, y 164)
+99. « F5 » (x 729, y 164)
+100. « Écran d'envoi hors ligne » (x 667, y 186)
+101. « Serveur MinIO de recette… » (x 689, y 212)
+102. « feat/envoi-hors-… » (x 688, y 235)
+103. « Phase 7/12 · Porte qu… » (x 675, y 258)
+104. « En review » (x 871, y 124,5)
+105. « 3 » (x 936, y 125)
+106. « SILO-45 » (x 864, y 164)
+107. « · » (x 918, y 164)
+108. « F4 » (x 926, y 164)
+109. « Conflits de saisie » (x 864, y 186)
+110. « Règle de fusion à valide… » (x 886, y 212)
+111. « #20 » (x 885, y 235)
+112. « changements demandés » (x 870, y 258)
+113. « CI cassée » (x 885, y 281)
+114. « Phase 9/12 · Review » (x 872, y 304)
+115. « SILO-32 » (x 864, y 348)
+116. « · » (x 918, y 348)
+117. « F5 » (x 926, y 348)
+118. « Route d'envoi des photos » (x 864, y 370)
+119. « #22 » (x 885, y 412)
+120. « Phase 10/12 · Démo » (x 872, y 435)
+121. « CI » (x 937, y 412)
+122. « SILO-61 » (x 864, y 479)
+123. « Passage à Expo SDK 54 » (x 864, y 501)
+124. « #23 » (x 885, y 527)
+125. « CI en cours » (x 935, y 527)
+126. « Bloqué » (x 1068, y 124,5)
+127. « 1 » (x 1117, y 125)
+128. « SILO-51 » (x 1061, y 164)
+129. « · » (x 1115, y 164)
+130. « F6 » (x 1123, y 164)
+131. « Lecture du fichier Excel » (x 1061, y 186)
+132. « bloqué · Q14 » (x 1082, y 212)
+133. « Phase 3/12 · Questions » (x 1069, y 235)
+134. « Terminé » (x 1265, y 124,5)
+135. « 17 » (x 1320, y 125)
+136. « SILO-21 » (x 1258, y 164)
+137. « · » (x 1312, y 164)
+138. « F3 » (x 1320, y 164)
+139. « Démo · F3 » (x 1258, y 186)
+140. « #18 » (x 1279, y 212)
+141. « SILO-31 » (x 1258, y 256)
+142. « · » (x 1312, y 256)
+143. « F5 » (x 1320, y 256)
+144. « Stockage des photos sur MinIO » (x 1258, y 278)
+145. « #19 » (x 1279, y 320)
+146. « SILO-43 » (x 1258, y 364)
+147. « · » (x 1312, y 364)
+148. « F4 » (x 1320, y 364)
+149. « Synchro au retour du réseau » (x 1258, y 386)
+150. « #16 » (x 1279, y 428)
+151. « SILO-42 » (x 1258, y 472)
+152. « · » (x 1312, y 472)
+153. « F4 » (x 1320, y 472)
+154. « Formulaire de saisie » (x 1258, y 494)
+155. « #14 » (x 1279, y 520)
+156. « SILO-41 » (x 1258, y 564)
+157. « · » (x 1312, y 564)
+158. « F4 » (x 1320, y 564)
+159. « Schéma local des constats » (x 1258, y 586)
+160. « #12 » (x 1279, y 628)
+161. « SILO-20 » (x 1258, y 672)
+162. « · » (x 1312, y 672)
+163. « F3 » (x 1320, y 672)
+164. « Écran de réaffectation » (x 1258, y 694)
+165. « SILO-19 » (x 1258, y 738)
+166. « · » (x 1312, y 738)
+167. « F3 » (x 1320, y 738)
+168. « Route de réaffectation » (x 1258, y 760)
+169. « SILO-18 » (x 1258, y 804)
+170. « · » (x 1312, y 804)
+171. « F3 » (x 1320, y 804)
+172. « Historique des affectations » (x 1258, y 826)
+173. « SILO-14 » (x 1258, y 886)
+174. « · » (x 1312, y 886)
+175. « F2 » (x 1320, y 886)
+176. « Démo · F2 » (x 1258, y 908)
+177. « SILO-45 » (x 926, y 18,5)
+178. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+179. « Fermer » (x 1374, y 18,5)
+180. « F4 » (x 926, y 72)
+181. « · » (x 953, y 72)
+182. « S42 » (x 980, y 72)
+183. « · » (x 1009, y 72)
+184. « PR #20 » (x 1036, y 72)
+185. « Conflits de saisie » (x 904, y 104)
+186. « En review » (x 928, y 152,5)
+187. « A » (x 1031, y 155)
+188. « Adam (moi) » (x 1050, y 152,5)
+189. « Requise pour livrer » (x 1193, y 152,5)
+190. « Ajouter une étiquette » (x 909, y 193)
+191. « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » (x 940, y 239)
+192. « Reprendre » (x 1335, y 250)
+193. « PR #20 » (x 935, y 315)
+194. « · changements demandés » (x 987, y 315)
+195. « · CI cassée » (x 1148, y 315)
+196. « PR » (x 1327, y 315,5)
+197. « Job » (x 1365, y 315,5)
+198. « Détails » (x 920, y 370)
+199. « Activité » (x 996, y 370)
+200. « Suivi » (x 904, y 417)
+201. « remonté de git, des PR et de full-delivery » (x 943, y 417,5)
+202. « Branche » (x 904, y 444,5)
+203. « feat/silo-45 » (x 1029, y 444,5)
+204. « sur » (x 1125, y 444,5)
+205. « dev » (x 1150, y 444,5)
+206. « déclarée » (x 1179, y 444,5)
+207. « PR » (x 904, y 478,5)
+208. « #20 » (x 1029, y 478,5)
+209. « ouverte hier à 16:40 » (x 1058, y 478,5)
+210. « Review » (x 904, y 512,5)
+211. « changements demandés » (x 1016, y 513)
+212. « 13:47 » (x 1155, y 512,5)
+213. « CI » (x 904, y 546,5)
+214. « CI cassée » (x 1031, y 547)
+215. « job e2e · 11:58 » (x 1094, y 546,5)
+216. « Session » (x 904, y 580,5)
+217. « T3 Code · 18 min » (x 1028, y 580,5)
+218. « Livraison » (x 904, y 614,5)
+219. « Phase 9/12 · Review » (x 1098, y 614,5)
+220. « · suivante : Démo » (x 1219, y 614,5)
+221. « Description » (x 904, y 670)
+222. « Modifier » (x 984, y 670,5)
+223. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 696)
+224. « Dépendances » (x 904, y 770)
+225. « Aucune » (x 904, y 798)
+226. « Ajouter une dépendance » (x 935, y 833)
+227. « Questions » (x 904, y 889)
+228. « 0 » (x 976, y 889,5)
+229. « Aucune question sur ce ticket. » (x 904, y 919)
+230. « Domaine » (x 926, y 971)
+231. « Aucun » (x 989, y 971,5)
+232. « Maquettes » (x 926, y 1007)
+233. « 0 » (x 1001, y 1007,5)
 
 ### Blocs
 
@@ -11131,35 +10306,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -11176,9 +10344,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -11710,195 +10875,191 @@ Exports : `exports/proposition-attente-dialogue-dark.png` et `exports/propositio
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269,2, y 65)
-34. « 41 » (x 303,2, y 65,5)
-35. « Sprint courant · S42 » (x 339,6, y 65)
-36. « 15 » (x 462,6, y 65,5)
-37. « Démarrable » (x 499,1, y 65)
-38. « 2 » (x 574,1, y 65,5)
-39. « À reprendre » (x 622,1, y 65)
-40. « 1 » (x 697,1, y 65,5)
-41. « En attente » (x 745,3, y 65)
-42. « 5 » (x 811,3, y 65,5)
-43. « Étiquette : toutes » (x 868,7, y 65)
-44. « 41 tickets · Tous » (x 1338, y 65)
-45. « Backlog » (x 281, y 123)
-46. « 0 » (x 391, y 123)
-47. « À faire » (x 478, y 123)
-48. « 19 » (x 581, y 123)
-49. « SILO-46 » (x 471, y 164)
-50. « · » (x 524, y 164)
-51. « F4 » (x 537, y 164)
-52. « Démo · F4 » (x 471, y 186)
-53. « facultative » (x 478, y 218)
-54. « Adam » (x 554, y 217)
-55. « SILO-34 » (x 471, y 264)
-56. « · » (x 524, y 264)
-57. « F5 » (x 537, y 264)
-58. « Tests E2E de l'envoi » (x 471, y 286)
-59. « attend SILO-33 » (x 494, y 317)
-60. « Adam » (x 480, y 340)
-61. « 1 question » (x 544, y 340)
-62. « SILO-35 » (x 471, y 387)
-63. « · » (x 524, y 387)
-64. « F5 » (x 537, y 387)
-65. « Démo · F5 » (x 471, y 409)
-66. « attend SILO-33 » (x 494, y 440)
-67. « Adam » (x 480, y 463)
-68. « SILO-52 » (x 471, y 510)
-69. « · » (x 524, y 510)
-70. « F6 » (x 537, y 510)
-71. « Contrôle des numéros » (x 471, y 532)
-72. « sprint S43 » (x 480, y 563)
-73. « SILO-53 » (x 471, y 610)
-74. « · » (x 524, y 610)
-75. « F6 » (x 537, y 610)
-76. « Écran d'import » (x 471, y 632)
-77. « sprint S43 » (x 480, y 663)
-78. « SILO-54 » (x 471, y 710)
-79. « · » (x 524, y 710)
-80. « F6 » (x 537, y 710)
-81. « Démo · F6 » (x 471, y 732)
-82. « attend SILO-51, SILO-52, … » (x 480, y 763)
-83. « SILO-62 » (x 471, y 810)
-84. « Journal des erreurs avec Sentry » (x 471, y 832)
-85. « SILO-71 » (x 471, y 910)
-86. « · » (x 524, y 910)
-87. « F8 » (x 537, y 910)
-88. « Statuts de contrat » (x 471, y 932)
-89. « sprint S43 » (x 480, y 963)
-90. « SILO-72 » (x 471, y 1010)
-91. « · » (x 524, y 1010)
-92. « F8 » (x 537, y 1010)
-93. « Sélection multiple » (x 471, y 1032)
-94. « sprint S43 » (x 480, y 1063)
-95. « SILO-73 » (x 471, y 1110)
-96. « · » (x 524, y 1110)
-97. « F8 » (x 537, y 1110)
-98. « Validation par lot » (x 471, y 1132)
-99. « sprint S43 » (x 480, y 1163)
-100. « SILO-74 » (x 471, y 1210)
-101. « · » (x 524, y 1210)
-102. « F8 » (x 537, y 1210)
-103. « Démo · F8 » (x 471, y 1232)
-104. « sprint S43 » (x 480, y 1263)
-105. « En cours » (x 675, y 123)
-106. « 1 » (x 785, y 123)
-107. « SILO-33 » (x 668, y 164)
-108. « · » (x 721, y 164)
-109. « F5 » (x 734, y 164)
-110. « Écran d'envoi hors ligne » (x 668, y 186)
-111. « Serveur MinIO de rec… » (x 691, y 217)
-112. « feat/envoi-hors-… » (x 690, y 240)
-113. « Phase 7/12 · Porte qu… » (x 675, y 263)
-114. « Adam » (x 677, y 288)
-115. « En review » (x 872, y 123)
-116. « 3 » (x 982, y 123)
-117. « SILO-45 » (x 865, y 164)
-118. « · » (x 918, y 164)
-119. « F4 » (x 931, y 164)
-120. « Conflits de saisie » (x 865, y 186)
-121. « Règle de fusion à vali… » (x 888, y 217)
-122. « #20 » (x 887, y 240)
-123. « changements demandés » (x 871, y 263)
-124. « CI cassée » (x 886, y 286)
-125. « Phase 9/12 · Review » (x 872, y 309)
-126. « Adam » (x 874, y 334)
-127. « SILO-32 » (x 865, y 381)
-128. « · » (x 918, y 381)
-129. « F5 » (x 931, y 381)
-130. « Route d'envoi des photos » (x 865, y 403)
-131. « #22 » (x 887, y 454)
-132. « Phase 10/12 · Démo » (x 872, y 477)
-133. « Adam » (x 874, y 502)
-134. « CI » (x 941, y 454)
-135. « SILO-61 » (x 865, y 549)
-136. « Passage à Expo SDK 54 » (x 865, y 571)
-137. « #23 » (x 887, y 602)
-138. « CI en cours » (x 939, y 602)
-139. « Bloqué » (x 1069, y 123)
-140. « 1 » (x 1179, y 123)
-141. « SILO-51 » (x 1062, y 164)
-142. « · » (x 1115, y 164)
-143. « F6 » (x 1128, y 164)
-144. « Lecture du fichier Excel » (x 1062, y 186)
-145. « bloqué · Q14 » (x 1083, y 217)
-146. « Phase 3/12 · Questions » (x 1069, y 240)
-147. « Terminé » (x 1266, y 123)
-148. « 17 » (x 1369, y 123)
-149. « SILO-2 » (x 1259, y 164)
-150. « · » (x 1305, y 164)
-151. « F1 » (x 1318, y 164)
-152. « Application Azure » (x 1259, y 186)
-153. « SILO-3 » (x 1259, y 244)
-154. « · » (x 1305, y 244)
-155. « F1 » (x 1318, y 244)
-156. « Route de connexion » (x 1259, y 266)
-157. « SILO-4 » (x 1259, y 324)
-158. « · » (x 1305, y 324)
-159. « F1 » (x 1318, y 324)
-160. « Écran de connexion » (x 1259, y 346)
-161. « SILO-5 » (x 1259, y 404)
-162. « · » (x 1305, y 404)
-163. « F1 » (x 1318, y 404)
-164. « Démo · F1 » (x 1259, y 426)
-165. « SILO-10 » (x 1259, y 484)
-166. « · » (x 1312, y 484)
-167. « F2 » (x 1325, y 484)
-168. « Modèle des affectations » (x 1259, y 506)
-169. « SILO-11 » (x 1259, y 564)
-170. « · » (x 1312, y 564)
-171. « F2 » (x 1325, y 564)
-172. « Périmètre côté serveur » (x 1259, y 586)
-173. « SILO-12 » (x 1259, y 644)
-174. « · » (x 1312, y 644)
-175. « F2 » (x 1325, y 644)
-176. « Règles de synchro » (x 1259, y 666)
-177. « SILO-13 » (x 1259, y 724)
-178. « · » (x 1312, y 724)
-179. « F2 » (x 1325, y 724)
-180. « Liste des box » (x 1259, y 746)
-181. « SILO-14 » (x 1259, y 804)
-182. « · » (x 1312, y 804)
-183. « F2 » (x 1325, y 804)
-184. « Démo · F2 » (x 1259, y 826)
-185. « SILO-18 » (x 1259, y 884)
-186. « · » (x 1312, y 884)
-187. « F3 » (x 1325, y 884)
-188. « Historique des affectations » (x 1259, y 906)
-189. « SILO-19 » (x 1259, y 984)
-190. « · » (x 1312, y 984)
-191. « F3 » (x 1325, y 984)
-192. « Route de réaffectation » (x 1259, y 1006)
-193. « Mettre SILO-82 en attente » (x 504, y 355)
-194. « L'étape attend une chose que l'équipe n'a pas encore : un environnement, des accès, une décision du client. » (x 504, y 383)
-195. « Raison » (x 504, y 439)
-196. « 37/80 » (x 900, y 439,5)
-197. « Serveur MinIO de recette indisponible » (x 516, y 471)
-198. « Raisons déjà employées » (x 504, y 515)
-199. « Règle de fusion à valider par le client » (x 533, y 543)
-200. « Serveur MinIO de recette indisponible » (x 533, y 574)
-201. « Annuler » (x 733, y 623)
-202. « Mettre en attente » (x 817, y 623)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269,2, y 65)
+30. « 41 » (x 303,2, y 65,5)
+31. « Sprint courant · S42 » (x 339,6, y 65)
+32. « 15 » (x 462,6, y 65,5)
+33. « Démarrable » (x 499,1, y 65)
+34. « 2 » (x 574,1, y 65,5)
+35. « À reprendre » (x 622,1, y 65)
+36. « 1 » (x 697,1, y 65,5)
+37. « En attente » (x 745,3, y 65)
+38. « 5 » (x 811,3, y 65,5)
+39. « Étiquette : toutes » (x 868,7, y 65)
+40. « 41 tickets · Tous » (x 1338, y 65)
+41. « Backlog » (x 281, y 123)
+42. « 0 » (x 391, y 123)
+43. « À faire » (x 478, y 123)
+44. « 19 » (x 581, y 123)
+45. « SILO-46 » (x 471, y 164)
+46. « · » (x 524, y 164)
+47. « F4 » (x 537, y 164)
+48. « Démo · F4 » (x 471, y 186)
+49. « facultative » (x 478, y 218)
+50. « Adam » (x 554, y 217)
+51. « SILO-34 » (x 471, y 264)
+52. « · » (x 524, y 264)
+53. « F5 » (x 537, y 264)
+54. « Tests E2E de l'envoi » (x 471, y 286)
+55. « attend SILO-33 » (x 494, y 317)
+56. « Adam » (x 480, y 340)
+57. « 1 question » (x 544, y 340)
+58. « SILO-35 » (x 471, y 387)
+59. « · » (x 524, y 387)
+60. « F5 » (x 537, y 387)
+61. « Démo · F5 » (x 471, y 409)
+62. « attend SILO-33 » (x 494, y 440)
+63. « Adam » (x 480, y 463)
+64. « SILO-52 » (x 471, y 510)
+65. « · » (x 524, y 510)
+66. « F6 » (x 537, y 510)
+67. « Contrôle des numéros » (x 471, y 532)
+68. « sprint S43 » (x 480, y 563)
+69. « SILO-53 » (x 471, y 610)
+70. « · » (x 524, y 610)
+71. « F6 » (x 537, y 610)
+72. « Écran d'import » (x 471, y 632)
+73. « sprint S43 » (x 480, y 663)
+74. « SILO-54 » (x 471, y 710)
+75. « · » (x 524, y 710)
+76. « F6 » (x 537, y 710)
+77. « Démo · F6 » (x 471, y 732)
+78. « attend SILO-51, SILO-52, … » (x 480, y 763)
+79. « SILO-62 » (x 471, y 810)
+80. « Journal des erreurs avec Sentry » (x 471, y 832)
+81. « SILO-71 » (x 471, y 910)
+82. « · » (x 524, y 910)
+83. « F8 » (x 537, y 910)
+84. « Statuts de contrat » (x 471, y 932)
+85. « sprint S43 » (x 480, y 963)
+86. « SILO-72 » (x 471, y 1010)
+87. « · » (x 524, y 1010)
+88. « F8 » (x 537, y 1010)
+89. « Sélection multiple » (x 471, y 1032)
+90. « sprint S43 » (x 480, y 1063)
+91. « SILO-73 » (x 471, y 1110)
+92. « · » (x 524, y 1110)
+93. « F8 » (x 537, y 1110)
+94. « Validation par lot » (x 471, y 1132)
+95. « sprint S43 » (x 480, y 1163)
+96. « SILO-74 » (x 471, y 1210)
+97. « · » (x 524, y 1210)
+98. « F8 » (x 537, y 1210)
+99. « Démo · F8 » (x 471, y 1232)
+100. « sprint S43 » (x 480, y 1263)
+101. « En cours » (x 675, y 123)
+102. « 1 » (x 785, y 123)
+103. « SILO-33 » (x 668, y 164)
+104. « · » (x 721, y 164)
+105. « F5 » (x 734, y 164)
+106. « Écran d'envoi hors ligne » (x 668, y 186)
+107. « Serveur MinIO de rec… » (x 691, y 217)
+108. « feat/envoi-hors-… » (x 690, y 240)
+109. « Phase 7/12 · Porte qu… » (x 675, y 263)
+110. « Adam » (x 677, y 288)
+111. « En review » (x 872, y 123)
+112. « 3 » (x 982, y 123)
+113. « SILO-45 » (x 865, y 164)
+114. « · » (x 918, y 164)
+115. « F4 » (x 931, y 164)
+116. « Conflits de saisie » (x 865, y 186)
+117. « Règle de fusion à vali… » (x 888, y 217)
+118. « #20 » (x 887, y 240)
+119. « changements demandés » (x 871, y 263)
+120. « CI cassée » (x 886, y 286)
+121. « Phase 9/12 · Review » (x 872, y 309)
+122. « Adam » (x 874, y 334)
+123. « SILO-32 » (x 865, y 381)
+124. « · » (x 918, y 381)
+125. « F5 » (x 931, y 381)
+126. « Route d'envoi des photos » (x 865, y 403)
+127. « #22 » (x 887, y 454)
+128. « Phase 10/12 · Démo » (x 872, y 477)
+129. « Adam » (x 874, y 502)
+130. « CI » (x 941, y 454)
+131. « SILO-61 » (x 865, y 549)
+132. « Passage à Expo SDK 54 » (x 865, y 571)
+133. « #23 » (x 887, y 602)
+134. « CI en cours » (x 939, y 602)
+135. « Bloqué » (x 1069, y 123)
+136. « 1 » (x 1179, y 123)
+137. « SILO-51 » (x 1062, y 164)
+138. « · » (x 1115, y 164)
+139. « F6 » (x 1128, y 164)
+140. « Lecture du fichier Excel » (x 1062, y 186)
+141. « bloqué · Q14 » (x 1083, y 217)
+142. « Phase 3/12 · Questions » (x 1069, y 240)
+143. « Terminé » (x 1266, y 123)
+144. « 17 » (x 1369, y 123)
+145. « SILO-2 » (x 1259, y 164)
+146. « · » (x 1305, y 164)
+147. « F1 » (x 1318, y 164)
+148. « Application Azure » (x 1259, y 186)
+149. « SILO-3 » (x 1259, y 244)
+150. « · » (x 1305, y 244)
+151. « F1 » (x 1318, y 244)
+152. « Route de connexion » (x 1259, y 266)
+153. « SILO-4 » (x 1259, y 324)
+154. « · » (x 1305, y 324)
+155. « F1 » (x 1318, y 324)
+156. « Écran de connexion » (x 1259, y 346)
+157. « SILO-5 » (x 1259, y 404)
+158. « · » (x 1305, y 404)
+159. « F1 » (x 1318, y 404)
+160. « Démo · F1 » (x 1259, y 426)
+161. « SILO-10 » (x 1259, y 484)
+162. « · » (x 1312, y 484)
+163. « F2 » (x 1325, y 484)
+164. « Modèle des affectations » (x 1259, y 506)
+165. « SILO-11 » (x 1259, y 564)
+166. « · » (x 1312, y 564)
+167. « F2 » (x 1325, y 564)
+168. « Périmètre côté serveur » (x 1259, y 586)
+169. « SILO-12 » (x 1259, y 644)
+170. « · » (x 1312, y 644)
+171. « F2 » (x 1325, y 644)
+172. « Règles de synchro » (x 1259, y 666)
+173. « SILO-13 » (x 1259, y 724)
+174. « · » (x 1312, y 724)
+175. « F2 » (x 1325, y 724)
+176. « Liste des box » (x 1259, y 746)
+177. « SILO-14 » (x 1259, y 804)
+178. « · » (x 1312, y 804)
+179. « F2 » (x 1325, y 804)
+180. « Démo · F2 » (x 1259, y 826)
+181. « SILO-18 » (x 1259, y 884)
+182. « · » (x 1312, y 884)
+183. « F3 » (x 1325, y 884)
+184. « Historique des affectations » (x 1259, y 906)
+185. « SILO-19 » (x 1259, y 984)
+186. « · » (x 1312, y 984)
+187. « F3 » (x 1325, y 984)
+188. « Route de réaffectation » (x 1259, y 1006)
+189. « Mettre SILO-82 en attente » (x 504, y 355)
+190. « L'étape attend une chose que l'équipe n'a pas encore : un environnement, des accès, une décision du client. » (x 504, y 383)
+191. « Raison » (x 504, y 439)
+192. « 37/80 » (x 900, y 439,5)
+193. « Serveur MinIO de recette indisponible » (x 516, y 471)
+194. « Raisons déjà employées » (x 504, y 515)
+195. « Règle de fusion à valider par le client » (x 533, y 543)
+196. « Serveur MinIO de recette indisponible » (x 533, y 574)
+197. « Annuler » (x 733, y 623)
+198. « Mettre en attente » (x 817, y 623)
 
 ### Blocs
 
@@ -11942,35 +11103,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -11987,9 +11141,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -12392,228 +11543,224 @@ Exports : `exports/proposition-attente-fiche-menu-dark.png` et `exports/proposit
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « Étiquette : toutes » (x 751, y 65,5)
-42. « 41 tickets · Tous » (x 1338, y 65,5)
-43. « Backlog » (x 280, y 124,5)
-44. « 0 » (x 336, y 125)
-45. « À faire » (x 477, y 124,5)
-46. « 19 » (x 524, y 125)
-47. « SILO-46 » (x 470, y 164)
-48. « · » (x 524, y 164)
-49. « F4 » (x 532, y 164)
-50. « Démo · F4 » (x 470, y 186)
-51. « facultative » (x 476, y 212)
-52. « SILO-34 » (x 470, y 256)
-53. « · » (x 524, y 256)
-54. « F5 » (x 532, y 256)
-55. « Tests E2E de l'envoi » (x 470, y 278)
-56. « attend SILO-33 » (x 476, y 304)
-57. « SILO-35 » (x 470, y 348)
-58. « · » (x 524, y 348)
-59. « F5 » (x 532, y 348)
-60. « Démo · F5 » (x 470, y 370)
-61. « attend SILO-34 » (x 476, y 396)
-62. « SILO-52 » (x 470, y 440)
-63. « · » (x 524, y 440)
-64. « F6 » (x 532, y 440)
-65. « Contrôle des numéros » (x 470, y 462)
-66. « sprint S43 » (x 476, y 488)
-67. « SILO-53 » (x 470, y 532)
-68. « · » (x 524, y 532)
-69. « F6 » (x 532, y 532)
-70. « Écran d'import » (x 470, y 554)
-71. « sprint S43 » (x 476, y 580)
-72. « SILO-54 » (x 470, y 624)
-73. « · » (x 524, y 624)
-74. « F6 » (x 532, y 624)
-75. « Démo · F6 » (x 470, y 646)
-76. « sprint S43 » (x 476, y 672)
-77. « SILO-71 » (x 470, y 716)
-78. « · » (x 524, y 716)
-79. « F8 » (x 532, y 716)
-80. « Statuts de contrat » (x 470, y 738)
-81. « sprint S43 » (x 476, y 764)
-82. « SILO-72 » (x 470, y 808)
-83. « · » (x 524, y 808)
-84. « F8 » (x 532, y 808)
-85. « Sélection multiple » (x 470, y 830)
-86. « sprint S43 » (x 476, y 856)
-87. « SILO-73 » (x 470, y 900)
-88. « · » (x 524, y 900)
-89. « F8 » (x 532, y 900)
-90. « Validation par lot » (x 470, y 922)
-91. « sprint S43 » (x 476, y 948)
-92. « SILO-74 » (x 470, y 992)
-93. « · » (x 524, y 992)
-94. « F8 » (x 532, y 992)
-95. « Démo · F8 » (x 470, y 1014)
-96. « sprint S43 » (x 476, y 1040)
-97. « En cours » (x 674, y 124,5)
-98. « 1 » (x 733, y 125)
-99. « SILO-33 » (x 667, y 164)
-100. « · » (x 721, y 164)
-101. « F5 » (x 729, y 164)
-102. « Écran d'envoi hors ligne » (x 667, y 186)
-103. « feat/envoi-hors-… » (x 688, y 212)
-104. « Phase 7/12 · Porte qu… » (x 675, y 235)
-105. « En review » (x 871, y 124,5)
-106. « 3 » (x 936, y 125)
-107. « SILO-45 » (x 864, y 164)
-108. « · » (x 918, y 164)
-109. « F4 » (x 926, y 164)
-110. « Conflits de saisie » (x 864, y 186)
-111. « #20 » (x 885, y 212)
-112. « changements demandés » (x 870, y 235)
-113. « CI cassée » (x 885, y 258)
-114. « Phase 9/12 · Review » (x 872, y 281)
-115. « SILO-32 » (x 864, y 325)
-116. « · » (x 918, y 325)
-117. « F5 » (x 926, y 325)
-118. « Route d'envoi des photos » (x 864, y 347)
-119. « #22 » (x 885, y 389)
-120. « Phase 10/12 · Démo » (x 872, y 412)
-121. « CI » (x 937, y 389)
-122. « SILO-61 » (x 864, y 456)
-123. « Passage à Expo SDK 54 » (x 864, y 478)
-124. « #23 » (x 885, y 504)
-125. « CI en cours » (x 935, y 504)
-126. « Bloqué » (x 1068, y 124,5)
-127. « 1 » (x 1117, y 125)
-128. « SILO-51 » (x 1061, y 164)
-129. « · » (x 1115, y 164)
-130. « F6 » (x 1123, y 164)
-131. « Lecture du fichier Excel » (x 1061, y 186)
-132. « bloqué · Q14 » (x 1082, y 212)
-133. « Phase 3/12 · Questions » (x 1069, y 235)
-134. « Terminé » (x 1265, y 124,5)
-135. « 17 » (x 1320, y 125)
-136. « SILO-21 » (x 1258, y 164)
-137. « · » (x 1312, y 164)
-138. « F3 » (x 1320, y 164)
-139. « Démo · F3 » (x 1258, y 186)
-140. « #18 » (x 1279, y 212)
-141. « SILO-31 » (x 1258, y 256)
-142. « · » (x 1312, y 256)
-143. « F5 » (x 1320, y 256)
-144. « Stockage des photos sur MinIO » (x 1258, y 278)
-145. « #19 » (x 1279, y 320)
-146. « SILO-43 » (x 1258, y 364)
-147. « · » (x 1312, y 364)
-148. « F4 » (x 1320, y 364)
-149. « Synchro au retour du réseau » (x 1258, y 386)
-150. « #16 » (x 1279, y 428)
-151. « SILO-42 » (x 1258, y 472)
-152. « · » (x 1312, y 472)
-153. « F4 » (x 1320, y 472)
-154. « Formulaire de saisie » (x 1258, y 494)
-155. « #14 » (x 1279, y 520)
-156. « SILO-41 » (x 1258, y 564)
-157. « · » (x 1312, y 564)
-158. « F4 » (x 1320, y 564)
-159. « Schéma local des constats » (x 1258, y 586)
-160. « #12 » (x 1279, y 628)
-161. « SILO-20 » (x 1258, y 672)
-162. « · » (x 1312, y 672)
-163. « F3 » (x 1320, y 672)
-164. « Écran de réaffectation » (x 1258, y 694)
-165. « SILO-19 » (x 1258, y 738)
-166. « · » (x 1312, y 738)
-167. « F3 » (x 1320, y 738)
-168. « Route de réaffectation » (x 1258, y 760)
-169. « SILO-18 » (x 1258, y 804)
-170. « · » (x 1312, y 804)
-171. « F3 » (x 1320, y 804)
-172. « Historique des affectations » (x 1258, y 826)
-173. « SILO-14 » (x 1258, y 886)
-174. « · » (x 1312, y 886)
-175. « F2 » (x 1320, y 886)
-176. « Démo · F2 » (x 1258, y 908)
-177. « SILO-45 » (x 926, y 18,5)
-178. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-179. « Fermer » (x 1374, y 18,5)
-180. « F4 » (x 926, y 72)
-181. « · » (x 953, y 72)
-182. « S42 » (x 980, y 72)
-183. « · » (x 1009, y 72)
-184. « PR #20 » (x 1036, y 72)
-185. « Conflits de saisie » (x 904, y 104)
-186. « En review » (x 928, y 152,5)
-187. « A » (x 1031, y 155)
-188. « Adam (moi) » (x 1050, y 152,5)
-189. « Requise pour livrer » (x 1193, y 152,5)
-190. « Ajouter une étiquette » (x 909, y 193)
-191. « PR #20 » (x 935, y 242)
-192. « · changements demandés » (x 987, y 242)
-193. « · CI cassée » (x 1148, y 242)
-194. « PR » (x 1327, y 242,5)
-195. « Job » (x 1365, y 242,5)
-196. « Détails » (x 920, y 297)
-197. « Activité » (x 996, y 297)
-198. « Suivi » (x 904, y 344)
-199. « remonté de git, des PR et de full-delivery » (x 943, y 344,5)
-200. « Branche » (x 904, y 371,5)
-201. « feat/silo-45 » (x 1029, y 371,5)
-202. « sur » (x 1125, y 371,5)
-203. « dev » (x 1150, y 371,5)
-204. « déclarée » (x 1179, y 371,5)
-205. « PR » (x 904, y 405,5)
-206. « #20 » (x 1029, y 405,5)
-207. « ouverte hier à 16:40 » (x 1058, y 405,5)
-208. « Review » (x 904, y 439,5)
-209. « changements demandés » (x 1016, y 440)
-210. « 13:47 » (x 1155, y 439,5)
-211. « CI » (x 904, y 473,5)
-212. « CI cassée » (x 1031, y 474)
-213. « job e2e · 11:58 » (x 1094, y 473,5)
-214. « Session » (x 904, y 507,5)
-215. « T3 Code · 18 min » (x 1028, y 507,5)
-216. « Livraison » (x 904, y 541,5)
-217. « Phase 9/12 · Review » (x 1098, y 541,5)
-218. « · suivante : Démo » (x 1219, y 541,5)
-219. « Description » (x 904, y 597)
-220. « Modifier » (x 984, y 597,5)
-221. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 623)
-222. « Dépendances » (x 904, y 697)
-223. « Aucune » (x 904, y 725)
-224. « Ajouter une dépendance » (x 935, y 760)
-225. « Questions » (x 904, y 816)
-226. « 0 » (x 976, y 816,5)
-227. « Aucune question sur ce ticket. » (x 904, y 846)
-228. « Domaine » (x 926, y 898)
-229. « Aucun » (x 989, y 898,5)
-230. « Maquettes » (x 926, y 934)
-231. « 0 » (x 1001, y 934,5)
-232. « Ouvrir dans un onglet » (x 1147, y 53)
-233. « Copier la clé » (x 1147, y 83)
-234. « Mettre en attente… » (x 1147, y 113)
-235. « Supprimer… » (x 1147, y 152)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « Étiquette : toutes » (x 751, y 65,5)
+38. « 41 tickets · Tous » (x 1338, y 65,5)
+39. « Backlog » (x 280, y 124,5)
+40. « 0 » (x 336, y 125)
+41. « À faire » (x 477, y 124,5)
+42. « 19 » (x 524, y 125)
+43. « SILO-46 » (x 470, y 164)
+44. « · » (x 524, y 164)
+45. « F4 » (x 532, y 164)
+46. « Démo · F4 » (x 470, y 186)
+47. « facultative » (x 476, y 212)
+48. « SILO-34 » (x 470, y 256)
+49. « · » (x 524, y 256)
+50. « F5 » (x 532, y 256)
+51. « Tests E2E de l'envoi » (x 470, y 278)
+52. « attend SILO-33 » (x 476, y 304)
+53. « SILO-35 » (x 470, y 348)
+54. « · » (x 524, y 348)
+55. « F5 » (x 532, y 348)
+56. « Démo · F5 » (x 470, y 370)
+57. « attend SILO-34 » (x 476, y 396)
+58. « SILO-52 » (x 470, y 440)
+59. « · » (x 524, y 440)
+60. « F6 » (x 532, y 440)
+61. « Contrôle des numéros » (x 470, y 462)
+62. « sprint S43 » (x 476, y 488)
+63. « SILO-53 » (x 470, y 532)
+64. « · » (x 524, y 532)
+65. « F6 » (x 532, y 532)
+66. « Écran d'import » (x 470, y 554)
+67. « sprint S43 » (x 476, y 580)
+68. « SILO-54 » (x 470, y 624)
+69. « · » (x 524, y 624)
+70. « F6 » (x 532, y 624)
+71. « Démo · F6 » (x 470, y 646)
+72. « sprint S43 » (x 476, y 672)
+73. « SILO-71 » (x 470, y 716)
+74. « · » (x 524, y 716)
+75. « F8 » (x 532, y 716)
+76. « Statuts de contrat » (x 470, y 738)
+77. « sprint S43 » (x 476, y 764)
+78. « SILO-72 » (x 470, y 808)
+79. « · » (x 524, y 808)
+80. « F8 » (x 532, y 808)
+81. « Sélection multiple » (x 470, y 830)
+82. « sprint S43 » (x 476, y 856)
+83. « SILO-73 » (x 470, y 900)
+84. « · » (x 524, y 900)
+85. « F8 » (x 532, y 900)
+86. « Validation par lot » (x 470, y 922)
+87. « sprint S43 » (x 476, y 948)
+88. « SILO-74 » (x 470, y 992)
+89. « · » (x 524, y 992)
+90. « F8 » (x 532, y 992)
+91. « Démo · F8 » (x 470, y 1014)
+92. « sprint S43 » (x 476, y 1040)
+93. « En cours » (x 674, y 124,5)
+94. « 1 » (x 733, y 125)
+95. « SILO-33 » (x 667, y 164)
+96. « · » (x 721, y 164)
+97. « F5 » (x 729, y 164)
+98. « Écran d'envoi hors ligne » (x 667, y 186)
+99. « feat/envoi-hors-… » (x 688, y 212)
+100. « Phase 7/12 · Porte qu… » (x 675, y 235)
+101. « En review » (x 871, y 124,5)
+102. « 3 » (x 936, y 125)
+103. « SILO-45 » (x 864, y 164)
+104. « · » (x 918, y 164)
+105. « F4 » (x 926, y 164)
+106. « Conflits de saisie » (x 864, y 186)
+107. « #20 » (x 885, y 212)
+108. « changements demandés » (x 870, y 235)
+109. « CI cassée » (x 885, y 258)
+110. « Phase 9/12 · Review » (x 872, y 281)
+111. « SILO-32 » (x 864, y 325)
+112. « · » (x 918, y 325)
+113. « F5 » (x 926, y 325)
+114. « Route d'envoi des photos » (x 864, y 347)
+115. « #22 » (x 885, y 389)
+116. « Phase 10/12 · Démo » (x 872, y 412)
+117. « CI » (x 937, y 389)
+118. « SILO-61 » (x 864, y 456)
+119. « Passage à Expo SDK 54 » (x 864, y 478)
+120. « #23 » (x 885, y 504)
+121. « CI en cours » (x 935, y 504)
+122. « Bloqué » (x 1068, y 124,5)
+123. « 1 » (x 1117, y 125)
+124. « SILO-51 » (x 1061, y 164)
+125. « · » (x 1115, y 164)
+126. « F6 » (x 1123, y 164)
+127. « Lecture du fichier Excel » (x 1061, y 186)
+128. « bloqué · Q14 » (x 1082, y 212)
+129. « Phase 3/12 · Questions » (x 1069, y 235)
+130. « Terminé » (x 1265, y 124,5)
+131. « 17 » (x 1320, y 125)
+132. « SILO-21 » (x 1258, y 164)
+133. « · » (x 1312, y 164)
+134. « F3 » (x 1320, y 164)
+135. « Démo · F3 » (x 1258, y 186)
+136. « #18 » (x 1279, y 212)
+137. « SILO-31 » (x 1258, y 256)
+138. « · » (x 1312, y 256)
+139. « F5 » (x 1320, y 256)
+140. « Stockage des photos sur MinIO » (x 1258, y 278)
+141. « #19 » (x 1279, y 320)
+142. « SILO-43 » (x 1258, y 364)
+143. « · » (x 1312, y 364)
+144. « F4 » (x 1320, y 364)
+145. « Synchro au retour du réseau » (x 1258, y 386)
+146. « #16 » (x 1279, y 428)
+147. « SILO-42 » (x 1258, y 472)
+148. « · » (x 1312, y 472)
+149. « F4 » (x 1320, y 472)
+150. « Formulaire de saisie » (x 1258, y 494)
+151. « #14 » (x 1279, y 520)
+152. « SILO-41 » (x 1258, y 564)
+153. « · » (x 1312, y 564)
+154. « F4 » (x 1320, y 564)
+155. « Schéma local des constats » (x 1258, y 586)
+156. « #12 » (x 1279, y 628)
+157. « SILO-20 » (x 1258, y 672)
+158. « · » (x 1312, y 672)
+159. « F3 » (x 1320, y 672)
+160. « Écran de réaffectation » (x 1258, y 694)
+161. « SILO-19 » (x 1258, y 738)
+162. « · » (x 1312, y 738)
+163. « F3 » (x 1320, y 738)
+164. « Route de réaffectation » (x 1258, y 760)
+165. « SILO-18 » (x 1258, y 804)
+166. « · » (x 1312, y 804)
+167. « F3 » (x 1320, y 804)
+168. « Historique des affectations » (x 1258, y 826)
+169. « SILO-14 » (x 1258, y 886)
+170. « · » (x 1312, y 886)
+171. « F2 » (x 1320, y 886)
+172. « Démo · F2 » (x 1258, y 908)
+173. « SILO-45 » (x 926, y 18,5)
+174. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+175. « Fermer » (x 1374, y 18,5)
+176. « F4 » (x 926, y 72)
+177. « · » (x 953, y 72)
+178. « S42 » (x 980, y 72)
+179. « · » (x 1009, y 72)
+180. « PR #20 » (x 1036, y 72)
+181. « Conflits de saisie » (x 904, y 104)
+182. « En review » (x 928, y 152,5)
+183. « A » (x 1031, y 155)
+184. « Adam (moi) » (x 1050, y 152,5)
+185. « Requise pour livrer » (x 1193, y 152,5)
+186. « Ajouter une étiquette » (x 909, y 193)
+187. « PR #20 » (x 935, y 242)
+188. « · changements demandés » (x 987, y 242)
+189. « · CI cassée » (x 1148, y 242)
+190. « PR » (x 1327, y 242,5)
+191. « Job » (x 1365, y 242,5)
+192. « Détails » (x 920, y 297)
+193. « Activité » (x 996, y 297)
+194. « Suivi » (x 904, y 344)
+195. « remonté de git, des PR et de full-delivery » (x 943, y 344,5)
+196. « Branche » (x 904, y 371,5)
+197. « feat/silo-45 » (x 1029, y 371,5)
+198. « sur » (x 1125, y 371,5)
+199. « dev » (x 1150, y 371,5)
+200. « déclarée » (x 1179, y 371,5)
+201. « PR » (x 904, y 405,5)
+202. « #20 » (x 1029, y 405,5)
+203. « ouverte hier à 16:40 » (x 1058, y 405,5)
+204. « Review » (x 904, y 439,5)
+205. « changements demandés » (x 1016, y 440)
+206. « 13:47 » (x 1155, y 439,5)
+207. « CI » (x 904, y 473,5)
+208. « CI cassée » (x 1031, y 474)
+209. « job e2e · 11:58 » (x 1094, y 473,5)
+210. « Session » (x 904, y 507,5)
+211. « T3 Code · 18 min » (x 1028, y 507,5)
+212. « Livraison » (x 904, y 541,5)
+213. « Phase 9/12 · Review » (x 1098, y 541,5)
+214. « · suivante : Démo » (x 1219, y 541,5)
+215. « Description » (x 904, y 597)
+216. « Modifier » (x 984, y 597,5)
+217. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 623)
+218. « Dépendances » (x 904, y 697)
+219. « Aucune » (x 904, y 725)
+220. « Ajouter une dépendance » (x 935, y 760)
+221. « Questions » (x 904, y 816)
+222. « 0 » (x 976, y 816,5)
+223. « Aucune question sur ce ticket. » (x 904, y 846)
+224. « Domaine » (x 926, y 898)
+225. « Aucun » (x 989, y 898,5)
+226. « Maquettes » (x 926, y 934)
+227. « 0 » (x 1001, y 934,5)
+228. « Ouvrir dans un onglet » (x 1147, y 53)
+229. « Copier la clé » (x 1147, y 83)
+230. « Mettre en attente… » (x 1147, y 113)
+231. « Supprimer… » (x 1147, y 152)
 
 ### Blocs
 
@@ -12657,35 +11804,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -12702,9 +11842,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -13234,234 +12371,230 @@ Exports : `exports/proposition-attente-fiche-menu-reprendre-dark.png` et `export
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « En attente » (x 742, y 65,5)
-42. « 5 » (x 808, y 66)
-43. « Étiquette : toutes » (x 864, y 65,5)
-44. « 41 tickets · Tous » (x 1338, y 65,5)
-45. « Backlog » (x 280, y 124,5)
-46. « 0 » (x 336, y 125)
-47. « À faire » (x 477, y 124,5)
-48. « 19 » (x 524, y 125)
-49. « SILO-46 » (x 470, y 164)
-50. « · » (x 524, y 164)
-51. « F4 » (x 532, y 164)
-52. « Démo · F4 » (x 470, y 186)
-53. « facultative » (x 476, y 212)
-54. « SILO-34 » (x 470, y 256)
-55. « · » (x 524, y 256)
-56. « F5 » (x 532, y 256)
-57. « Tests E2E de l'envoi » (x 470, y 278)
-58. « attend SILO-33 » (x 492, y 304)
-59. « SILO-35 » (x 470, y 348)
-60. « · » (x 524, y 348)
-61. « F5 » (x 532, y 348)
-62. « Démo · F5 » (x 470, y 370)
-63. « attend SILO-33 » (x 492, y 396)
-64. « SILO-52 » (x 470, y 440)
-65. « · » (x 524, y 440)
-66. « F6 » (x 532, y 440)
-67. « Contrôle des numéros » (x 470, y 462)
-68. « sprint S43 » (x 476, y 488)
-69. « SILO-53 » (x 470, y 532)
-70. « · » (x 524, y 532)
-71. « F6 » (x 532, y 532)
-72. « Écran d'import » (x 470, y 554)
-73. « sprint S43 » (x 476, y 580)
-74. « SILO-54 » (x 470, y 624)
-75. « · » (x 524, y 624)
-76. « F6 » (x 532, y 624)
-77. « Démo · F6 » (x 470, y 646)
-78. « sprint S43 » (x 476, y 672)
-79. « SILO-71 » (x 470, y 716)
-80. « · » (x 524, y 716)
-81. « F8 » (x 532, y 716)
-82. « Statuts de contrat » (x 470, y 738)
-83. « sprint S43 » (x 476, y 764)
-84. « SILO-72 » (x 470, y 808)
-85. « · » (x 524, y 808)
-86. « F8 » (x 532, y 808)
-87. « Sélection multiple » (x 470, y 830)
-88. « sprint S43 » (x 476, y 856)
-89. « SILO-73 » (x 470, y 900)
-90. « · » (x 524, y 900)
-91. « F8 » (x 532, y 900)
-92. « Validation par lot » (x 470, y 922)
-93. « sprint S43 » (x 476, y 948)
-94. « SILO-74 » (x 470, y 992)
-95. « · » (x 524, y 992)
-96. « F8 » (x 532, y 992)
-97. « Démo · F8 » (x 470, y 1014)
-98. « sprint S43 » (x 476, y 1040)
-99. « En cours » (x 674, y 124,5)
-100. « 1 » (x 733, y 125)
-101. « SILO-33 » (x 667, y 164)
-102. « · » (x 721, y 164)
-103. « F5 » (x 729, y 164)
-104. « Écran d'envoi hors ligne » (x 667, y 186)
-105. « Serveur MinIO de recette… » (x 689, y 212)
-106. « feat/envoi-hors-… » (x 688, y 235)
-107. « Phase 7/12 · Porte qu… » (x 675, y 258)
-108. « En review » (x 871, y 124,5)
-109. « 3 » (x 936, y 125)
-110. « SILO-45 » (x 864, y 164)
-111. « · » (x 918, y 164)
-112. « F4 » (x 926, y 164)
-113. « Conflits de saisie » (x 864, y 186)
-114. « Règle de fusion à valide… » (x 886, y 212)
-115. « #20 » (x 885, y 235)
-116. « changements demandés » (x 870, y 258)
-117. « CI cassée » (x 885, y 281)
-118. « Phase 9/12 · Review » (x 872, y 304)
-119. « SILO-32 » (x 864, y 348)
-120. « · » (x 918, y 348)
-121. « F5 » (x 926, y 348)
-122. « Route d'envoi des photos » (x 864, y 370)
-123. « #22 » (x 885, y 412)
-124. « Phase 10/12 · Démo » (x 872, y 435)
-125. « CI » (x 937, y 412)
-126. « SILO-61 » (x 864, y 479)
-127. « Passage à Expo SDK 54 » (x 864, y 501)
-128. « #23 » (x 885, y 527)
-129. « CI en cours » (x 935, y 527)
-130. « Bloqué » (x 1068, y 124,5)
-131. « 1 » (x 1117, y 125)
-132. « SILO-51 » (x 1061, y 164)
-133. « · » (x 1115, y 164)
-134. « F6 » (x 1123, y 164)
-135. « Lecture du fichier Excel » (x 1061, y 186)
-136. « bloqué · Q14 » (x 1082, y 212)
-137. « Phase 3/12 · Questions » (x 1069, y 235)
-138. « Terminé » (x 1265, y 124,5)
-139. « 17 » (x 1320, y 125)
-140. « SILO-21 » (x 1258, y 164)
-141. « · » (x 1312, y 164)
-142. « F3 » (x 1320, y 164)
-143. « Démo · F3 » (x 1258, y 186)
-144. « #18 » (x 1279, y 212)
-145. « SILO-31 » (x 1258, y 256)
-146. « · » (x 1312, y 256)
-147. « F5 » (x 1320, y 256)
-148. « Stockage des photos sur MinIO » (x 1258, y 278)
-149. « #19 » (x 1279, y 320)
-150. « SILO-43 » (x 1258, y 364)
-151. « · » (x 1312, y 364)
-152. « F4 » (x 1320, y 364)
-153. « Synchro au retour du réseau » (x 1258, y 386)
-154. « #16 » (x 1279, y 428)
-155. « SILO-42 » (x 1258, y 472)
-156. « · » (x 1312, y 472)
-157. « F4 » (x 1320, y 472)
-158. « Formulaire de saisie » (x 1258, y 494)
-159. « #14 » (x 1279, y 520)
-160. « SILO-41 » (x 1258, y 564)
-161. « · » (x 1312, y 564)
-162. « F4 » (x 1320, y 564)
-163. « Schéma local des constats » (x 1258, y 586)
-164. « #12 » (x 1279, y 628)
-165. « SILO-20 » (x 1258, y 672)
-166. « · » (x 1312, y 672)
-167. « F3 » (x 1320, y 672)
-168. « Écran de réaffectation » (x 1258, y 694)
-169. « SILO-19 » (x 1258, y 738)
-170. « · » (x 1312, y 738)
-171. « F3 » (x 1320, y 738)
-172. « Route de réaffectation » (x 1258, y 760)
-173. « SILO-18 » (x 1258, y 804)
-174. « · » (x 1312, y 804)
-175. « F3 » (x 1320, y 804)
-176. « Historique des affectations » (x 1258, y 826)
-177. « SILO-14 » (x 1258, y 886)
-178. « · » (x 1312, y 886)
-179. « F2 » (x 1320, y 886)
-180. « Démo · F2 » (x 1258, y 908)
-181. « SILO-45 » (x 926, y 18,5)
-182. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-183. « Fermer » (x 1374, y 18,5)
-184. « F4 » (x 926, y 72)
-185. « · » (x 953, y 72)
-186. « S42 » (x 980, y 72)
-187. « · » (x 1009, y 72)
-188. « PR #20 » (x 1036, y 72)
-189. « Conflits de saisie » (x 904, y 104)
-190. « En review » (x 928, y 152,5)
-191. « A » (x 1031, y 155)
-192. « Adam (moi) » (x 1050, y 152,5)
-193. « Requise pour livrer » (x 1193, y 152,5)
-194. « Ajouter une étiquette » (x 909, y 193)
-195. « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » (x 940, y 239)
-196. « Reprendre » (x 1335, y 250)
-197. « PR #20 » (x 935, y 315)
-198. « · changements demandés » (x 987, y 315)
-199. « · CI cassée » (x 1148, y 315)
-200. « PR » (x 1327, y 315,5)
-201. « Job » (x 1365, y 315,5)
-202. « Détails » (x 920, y 370)
-203. « Activité » (x 996, y 370)
-204. « Suivi » (x 904, y 417)
-205. « remonté de git, des PR et de full-delivery » (x 943, y 417,5)
-206. « Branche » (x 904, y 444,5)
-207. « feat/silo-45 » (x 1029, y 444,5)
-208. « sur » (x 1125, y 444,5)
-209. « dev » (x 1150, y 444,5)
-210. « déclarée » (x 1179, y 444,5)
-211. « PR » (x 904, y 478,5)
-212. « #20 » (x 1029, y 478,5)
-213. « ouverte hier à 16:40 » (x 1058, y 478,5)
-214. « Review » (x 904, y 512,5)
-215. « changements demandés » (x 1016, y 513)
-216. « 13:47 » (x 1155, y 512,5)
-217. « CI » (x 904, y 546,5)
-218. « CI cassée » (x 1031, y 547)
-219. « job e2e · 11:58 » (x 1094, y 546,5)
-220. « Session » (x 904, y 580,5)
-221. « T3 Code · 18 min » (x 1028, y 580,5)
-222. « Livraison » (x 904, y 614,5)
-223. « Phase 9/12 · Review » (x 1098, y 614,5)
-224. « · suivante : Démo » (x 1219, y 614,5)
-225. « Description » (x 904, y 670)
-226. « Modifier » (x 984, y 670,5)
-227. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 696)
-228. « Dépendances » (x 904, y 770)
-229. « Aucune » (x 904, y 798)
-230. « Ajouter une dépendance » (x 935, y 833)
-231. « Questions » (x 904, y 889)
-232. « 0 » (x 976, y 889,5)
-233. « Aucune question sur ce ticket. » (x 904, y 919)
-234. « Domaine » (x 926, y 971)
-235. « Aucun » (x 989, y 971,5)
-236. « Maquettes » (x 926, y 1007)
-237. « 0 » (x 1001, y 1007,5)
-238. « Ouvrir dans un onglet » (x 1147, y 53)
-239. « Copier la clé » (x 1147, y 83)
-240. « Reprendre » (x 1147, y 113)
-241. « Supprimer… » (x 1147, y 152)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « En attente » (x 742, y 65,5)
+38. « 5 » (x 808, y 66)
+39. « Étiquette : toutes » (x 864, y 65,5)
+40. « 41 tickets · Tous » (x 1338, y 65,5)
+41. « Backlog » (x 280, y 124,5)
+42. « 0 » (x 336, y 125)
+43. « À faire » (x 477, y 124,5)
+44. « 19 » (x 524, y 125)
+45. « SILO-46 » (x 470, y 164)
+46. « · » (x 524, y 164)
+47. « F4 » (x 532, y 164)
+48. « Démo · F4 » (x 470, y 186)
+49. « facultative » (x 476, y 212)
+50. « SILO-34 » (x 470, y 256)
+51. « · » (x 524, y 256)
+52. « F5 » (x 532, y 256)
+53. « Tests E2E de l'envoi » (x 470, y 278)
+54. « attend SILO-33 » (x 492, y 304)
+55. « SILO-35 » (x 470, y 348)
+56. « · » (x 524, y 348)
+57. « F5 » (x 532, y 348)
+58. « Démo · F5 » (x 470, y 370)
+59. « attend SILO-33 » (x 492, y 396)
+60. « SILO-52 » (x 470, y 440)
+61. « · » (x 524, y 440)
+62. « F6 » (x 532, y 440)
+63. « Contrôle des numéros » (x 470, y 462)
+64. « sprint S43 » (x 476, y 488)
+65. « SILO-53 » (x 470, y 532)
+66. « · » (x 524, y 532)
+67. « F6 » (x 532, y 532)
+68. « Écran d'import » (x 470, y 554)
+69. « sprint S43 » (x 476, y 580)
+70. « SILO-54 » (x 470, y 624)
+71. « · » (x 524, y 624)
+72. « F6 » (x 532, y 624)
+73. « Démo · F6 » (x 470, y 646)
+74. « sprint S43 » (x 476, y 672)
+75. « SILO-71 » (x 470, y 716)
+76. « · » (x 524, y 716)
+77. « F8 » (x 532, y 716)
+78. « Statuts de contrat » (x 470, y 738)
+79. « sprint S43 » (x 476, y 764)
+80. « SILO-72 » (x 470, y 808)
+81. « · » (x 524, y 808)
+82. « F8 » (x 532, y 808)
+83. « Sélection multiple » (x 470, y 830)
+84. « sprint S43 » (x 476, y 856)
+85. « SILO-73 » (x 470, y 900)
+86. « · » (x 524, y 900)
+87. « F8 » (x 532, y 900)
+88. « Validation par lot » (x 470, y 922)
+89. « sprint S43 » (x 476, y 948)
+90. « SILO-74 » (x 470, y 992)
+91. « · » (x 524, y 992)
+92. « F8 » (x 532, y 992)
+93. « Démo · F8 » (x 470, y 1014)
+94. « sprint S43 » (x 476, y 1040)
+95. « En cours » (x 674, y 124,5)
+96. « 1 » (x 733, y 125)
+97. « SILO-33 » (x 667, y 164)
+98. « · » (x 721, y 164)
+99. « F5 » (x 729, y 164)
+100. « Écran d'envoi hors ligne » (x 667, y 186)
+101. « Serveur MinIO de recette… » (x 689, y 212)
+102. « feat/envoi-hors-… » (x 688, y 235)
+103. « Phase 7/12 · Porte qu… » (x 675, y 258)
+104. « En review » (x 871, y 124,5)
+105. « 3 » (x 936, y 125)
+106. « SILO-45 » (x 864, y 164)
+107. « · » (x 918, y 164)
+108. « F4 » (x 926, y 164)
+109. « Conflits de saisie » (x 864, y 186)
+110. « Règle de fusion à valide… » (x 886, y 212)
+111. « #20 » (x 885, y 235)
+112. « changements demandés » (x 870, y 258)
+113. « CI cassée » (x 885, y 281)
+114. « Phase 9/12 · Review » (x 872, y 304)
+115. « SILO-32 » (x 864, y 348)
+116. « · » (x 918, y 348)
+117. « F5 » (x 926, y 348)
+118. « Route d'envoi des photos » (x 864, y 370)
+119. « #22 » (x 885, y 412)
+120. « Phase 10/12 · Démo » (x 872, y 435)
+121. « CI » (x 937, y 412)
+122. « SILO-61 » (x 864, y 479)
+123. « Passage à Expo SDK 54 » (x 864, y 501)
+124. « #23 » (x 885, y 527)
+125. « CI en cours » (x 935, y 527)
+126. « Bloqué » (x 1068, y 124,5)
+127. « 1 » (x 1117, y 125)
+128. « SILO-51 » (x 1061, y 164)
+129. « · » (x 1115, y 164)
+130. « F6 » (x 1123, y 164)
+131. « Lecture du fichier Excel » (x 1061, y 186)
+132. « bloqué · Q14 » (x 1082, y 212)
+133. « Phase 3/12 · Questions » (x 1069, y 235)
+134. « Terminé » (x 1265, y 124,5)
+135. « 17 » (x 1320, y 125)
+136. « SILO-21 » (x 1258, y 164)
+137. « · » (x 1312, y 164)
+138. « F3 » (x 1320, y 164)
+139. « Démo · F3 » (x 1258, y 186)
+140. « #18 » (x 1279, y 212)
+141. « SILO-31 » (x 1258, y 256)
+142. « · » (x 1312, y 256)
+143. « F5 » (x 1320, y 256)
+144. « Stockage des photos sur MinIO » (x 1258, y 278)
+145. « #19 » (x 1279, y 320)
+146. « SILO-43 » (x 1258, y 364)
+147. « · » (x 1312, y 364)
+148. « F4 » (x 1320, y 364)
+149. « Synchro au retour du réseau » (x 1258, y 386)
+150. « #16 » (x 1279, y 428)
+151. « SILO-42 » (x 1258, y 472)
+152. « · » (x 1312, y 472)
+153. « F4 » (x 1320, y 472)
+154. « Formulaire de saisie » (x 1258, y 494)
+155. « #14 » (x 1279, y 520)
+156. « SILO-41 » (x 1258, y 564)
+157. « · » (x 1312, y 564)
+158. « F4 » (x 1320, y 564)
+159. « Schéma local des constats » (x 1258, y 586)
+160. « #12 » (x 1279, y 628)
+161. « SILO-20 » (x 1258, y 672)
+162. « · » (x 1312, y 672)
+163. « F3 » (x 1320, y 672)
+164. « Écran de réaffectation » (x 1258, y 694)
+165. « SILO-19 » (x 1258, y 738)
+166. « · » (x 1312, y 738)
+167. « F3 » (x 1320, y 738)
+168. « Route de réaffectation » (x 1258, y 760)
+169. « SILO-18 » (x 1258, y 804)
+170. « · » (x 1312, y 804)
+171. « F3 » (x 1320, y 804)
+172. « Historique des affectations » (x 1258, y 826)
+173. « SILO-14 » (x 1258, y 886)
+174. « · » (x 1312, y 886)
+175. « F2 » (x 1320, y 886)
+176. « Démo · F2 » (x 1258, y 908)
+177. « SILO-45 » (x 926, y 18,5)
+178. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+179. « Fermer » (x 1374, y 18,5)
+180. « F4 » (x 926, y 72)
+181. « · » (x 953, y 72)
+182. « S42 » (x 980, y 72)
+183. « · » (x 1009, y 72)
+184. « PR #20 » (x 1036, y 72)
+185. « Conflits de saisie » (x 904, y 104)
+186. « En review » (x 928, y 152,5)
+187. « A » (x 1031, y 155)
+188. « Adam (moi) » (x 1050, y 152,5)
+189. « Requise pour livrer » (x 1193, y 152,5)
+190. « Ajouter une étiquette » (x 909, y 193)
+191. « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » (x 940, y 239)
+192. « Reprendre » (x 1335, y 250)
+193. « PR #20 » (x 935, y 315)
+194. « · changements demandés » (x 987, y 315)
+195. « · CI cassée » (x 1148, y 315)
+196. « PR » (x 1327, y 315,5)
+197. « Job » (x 1365, y 315,5)
+198. « Détails » (x 920, y 370)
+199. « Activité » (x 996, y 370)
+200. « Suivi » (x 904, y 417)
+201. « remonté de git, des PR et de full-delivery » (x 943, y 417,5)
+202. « Branche » (x 904, y 444,5)
+203. « feat/silo-45 » (x 1029, y 444,5)
+204. « sur » (x 1125, y 444,5)
+205. « dev » (x 1150, y 444,5)
+206. « déclarée » (x 1179, y 444,5)
+207. « PR » (x 904, y 478,5)
+208. « #20 » (x 1029, y 478,5)
+209. « ouverte hier à 16:40 » (x 1058, y 478,5)
+210. « Review » (x 904, y 512,5)
+211. « changements demandés » (x 1016, y 513)
+212. « 13:47 » (x 1155, y 512,5)
+213. « CI » (x 904, y 546,5)
+214. « CI cassée » (x 1031, y 547)
+215. « job e2e · 11:58 » (x 1094, y 546,5)
+216. « Session » (x 904, y 580,5)
+217. « T3 Code · 18 min » (x 1028, y 580,5)
+218. « Livraison » (x 904, y 614,5)
+219. « Phase 9/12 · Review » (x 1098, y 614,5)
+220. « · suivante : Démo » (x 1219, y 614,5)
+221. « Description » (x 904, y 670)
+222. « Modifier » (x 984, y 670,5)
+223. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 696)
+224. « Dépendances » (x 904, y 770)
+225. « Aucune » (x 904, y 798)
+226. « Ajouter une dépendance » (x 935, y 833)
+227. « Questions » (x 904, y 889)
+228. « 0 » (x 976, y 889,5)
+229. « Aucune question sur ce ticket. » (x 904, y 919)
+230. « Domaine » (x 926, y 971)
+231. « Aucun » (x 989, y 971,5)
+232. « Maquettes » (x 926, y 1007)
+233. « 0 » (x 1001, y 1007,5)
+234. « Ouvrir dans un onglet » (x 1147, y 53)
+235. « Copier la clé » (x 1147, y 83)
+236. « Reprendre » (x 1147, y 113)
+237. « Supprimer… » (x 1147, y 152)
 
 ### Blocs
 
@@ -13505,35 +12638,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -13550,9 +12676,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -14099,124 +13222,120 @@ Exports : `exports/proposition-attente-planning-menu-dark.png` et `exports/propo
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Planning » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Planning » (x 265, y 67)
-34. « 4 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
-35. « Fonctionnalité » (x 933, y 74)
-36. « Sprint » (x 1062, y 74)
-37. « En cours : 1 / 2 » (x 1146, y 74)
-38. « Colonnes » (x 1282, y 73)
-39. « Bandes » (x 1359, y 73)
-40. « À planifier » (x 297, y 120)
-41. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
-42. « F9 » (x 306, y 178)
-43. « Exporter le dossier client » (x 287, y 200)
-44. « 0/3 étapes » (x 287, y 240)
-45. « suivante : SILO-91 » (x 366, y 240)
-46. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
-47. « En attente (3) » (x 297, y 651)
-48. « Règle de fusion à valider par le client » (x 277, y 679)
-49. « SILO-45 » (x 287, y 728)
-50. « · » (x 339, y 728)
-51. « F4 » (x 347, y 728)
-52. « Conflits de saisie » (x 287, y 745)
-53. « Serveur MinIO de recette indisponible » (x 277, y 780)
-54. « SILO-33 » (x 287, y 829)
-55. « · » (x 339, y 829)
-56. « F5 » (x 347, y 829)
-57. « Écran d'envoi hors ligne » (x 287, y 846)
-58. « SILO-82 » (x 287, y 882)
-59. « · » (x 339, y 882)
-60. « F7 » (x 347, y 882)
-61. « Génération PDF » (x 287, y 899)
-62. « 2 en dépendent » (x 297, y 928)
-63. « S41 » (x 503, y 120)
-64. « Accès » (x 533, y 120)
-65. « 5–9 oct. » (x 503, y 141,5)
-66. « terminé » (x 649, y 142)
-67. « 2/2 livrées » (x 613, y 161)
-68. « 9 étapes prévues · capacité 5 » (x 503, y 179)
-69. « F1 » (x 532, y 217)
-70. « livrée » (x 654, y 217)
-71. « Se connecter avec Microsoft » (x 513, y 239)
-72. « F2 » (x 532, y 301)
-73. « livrée » (x 654, y 301)
-74. « Voir ses box affectés » (x 513, y 323)
-75. « S42 » (x 729, y 120)
-76. « Saisie hors ligne » (x 759, y 120)
-77. « 12–16 oct. » (x 729, y 141,5)
-78. « se termine aujourd'hui » (x 804, y 142)
-79. « 2/3 livrées » (x 839, y 161)
-80. « 10 étapes prévues · capacité 5 » (x 729, y 179)
-81. « F3 » (x 758, y 217)
-82. « livrée » (x 880, y 217)
-83. « Réaffecter un box » (x 739, y 239)
-84. « 4/4 étapes » (x 739, y 279)
-85. « F4 » (x 758, y 323)
-86. « livrée · 1 en attente » (x 812, y 323)
-87. « Saisir un constat hors ligne » (x 739, y 345)
-88. « 3/4 étapes » (x 739, y 385)
-89. « SILO-45 » (x 862, y 385)
-90. « F5 » (x 758, y 430,5)
-91. « en cours » (x 860, y 431)
-92. « Envoyer les photos d'un constat » (x 739, y 454)
-93. « 1/2 étapes » (x 739, y 510)
-94. « SILO-33 » (x 862, y 510)
-95. « S43 » (x 955, y 120)
-96. « Import et contrats » (x 985, y 120)
-97. « 19–23 oct. » (x 955, y 140)
-98. « 2 prévues » (x 1093, y 140)
-99. « 8 étapes prévues · capacité 5 » (x 955, y 158)
-100. « F6 » (x 984, y 197,5)
-101. « bloquée · Q14 » (x 1063, y 198)
-102. « Importer les box depuis Excel » (x 965, y 221)
-103. « 0/4 étapes » (x 965, y 277)
-104. « suivante : SILO-51 » (x 1044, y 277)
-105. « F8 » (x 984, y 321)
-106. « Valider les contrats par lot » (x 965, y 343)
-107. « 0/4 étapes » (x 965, y 383)
-108. « suivante : SILO-71 » (x 1045, y 383)
-109. « S44 » (x 1181, y 120)
-110. « Rapports » (x 1211, y 120)
-111. « 26–30 oct. » (x 1181, y 140)
-112. « 1 prévue » (x 1328, y 140)
-113. « 4 étapes prévues · capacité 5 » (x 1181, y 158)
-114. « F7 » (x 1210, y 196)
-115. « Rapport de centre journalier » (x 1191, y 218)
-116. « 0/4 étapes » (x 1191, y 274)
-117. « suivante : SILO-81 » (x 1270, y 274)
-118. « Déposer pour planifier en S44 » (x 1192, y 361,5)
-119. « 26–30 oct. » (x 1248, y 382,5)
-120. « étape livrée » (x 283, y 968)
-121. « en review » (x 377, y 968)
-122. « en cours » (x 460, y 968)
-123. « bloquée » (x 538, y 968)
-124. « à faire » (x 613, y 968)
-125. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
-126. « F9 » (x 1230, y 399)
-127. « Exporter le dossier client » (x 1211, y 421)
-128. « Reprendre » (x 474, y 759)
-129. « Reprendre dans » (x 474, y 789)
-130. « S43 · Import et contrats » (x 656, y 793)
-131. « S44 · Rapports » (x 656, y 823)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Planning » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Planning » (x 265, y 67)
+30. « 4 fonctionnalités livrées sur 9 · 1 à planifier » (x 368, y 79)
+31. « Fonctionnalité » (x 933, y 74)
+32. « Sprint » (x 1062, y 74)
+33. « En cours : 1 / 2 » (x 1146, y 74)
+34. « Colonnes » (x 1282, y 73)
+35. « Bandes » (x 1359, y 73)
+36. « À planifier » (x 297, y 120)
+37. « Glisse une fonctionnalité vers un sprint » (x 277, y 140)
+38. « F9 » (x 306, y 178)
+39. « Exporter le dossier client » (x 287, y 200)
+40. « 0/3 étapes » (x 287, y 240)
+41. « suivante : SILO-91 » (x 366, y 240)
+42. « Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours. » (x 279, y 282)
+43. « En attente (3) » (x 297, y 651)
+44. « Règle de fusion à valider par le client » (x 277, y 679)
+45. « SILO-45 » (x 287, y 728)
+46. « · » (x 339, y 728)
+47. « F4 » (x 347, y 728)
+48. « Conflits de saisie » (x 287, y 745)
+49. « Serveur MinIO de recette indisponible » (x 277, y 780)
+50. « SILO-33 » (x 287, y 829)
+51. « · » (x 339, y 829)
+52. « F5 » (x 347, y 829)
+53. « Écran d'envoi hors ligne » (x 287, y 846)
+54. « SILO-82 » (x 287, y 882)
+55. « · » (x 339, y 882)
+56. « F7 » (x 347, y 882)
+57. « Génération PDF » (x 287, y 899)
+58. « 2 en dépendent » (x 297, y 928)
+59. « S41 » (x 503, y 120)
+60. « Accès » (x 533, y 120)
+61. « 5–9 oct. » (x 503, y 141,5)
+62. « terminé » (x 649, y 142)
+63. « 2/2 livrées » (x 613, y 161)
+64. « 9 étapes prévues · capacité 5 » (x 503, y 179)
+65. « F1 » (x 532, y 217)
+66. « livrée » (x 654, y 217)
+67. « Se connecter avec Microsoft » (x 513, y 239)
+68. « F2 » (x 532, y 301)
+69. « livrée » (x 654, y 301)
+70. « Voir ses box affectés » (x 513, y 323)
+71. « S42 » (x 729, y 120)
+72. « Saisie hors ligne » (x 759, y 120)
+73. « 12–16 oct. » (x 729, y 141,5)
+74. « se termine aujourd'hui » (x 804, y 142)
+75. « 2/3 livrées » (x 839, y 161)
+76. « 10 étapes prévues · capacité 5 » (x 729, y 179)
+77. « F3 » (x 758, y 217)
+78. « livrée » (x 880, y 217)
+79. « Réaffecter un box » (x 739, y 239)
+80. « 4/4 étapes » (x 739, y 279)
+81. « F4 » (x 758, y 323)
+82. « livrée · 1 en attente » (x 812, y 323)
+83. « Saisir un constat hors ligne » (x 739, y 345)
+84. « 3/4 étapes » (x 739, y 385)
+85. « SILO-45 » (x 862, y 385)
+86. « F5 » (x 758, y 430,5)
+87. « en cours » (x 860, y 431)
+88. « Envoyer les photos d'un constat » (x 739, y 454)
+89. « 1/2 étapes » (x 739, y 510)
+90. « SILO-33 » (x 862, y 510)
+91. « S43 » (x 955, y 120)
+92. « Import et contrats » (x 985, y 120)
+93. « 19–23 oct. » (x 955, y 140)
+94. « 2 prévues » (x 1093, y 140)
+95. « 8 étapes prévues · capacité 5 » (x 955, y 158)
+96. « F6 » (x 984, y 197,5)
+97. « bloquée · Q14 » (x 1063, y 198)
+98. « Importer les box depuis Excel » (x 965, y 221)
+99. « 0/4 étapes » (x 965, y 277)
+100. « suivante : SILO-51 » (x 1044, y 277)
+101. « F8 » (x 984, y 321)
+102. « Valider les contrats par lot » (x 965, y 343)
+103. « 0/4 étapes » (x 965, y 383)
+104. « suivante : SILO-71 » (x 1045, y 383)
+105. « S44 » (x 1181, y 120)
+106. « Rapports » (x 1211, y 120)
+107. « 26–30 oct. » (x 1181, y 140)
+108. « 1 prévue » (x 1328, y 140)
+109. « 4 étapes prévues · capacité 5 » (x 1181, y 158)
+110. « F7 » (x 1210, y 196)
+111. « Rapport de centre journalier » (x 1191, y 218)
+112. « 0/4 étapes » (x 1191, y 274)
+113. « suivante : SILO-81 » (x 1270, y 274)
+114. « Déposer pour planifier en S44 » (x 1192, y 361,5)
+115. « 26–30 oct. » (x 1248, y 382,5)
+116. « étape livrée » (x 283, y 968)
+117. « en review » (x 377, y 968)
+118. « en cours » (x 460, y 968)
+119. « bloquée » (x 538, y 968)
+120. « à faire » (x 613, y 968)
+121. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
+122. « F9 » (x 1230, y 399)
+123. « Exporter le dossier client » (x 1211, y 421)
+124. « Reprendre » (x 474, y 759)
+125. « Reprendre dans » (x 474, y 789)
+126. « S43 · Import et contrats » (x 656, y 793)
+127. « S44 · Rapports » (x 656, y 823)
 
 ### Blocs
 
@@ -14260,35 +13379,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `fg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 297, 54 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -14305,9 +13417,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Planning » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 54 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -14607,74 +13716,70 @@ Exports : `exports/proposition-questions-menu-dark.png` et `exports/proposition-
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Questions » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Ouvertes » (x 269, y 67,5)
-34. « Répondues » (x 345, y 67,5)
-35. « Toutes » (x 433, y 67,5)
-36. « Archivées » (x 495, y 67,5)
-37. « Tous » (x 583, y 67,5)
-38. « 3 » (x 617, y 68)
-39. « Silo SA » (x 648, y 67,5)
-40. « 2 » (x 696, y 68)
-41. « Produit » (x 727, y 67,5)
-42. « 1 » (x 776, y 68)
-43. « Exporter pour le client (2) » (x 1123, y 67,5)
-44. « Nouvelle question » (x 1312, y 67,5)
-45. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
-46. « SILO-51 » (x 265, y 156)
-47. « Lecture du fichier Excel » (x 324, y 155,5)
-48. « F6 » (x 501, y 156)
-49. « Q14 » (x 279, y 194)
-50. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
-51. « bloquante » (x 600, y 194)
-52. « Pour : Silo SA » (x 304, y 224)
-53. « posée par » (x 411, y 224)
-54. « AB » (x 478, y 227)
-55. « Adam · il y a 3 j » (x 500, y 224)
-56. « Votre réponse… » (x 291, y 262)
-57. « Répondre » (x 1337, y 262,5)
-58. « SILO-34 » (x 265, y 321)
-59. « Tests E2E de l'envoi » (x 324, y 320,5)
-60. « F5 » (x 477, y 321)
-61. « Q16 » (x 279, y 358)
-62. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
-63. « Pour : Produit » (x 304, y 387)
-64. « posée par » (x 411, y 387)
-65. « AB » (x 478, y 390)
-66. « Adam · hier » (x 500, y 387)
-67. « Votre réponse… » (x 291, y 425)
-68. « Répondre » (x 1337, y 425,5)
-69. « SILO-81 » (x 265, y 484)
-70. « Modèle du rapport » (x 324, y 483,5)
-71. « F7 » (x 469, y 484)
-72. « Q17 » (x 279, y 521)
-73. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
-74. « Pour : Silo SA » (x 304, y 550)
-75. « posée par » (x 411, y 550)
-76. « AB » (x 478, y 553)
-77. « Adam · il y a 2 h » (x 500, y 550)
-78. « Votre réponse… » (x 291, y 588)
-79. « Répondre » (x 1337, y 588,5)
-80. « Archiver » (x 1249, y 377)
-81. « Supprimer » (x 1249, y 416)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Questions » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Ouvertes » (x 269, y 67,5)
+30. « Répondues » (x 345, y 67,5)
+31. « Toutes » (x 433, y 67,5)
+32. « Archivées » (x 495, y 67,5)
+33. « Tous » (x 583, y 67,5)
+34. « 3 » (x 617, y 68)
+35. « Silo SA » (x 648, y 67,5)
+36. « 2 » (x 696, y 68)
+37. « Produit » (x 727, y 67,5)
+38. « 1 » (x 776, y 68)
+39. « Exporter pour le client (2) » (x 1123, y 67,5)
+40. « Nouvelle question » (x 1312, y 67,5)
+41. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
+42. « SILO-51 » (x 265, y 156)
+43. « Lecture du fichier Excel » (x 324, y 155,5)
+44. « F6 » (x 501, y 156)
+45. « Q14 » (x 279, y 194)
+46. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
+47. « bloquante » (x 600, y 194)
+48. « Pour : Silo SA » (x 304, y 224)
+49. « posée par » (x 411, y 224)
+50. « AB » (x 478, y 227)
+51. « Adam · il y a 3 j » (x 500, y 224)
+52. « Votre réponse… » (x 291, y 262)
+53. « Répondre » (x 1337, y 262,5)
+54. « SILO-34 » (x 265, y 321)
+55. « Tests E2E de l'envoi » (x 324, y 320,5)
+56. « F5 » (x 477, y 321)
+57. « Q16 » (x 279, y 358)
+58. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
+59. « Pour : Produit » (x 304, y 387)
+60. « posée par » (x 411, y 387)
+61. « AB » (x 478, y 390)
+62. « Adam · hier » (x 500, y 387)
+63. « Votre réponse… » (x 291, y 425)
+64. « Répondre » (x 1337, y 425,5)
+65. « SILO-81 » (x 265, y 484)
+66. « Modèle du rapport » (x 324, y 483,5)
+67. « F7 » (x 469, y 484)
+68. « Q17 » (x 279, y 521)
+69. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
+70. « Pour : Silo SA » (x 304, y 550)
+71. « posée par » (x 411, y 550)
+72. « AB » (x 478, y 553)
+73. « Adam · il y a 2 h » (x 500, y 550)
+74. « Votre réponse… » (x 291, y 588)
+75. « Répondre » (x 1337, y 588,5)
+76. « Archiver » (x 1249, y 377)
+77. « Supprimer » (x 1249, y 416)
 
 ### Blocs
 
@@ -14718,35 +13823,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `fg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 457, 62 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `fg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 62 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -14763,9 +13861,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 62 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -14915,76 +14010,72 @@ Exports : `exports/proposition-questions-supprimer-dark.png` et `exports/proposi
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Questions » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Ouvertes » (x 269, y 67,5)
-34. « Répondues » (x 345, y 67,5)
-35. « Toutes » (x 433, y 67,5)
-36. « Archivées » (x 495, y 67,5)
-37. « Tous » (x 583, y 67,5)
-38. « 3 » (x 617, y 68)
-39. « Silo SA » (x 648, y 67,5)
-40. « 2 » (x 696, y 68)
-41. « Produit » (x 727, y 67,5)
-42. « 1 » (x 776, y 68)
-43. « Exporter pour le client (2) » (x 1123, y 67,5)
-44. « Nouvelle question » (x 1312, y 67,5)
-45. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
-46. « SILO-51 » (x 265, y 156)
-47. « Lecture du fichier Excel » (x 324, y 155,5)
-48. « F6 » (x 501, y 156)
-49. « Q14 » (x 279, y 194)
-50. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
-51. « bloquante » (x 600, y 194)
-52. « Pour : Silo SA » (x 304, y 224)
-53. « posée par » (x 411, y 224)
-54. « AB » (x 478, y 227)
-55. « Adam · il y a 3 j » (x 500, y 224)
-56. « Votre réponse… » (x 291, y 262)
-57. « Répondre » (x 1337, y 262,5)
-58. « SILO-34 » (x 265, y 321)
-59. « Tests E2E de l'envoi » (x 324, y 320,5)
-60. « F5 » (x 477, y 321)
-61. « Q16 » (x 279, y 358)
-62. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
-63. « Pour : Produit » (x 304, y 387)
-64. « posée par » (x 411, y 387)
-65. « AB » (x 478, y 390)
-66. « Adam · hier » (x 500, y 387)
-67. « Votre réponse… » (x 291, y 425)
-68. « Répondre » (x 1337, y 425,5)
-69. « SILO-81 » (x 265, y 484)
-70. « Modèle du rapport » (x 324, y 483,5)
-71. « F7 » (x 469, y 484)
-72. « Q17 » (x 279, y 521)
-73. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
-74. « Pour : Silo SA » (x 304, y 550)
-75. « posée par » (x 411, y 550)
-76. « AB » (x 478, y 553)
-77. « Adam · il y a 2 h » (x 500, y 550)
-78. « Votre réponse… » (x 291, y 588)
-79. « Répondre » (x 1337, y 588,5)
-80. « Supprimer « Quota par client : 2 Go ou 5 Go ? » ? » (x 488, y 441)
-81. « Suppression définitive, pour tous les membres du projet : la question, sa réponse et son historique. Pour la masquer sans la perdre, archive-la. » (x 488, y 472)
-82. « Annuler » (x 790, y 536)
-83. « Supprimer » (x 874, y 536)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Questions » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Ouvertes » (x 269, y 67,5)
+30. « Répondues » (x 345, y 67,5)
+31. « Toutes » (x 433, y 67,5)
+32. « Archivées » (x 495, y 67,5)
+33. « Tous » (x 583, y 67,5)
+34. « 3 » (x 617, y 68)
+35. « Silo SA » (x 648, y 67,5)
+36. « 2 » (x 696, y 68)
+37. « Produit » (x 727, y 67,5)
+38. « 1 » (x 776, y 68)
+39. « Exporter pour le client (2) » (x 1123, y 67,5)
+40. « Nouvelle question » (x 1312, y 67,5)
+41. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
+42. « SILO-51 » (x 265, y 156)
+43. « Lecture du fichier Excel » (x 324, y 155,5)
+44. « F6 » (x 501, y 156)
+45. « Q14 » (x 279, y 194)
+46. « Un box réaffecté garde-t-il ses photos ? » (x 310, y 193)
+47. « bloquante » (x 600, y 194)
+48. « Pour : Silo SA » (x 304, y 224)
+49. « posée par » (x 411, y 224)
+50. « AB » (x 478, y 227)
+51. « Adam · il y a 3 j » (x 500, y 224)
+52. « Votre réponse… » (x 291, y 262)
+53. « Répondre » (x 1337, y 262,5)
+54. « SILO-34 » (x 265, y 321)
+55. « Tests E2E de l'envoi » (x 324, y 320,5)
+56. « F5 » (x 477, y 321)
+57. « Q16 » (x 279, y 358)
+58. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 357)
+59. « Pour : Produit » (x 304, y 387)
+60. « posée par » (x 411, y 387)
+61. « AB » (x 478, y 390)
+62. « Adam · hier » (x 500, y 387)
+63. « Votre réponse… » (x 291, y 425)
+64. « Répondre » (x 1337, y 425,5)
+65. « SILO-81 » (x 265, y 484)
+66. « Modèle du rapport » (x 324, y 483,5)
+67. « F7 » (x 469, y 484)
+68. « Q17 » (x 279, y 521)
+69. « Un rapport par chef de centre ou par client ? » (x 310, y 520)
+70. « Pour : Silo SA » (x 304, y 550)
+71. « posée par » (x 411, y 550)
+72. « AB » (x 478, y 553)
+73. « Adam · il y a 2 h » (x 500, y 550)
+74. « Votre réponse… » (x 291, y 588)
+75. « Répondre » (x 1337, y 588,5)
+76. « Supprimer « Quota par client : 2 Go ou 5 Go ? » ? » (x 488, y 441)
+77. « Suppression définitive, pour tous les membres du projet : la question, sa réponse et son historique. Pour la masquer sans la perdre, archive-la. » (x 488, y 472)
+78. « Annuler » (x 790, y 536)
+79. « Supprimer » (x 874, y 536)
 
 ### Blocs
 
@@ -15028,35 +14119,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `fg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 457, 62 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `fg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 62 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -15073,9 +14157,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 62 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -15225,48 +14306,44 @@ Exports : `exports/proposition-questions-repondues-dark.png` et `exports/proposi
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 2 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Questions » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Ouvertes » (x 269, y 67,5)
-34. « Répondues » (x 345, y 67,5)
-35. « Toutes » (x 433, y 67,5)
-36. « Archivées » (x 495, y 67,5)
-37. « Tous » (x 583, y 67,5)
-38. « 2 » (x 617, y 68)
-39. « Silo SA » (x 648, y 67,5)
-40. « 2 » (x 696, y 68)
-41. « Exporter pour le client (2) » (x 1123, y 67,5)
-42. « Nouvelle question » (x 1312, y 67,5)
-43. « SILO-34 » (x 265, y 121)
-44. « Tests E2E de l'envoi » (x 324, y 120,5)
-45. « F5 » (x 477, y 121)
-46. « Q16 » (x 279, y 161,5)
-47. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 160,5)
-48. « Modifier la réponse » (x 1122, y 161,5)
-49. « Retirer la réponse » (x 1271, y 161,5)
-50. « Pour : Produit » (x 304, y 194)
-51. « posée par » (x 411, y 194)
-52. « AB » (x 478, y 197)
-53. « Adam · hier » (x 500, y 194)
-54. « Réponse : 5 Go » (x 289, y 230)
-55. « Répondu par Adam · il y a 2 h » (x 289, y 249)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 2 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Questions » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Ouvertes » (x 269, y 67,5)
+30. « Répondues » (x 345, y 67,5)
+31. « Toutes » (x 433, y 67,5)
+32. « Archivées » (x 495, y 67,5)
+33. « Tous » (x 583, y 67,5)
+34. « 2 » (x 617, y 68)
+35. « Silo SA » (x 648, y 67,5)
+36. « 2 » (x 696, y 68)
+37. « Exporter pour le client (2) » (x 1123, y 67,5)
+38. « Nouvelle question » (x 1312, y 67,5)
+39. « SILO-34 » (x 265, y 121)
+40. « Tests E2E de l'envoi » (x 324, y 120,5)
+41. « F5 » (x 477, y 121)
+42. « Q16 » (x 279, y 161,5)
+43. « Quota par client : 2 Go ou 5 Go ? » (x 310, y 160,5)
+44. « Modifier la réponse » (x 1122, y 161,5)
+45. « Retirer la réponse » (x 1271, y 161,5)
+46. « Pour : Produit » (x 304, y 194)
+47. « posée par » (x 411, y 194)
+48. « AB » (x 478, y 197)
+49. « Adam · hier » (x 500, y 194)
+50. « Réponse : 5 Go » (x 289, y 230)
+51. « Répondu par Adam · il y a 2 h » (x 289, y 249)
 
 ### Blocs
 
@@ -15310,35 +14387,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `fg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 457, 62 × 16
-        - « 2 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `fg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 62 × 16
+        - « 2 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -15355,9 +14425,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Questions » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 62 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -15452,104 +14519,100 @@ Exports : `exports/proposition-graphe-fonctionnalites-dark.png` et `exports/prop
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 314, y 16)
-29. « Graphe » (x 329, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Fonctionnalités » (x 288, y 64,5)
-34. « PRs » (x 419, y 64,5)
-35. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
-36. « S41 » (x 273, y 108,5)
-37. « Accès » (x 301, y 108)
-38. « terminé » (x 255, y 125)
-39. « S42 » (x 423, y 108,5)
-40. « Saisie hors ligne » (x 451, y 108)
-41. « en cours » (x 405, y 125)
-42. « S43 » (x 713, y 108,5)
-43. « Import et contrats » (x 741, y 108)
-44. « prévu » (x 695, y 125)
-45. « S44 » (x 973, y 108,5)
-46. « Rapports » (x 1001, y 108)
-47. « prévu » (x 955, y 125)
-48. « À planifier » (x 1223, y 108)
-49. « F1 » (x 263, y 176)
-50. « 4/4 » (x 331, y 176)
-51. « Se connecter avec Microsoft » (x 263, y 196)
-52. « F3 » (x 415, y 176)
-53. « 4/4 » (x 619, y 176)
-54. « Réaffecter un box » (x 415, y 196)
-55. « F6 » (x 705, y 176)
-56. « 0/4 » (x 897, y 176)
-57. « Importer les box depuis Excel » (x 705, y 196)
-58. « Lecture du fichier Excel » (x 726, y 233)
-59. « Contrôle des numéros » (x 726, y 263)
-60. « Écran d'import » (x 726, y 293)
-61. « Démo client » (x 726, y 323)
-62. « bloquée par Q14 » (x 722, y 348)
-63. « F7 » (x 965, y 176)
-64. « 0/5 » (x 1147, y 176)
-65. « Rapport de centre journalier » (x 965, y 196)
-66. « Modèle du rapport » (x 986, y 233)
-67. « Génération PDF » (x 986, y 263)
-68. « Photos dans le rapport » (x 986, y 293)
-69. « Envoi le soir » (x 986, y 323)
-70. « Démo client » (x 986, y 353)
-71. « F9 » (x 1215, y 176)
-72. « 0/3 » (x 1357, y 176)
-73. « Exporter le dossier client » (x 1215, y 196)
-74. « Format du dossier » (x 1236, y 233)
-75. « Archive ZIP » (x 1236, y 263)
-76. « Démo client » (x 1236, y 293)
-77. « F4 » (x 415, y 272)
-78. « 3/5 » (x 637, y 272)
-79. « Saisir un constat hors ligne » (x 415, y 292)
-80. « Schéma local des constats » (x 436, y 329)
-81. « Formulaire de saisie » (x 436, y 359)
-82. « Synchro au retour du réseau » (x 436, y 389)
-83. « Conflits de saisie » (x 436, y 419)
-84. « Démo client » (x 436, y 449)
-85. « F2 » (x 263, y 287)
-86. « 5/5 » (x 331, y 287)
-87. « Voir ses box affectés » (x 263, y 307)
-88. « F8 » (x 705, y 412)
-89. « 0/4 » (x 897, y 412)
-90. « Valider les contrats par lot » (x 705, y 432)
-91. « Statuts de contrat » (x 726, y 469)
-92. « Sélection multiple » (x 726, y 499)
-93. « Validation par lot » (x 726, y 529)
-94. « Démo client » (x 726, y 559)
-95. « F5 » (x 415, y 518)
-96. « 1/5 » (x 637, y 518)
-97. « Envoyer les photos d'un constat » (x 415, y 538)
-98. « Stockage des photos sur MinIO » (x 436, y 575)
-99. « Route d'envoi des photos » (x 436, y 605)
-100. « Écran d'envoi hors ligne » (x 436, y 635)
-101. « Tests E2E de l'envoi » (x 436, y 665)
-102. « Démo client » (x 436, y 695)
-103. « en retard · glisse en S43 » (x 432, y 720)
-104. « À faire » (x 283, y 960)
-105. « En cours » (x 346, y 960)
-106. « En review » (x 420, y 960)
-107. « Bloqué » (x 499, y 960)
-108. « En attente » (x 564, y 960)
-109. « Fonctionnalité » (x 652, y 960)
-110. « Colonne = sprint » (x 759, y 960)
-111. « Session active » (x 872, y 960)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 314, y 16)
+26. « Graphe » (x 329, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Fonctionnalités » (x 288, y 64,5)
+30. « PRs » (x 419, y 64,5)
+31. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
+32. « S41 » (x 273, y 108,5)
+33. « Accès » (x 301, y 108)
+34. « terminé » (x 255, y 125)
+35. « S42 » (x 423, y 108,5)
+36. « Saisie hors ligne » (x 451, y 108)
+37. « en cours » (x 405, y 125)
+38. « S43 » (x 713, y 108,5)
+39. « Import et contrats » (x 741, y 108)
+40. « prévu » (x 695, y 125)
+41. « S44 » (x 973, y 108,5)
+42. « Rapports » (x 1001, y 108)
+43. « prévu » (x 955, y 125)
+44. « À planifier » (x 1223, y 108)
+45. « F1 » (x 263, y 176)
+46. « 4/4 » (x 331, y 176)
+47. « Se connecter avec Microsoft » (x 263, y 196)
+48. « F3 » (x 415, y 176)
+49. « 4/4 » (x 619, y 176)
+50. « Réaffecter un box » (x 415, y 196)
+51. « F6 » (x 705, y 176)
+52. « 0/4 » (x 897, y 176)
+53. « Importer les box depuis Excel » (x 705, y 196)
+54. « Lecture du fichier Excel » (x 726, y 233)
+55. « Contrôle des numéros » (x 726, y 263)
+56. « Écran d'import » (x 726, y 293)
+57. « Démo client » (x 726, y 323)
+58. « bloquée par Q14 » (x 722, y 348)
+59. « F7 » (x 965, y 176)
+60. « 0/5 » (x 1147, y 176)
+61. « Rapport de centre journalier » (x 965, y 196)
+62. « Modèle du rapport » (x 986, y 233)
+63. « Génération PDF » (x 986, y 263)
+64. « Photos dans le rapport » (x 986, y 293)
+65. « Envoi le soir » (x 986, y 323)
+66. « Démo client » (x 986, y 353)
+67. « F9 » (x 1215, y 176)
+68. « 0/3 » (x 1357, y 176)
+69. « Exporter le dossier client » (x 1215, y 196)
+70. « Format du dossier » (x 1236, y 233)
+71. « Archive ZIP » (x 1236, y 263)
+72. « Démo client » (x 1236, y 293)
+73. « F4 » (x 415, y 272)
+74. « 3/5 » (x 637, y 272)
+75. « Saisir un constat hors ligne » (x 415, y 292)
+76. « Schéma local des constats » (x 436, y 329)
+77. « Formulaire de saisie » (x 436, y 359)
+78. « Synchro au retour du réseau » (x 436, y 389)
+79. « Conflits de saisie » (x 436, y 419)
+80. « Démo client » (x 436, y 449)
+81. « F2 » (x 263, y 287)
+82. « 5/5 » (x 331, y 287)
+83. « Voir ses box affectés » (x 263, y 307)
+84. « F8 » (x 705, y 412)
+85. « 0/4 » (x 897, y 412)
+86. « Valider les contrats par lot » (x 705, y 432)
+87. « Statuts de contrat » (x 726, y 469)
+88. « Sélection multiple » (x 726, y 499)
+89. « Validation par lot » (x 726, y 529)
+90. « Démo client » (x 726, y 559)
+91. « F5 » (x 415, y 518)
+92. « 1/5 » (x 637, y 518)
+93. « Envoyer les photos d'un constat » (x 415, y 538)
+94. « Stockage des photos sur MinIO » (x 436, y 575)
+95. « Route d'envoi des photos » (x 436, y 605)
+96. « Écran d'envoi hors ligne » (x 436, y 635)
+97. « Tests E2E de l'envoi » (x 436, y 665)
+98. « Démo client » (x 436, y 695)
+99. « en retard · glisse en S43 » (x 432, y 720)
+100. « À faire » (x 283, y 960)
+101. « En cours » (x 346, y 960)
+102. « En review » (x 420, y 960)
+103. « Bloqué » (x 499, y 960)
+104. « En attente » (x 564, y 960)
+105. « Fonctionnalité » (x 652, y 960)
+106. « Colonne = sprint » (x 759, y 960)
+107. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -15593,35 +14656,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `fg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 44 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `fg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 44 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 43 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 43 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 35 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 35 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -15638,9 +14694,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 29 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 314, y 16, 7 × 16
           - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 329, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -15928,85 +14981,81 @@ Exports : `exports/proposition-graphe-prs-dark.png` et `exports/proposition-grap
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 314, y 16)
-29. « Graphe » (x 329, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Fonctionnalités » (x 288, y 64,5)
-34. « PRs » (x 419, y 64,5)
-35. « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger » (x 1105, y 64,5)
-36. « 3 PR empilées » (x 289, y 108)
-37. « F5 · Envoyer les photos d'un constat · #22 à #25 » (x 270, y 126)
-38. « 1 PR » (x 678, y 108)
-39. « F4 · Saisir un constat hors ligne · #20 » (x 659, y 126)
-40. « 1 PR » (x 1067, y 108)
-41. « Hors fonctionnalité · #23 » (x 1048, y 126)
-42. « #25 » (x 303, y 504,5)
-43. « Tests E2E de l'envoi » (x 333, y 504)
-44. « SILO-34 » (x 287, y 530)
-45. « F5 · Envoyer les photos d'un constat » (x 361, y 529)
-46. « Brouillon » (x 301, y 555)
-47. « CI verte » (x 382, y 555)
-48. « feat/silo-34 » (x 546, y 555,5)
-49. « sur feat/envoi-hors-ligne » (x 460, y 599)
-50. « #24 » (x 303, y 640,5)
-51. « Écran d'envoi hors ligne » (x 333, y 640)
-52. « session » (x 583, y 641)
-53. « SILO-33 » (x 287, y 666)
-54. « F5 · Envoyer les photos d'un constat » (x 361, y 665)
-55. « Brouillon » (x 301, y 691)
-56. « CI en cours » (x 382, y 691)
-57. « feat/envoi-hors-ligne » (x 489, y 691,5)
-58. « sur feat/silo-32 » (x 460, y 735)
-59. « #22 » (x 303, y 776,5)
-60. « Route d'envoi des photos » (x 333, y 776)
-61. « SILO-32 » (x 287, y 802)
-62. « F5 · Envoyer les photos d'un constat » (x 361, y 801)
-63. « En attente de review » (x 301, y 827)
-64. « CI verte » (x 441, y 827)
-65. « feat/silo-32 » (x 546, y 827,5)
-66. « #20 » (x 692, y 776,5)
-67. « Conflits de saisie » (x 722, y 776)
-68. « session » (x 972, y 777)
-69. « SILO-45 » (x 676, y 802)
-70. « F4 · Saisir un constat hors ligne » (x 750, y 801)
-71. « Changements demandés » (x 690, y 827)
-72. « CI rouge » (x 854, y 827)
-73. « feat/silo-45 » (x 935, y 827,5)
-74. « #23 » (x 1081, y 776,5)
-75. « Passage à Expo SDK 54 » (x 1111, y 776)
-76. « SILO-61 » (x 1065, y 802)
-77. « Hors fonctionnalité » (x 1121, y 801)
-78. « En attente de review » (x 1079, y 827)
-79. « CI en cours » (x 1219, y 827)
-80. « chore/expo-54 » (x 1318, y 827,5)
-81. « dev » (x 284, y 878)
-82. « branche de base » (x 311, y 878)
-83. « Brouillon » (x 282, y 960)
-84. « En attente de review » (x 356, y 960)
-85. « Changements demandés » (x 490, y 960)
-86. « Approuvée » (x 649, y 960)
-87. « CI verte » (x 737, y 960)
-88. « CI rouge » (x 809, y 960)
-89. « CI en cours » (x 885, y 960)
-90. « Basée sur la PR du dessous » (x 966, y 960)
-91. « Session active » (x 1139, y 960)
-92. « Clic : fiche du ticket » (x 1246, y 960)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 314, y 16)
+26. « Graphe » (x 329, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Fonctionnalités » (x 288, y 64,5)
+30. « PRs » (x 419, y 64,5)
+31. « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger » (x 1105, y 64,5)
+32. « 3 PR empilées » (x 289, y 108)
+33. « F5 · Envoyer les photos d'un constat · #22 à #25 » (x 270, y 126)
+34. « 1 PR » (x 678, y 108)
+35. « F4 · Saisir un constat hors ligne · #20 » (x 659, y 126)
+36. « 1 PR » (x 1067, y 108)
+37. « Hors fonctionnalité · #23 » (x 1048, y 126)
+38. « #25 » (x 303, y 504,5)
+39. « Tests E2E de l'envoi » (x 333, y 504)
+40. « SILO-34 » (x 287, y 530)
+41. « F5 · Envoyer les photos d'un constat » (x 361, y 529)
+42. « Brouillon » (x 301, y 555)
+43. « CI verte » (x 382, y 555)
+44. « feat/silo-34 » (x 546, y 555,5)
+45. « sur feat/envoi-hors-ligne » (x 460, y 599)
+46. « #24 » (x 303, y 640,5)
+47. « Écran d'envoi hors ligne » (x 333, y 640)
+48. « session » (x 583, y 641)
+49. « SILO-33 » (x 287, y 666)
+50. « F5 · Envoyer les photos d'un constat » (x 361, y 665)
+51. « Brouillon » (x 301, y 691)
+52. « CI en cours » (x 382, y 691)
+53. « feat/envoi-hors-ligne » (x 489, y 691,5)
+54. « sur feat/silo-32 » (x 460, y 735)
+55. « #22 » (x 303, y 776,5)
+56. « Route d'envoi des photos » (x 333, y 776)
+57. « SILO-32 » (x 287, y 802)
+58. « F5 · Envoyer les photos d'un constat » (x 361, y 801)
+59. « En attente de review » (x 301, y 827)
+60. « CI verte » (x 441, y 827)
+61. « feat/silo-32 » (x 546, y 827,5)
+62. « #20 » (x 692, y 776,5)
+63. « Conflits de saisie » (x 722, y 776)
+64. « session » (x 972, y 777)
+65. « SILO-45 » (x 676, y 802)
+66. « F4 · Saisir un constat hors ligne » (x 750, y 801)
+67. « Changements demandés » (x 690, y 827)
+68. « CI rouge » (x 854, y 827)
+69. « feat/silo-45 » (x 935, y 827,5)
+70. « #23 » (x 1081, y 776,5)
+71. « Passage à Expo SDK 54 » (x 1111, y 776)
+72. « SILO-61 » (x 1065, y 802)
+73. « Hors fonctionnalité » (x 1121, y 801)
+74. « En attente de review » (x 1079, y 827)
+75. « CI en cours » (x 1219, y 827)
+76. « chore/expo-54 » (x 1318, y 827,5)
+77. « dev » (x 284, y 878)
+78. « branche de base » (x 311, y 878)
+79. « Brouillon » (x 282, y 960)
+80. « En attente de review » (x 356, y 960)
+81. « Changements demandés » (x 490, y 960)
+82. « Approuvée » (x 649, y 960)
+83. « CI verte » (x 737, y 960)
+84. « CI rouge » (x 809, y 960)
+85. « CI en cours » (x 885, y 960)
+86. « Basée sur la PR du dessous » (x 966, y 960)
+87. « Session active » (x 1139, y 960)
+88. « Clic : fiche du ticket » (x 1246, y 960)
 
 ### Blocs
 
@@ -16050,35 +15099,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `fg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 44 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `fg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 44 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 43 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 43 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 35 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 35 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -16095,9 +15137,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 29 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 314, y 16, 7 × 16
           - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 329, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -16298,30 +15337,26 @@ Exports : `exports/proposition-graphe-prs-vide-dark.png` et `exports/proposition
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Graphe » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Fonctionnalités » (x 288, y 64,5)
-34. « PRs » (x 419, y 64,5)
-35. « 0 PR ouverte · 0 pile » (x 1314, y 64,5)
-36. « Aucune PR ouverte » (x 778, y 506)
-37. « Les PR ouvertes des étapes apparaissent ici, empilées sur leur branche de base. » (x 604, y 529)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Graphe » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Fonctionnalités » (x 288, y 64,5)
+30. « PRs » (x 419, y 64,5)
+31. « 0 PR ouverte · 0 pile » (x 1314, y 64,5)
+32. « Aucune PR ouverte » (x 778, y 506)
+33. « Les PR ouvertes des étapes apparaissent ici, empilées sur leur branche de base. » (x 604, y 529)
 
 ### Blocs
 
@@ -16365,35 +15400,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `fg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 44 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `fg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 44 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -16410,9 +15438,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -16454,249 +15479,245 @@ Exports : `exports/proposition-fiche-ticket-maquettes-dark.png` et `exports/prop
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Kanban » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Tous » (x 269, y 65,5)
-34. « 41 » (x 303, y 66)
-35. « Sprint courant · S42 » (x 339, y 65,5)
-36. « 15 » (x 462, y 66)
-37. « Démarrable » (x 498, y 65,5)
-38. « 1 » (x 573, y 66)
-39. « À reprendre » (x 620, y 65,5)
-40. « 1 » (x 695, y 66)
-41. « Étiquette : toutes » (x 751, y 65,5)
-42. « 41 tickets · Tous » (x 1338, y 65,5)
-43. « Backlog » (x 280, y 124,5)
-44. « 0 » (x 336, y 125)
-45. « À faire » (x 477, y 124,5)
-46. « 19 » (x 524, y 125)
-47. « SILO-46 » (x 470, y 164)
-48. « · » (x 524, y 164)
-49. « F4 » (x 532, y 164)
-50. « Démo · F4 » (x 470, y 186)
-51. « facultative » (x 476, y 212)
-52. « SILO-34 » (x 470, y 256)
-53. « · » (x 524, y 256)
-54. « F5 » (x 532, y 256)
-55. « Tests E2E de l'envoi » (x 470, y 278)
-56. « attend SILO-33 » (x 476, y 304)
-57. « SILO-35 » (x 470, y 348)
-58. « · » (x 524, y 348)
-59. « F5 » (x 532, y 348)
-60. « Démo · F5 » (x 470, y 370)
-61. « attend SILO-34 » (x 476, y 396)
-62. « SILO-52 » (x 470, y 440)
-63. « · » (x 524, y 440)
-64. « F6 » (x 532, y 440)
-65. « Contrôle des numéros » (x 470, y 462)
-66. « sprint S43 » (x 476, y 488)
-67. « SILO-53 » (x 470, y 532)
-68. « · » (x 524, y 532)
-69. « F6 » (x 532, y 532)
-70. « Écran d'import » (x 470, y 554)
-71. « sprint S43 » (x 476, y 580)
-72. « SILO-54 » (x 470, y 624)
-73. « · » (x 524, y 624)
-74. « F6 » (x 532, y 624)
-75. « Démo · F6 » (x 470, y 646)
-76. « sprint S43 » (x 476, y 672)
-77. « SILO-71 » (x 470, y 716)
-78. « · » (x 524, y 716)
-79. « F8 » (x 532, y 716)
-80. « Statuts de contrat » (x 470, y 738)
-81. « sprint S43 » (x 476, y 764)
-82. « SILO-72 » (x 470, y 808)
-83. « · » (x 524, y 808)
-84. « F8 » (x 532, y 808)
-85. « Sélection multiple » (x 470, y 830)
-86. « sprint S43 » (x 476, y 856)
-87. « SILO-73 » (x 470, y 900)
-88. « · » (x 524, y 900)
-89. « F8 » (x 532, y 900)
-90. « Validation par lot » (x 470, y 922)
-91. « sprint S43 » (x 476, y 948)
-92. « SILO-74 » (x 470, y 992)
-93. « · » (x 524, y 992)
-94. « F8 » (x 532, y 992)
-95. « Démo · F8 » (x 470, y 1014)
-96. « sprint S43 » (x 476, y 1040)
-97. « En cours » (x 674, y 124,5)
-98. « 1 » (x 733, y 125)
-99. « SILO-33 » (x 667, y 164)
-100. « · » (x 721, y 164)
-101. « F5 » (x 729, y 164)
-102. « Écran d'envoi hors ligne » (x 667, y 186)
-103. « feat/envoi-hors-… » (x 688, y 212)
-104. « Phase 7/12 · Porte qu… » (x 675, y 235)
-105. « En review » (x 871, y 124,5)
-106. « 3 » (x 936, y 125)
-107. « SILO-45 » (x 864, y 164)
-108. « · » (x 918, y 164)
-109. « F4 » (x 926, y 164)
-110. « Conflits de saisie » (x 864, y 186)
-111. « #20 » (x 885, y 212)
-112. « changements demandés » (x 870, y 235)
-113. « CI cassée » (x 885, y 258)
-114. « Phase 9/12 · Review » (x 872, y 281)
-115. « SILO-32 » (x 864, y 325)
-116. « · » (x 918, y 325)
-117. « F5 » (x 926, y 325)
-118. « Route d'envoi des photos » (x 864, y 347)
-119. « #22 » (x 885, y 389)
-120. « Phase 10/12 · Démo » (x 872, y 412)
-121. « CI » (x 937, y 389)
-122. « SILO-61 » (x 864, y 456)
-123. « Passage à Expo SDK 54 » (x 864, y 478)
-124. « #23 » (x 885, y 504)
-125. « CI en cours » (x 935, y 504)
-126. « Bloqué » (x 1068, y 124,5)
-127. « 1 » (x 1117, y 125)
-128. « SILO-51 » (x 1061, y 164)
-129. « · » (x 1115, y 164)
-130. « F6 » (x 1123, y 164)
-131. « Lecture du fichier Excel » (x 1061, y 186)
-132. « bloqué · Q14 » (x 1082, y 212)
-133. « Phase 3/12 · Questions » (x 1069, y 235)
-134. « Terminé » (x 1265, y 124,5)
-135. « 17 » (x 1320, y 125)
-136. « SILO-21 » (x 1258, y 164)
-137. « · » (x 1312, y 164)
-138. « F3 » (x 1320, y 164)
-139. « Démo · F3 » (x 1258, y 186)
-140. « #18 » (x 1279, y 212)
-141. « SILO-31 » (x 1258, y 256)
-142. « · » (x 1312, y 256)
-143. « F5 » (x 1320, y 256)
-144. « Stockage des photos sur MinIO » (x 1258, y 278)
-145. « #19 » (x 1279, y 320)
-146. « SILO-43 » (x 1258, y 364)
-147. « · » (x 1312, y 364)
-148. « F4 » (x 1320, y 364)
-149. « Synchro au retour du réseau » (x 1258, y 386)
-150. « #16 » (x 1279, y 428)
-151. « SILO-42 » (x 1258, y 472)
-152. « · » (x 1312, y 472)
-153. « F4 » (x 1320, y 472)
-154. « Formulaire de saisie » (x 1258, y 494)
-155. « #14 » (x 1279, y 520)
-156. « SILO-41 » (x 1258, y 564)
-157. « · » (x 1312, y 564)
-158. « F4 » (x 1320, y 564)
-159. « Schéma local des constats » (x 1258, y 586)
-160. « #12 » (x 1279, y 628)
-161. « SILO-20 » (x 1258, y 672)
-162. « · » (x 1312, y 672)
-163. « F3 » (x 1320, y 672)
-164. « Écran de réaffectation » (x 1258, y 694)
-165. « SILO-19 » (x 1258, y 738)
-166. « · » (x 1312, y 738)
-167. « F3 » (x 1320, y 738)
-168. « Route de réaffectation » (x 1258, y 760)
-169. « SILO-18 » (x 1258, y 804)
-170. « · » (x 1312, y 804)
-171. « F3 » (x 1320, y 804)
-172. « Historique des affectations » (x 1258, y 826)
-173. « SILO-14 » (x 1258, y 886)
-174. « · » (x 1312, y 886)
-175. « F2 » (x 1320, y 886)
-176. « Démo · F2 » (x 1258, y 908)
-177. « F4 » (x 926, y -314)
-178. « · » (x 953, y -314)
-179. « S42 » (x 980, y -314)
-180. « · » (x 1009, y -314)
-181. « PR #20 » (x 1036, y -314)
-182. « Conflits de saisie » (x 904, y -282)
-183. « En review » (x 928, y -233,5)
-184. « A » (x 1031, y -231)
-185. « Adam (moi) » (x 1050, y -233,5)
-186. « Requise pour livrer » (x 1193, y -233,5)
-187. « Ajouter une étiquette » (x 909, y -193)
-188. « PR #20 » (x 935, y -144)
-189. « · changements demandés » (x 987, y -144)
-190. « · CI cassée » (x 1148, y -144)
-191. « PR » (x 1327, y -143,5)
-192. « Job » (x 1365, y -143,5)
-193. « Détails » (x 920, y -89)
-194. « Activité » (x 996, y -89)
-195. « Suivi » (x 904, y -42)
-196. « remonté de git, des PR et de full-delivery » (x 943, y -41,5)
-197. « Branche » (x 904, y -14,5)
-198. « feat/silo-45 » (x 1029, y -14,5)
-199. « sur » (x 1125, y -14,5)
-200. « dev » (x 1150, y -14,5)
-201. « déclarée » (x 1179, y -14,5)
-202. « PR » (x 904, y 19,5)
-203. « #20 » (x 1029, y 19,5)
-204. « ouverte hier à 16:40 » (x 1058, y 19,5)
-205. « Review » (x 904, y 53,5)
-206. « changements demandés » (x 1016, y 54)
-207. « 13:47 » (x 1155, y 53,5)
-208. « CI » (x 904, y 87,5)
-209. « CI cassée » (x 1031, y 88)
-210. « job e2e · 11:58 » (x 1094, y 87,5)
-211. « Session » (x 904, y 121,5)
-212. « T3 Code · 18 min » (x 1028, y 121,5)
-213. « Livraison » (x 904, y 155,5)
-214. « Phase 9/12 · Review » (x 1098, y 155,5)
-215. « · suivante : Démo » (x 1219, y 155,5)
-216. « Description » (x 904, y 211)
-217. « Modifier » (x 984, y 211,5)
-218. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 237)
-219. « Dépendances » (x 904, y 311)
-220. « Aucune » (x 904, y 339)
-221. « Ajouter une dépendance » (x 935, y 374)
-222. « Questions » (x 904, y 430)
-223. « 0 » (x 976, y 430,5)
-224. « Aucune question sur ce ticket. » (x 904, y 460)
-225. « Domaine » (x 926, y 512)
-226. « Aucun » (x 989, y 512,5)
-227. « Maquettes » (x 926, y 548)
-228. « 1 » (x 1001, y 548,5)
-229. « Maquette » (x 904, y 581,5)
-230. « Conflit de saisie » (x 1028, y 581,5)
-231. « 14:02 » (x 1101,8, y 618,2)
-232. « Conflit de saisie » (x 1099,4, y 632,6)
-233. « Deux saisies du constat du box B-114 » (x 1099,4, y 644)
-234. « Version hors ligne · 14:02 » (x 1104,2, y 661,4)
-235. « État » (x 1104,2, y 673,7)
-236. « Occupé » (x 1133, y 673,7)
-237. « Photos » (x 1104,2, y 692)
-238. « 3 photos » (x 1195,4, y 692)
-239. « Cadenas changé » (x 1129,4, y 711,2)
-240. « Note » (x 1104,2, y 711,8)
-241. « Version du serveur · 13:47 » (x 1104,2, y 738,2)
-242. « État » (x 1104,2, y 750,5)
-243. « Libre » (x 1133, y 750,5)
-244. « Photos » (x 1104,2, y 768,8)
-245. « 2 photos » (x 1173,8, y 768,8)
-246. « Note » (x 1104,2, y 788,6)
-247. « Garder la plus récente » (x 1099,4, y 857,6)
-248. « Comparer » (x 1099,4, y 876,8)
-249. « Conflit de saisie » (x 936, y 918,5)
-250. « Ouvrir dans Figma » (x 1246, y 918,5)
-251. « Retirer » (x 1369, y 918,5)
-252. « Colle l'URL d'un cadre Figma ou d'un board Penpot » (x 914, y 958,5)
-253. « Lier un cadre » (x 1331, y 958,5)
-254. « SILO-45 » (x 926, y 18,5)
-255. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
-256. « Fermer » (x 1374, y 18,5)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Kanban » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Tous » (x 269, y 65,5)
+30. « 41 » (x 303, y 66)
+31. « Sprint courant · S42 » (x 339, y 65,5)
+32. « 15 » (x 462, y 66)
+33. « Démarrable » (x 498, y 65,5)
+34. « 1 » (x 573, y 66)
+35. « À reprendre » (x 620, y 65,5)
+36. « 1 » (x 695, y 66)
+37. « Étiquette : toutes » (x 751, y 65,5)
+38. « 41 tickets · Tous » (x 1338, y 65,5)
+39. « Backlog » (x 280, y 124,5)
+40. « 0 » (x 336, y 125)
+41. « À faire » (x 477, y 124,5)
+42. « 19 » (x 524, y 125)
+43. « SILO-46 » (x 470, y 164)
+44. « · » (x 524, y 164)
+45. « F4 » (x 532, y 164)
+46. « Démo · F4 » (x 470, y 186)
+47. « facultative » (x 476, y 212)
+48. « SILO-34 » (x 470, y 256)
+49. « · » (x 524, y 256)
+50. « F5 » (x 532, y 256)
+51. « Tests E2E de l'envoi » (x 470, y 278)
+52. « attend SILO-33 » (x 476, y 304)
+53. « SILO-35 » (x 470, y 348)
+54. « · » (x 524, y 348)
+55. « F5 » (x 532, y 348)
+56. « Démo · F5 » (x 470, y 370)
+57. « attend SILO-34 » (x 476, y 396)
+58. « SILO-52 » (x 470, y 440)
+59. « · » (x 524, y 440)
+60. « F6 » (x 532, y 440)
+61. « Contrôle des numéros » (x 470, y 462)
+62. « sprint S43 » (x 476, y 488)
+63. « SILO-53 » (x 470, y 532)
+64. « · » (x 524, y 532)
+65. « F6 » (x 532, y 532)
+66. « Écran d'import » (x 470, y 554)
+67. « sprint S43 » (x 476, y 580)
+68. « SILO-54 » (x 470, y 624)
+69. « · » (x 524, y 624)
+70. « F6 » (x 532, y 624)
+71. « Démo · F6 » (x 470, y 646)
+72. « sprint S43 » (x 476, y 672)
+73. « SILO-71 » (x 470, y 716)
+74. « · » (x 524, y 716)
+75. « F8 » (x 532, y 716)
+76. « Statuts de contrat » (x 470, y 738)
+77. « sprint S43 » (x 476, y 764)
+78. « SILO-72 » (x 470, y 808)
+79. « · » (x 524, y 808)
+80. « F8 » (x 532, y 808)
+81. « Sélection multiple » (x 470, y 830)
+82. « sprint S43 » (x 476, y 856)
+83. « SILO-73 » (x 470, y 900)
+84. « · » (x 524, y 900)
+85. « F8 » (x 532, y 900)
+86. « Validation par lot » (x 470, y 922)
+87. « sprint S43 » (x 476, y 948)
+88. « SILO-74 » (x 470, y 992)
+89. « · » (x 524, y 992)
+90. « F8 » (x 532, y 992)
+91. « Démo · F8 » (x 470, y 1014)
+92. « sprint S43 » (x 476, y 1040)
+93. « En cours » (x 674, y 124,5)
+94. « 1 » (x 733, y 125)
+95. « SILO-33 » (x 667, y 164)
+96. « · » (x 721, y 164)
+97. « F5 » (x 729, y 164)
+98. « Écran d'envoi hors ligne » (x 667, y 186)
+99. « feat/envoi-hors-… » (x 688, y 212)
+100. « Phase 7/12 · Porte qu… » (x 675, y 235)
+101. « En review » (x 871, y 124,5)
+102. « 3 » (x 936, y 125)
+103. « SILO-45 » (x 864, y 164)
+104. « · » (x 918, y 164)
+105. « F4 » (x 926, y 164)
+106. « Conflits de saisie » (x 864, y 186)
+107. « #20 » (x 885, y 212)
+108. « changements demandés » (x 870, y 235)
+109. « CI cassée » (x 885, y 258)
+110. « Phase 9/12 · Review » (x 872, y 281)
+111. « SILO-32 » (x 864, y 325)
+112. « · » (x 918, y 325)
+113. « F5 » (x 926, y 325)
+114. « Route d'envoi des photos » (x 864, y 347)
+115. « #22 » (x 885, y 389)
+116. « Phase 10/12 · Démo » (x 872, y 412)
+117. « CI » (x 937, y 389)
+118. « SILO-61 » (x 864, y 456)
+119. « Passage à Expo SDK 54 » (x 864, y 478)
+120. « #23 » (x 885, y 504)
+121. « CI en cours » (x 935, y 504)
+122. « Bloqué » (x 1068, y 124,5)
+123. « 1 » (x 1117, y 125)
+124. « SILO-51 » (x 1061, y 164)
+125. « · » (x 1115, y 164)
+126. « F6 » (x 1123, y 164)
+127. « Lecture du fichier Excel » (x 1061, y 186)
+128. « bloqué · Q14 » (x 1082, y 212)
+129. « Phase 3/12 · Questions » (x 1069, y 235)
+130. « Terminé » (x 1265, y 124,5)
+131. « 17 » (x 1320, y 125)
+132. « SILO-21 » (x 1258, y 164)
+133. « · » (x 1312, y 164)
+134. « F3 » (x 1320, y 164)
+135. « Démo · F3 » (x 1258, y 186)
+136. « #18 » (x 1279, y 212)
+137. « SILO-31 » (x 1258, y 256)
+138. « · » (x 1312, y 256)
+139. « F5 » (x 1320, y 256)
+140. « Stockage des photos sur MinIO » (x 1258, y 278)
+141. « #19 » (x 1279, y 320)
+142. « SILO-43 » (x 1258, y 364)
+143. « · » (x 1312, y 364)
+144. « F4 » (x 1320, y 364)
+145. « Synchro au retour du réseau » (x 1258, y 386)
+146. « #16 » (x 1279, y 428)
+147. « SILO-42 » (x 1258, y 472)
+148. « · » (x 1312, y 472)
+149. « F4 » (x 1320, y 472)
+150. « Formulaire de saisie » (x 1258, y 494)
+151. « #14 » (x 1279, y 520)
+152. « SILO-41 » (x 1258, y 564)
+153. « · » (x 1312, y 564)
+154. « F4 » (x 1320, y 564)
+155. « Schéma local des constats » (x 1258, y 586)
+156. « #12 » (x 1279, y 628)
+157. « SILO-20 » (x 1258, y 672)
+158. « · » (x 1312, y 672)
+159. « F3 » (x 1320, y 672)
+160. « Écran de réaffectation » (x 1258, y 694)
+161. « SILO-19 » (x 1258, y 738)
+162. « · » (x 1312, y 738)
+163. « F3 » (x 1320, y 738)
+164. « Route de réaffectation » (x 1258, y 760)
+165. « SILO-18 » (x 1258, y 804)
+166. « · » (x 1312, y 804)
+167. « F3 » (x 1320, y 804)
+168. « Historique des affectations » (x 1258, y 826)
+169. « SILO-14 » (x 1258, y 886)
+170. « · » (x 1312, y 886)
+171. « F2 » (x 1320, y 886)
+172. « Démo · F2 » (x 1258, y 908)
+173. « F4 » (x 926, y -314)
+174. « · » (x 953, y -314)
+175. « S42 » (x 980, y -314)
+176. « · » (x 1009, y -314)
+177. « PR #20 » (x 1036, y -314)
+178. « Conflits de saisie » (x 904, y -282)
+179. « En review » (x 928, y -233,5)
+180. « A » (x 1031, y -231)
+181. « Adam (moi) » (x 1050, y -233,5)
+182. « Requise pour livrer » (x 1193, y -233,5)
+183. « Ajouter une étiquette » (x 909, y -193)
+184. « PR #20 » (x 935, y -144)
+185. « · changements demandés » (x 987, y -144)
+186. « · CI cassée » (x 1148, y -144)
+187. « PR » (x 1327, y -143,5)
+188. « Job » (x 1365, y -143,5)
+189. « Détails » (x 920, y -89)
+190. « Activité » (x 996, y -89)
+191. « Suivi » (x 904, y -42)
+192. « remonté de git, des PR et de full-delivery » (x 943, y -41,5)
+193. « Branche » (x 904, y -14,5)
+194. « feat/silo-45 » (x 1029, y -14,5)
+195. « sur » (x 1125, y -14,5)
+196. « dev » (x 1150, y -14,5)
+197. « déclarée » (x 1179, y -14,5)
+198. « PR » (x 904, y 19,5)
+199. « #20 » (x 1029, y 19,5)
+200. « ouverte hier à 16:40 » (x 1058, y 19,5)
+201. « Review » (x 904, y 53,5)
+202. « changements demandés » (x 1016, y 54)
+203. « 13:47 » (x 1155, y 53,5)
+204. « CI » (x 904, y 87,5)
+205. « CI cassée » (x 1031, y 88)
+206. « job e2e · 11:58 » (x 1094, y 87,5)
+207. « Session » (x 904, y 121,5)
+208. « T3 Code · 18 min » (x 1028, y 121,5)
+209. « Livraison » (x 904, y 155,5)
+210. « Phase 9/12 · Review » (x 1098, y 155,5)
+211. « · suivante : Démo » (x 1219, y 155,5)
+212. « Description » (x 904, y 211)
+213. « Modifier » (x 984, y 211,5)
+214. « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau. » (x 904, y 237)
+215. « Dépendances » (x 904, y 311)
+216. « Aucune » (x 904, y 339)
+217. « Ajouter une dépendance » (x 935, y 374)
+218. « Questions » (x 904, y 430)
+219. « 0 » (x 976, y 430,5)
+220. « Aucune question sur ce ticket. » (x 904, y 460)
+221. « Domaine » (x 926, y 512)
+222. « Aucun » (x 989, y 512,5)
+223. « Maquettes » (x 926, y 548)
+224. « 1 » (x 1001, y 548,5)
+225. « Maquette » (x 904, y 581,5)
+226. « Conflit de saisie » (x 1028, y 581,5)
+227. « 14:02 » (x 1101,8, y 618,2)
+228. « Conflit de saisie » (x 1099,4, y 632,6)
+229. « Deux saisies du constat du box B-114 » (x 1099,4, y 644)
+230. « Version hors ligne · 14:02 » (x 1104,2, y 661,4)
+231. « État » (x 1104,2, y 673,7)
+232. « Occupé » (x 1133, y 673,7)
+233. « Photos » (x 1104,2, y 692)
+234. « 3 photos » (x 1195,4, y 692)
+235. « Cadenas changé » (x 1129,4, y 711,2)
+236. « Note » (x 1104,2, y 711,8)
+237. « Version du serveur · 13:47 » (x 1104,2, y 738,2)
+238. « État » (x 1104,2, y 750,5)
+239. « Libre » (x 1133, y 750,5)
+240. « Photos » (x 1104,2, y 768,8)
+241. « 2 photos » (x 1173,8, y 768,8)
+242. « Note » (x 1104,2, y 788,6)
+243. « Garder la plus récente » (x 1099,4, y 857,6)
+244. « Comparer » (x 1099,4, y 876,8)
+245. « Conflit de saisie » (x 936, y 918,5)
+246. « Ouvrir dans Figma » (x 1246, y 918,5)
+247. « Retirer » (x 1369, y 918,5)
+248. « Colle l'URL d'un cadre Figma ou d'un board Penpot » (x 914, y 958,5)
+249. « Lier un cadre » (x 1331, y 958,5)
+250. « SILO-45 » (x 926, y 18,5)
+251. « Copier /full-delivery SILO-45 » (x 1117, y 18,5)
+252. « Fermer » (x 1374, y 18,5)
 
 ### Blocs
 
@@ -16740,35 +15761,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `fg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 47 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `fg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 329, 47 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -16785,9 +15799,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Kanban » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 47 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -17469,102 +16480,98 @@ Exports : `exports/proposition-attente-graphe-dark.png` et `exports/proposition-
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 923)
-25. « AB » (x 21, y 962)
-26. « Adam Ben Mchichi » (x 48, y 960,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Graphe » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1125, y 16,5)
-31. « Agent de projet » (x 1300, y 16,5)
-32. « 3 » (x 1402, y 17,5)
-33. « Fonctionnalités » (x 288, y 64,5)
-34. « PRs » (x 419, y 64,5)
-35. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
-36. « S41 » (x 273, y 108)
-37. « Accès » (x 301, y 108)
-38. « terminé » (x 255, y 125)
-39. « S42 » (x 423, y 108)
-40. « Saisie hors ligne » (x 451, y 108)
-41. « en cours » (x 405, y 125)
-42. « S43 » (x 713, y 108)
-43. « Import et contrats » (x 741, y 108)
-44. « prévu » (x 695, y 125)
-45. « S44 » (x 973, y 108)
-46. « Rapports » (x 1001, y 108)
-47. « prévu » (x 955, y 125)
-48. « À planifier » (x 1223, y 108)
-49. « F1 » (x 263, y 176)
-50. « 4/4 » (x 331, y 176)
-51. « Connexion, environnements et hébergement » (x 263, y 196)
-52. « F3 » (x 415, y 176)
-53. « 4/4 » (x 619, y 176)
-54. « Réaffecter un box » (x 415, y 196)
-55. « F6 » (x 705, y 176)
-56. « 0/4 » (x 897, y 176)
-57. « Importer les box depuis Excel » (x 705, y 196)
-58. « Lecture du fichier Excel » (x 726, y 233)
-59. « Contrôle des numéros » (x 726, y 263)
-60. « Écran d'import » (x 726, y 293)
-61. « Démo client » (x 726, y 323)
-62. « bloquée par Q14 » (x 722, y 348)
-63. « F7 » (x 965, y 176)
-64. « 0/4 » (x 1121, y 176)
-65. « 1 » (x 1160, y 176)
-66. « Rapport de centre journalier » (x 965, y 196)
-67. « Modèle du rapport » (x 986, y 233)
-68. « Génération PDF » (x 986, y 263)
-69. « Photos dans le rapport » (x 986, y 293)
-70. « Envoi le soir » (x 986, y 323)
-71. « Démo client » (x 986, y 353)
-72. « F9 » (x 1215, y 176)
-73. « 0/3 » (x 1357, y 176)
-74. « Exporter le dossier client » (x 1215, y 196)
-75. « Format du dossier » (x 1236, y 233)
-76. « Archive ZIP » (x 1236, y 263)
-77. « Démo client » (x 1236, y 293)
-78. « F4 » (x 415, y 272)
-79. « 3/4 » (x 543, y 272)
-80. « 1 » (x 582, y 272)
-81. « Saisir un constat hors ligne » (x 415, y 292)
-82. « Conflits de saisie » (x 436, y 329)
-83. « F2 » (x 263, y 302)
-84. « 5/5 » (x 331, y 302)
-85. « Voir ses box affectés » (x 263, y 322)
-86. « F5 » (x 415, y 398)
-87. « 1/2 » (x 611, y 398)
-88. « 3 » (x 650, y 398)
-89. « Envoyer les photos d'un constat » (x 415, y 418)
-90. « Stockage des photos sur MinIO » (x 436, y 455)
-91. « Route d'envoi des photos » (x 436, y 485)
-92. « Écran d'envoi hors ligne » (x 436, y 515)
-93. « Tests E2E de l'envoi » (x 436, y 545)
-94. « Démo client » (x 436, y 575)
-95. « F8 » (x 705, y 412)
-96. « 0/4 » (x 897, y 412)
-97. « Valider les contrats par lot » (x 705, y 432)
-98. « Statuts de contrat » (x 726, y 469)
-99. « Sélection multiple » (x 726, y 499)
-100. « Validation par lot » (x 726, y 529)
-101. « Démo client » (x 726, y 559)
-102. « À faire » (x 283, y 960)
-103. « En cours » (x 346, y 960)
-104. « En review » (x 420, y 960)
-105. « Bloqué » (x 499, y 960)
-106. « En attente » (x 564, y 960)
-107. « Fonctionnalité » (x 652, y 960)
-108. « Colonne = sprint » (x 759, y 960)
-109. « Session active » (x 872, y 960)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 923)
+22. « AB » (x 21, y 962)
+23. « Adam Ben Mchichi » (x 48, y 960,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Graphe » (x 323, y 16)
+27. « Agent de projet » (x 1300, y 16,5)
+28. « 3 » (x 1402, y 17,5)
+29. « Fonctionnalités » (x 288, y 64,5)
+30. « PRs » (x 419, y 64,5)
+31. « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » (x 1036, y 64,5)
+32. « S41 » (x 273, y 108)
+33. « Accès » (x 301, y 108)
+34. « terminé » (x 255, y 125)
+35. « S42 » (x 423, y 108)
+36. « Saisie hors ligne » (x 451, y 108)
+37. « en cours » (x 405, y 125)
+38. « S43 » (x 713, y 108)
+39. « Import et contrats » (x 741, y 108)
+40. « prévu » (x 695, y 125)
+41. « S44 » (x 973, y 108)
+42. « Rapports » (x 1001, y 108)
+43. « prévu » (x 955, y 125)
+44. « À planifier » (x 1223, y 108)
+45. « F1 » (x 263, y 176)
+46. « 4/4 » (x 331, y 176)
+47. « Connexion, environnements et hébergement » (x 263, y 196)
+48. « F3 » (x 415, y 176)
+49. « 4/4 » (x 619, y 176)
+50. « Réaffecter un box » (x 415, y 196)
+51. « F6 » (x 705, y 176)
+52. « 0/4 » (x 897, y 176)
+53. « Importer les box depuis Excel » (x 705, y 196)
+54. « Lecture du fichier Excel » (x 726, y 233)
+55. « Contrôle des numéros » (x 726, y 263)
+56. « Écran d'import » (x 726, y 293)
+57. « Démo client » (x 726, y 323)
+58. « bloquée par Q14 » (x 722, y 348)
+59. « F7 » (x 965, y 176)
+60. « 0/4 » (x 1121, y 176)
+61. « 1 » (x 1160, y 176)
+62. « Rapport de centre journalier » (x 965, y 196)
+63. « Modèle du rapport » (x 986, y 233)
+64. « Génération PDF » (x 986, y 263)
+65. « Photos dans le rapport » (x 986, y 293)
+66. « Envoi le soir » (x 986, y 323)
+67. « Démo client » (x 986, y 353)
+68. « F9 » (x 1215, y 176)
+69. « 0/3 » (x 1357, y 176)
+70. « Exporter le dossier client » (x 1215, y 196)
+71. « Format du dossier » (x 1236, y 233)
+72. « Archive ZIP » (x 1236, y 263)
+73. « Démo client » (x 1236, y 293)
+74. « F4 » (x 415, y 272)
+75. « 3/4 » (x 543, y 272)
+76. « 1 » (x 582, y 272)
+77. « Saisir un constat hors ligne » (x 415, y 292)
+78. « Conflits de saisie » (x 436, y 329)
+79. « F2 » (x 263, y 302)
+80. « 5/5 » (x 331, y 302)
+81. « Voir ses box affectés » (x 263, y 322)
+82. « F5 » (x 415, y 398)
+83. « 1/2 » (x 611, y 398)
+84. « 3 » (x 650, y 398)
+85. « Envoyer les photos d'un constat » (x 415, y 418)
+86. « Stockage des photos sur MinIO » (x 436, y 455)
+87. « Route d'envoi des photos » (x 436, y 485)
+88. « Écran d'envoi hors ligne » (x 436, y 515)
+89. « Tests E2E de l'envoi » (x 436, y 545)
+90. « Démo client » (x 436, y 575)
+91. « F8 » (x 705, y 412)
+92. « 0/4 » (x 897, y 412)
+93. « Valider les contrats par lot » (x 705, y 432)
+94. « Statuts de contrat » (x 726, y 469)
+95. « Sélection multiple » (x 726, y 499)
+96. « Validation par lot » (x 726, y 529)
+97. « Démo client » (x 726, y 559)
+98. « À faire » (x 283, y 960)
+99. « En cours » (x 346, y 960)
+100. « En review » (x 420, y 960)
+101. « Bloqué » (x 499, y 960)
+102. « En attente » (x 564, y 960)
+103. « Fonctionnalité » (x 652, y 960)
+104. « Colonne = sprint » (x 759, y 960)
+105. « Session active » (x 872, y 960)
 
 ### Blocs
 
@@ -17608,35 +16615,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298, 20 × 14
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330, 14 × 14
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `fg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 393, 44 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458, 7 × 14
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · fond `hover` · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `fg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 59, y 361, 44 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394, 7 × 14
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 916, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 923,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 923, 69 × 16
@@ -17653,9 +16653,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Graphe » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 44 × 16
-        - **box** (bloc) · x 1105, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 1105, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1125, y 16,5, 132 × 15
         - **agent-button** (bloc) · x 1269, y 11,5, 155 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/start · bordure 1 `border` · rayon 6
           - icône `bot` 15 px, `brand` — x 1279, y 16,5, 15 × 15
           - « Agent de projet » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 1300, y 16,5, 91 × 15
@@ -17940,190 +16937,186 @@ Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-a
 11. « Vue d'ensemble » (x 59, y 265)
 12. « Planning » (x 59, y 297)
 13. « S42 » (x 202, y 298,5)
-14. « Tickets » (x 59, y 329)
-15. « 24 » (x 208, y 330,5)
-16. « Kanban » (x 59, y 361)
-17. « Graphe » (x 59, y 393)
-18. « Notes » (x 59, y 425)
-19. « Questions » (x 59, y 457)
-20. « 3 » (x 215, y 458,5)
-21. « Kibo » (x 55, y 489)
-22. « Atlas » (x 55, y 521)
-23. « Nimbus » (x 55, y 553)
-24. « Paramètres » (x 41, y 1183)
-25. « AB » (x 21, y 1222)
-26. « Adam Ben Mchichi » (x 48, y 1220,5)
-27. « Silo » (x 277, y 16)
-28. « / » (x 308, y 16)
-29. « Vue d'ensemble » (x 323, y 16)
-30. « Synchronisé · il y a 1 min » (x 1012, y 16,5)
-31. « Nouveau ticket » (x 1185, y 16,5)
-32. « Agent de projet » (x 1323, y 16,5)
-33. « Silo » (x 265, y 67)
-34. « client Silo SA » (x 286, y 100)
-35. « · » (x 373, y 100)
-36. « Location de box » (x 384, y 100)
-37. « · » (x 487, y 100)
-38. « silo-labs/silo-location » (x 519, y 101)
-39. « Fonctionnalités » (x 303, y 142)
-40. « 3 » (x 283, y 162)
-41. « livrées sur 9 » (x 307, y 174)
-42. « 2 à risque » (x 422,4, y 195,5)
-43. « Sprint en cours » (x 533,4, y 142)
-44. « S42 » (x 513,4, y 162)
-45. « Saisie ho… » (x 573,4, y 174)
-46. « se termine aujourd'hui » (x 513,4, y 195,5)
-47. « En cours » (x 763,8, y 142)
-48. « 2 » (x 743,8, y 162)
-49. « / 2 » (x 767,8, y 174)
-50. « limite · bloquée : F6 » (x 756,8, y 195,5)
-51. « En review » (x 994,2, y 142)
-52. « 3 » (x 974,2, y 162)
-53. « PR » (x 998,2, y 174)
-54. « #20 · #22 · #23 » (x 974,2, y 195,5)
-55. « Questions » (x 1224,6, y 142)
-56. « 3 » (x 1204,6, y 162)
-57. « ouvertes » (x 1228,6, y 174)
-58. « Q14 bloque F6 » (x 1217,6, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 253)
-62. « SILO-33 » (x 488, y 253)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 1200, y 252,5)
-65. « 42 min » (x 1361, y 252,5)
-66. « F4 » (x 454, y 290)
-67. « SILO-45 » (x 488, y 290)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 1200, y 289,5)
-70. « 18 min » (x 1364, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 1257, y 350,5)
-73. « S42 » (x 531,1, y 390,5)
-74. « 12 oct. » (x 559,1, y 390)
-75. « S43 » (x 755,4, y 390,5)
-76. « 19 oct. » (x 783,4, y 390)
-77. « S44 » (x 979,6, y 390,5)
-78. « 26 oct. » (x 1007,6, y 390)
-79. « S45 » (x 1203,9, y 390,5)
-80. « 2 nov. » (x 1231,9, y 390)
-81. « F4 » (x 281, y 419,5)
-82. « Saisir un constat hors ligne » (x 304, y 419)
-83. « F5 » (x 281, y 449,5)
-84. « Envoyer les photos d'un constat » (x 304, y 449)
-85. « bloquée · Q14 » (x 1004,6, y 480)
-86. « F6 » (x 281, y 479,5)
-87. « Importer les box depuis Excel » (x 304, y 479)
-88. « F8 » (x 281, y 509,5)
-89. « Valider les contrats par lot » (x 304, y 509)
-90. « F7 » (x 281, y 539,5)
-91. « Rapport de centre journalier » (x 304, y 539)
-92. « aujourd'hui » (x 674,8, y 544)
-93. « étape livrée » (x 299, y 578)
-94. « en review » (x 397, y 578)
-95. « en cours » (x 484, y 578)
-96. « bloquée » (x 565, y 578)
-97. « à faire » (x 644, y 578)
-98. « glissement prévu » (x 713, y 578)
-99. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
-100. « 12–16 oct. » (x 1027, y 631,5)
-101. « F3 » (x 281, y 674)
-102. « Réaffecter un box » (x 317, y 673)
-103. « livrée » (x 907, y 673,5)
-104. « 4/4 » (x 1061, y 673,5)
-105. « F4 » (x 281, y 713)
-106. « Saisir un constat hors ligne » (x 317, y 712)
-107. « à risque » (x 907, y 712,5)
-108. « 3/5 » (x 1061, y 712,5)
-109. « F5 » (x 281, y 752)
-110. « Envoyer les photos d'un constat » (x 317, y 751)
-111. « à risque » (x 907, y 751,5)
-112. « 1/5 » (x 1061, y 751,5)
-113. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-114. « Prochaine à finir » (x 304, y 841,5)
-115. « la plus avancée du sprint » (x 942, y 842,5)
-116. « F4 » (x 281, y 876)
-117. « Saisir un constat hors ligne » (x 306, y 874)
-118. « 3/5 » (x 1061, y 875,5)
-119. « SILO-45 » (x 297, y 903)
-120. « Conflits de saisie » (x 356, y 902)
-121. « changements demandés » (x 466, y 902,5)
-122. « SILO-46 » (x 297, y 925)
-123. « Démo client » (x 356, y 924)
-124. « Étape suivante » (x 293, y 963)
-125. « /full-delivery SILO-45 » (x 387, y 963)
-126. « Copier » (x 1026, y 963)
-127. « Activité » (x 304, y 1032,5)
-128. « git » (x 974, y 1033,5)
-129. « full-delivery » (x 1009, y 1033,5)
-130. « 15:04 » (x 281, y 1076)
-131. « PR #22 ouverte » (x 355, y 1075)
-132. « SILO-32 » (x 984, y 1075,5)
-133. « F5 » (x 1063, y 1075,5)
-134. « 14:51 » (x 281, y 1115)
-135. « Phase 7/12 · Porte qualité » (x 355, y 1114)
-136. « SILO-33 » (x 984, y 1114,5)
-137. « F5 » (x 1063, y 1114,5)
-138. « 14:40 » (x 281, y 1154)
-139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
-140. « Agent de projet » (x 999, y 1153,5)
-141. « 14:36 » (x 281, y 1193)
-142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-143. « SILO-21 » (x 984, y 1192,5)
-144. « F3 » (x 1063, y 1192,5)
-145. « En review » (x 1155, y 630,5)
-146. « 3 » (x 1235, y 631,5)
-147. « #22 » (x 1159, y 672)
-148. « Route d'envoi des photos » (x 1189, y 672)
-149. « SILO-32 » (x 1159, y 693)
-150. « F5 » (x 1238, y 693)
-151. « CI verte » (x 1177, y 713)
-152. « #20 » (x 1159, y 749)
-153. « Conflits de saisie » (x 1189, y 749)
-154. « SILO-45 » (x 1159, y 770)
-155. « F4 » (x 1238, y 770)
-156. « changements demandés » (x 1177, y 790)
-157. « #23 » (x 1159, y 826)
-158. « Passage à Expo SDK 54 » (x 1189, y 826)
-159. « SILO-61 » (x 1159, y 846)
-160. « CI en cours » (x 1176, y 865)
-161. « Questions » (x 1155, y 917,5)
-162. « 3 » (x 1239, y 918,5)
-163. « Un box réaffecté garde-t-il ses photos ? » (x 1132, y 959)
-164. « F6 » (x 1154, y 984)
-165. « Q14 · Client · il y a 3 j » (x 1181, y 984)
-166. « bloquante » (x 1306, y 984)
-167. « Quota par client : 2 Go ou 5 Go ? » (x 1132, y 1022)
-168. « F5 » (x 1154, y 1046)
-169. « Q16 · Produit · hier » (x 1181, y 1046)
-170. « Un rapport par chef de centre ou par client ? » (x 1132, y 1083)
-171. « F7 » (x 1154, y 1107)
-172. « Q17 · Client · il y a 2 h » (x 1181, y 1107)
-173. « Agent de projet · Silo » (x 775, y 20)
-174. « Nouvel agent » (x 758, y 73,5)
-175. « Fais le point du jour » (x 737, y 116)
-176. « 14:38 · 4 messages » (x 737, y 135)
-177. « en cours » (x 846, y 135,5)
-178. « Point de sprint S41 » (x 737, y 174)
-179. « 9 oct. · 6 messages » (x 737, y 193)
-180. « Relances client » (x 737, y 232)
-181. « 2 oct. · 3 messages » (x 737, y 251)
-182. « Fais le point du jour » (x 1194, y 83)
-183. « 14:38 » (x 1194, y 106)
-184. « F3 est livrée : 3 fonctionnalités sur 9. » (x 984, y 145)
-185. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 984, y 174)
-186. « Lu : Planning, F5, journal des étapes » (x 984, y 223)
-187. « Lot n° 7 » (x 964, y 262)
-188. « 3 actions » (x 1357, y 262,5)
-189. « Reporter F5 en S43 » (x 990, y 299)
-190. « 4 étapes restantes, S42 finit aujourd'hui » (x 990, y 318)
-191. « Planifier F9 en S44 » (x 990, y 354)
-192. « seule fonctionnalité à planifier » (x 990, y 373)
-193. « Relancer le client sur Q14 » (x 990, y 409)
-194. « bloque F6, prévue en S43 » (x 990, y 428)
-195. « Valider (3) » (x 974, y 471)
-196. « Refuser » (x 1059, y 471)
-197. « Écris à l'agent de projet… » (x 962, y 1218)
+14. « Kanban » (x 59, y 329)
+15. « Graphe » (x 59, y 361)
+16. « Questions » (x 59, y 393)
+17. « 3 » (x 215, y 394,5)
+18. « Kibo » (x 55, y 425)
+19. « Atlas » (x 55, y 457)
+20. « Nimbus » (x 55, y 489)
+21. « Paramètres » (x 41, y 1183)
+22. « AB » (x 21, y 1222)
+23. « Adam Ben Mchichi » (x 48, y 1220,5)
+24. « Silo » (x 277, y 16)
+25. « / » (x 308, y 16)
+26. « Vue d'ensemble » (x 323, y 16)
+27. « Nouveau ticket » (x 1185, y 16,5)
+28. « Agent de projet » (x 1323, y 16,5)
+29. « Silo » (x 265, y 67)
+30. « client Silo SA » (x 286, y 100)
+31. « · » (x 373, y 100)
+32. « Location de box » (x 384, y 100)
+33. « · » (x 487, y 100)
+34. « silo-labs/silo-location » (x 519, y 101)
+35. « Fonctionnalités » (x 303, y 142)
+36. « 3 » (x 283, y 162)
+37. « livrées sur 9 » (x 307, y 174)
+38. « 2 à risque » (x 422,4, y 195,5)
+39. « Sprint en cours » (x 533,4, y 142)
+40. « S42 » (x 513,4, y 162)
+41. « Saisie ho… » (x 573,4, y 174)
+42. « se termine aujourd'hui » (x 513,4, y 195,5)
+43. « En cours » (x 763,8, y 142)
+44. « 2 » (x 743,8, y 162)
+45. « / 2 » (x 767,8, y 174)
+46. « limite · bloquée : F6 » (x 756,8, y 195,5)
+47. « En review » (x 994,2, y 142)
+48. « 3 » (x 974,2, y 162)
+49. « PR » (x 998,2, y 174)
+50. « #20 · #22 · #23 » (x 974,2, y 195,5)
+51. « Questions » (x 1224,6, y 142)
+52. « 3 » (x 1204,6, y 162)
+53. « ouvertes » (x 1228,6, y 174)
+54. « Q14 bloque F6 » (x 1217,6, y 195,5)
+55. « En ce moment » (x 302, y 261,5)
+56. « 2 sessions T3 Code » (x 281, y 281,5)
+57. « F5 » (x 454, y 253)
+58. « SILO-33 » (x 488, y 253)
+59. « Écran d'envoi hors ligne » (x 547, y 252)
+60. « 7 · Porte qualité » (x 1200, y 252,5)
+61. « 42 min » (x 1361, y 252,5)
+62. « F4 » (x 454, y 290)
+63. « SILO-45 » (x 488, y 290)
+64. « Conflits de saisie » (x 547, y 289)
+65. « 9 · Review » (x 1200, y 289,5)
+66. « 18 min » (x 1364, y 289,5)
+67. « Échéances » (x 304, y 349,5)
+68. « fonctionnalités par sprint » (x 1257, y 350,5)
+69. « S42 » (x 531,1, y 390,5)
+70. « 12 oct. » (x 559,1, y 390)
+71. « S43 » (x 755,4, y 390,5)
+72. « 19 oct. » (x 783,4, y 390)
+73. « S44 » (x 979,6, y 390,5)
+74. « 26 oct. » (x 1007,6, y 390)
+75. « S45 » (x 1203,9, y 390,5)
+76. « 2 nov. » (x 1231,9, y 390)
+77. « F4 » (x 281, y 419,5)
+78. « Saisir un constat hors ligne » (x 304, y 419)
+79. « F5 » (x 281, y 449,5)
+80. « Envoyer les photos d'un constat » (x 304, y 449)
+81. « bloquée · Q14 » (x 1004,6, y 480)
+82. « F6 » (x 281, y 479,5)
+83. « Importer les box depuis Excel » (x 304, y 479)
+84. « F8 » (x 281, y 509,5)
+85. « Valider les contrats par lot » (x 304, y 509)
+86. « F7 » (x 281, y 539,5)
+87. « Rapport de centre journalier » (x 304, y 539)
+88. « aujourd'hui » (x 674,8, y 544)
+89. « étape livrée » (x 299, y 578)
+90. « en review » (x 397, y 578)
+91. « en cours » (x 484, y 578)
+92. « bloquée » (x 565, y 578)
+93. « à faire » (x 644, y 578)
+94. « glissement prévu » (x 713, y 578)
+95. « Sprint S42 · Saisie hors ligne » (x 304, y 630,5)
+96. « 12–16 oct. » (x 1027, y 631,5)
+97. « F3 » (x 281, y 674)
+98. « Réaffecter un box » (x 317, y 673)
+99. « livrée » (x 907, y 673,5)
+100. « 4/4 » (x 1061, y 673,5)
+101. « F4 » (x 281, y 713)
+102. « Saisir un constat hors ligne » (x 317, y 712)
+103. « à risque » (x 907, y 712,5)
+104. « 3/5 » (x 1061, y 712,5)
+105. « F5 » (x 281, y 752)
+106. « Envoyer les photos d'un constat » (x 317, y 751)
+107. « à risque » (x 907, y 751,5)
+108. « 1/5 » (x 1061, y 751,5)
+109. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+110. « Prochaine à finir » (x 304, y 841,5)
+111. « la plus avancée du sprint » (x 942, y 842,5)
+112. « F4 » (x 281, y 876)
+113. « Saisir un constat hors ligne » (x 306, y 874)
+114. « 3/5 » (x 1061, y 875,5)
+115. « SILO-45 » (x 297, y 903)
+116. « Conflits de saisie » (x 356, y 902)
+117. « changements demandés » (x 466, y 902,5)
+118. « SILO-46 » (x 297, y 925)
+119. « Démo client » (x 356, y 924)
+120. « Étape suivante » (x 293, y 963)
+121. « /full-delivery SILO-45 » (x 387, y 963)
+122. « Copier » (x 1026, y 963)
+123. « Activité » (x 304, y 1032,5)
+124. « git » (x 974, y 1033,5)
+125. « full-delivery » (x 1009, y 1033,5)
+126. « 15:04 » (x 281, y 1076)
+127. « PR #22 ouverte » (x 355, y 1075)
+128. « SILO-32 » (x 984, y 1075,5)
+129. « F5 » (x 1063, y 1075,5)
+130. « 14:51 » (x 281, y 1115)
+131. « Phase 7/12 · Porte qualité » (x 355, y 1114)
+132. « SILO-33 » (x 984, y 1114,5)
+133. « F5 » (x 1063, y 1114,5)
+134. « 14:40 » (x 281, y 1154)
+135. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
+136. « Agent de projet » (x 999, y 1153,5)
+137. « 14:36 » (x 281, y 1193)
+138. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+139. « SILO-21 » (x 984, y 1192,5)
+140. « F3 » (x 1063, y 1192,5)
+141. « En review » (x 1155, y 630,5)
+142. « 3 » (x 1235, y 631,5)
+143. « #22 » (x 1159, y 672)
+144. « Route d'envoi des photos » (x 1189, y 672)
+145. « SILO-32 » (x 1159, y 693)
+146. « F5 » (x 1238, y 693)
+147. « CI verte » (x 1177, y 713)
+148. « #20 » (x 1159, y 749)
+149. « Conflits de saisie » (x 1189, y 749)
+150. « SILO-45 » (x 1159, y 770)
+151. « F4 » (x 1238, y 770)
+152. « changements demandés » (x 1177, y 790)
+153. « #23 » (x 1159, y 826)
+154. « Passage à Expo SDK 54 » (x 1189, y 826)
+155. « SILO-61 » (x 1159, y 846)
+156. « CI en cours » (x 1176, y 865)
+157. « Questions » (x 1155, y 917,5)
+158. « 3 » (x 1239, y 918,5)
+159. « Un box réaffecté garde-t-il ses photos ? » (x 1132, y 959)
+160. « F6 » (x 1154, y 984)
+161. « Q14 · Client · il y a 3 j » (x 1181, y 984)
+162. « bloquante » (x 1306, y 984)
+163. « Quota par client : 2 Go ou 5 Go ? » (x 1132, y 1022)
+164. « F5 » (x 1154, y 1046)
+165. « Q16 · Produit · hier » (x 1181, y 1046)
+166. « Un rapport par chef de centre ou par client ? » (x 1132, y 1083)
+167. « F7 » (x 1154, y 1107)
+168. « Q17 · Client · il y a 2 h » (x 1181, y 1107)
+169. « Agent de projet · Silo » (x 775, y 20)
+170. « Nouvel agent » (x 758, y 73,5)
+171. « Fais le point du jour » (x 737, y 116)
+172. « 14:38 · 4 messages » (x 737, y 135)
+173. « en cours » (x 846, y 135,5)
+174. « Point de sprint S41 » (x 737, y 174)
+175. « 9 oct. · 6 messages » (x 737, y 193)
+176. « Relances client » (x 737, y 232)
+177. « 2 oct. · 3 messages » (x 737, y 251)
+178. « Fais le point du jour » (x 1194, y 83)
+179. « 14:38 » (x 1194, y 106)
+180. « F3 est livrée : 3 fonctionnalités sur 9. » (x 984, y 145)
+181. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 984, y 174)
+182. « Lu : Planning, F5, journal des étapes » (x 984, y 223)
+183. « Lot n° 7 » (x 964, y 262)
+184. « 3 actions » (x 1357, y 262,5)
+185. « Reporter F5 en S43 » (x 990, y 299)
+186. « 4 étapes restantes, S42 finit aujourd'hui » (x 990, y 318)
+187. « Planifier F9 en S44 » (x 990, y 354)
+188. « seule fonctionnalité à planifier » (x 990, y 373)
+189. « Relancer le client sur Q14 » (x 990, y 409)
+190. « bloque F6, prévue en S43 » (x 990, y 428)
+191. « Valider (3) » (x 974, y 471)
+192. « Refuser » (x 1059, y 471)
+193. « Écris à l'agent de projet… » (x 962, y 1218)
 
 ### Blocs
 
@@ -18167,35 +17160,28 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
         - icône `sprint` 15 px, `mfg` — x 36, y 297,5, 15 × 15
         - « Planning » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 297, 53 × 16
         - « S42 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 202, y 298,5, 20 × 13
-      - **nav / Tickets** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `list` 15 px, `mfg` — x 36, y 329,5, 15 × 15
-        - « Tickets » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 43 × 16
-        - « 24 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 208, y 330,5, 14 × 13
-      - **nav / Kanban** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `kanban` 15 px, `mfg` — x 36, y 361,5, 15 × 15
-        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 46 × 16
-      - **nav / Graphe** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `graph` 15 px, `mfg` — x 36, y 393,5, 15 × 15
-        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 43 × 16
-      - **nav / Notes** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `note` 15 px, `mfg` — x 36, y 425,5, 15 × 15
-        - « Notes » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 425, 36 × 16
-      - **nav / Questions** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `question` 15 px, `mfg` — x 36, y 457,5, 15 × 15
-        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 457, 60 × 16
-        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 458,5, 7 × 13
-      - **nav / Kibo** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+      - **nav / Kanban** (bloc) · x 10, y 322, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `kanban` 15 px, `mfg` — x 36, y 329,5, 15 × 15
+        - « Kanban » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 329, 46 × 16
+      - **nav / Graphe** (bloc) · x 10, y 354, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `graph` 15 px, `mfg` — x 36, y 361,5, 15 × 15
+        - « Graphe » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 361, 43 × 16
+      - **nav / Questions** (bloc) · x 10, y 386, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 26, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `question` 15 px, `mfg` — x 36, y 393,5, 15 × 15
+        - « Questions » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 59, y 393, 60 × 16
+        - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 215, y 394,5, 7 × 13
+      - **nav / Kibo** (bloc) · x 10, y 418, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 426,5, 13 × 13
+        - **dot** (pastille) · x 39, y 429, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
+        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 425, 27 × 16
+      - **nav / Atlas** (bloc) · x 10, y 450, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
+        - icône `chevRight` 13 px, `dim` — x 18, y 458,5, 13 × 13
+        - **dot** (pastille) · x 39, y 461, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
+        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 457, 31 × 16
+      - **nav / Nimbus** (bloc) · x 10, y 482, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `chevRight` 13 px, `dim` — x 18, y 490,5, 13 × 13
-        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#6366F1` · dimension fixe/fixe
-        - « Kibo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 27 × 16
-      - **nav / Atlas** (bloc) · x 10, y 514, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 522,5, 13 × 13
-        - **dot** (pastille) · x 39, y 525, 8 × 8 · fond `#84CC16` · dimension fixe/fixe
-        - « Atlas » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 521, 31 × 16
-      - **nav / Nimbus** (bloc) · x 10, y 546, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
-        - icône `chevRight` 13 px, `dim` — x 18, y 554,5, 13 × 13
-        - **dot** (pastille) · x 39, y 557, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
-        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 553, 46 × 16
+        - **dot** (pastille) · x 39, y 493, 8 × 8 · fond `#EC4899` · dimension fixe/fixe
+        - « Nimbus » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 55, y 489, 46 × 16
       - **nav / Paramètres** (bloc) · x 10, y 1176, 220 × 30 · flex ligne, espacement 8, marges internes 0 8 0 8, alignement center/start · rayon 6 · dimension remplit/fixe
         - icône `settings` 15 px, `mfg` — x 18, y 1183,5, 15 × 15
         - « Paramètres » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 41, y 1183, 69 × 16
@@ -18212,9 +17198,6 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
           - « Silo » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 277, y 16, 23 × 16
           - « / » — Geist 13 / 400, interligne 1,2, couleur `faint` — x 308, y 16, 7 × 16
           - « Vue d'ensemble » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 323, y 16, 96 × 16
-        - **box** (bloc) · x 992, y 16,5, 152 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
-          - icône `github` 14 px, `dim` — x 992, y 17, 14 × 14
-          - « Synchronisé · il y a 1 min » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 1012, y 16,5, 132 × 15
         - **Button / outline** (bloc) · x 1156, y 11,5, 124 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `plus` 13 px, `fg` — x 1166, y 17,5, 13 × 13
           - « Nouveau ticket » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1185, y 16,5, 85 × 15

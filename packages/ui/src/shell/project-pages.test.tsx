@@ -28,7 +28,7 @@ const page = (id: string, title: string, parentId: string | null): Page => ({
   kind: "view",
   parentId,
 });
-const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
+const project = (): ProjectSnapshot => ({
   meta: {
     id: "p1",
     name: "Kibo",
@@ -37,7 +37,6 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -58,9 +57,8 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
-const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
+const show = () => {
   const onOpen = mock((_t: unknown, _newTab: boolean, _keep?: boolean) => {});
   const onNewPage = mock((_parentId: string | null) => {});
   const onRenamePage = mock((_p: Page) => {});
@@ -70,7 +68,7 @@ const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
       <SidebarMenu>
         <SidebarMenuItem>
           <ProjectPages
-            project={project(access)}
+            project={project()}
             activeTarget={null}
             header={<span>Kibo</span>}
             onOpen={onOpen}
@@ -155,15 +153,6 @@ test("a refused move is shown as an alert", async () => {
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de déplacer la page.");
 });
 
-test("a read-only project has no ⋯ button and a one-entry menu", async () => {
-  const { user } = show("read-only");
-  expect(screen.queryByRole("button", { name: /Actions de la page/ })).toBeNull();
-  await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
-  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
-    "Ouvrir dans un nouvel onglet",
-  ]);
-});
-
 test("each editable row carries three hidden drop zones and keeps its button and menu", async () => {
   const { user } = show();
   const row = screen.getByRole("button", { name: "Kanban" }).closest("li");
@@ -179,11 +168,6 @@ test("each editable row carries three hidden drop zones and keeps its button and
   expect(zones.every((z) => z.getAttribute("aria-hidden") === "true")).toBe(true);
   await user.pointer({ keys: "[MouseRight]", target: screen.getByRole("button", { name: "Kanban" }) });
   expect(await screen.findAllByRole("menuitem")).toHaveLength(7);
-});
-
-test("a read-only project renders no drop zone", () => {
-  show("read-only");
-  expect(document.querySelectorAll("[data-drop-zone]")).toHaveLength(0);
 });
 
 test("an open feature lights the Planning page of its project", async () => {

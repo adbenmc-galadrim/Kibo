@@ -1,9 +1,0 @@
-{
-  "routes": [
-    { "prompt": "# SILO-15", "scenario": "delivery-steps.json" },
-    { "prompt": "# SILO-16", "scenario": "delivery-denied.json" },
-    { "prompt": "# SILO-18", "scenario": "delivery-subagents.json" },
-    { "prompt": "# SILO-19", "scenario": "delivery-review.json" }
-  ],
-  "fallback": "done.json"
-}

@@ -1,10 +1,4 @@
-import {
-  type Capability,
-  type ComponentManifest,
-  type ComponentSummary,
-  type Instance,
-  splitRef,
-} from "@kibo/schema";
+import type { Capability, ComponentManifest, Instance } from "@kibo/schema";
 import type { FocusApi, SelectionApi, SpotlightApi, VisibilityApi } from "@kibo/sdk";
 import { findComponent } from "../registry";
 
@@ -16,15 +10,8 @@ export type InstanceApis = {
   spotlight?: SpotlightApi;
 };
 
-export function manifestOf(
-  instance: Pick<Instance, "component">,
-  components: ComponentSummary[] | null,
-): ComponentManifest | null {
-  const builtin = findComponent(instance.component);
-  if (builtin) return builtin.manifest;
-  const { id, version } = splitRef(instance.component);
-  const v = components?.find((c) => c.id === id && !c.builtin)?.versions.find((x) => x.version === version);
-  return v?.active && v.manifest ? v.manifest : null;
+export function manifestOf(instance: Pick<Instance, "component">): ComponentManifest | null {
+  return findComponent(instance.component)?.manifest ?? null;
 }
 
 export const NONE: readonly Capability[] = [];

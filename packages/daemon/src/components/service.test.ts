@@ -2,24 +2,8 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  type ComponentCall,
-  INBOX_ID,
-  type Instance,
-  KiboError,
-  type TicketRun,
-  type ValidationReport,
-} from "@kibo/schema";
-import {
-  addInstance,
-  boot,
-  createProject,
-  type Harness,
-  type HarnessOptions,
-  publishAndApprove,
-  SANDBOX_ORIGIN,
-  writeDraft,
-} from "./service.test-helper";
+import { type ComponentCall, INBOX_ID, type Instance } from "@kibo/schema";
+import { addInstance, boot, createProject, type Harness, type HarnessOptions } from "./service.test-helper";
 
 let home: string;
 let h: Harness;
@@ -57,42 +41,6 @@ describe("components over RPC", () => {
     expect(seen).toEqual([{ method: "createTicket", instanceId: inst.id }]);
   });
 
-  test("publish, approve, add, then calls are checked against the grant", async () => {
-    const { projectId, pageId } = await createProject(h);
-    await h.rpc({ method: "command", projectId, command: { method: "createTicket", title: "A" } });
-    writeDraft(home, "0.1.0");
-    expect((await h.rpc({ method: "previewPublish", id: "hello" })).status).toBe("new");
-    const { hash } = await publishAndApprove(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "hello@0.1.0"));
-    expect(await call({ kind: "list", entity: "ticket" })).toHaveLength(1);
-    await expect(call({ kind: "list", entity: "link" })).rejects.toThrow("PERMISSION_DENIED");
-    await expect(call({ kind: "run", command: { method: "createTicket", title: "B" } })).rejects.toThrow(
-      "PERMISSION_DENIED",
-    );
-    await call({ kind: "data.set", key: "k", value: { a: 1 } });
-    expect(await call({ kind: "data.get", key: "k" })).toEqual({ a: 1 });
-    expect(h.components.assets("hello", "0.1.0", hash)?.trust).toBe("sandboxed");
-    expect(h.components.assets("hello", "0.1.0", hash)?.capabilities).toEqual([]);
-    expect(h.components.assets("hello", "0.1.0", "0".repeat(64))).toBeNull();
-    expect(await h.rpc({ method: "getRuntimeInfo" })).toEqual({ sandboxOrigin: SANDBOX_ORIGIN });
-  });
-
-  test("each version is served with the capabilities it was granted", async () => {
-    writeDraft(home, "0.1.0", { capabilities: ["audio", "assets"] });
-    const first = await publishAndApprove(h);
-    writeDraft(home, "0.2.0", { capabilities: ["audio"] });
-    const second = await publishAndApprove(h);
-    expect(h.components.assets("hello", "0.1.0", first.hash)?.capabilities).toEqual(["audio", "assets"]);
-    expect(h.components.assets("hello", "0.2.0", second.hash)?.capabilities).toEqual(["audio"]);
-  });
-
-  test("assets are not served once the trust is withdrawn", async () => {
-    writeDraft(home, "0.1.0");
-    const { hash } = await publishAndApprove(h);
-    await h.rpc({ method: "revokeComponent", id: "hello", version: "0.1.0" });
-    expect(h.components.assets("hello", "0.1.0", hash)).toBeNull();
-  });
-
   test("reserved commands cannot be sent through the command RPC", async () => {
     const { projectId, pageId } = await createProject(h);
     const inst = await addInstance(h, projectId, pageId, "kanban@1.0.0");
@@ -104,15 +52,13 @@ describe("components over RPC", () => {
 
   test("instance data is capped at 256 KiB and the refusal is journaled", async () => {
     const { projectId, pageId } = await createProject(h);
-    writeDraft(home, "0.1.0");
-    await publishAndApprove(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "hello@0.1.0"));
+    const call = callOf(projectId, await addInstance(h, projectId, pageId, "kanban@1.0.0"));
     await call({ kind: "data.set", key: "a", value: "x".repeat(200_000) });
     await expect(call({ kind: "data.set", key: "b", value: "x".repeat(70_000) })).rejects.toThrow(
       "QUOTA_EXCEEDED",
     );
     expect(events().map((e) => [e.ref, e.kind, e.code])).toEqual([
-      ["hello@0.1.0", "data.set", "QUOTA_EXCEEDED"],
+      ["kanban@1.0.0", "data.set", "QUOTA_EXCEEDED"],
     ]);
   });
 
@@ -124,29 +70,13 @@ describe("components over RPC", () => {
     ).rejects.toThrow("PERMISSION_DENIED");
   });
 
-  test("runs are listed through the gate with the run entity", async () => {
-    await h.stop();
-    const run: TicketRun = {
-      ticketId: "t1",
-      runId: "r1",
-      label: "opus-dev",
-      state: "running",
-      position: null,
-    };
-    const asked: string[] = [];
-    await start({
-      runs: (projectId) => {
-        asked.push(projectId);
-        return [run];
-      },
-    });
+  test("a call for a non-builtin ref is refused with NOT_FOUND and journaled", async () => {
     const { projectId, pageId } = await createProject(h);
-    writeDraft(home, "0.1.0", { reads: ["run"] });
-    await publishAndApprove(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "hello@0.1.0"));
-    expect(await call({ kind: "list", entity: "run" })).toEqual([run]);
-    expect(asked).toEqual([projectId]);
-    await expect(call({ kind: "list", entity: "ticket" })).rejects.toThrow("PERMISSION_DENIED");
+    for (const ref of ["hello@0.1.0", "notes@1.0.0", "tickets@1.0.0"]) {
+      const call = callOf(projectId, await addInstance(h, projectId, pageId, ref));
+      await expect(call({ kind: "list", entity: "ticket" })).rejects.toThrow("NOT_FOUND");
+    }
+    expect(events().map((e) => e.ref)).toEqual(["hello@0.1.0", "notes@1.0.0", "tickets@1.0.0"]);
   });
 
   test("a navigating frame is journaled with its ref", async () => {
@@ -168,41 +98,6 @@ describe("components over RPC", () => {
     expect(events().reduce((n, e) => n + e.count, 0)).toBe(12);
   });
 
-  test("drafts are listed until published", async () => {
-    writeDraft(home, "0.1.0");
-    expect(await h.rpc({ method: "listDrafts" })).toHaveLength(1);
-    await h.rpc({ method: "publishComponent", id: "hello", strategy: "new-version" });
-    expect(await h.rpc({ method: "listDrafts" })).toEqual([]);
-  });
-
-  test("a manual publication is refused while an AI draft of the component is being finalized", async () => {
-    writeDraft(home, "0.1.0");
-    let release = () => {};
-    const finalizing = h.components.publishLock.hold(
-      "hello",
-      () =>
-        new Promise<void>((r) => {
-          release = r;
-        }),
-    );
-    const refused = h.rpc({ method: "publishComponent", id: "hello", strategy: "new-version" });
-    await expect(refused).rejects.toMatchObject({ code: "CONFLICT" });
-    release();
-    await finalizing;
-    expect(await h.rpc({ method: "publishComponent", id: "hello", strategy: "new-version" })).toMatchObject({
-      version: { version: "0.1.0" },
-    });
-  });
-
-  test("the registry and the publisher are shared with the AI", async () => {
-    writeDraft(home, "0.1.0");
-    const published = await h.components.publisher.publish("hello", "new-version", { origin: "ai" });
-    expect(published.version.origin).toBe("ai");
-    expect(h.components.registry.list().find((c) => c.id === "hello")?.versions[0]?.hash).toBe(
-      published.version.hash,
-    );
-  });
-
   test("installing the command line is left to the desktop app", async () => {
     await expect(h.rpc({ method: "installCli" })).rejects.toThrow("INVALID_INPUT");
     await expect(h.rpc({ method: "cliStatus" })).rejects.toThrow("INVALID_INPUT");
@@ -217,20 +112,18 @@ describe("components over RPC", () => {
 });
 
 describe("notes", () => {
-  test("notes RPCs and the built-in notes component share the same folder", async () => {
-    const { projectId, pageId } = await createProject(h);
+  test("the notes folder of a project is read over RPC", async () => {
+    const { projectId } = await createProject(h);
     const info = await h.rpc({ method: "getNotesDir", projectId });
     expect(info.dir).toBe(join(home, "notes", "KIB"));
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
-    await call({ kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
-    expect(await call({ kind: "list", entity: "note" })).toHaveLength(1);
     await expect(h.rpc({ method: "getNotesDir", projectId: "ghost" })).rejects.toThrow("NOT_FOUND");
   });
 
   test("listNotes reads the notes index without a component instance", async () => {
-    const { projectId, pageId } = await createProject(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
-    await call({ kind: "notes.write", path: "briefs/C1-3.md", markdown: "# Brief", expectedMtime: null });
+    const { projectId } = await createProject(h);
+    const dir = join(home, "notes", "KIB", "briefs");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "C1-3.md"), "# Brief");
     const notes = await h.rpc({ method: "listNotes", projectId });
     expect(notes.map((n) => [n.path, n.title])).toEqual([["briefs/C1-3.md", "Brief"]]);
     await expect(h.rpc({ method: "listNotes", projectId: INBOX_ID })).rejects.toThrow(
@@ -265,9 +158,10 @@ describe("notes", () => {
   });
 
   test("a removed project leaves the notes index", async () => {
-    const { projectId, pageId } = await createProject(h);
-    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
-    await call({ kind: "notes.write", path: "a.md", markdown: "# A", expectedMtime: null });
+    const { projectId } = await createProject(h);
+    mkdirSync(join(home, "notes", "KIB"), { recursive: true });
+    writeFileSync(join(home, "notes", "KIB", "a.md"), "# A");
+    await h.rpc({ method: "listNotes", projectId });
     const rows = () => h.store.db.query<{ path: string }, []>("SELECT path FROM notes").all();
     expect(rows()).toEqual([{ path: "a.md" }]);
     h.service.docs.removeProject(projectId);
@@ -285,60 +179,48 @@ describe("notes", () => {
   });
 });
 
-type Validation = { signal: AbortSignal; fail(e: unknown): void };
-
-function suspendedValidation() {
-  const seen: Validation[] = [];
-  const validate = (_dir: string, signal: AbortSignal) =>
-    new Promise<ValidationReport>((_resolve, fail) => {
-      seen.push({ signal, fail });
-    });
-  return { seen, validate };
-}
-
 const settledWithin = (p: Promise<unknown>, ms: number) =>
   Promise.race([p.then(() => true), Bun.sleep(ms).then(() => false)]);
 
+function suspendedStatus() {
+  let release = () => {};
+  let asked = false;
+  const cliStatus = () =>
+    new Promise<{ path: string; installed: boolean }>((resolve) => {
+      asked = true;
+      release = () => resolve({ path: "/usr/local/bin/kibo", installed: true });
+    });
+  return { cliStatus, asked: () => asked, release: () => release() };
+}
+
 describe("stopping", () => {
-  test("stop waits for a request in flight and aborts its validation", async () => {
-    const suspended = suspendedValidation();
+  test("stop waits for a request in flight", async () => {
+    const suspended = suspendedStatus();
     await h.stop();
-    await start({ validate: suspended.validate });
-    writeDraft(home, "0.1.0");
-    const errors = spyOn(console, "error");
-    const publish = h.components.handle({ method: "publishComponent", id: "hello", strategy: "new-version" });
-    const outcome = publish.then(
-      () => "resolved",
-      (e: unknown) => (e instanceof KiboError ? e.code : String(e)),
-    );
-    while (suspended.seen.length === 0) await Bun.sleep(5);
+    await start({ cliStatus: suspended.cliStatus });
+    const status = h.components.handle({ method: "cliStatus" });
+    while (!suspended.asked()) await Bun.sleep(5);
     const stopping = h.components.stop();
     expect(await settledWithin(stopping, 50)).toBe(false);
-    const [validation] = suspended.seen;
-    expect(validation?.signal.aborted).toBe(true);
-    validation?.fail(new KiboError("INTERNAL", "validation aborted"));
+    suspended.release();
     await stopping;
-    expect(await outcome).toBe("INTERNAL");
-    const logged = errors.mock.calls.flat().map(String);
-    errors.mockRestore();
-    expect(logged.filter((m) => m.includes("closed"))).toEqual([]);
+    expect(await status).toEqual({ path: "/usr/local/bin/kibo", installed: true });
   });
 
   test("a request after stop is refused at once", async () => {
     await h.components.stop();
-    const refused = h.components.handle({ method: "listComponents" });
+    const refused = h.components.handle({ method: "cliStatus" });
     await expect(refused).rejects.toThrow("the daemon is stopping");
     await expect(refused).rejects.toMatchObject({ code: "INTERNAL" });
   });
 
   test("a request that never ends only delays the stop by drainMs", async () => {
-    const suspended = suspendedValidation();
+    const suspended = suspendedStatus();
     await h.stop();
-    await start({ validate: suspended.validate, drainMs: 50 });
-    writeDraft(home, "0.1.0");
+    await start({ cliStatus: suspended.cliStatus, drainMs: 50 });
     const errors = spyOn(console, "error").mockImplementation(() => undefined);
-    h.components.handle({ method: "publishComponent", id: "hello", strategy: "new-version" });
-    while (suspended.seen.length === 0) await Bun.sleep(5);
+    h.components.handle({ method: "cliStatus" });
+    while (!suspended.asked()) await Bun.sleep(5);
     const started = Date.now();
     await h.components.stop();
     const elapsed = Date.now() - started;

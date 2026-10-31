@@ -125,7 +125,7 @@ export function answerQuestion(
   return storeQuestion(doc, { ...question, answer: { ...resolveAnswer(question, input), by, at } });
 }
 
-export type DeliveryMark = { ticketId: string; questionIds: readonly string[]; runId: string; at: number };
+type DeliveryMark = { ticketId: string; questionIds: readonly string[]; runId: string; at: number };
 
 function deliverable(doc: LoroDoc, mark: DeliveryMark): Question[] {
   return mark.questionIds.map((id) => {

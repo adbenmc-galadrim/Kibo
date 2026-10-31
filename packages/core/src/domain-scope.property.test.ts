@@ -8,8 +8,7 @@ import { createProjectDoc } from "./project";
 import { listProjectDomains } from "./project-domains";
 import { createWorkspaceDoc } from "./workspace";
 
-const PROJECTS = ["a", "b", "c", "ro"] as const;
-const writable = (projectId: string) => projectId !== "ro";
+const PROJECTS = ["a", "b", "c"] as const;
 
 const scenario = fc
   .uniqueArray(
@@ -31,19 +30,18 @@ const usersOf = (usage: DomainUsageByProject, domainId: string) =>
 
 describe("planDomainScopes", () => {
   test("an empty workspace gives an empty plan", () => {
-    expect(planDomainScopes([], new Map(), writable)).toEqual({ move: [], keep: [] });
+    expect(planDomainScopes([], new Map())).toEqual({ move: [], keep: [] });
   });
 
-  test("every domain is planned once, a move targets the only writable user", () => {
+  test("every domain is planned once, a move targets the only user", () => {
     fc.assert(
       fc.property(scenario, ({ domains, usage }) => {
-        const plan = planDomainScopes(domains, usage, writable);
+        const plan = planDomainScopes(domains, usage);
         const planned = [...plan.move, ...plan.keep].map((p) => p.domainId);
         expect(new Set(planned).size).toBe(planned.length);
         expect(planned.sort()).toEqual(domains.map((d) => d.id).sort());
         for (const move of plan.move) {
           expect(usersOf(usage, move.domainId)).toEqual([move.projectId]);
-          expect(writable(move.projectId)).toBe(true);
         }
       }),
     );
@@ -52,13 +50,13 @@ describe("planDomainScopes", () => {
   test("a plan applied then planned again moves nothing", () => {
     fc.assert(
       fc.property(scenario, ({ domains, usage }) => {
-        const plan = planDomainScopes(domains, usage, writable);
+        const plan = planDomainScopes(domains, usage);
         const moved = new Map(plan.move.map((m) => [m.domainId, m.projectId]));
         const after = domains.map((d) => {
           const projectId = moved.get(d.id);
           return projectId ? Domain.parse({ ...d, owner: { scope: "project", projectId } }) : d;
         });
-        expect(planDomainScopes(after, usage, writable).move).toEqual([]);
+        expect(planDomainScopes(after, usage).move).toEqual([]);
       }),
     );
   });
@@ -80,7 +78,6 @@ describe("planDomainScopes", () => {
               color: "#F97316",
               worktree: null,
               storybook: null,
-              duplication: null,
               delivery: null,
               tracking: null,
               description: null,
@@ -89,7 +86,7 @@ describe("planDomainScopes", () => {
           ]),
         );
         const apply = () => {
-          const plan = planDomainScopes(listDomains(ws), usage, writable);
+          const plan = planDomainScopes(listDomains(ws), usage);
           for (const m of plan.move) {
             const doc = docs.get(m.projectId);
             if (doc) applyDomainMove(ws, doc, m.projectId, m.domainId);

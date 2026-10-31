@@ -1,12 +1,11 @@
-import { isFeature, isOpen, type ProjectSnapshot, splitRef } from "@kibo/schema";
+import { isOpen, type ProjectSnapshot, splitRef } from "@kibo/schema";
 
-type Badged = Pick<ProjectSnapshot, "instances" | "sprints" | "tickets" | "questions">;
+type Badged = Pick<ProjectSnapshot, "instances" | "sprints" | "questions">;
 
 const count = (n: number): string | null => (n > 0 ? String(n) : null);
 
 const BADGES: Record<string, (p: Badged) => string | null> = {
   planning: (p) => p.sprints.find((s) => s.state === "current")?.code ?? null,
-  tickets: (p) => count(p.tickets.filter((t) => !isFeature(t) && t.statusId !== "done").length),
   questions: (p) => count(p.questions.filter(isOpen).length),
 };
 

@@ -1,14 +1,11 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { agentSummary } from "@kibo/core/agents/summary";
 import { type BatchContext, renderProblems, validateBatch } from "@kibo/core/project-agent/validate";
 import {
   type Agent,
   type AgentsState,
   type Batch,
-  type DeliveryResult,
-  KiboError,
   type ProjectCommand,
   type ProjectMeta,
   type ProposedAction,
@@ -18,17 +15,13 @@ import {
   type StatusId,
   Ticket,
 } from "@kibo/schema";
-import { testAgent } from "../agents/agents-port.test-helper";
-import type { TicketExecution } from "../agents/execution-removed";
-import type { AssignInput } from "../agents/orchestrator-types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { runView } from "../questions/questions.test-helper";
+import { testAgent } from "../runs/agents-port.test-helper";
 import { call, createService, type Service } from "../service";
-import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { openStore } from "../store";
 import { createProjectAgentDataPort } from "./data-port";
-import { signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const HUMAN = { kind: "human", ref: "adam" } as const;
@@ -48,11 +41,7 @@ export const AGENTS: Agent[] = [
 export type FakeAgents = ProjectAgentAgentsPort & {
   runs: RunView[];
   queue: QueueEntry[];
-  assigned: AssignInput[];
   cancelled: string[];
-  delivered: { projectId: string; ticketId: string }[];
-  failAssign: KiboError | null;
-  mode: TicketExecution;
 };
 
 const HOST = {
@@ -76,12 +65,7 @@ export function fakeAgents(): FakeAgents {
   const fake: FakeAgents = {
     runs: [],
     queue: [],
-    assigned: [],
     cancelled: [],
-    delivered: [],
-    failAssign: null,
-    mode: "allowed",
-    ticketExecution: () => fake.mode,
     startProjectRun: unused,
     answer: unused,
     log: unused,
@@ -91,27 +75,11 @@ export function fakeAgents(): FakeAgents {
       host: HOST,
       tokensToday: 0,
       resumable: [],
-      questions: [],
       projectAgents: [],
-      progress: [],
-      signals: [],
     }),
-    assign(input) {
-      if (fake.failAssign) throw fake.failAssign;
-      fake.assigned.push(input);
-      return runView({
-        id: `run-${fake.assigned.length}`,
-        projectId: input.projectId,
-        ticketId: input.ticketId,
-      });
-    },
     cancel(runId) {
       fake.cancelled.push(runId);
       return runView({ id: runId, state: "cancelled" });
-    },
-    deliverAnswers(projectId, ticketId): DeliveryResult {
-      fake.delivered.push({ projectId, ticketId });
-      return { sent: 1, runId: null };
     },
   };
   return fake;
@@ -123,7 +91,6 @@ export type Harness = {
   notes: NotesService;
   data: ProjectAgentDataPort;
   agents: FakeAgents;
-  signals: FakeSignals;
   project: ProjectMeta;
   commands: ProjectCommand[];
   projectReads: () => number;
@@ -178,7 +145,6 @@ export function harness(): Harness {
     notes,
     data,
     agents: fakeAgents(),
-    signals: fakeSignals(),
     project,
     commands,
     projectReads: () => reads,
@@ -192,27 +158,18 @@ export function harness(): Harness {
   };
 }
 
-export const readOnly = (h: Harness): (() => void) =>
-  h.service.docs.setWriteGuard((projectId) => {
-    if (projectId === h.project.id) throw new KiboError("FORBIDDEN", "project is read-only");
-  });
-
 export async function contextOf(h: Harness): Promise<BatchContext> {
   const notes = await h.data.notes(h.project.id);
   return {
     project: h.data.project(h.project.id),
     runs: h.agents.state().runs,
     notes: notes.map((n) => ({ path: n.path, hash: n.hash })),
-    agents: AGENTS.map(agentSummary),
-    demoProject: false,
     viewer: "adam",
-    ...signalRefs(h.signals, h.project.id),
   };
 }
 
 export async function propose(h: Harness, actions: ProposedAction[]): Promise<Batch> {
-  const context = { ...(await contextOf(h)), agentExecution: "shown" as const };
-  const checked = validateBatch({ summary: "Ranger le projet", actions }, context);
+  const checked = validateBatch({ summary: "Ranger le projet", actions }, await contextOf(h));
   if (!checked.ok) throw new Error(renderProblems(checked.problems));
   return {
     id: "b1",

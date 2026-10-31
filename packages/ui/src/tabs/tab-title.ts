@@ -10,7 +10,6 @@ import {
   CalendarRange,
   FileCode,
   FolderKanban,
-  GitCommitHorizontal,
   LayoutDashboard,
   type LucideIcon,
   Ticket,
@@ -23,7 +22,7 @@ import { SCREENS } from "./screens";
 import { findTicket } from "./target-hash";
 
 export type TabDescription = { title: string; icon: LucideIcon; color: string | null; missing: boolean };
-export type DescribeContext = {
+type DescribeContext = {
   projects: ProjectSummary[];
   snapshots: Map<string, ProjectSnapshot>;
   runs?: readonly RunView[];
@@ -36,13 +35,6 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
     const { title, icon } = SCREENS[target.screen];
     return { title, icon, color: null, missing: false };
   }
-  if (target.kind === "run") {
-    const run = ctx.runs?.find((r) => r.id === target.runId);
-    const title = run ? fr.tabs.runTitle(run.label) : fr.tabs.run;
-    return { title, icon: SCREENS.agents.icon, color: null, missing: false };
-  }
-  if (target.kind === "skill")
-    return { title: target.skillId, icon: SCREENS.skills.icon, color: null, missing: false };
   const project: ProjectMeta | undefined = isInbox(target.projectId)
     ? inboxMeta()
     : ctx.projects.find((p) => p.id === target.projectId);
@@ -53,8 +45,6 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
   switch (target.kind) {
     case "project":
       return { title: displayName(project), icon: FolderKanban, color, missing: false };
-    case "changes":
-      return { title: titled(fr.tabs.changes), icon: GitCommitHorizontal, color, missing: false };
     case "file":
       return { title: basename(target.path), icon: FileCode, color, missing: false };
     case "page": {

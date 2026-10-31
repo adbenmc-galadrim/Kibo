@@ -22,9 +22,6 @@ const ticketAddress = (projectId: string, ticketId: string): string =>
   ticketKeys.get(keySlot(projectId, ticketId)) ?? ticketId;
 
 const SCREEN_HASHES: Record<Screen, string> = {
-  agents: "#/agents",
-  queue: "#/agents/queue",
-  skills: "#/agents/skills",
   general: "#/settings/general",
   domains: "#/settings/domains",
   components: "#/components",
@@ -32,20 +29,15 @@ const SCREEN_HASHES: Record<Screen, string> = {
   inbox: "#/inbox",
   integrations: "#/settings/integrations",
   appearance: "#/settings/appearance",
-  security: "#/settings/security",
   sources: "#/settings/components",
-  sync: "#/settings/sync",
   shortcuts: "#/settings/shortcuts",
   workspace: "#/settings/workspace",
-  creations: "#/creations",
 };
 
 export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
   if (target.kind === "screen")
     return `${SCREEN_HASHES[target.screen]}${target.projectId ? `?project=${enc(target.projectId)}` : ""}`;
-  if (target.kind === "run") return `#/runs/${enc(target.runId)}`;
-  if (target.kind === "skill") return `#/skills/${enc(target.skillId)}`;
   const base = `#/p/${enc(target.projectId)}`;
   switch (target.kind) {
     case "project":
@@ -56,8 +48,6 @@ export function targetToHash(target: TabTarget | null): string {
       return `${base}/t/${enc(ticketAddress(target.projectId, target.ticketId))}`;
     case "sprint":
       return `${base}/s/${enc(target.sprintId)}`;
-    case "changes":
-      return target.worktree ? `${base}/changes?wt=${enc(target.worktree)}` : `${base}/changes`;
     case "file": {
       const q = new URLSearchParams({ path: target.path });
       if (target.worktree) q.set("wt", target.worktree);
@@ -69,7 +59,6 @@ export function targetToHash(target: TabTarget | null): string {
 
 function candidate(projectId: string, rest: string, q: URLSearchParams): unknown {
   if (rest === "") return { kind: "project", projectId };
-  if (rest === "changes") return { kind: "changes", projectId, worktree: q.get("wt") };
   if (rest === "file") {
     const line = q.get("line");
     return {
@@ -103,10 +92,6 @@ function screenTarget(hash: string): TabTarget | null {
 }
 
 function pathCandidate(path: string, query: string): unknown {
-  const run = /^\/runs\/([^/]+)\/?$/.exec(path);
-  if (run?.[1]) return { kind: "run", runId: decodeURIComponent(run[1]) };
-  const skill = /^\/skills\/([^/]+)\/?$/.exec(path);
-  if (skill?.[1]) return { kind: "skill", skillId: decodeURIComponent(skill[1]) };
   const m = /^\/p\/([^/]+)(?:\/(.*))?$/.exec(path);
   if (!m?.[1]) return null;
   return candidate(decodeURIComponent(m[1]), m[2] ?? "", new URLSearchParams(query));

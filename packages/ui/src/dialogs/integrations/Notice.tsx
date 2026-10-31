@@ -2,7 +2,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@kibo/sdk/ui/alert";
 import { CircleX, type LucideIcon, ShieldAlert, TriangleAlert } from "lucide-react";
 
-export type NoticeTone = "error" | "warning" | "security";
+type NoticeTone = "error" | "warning" | "security";
 
 const TONES: Record<NoticeTone, { icon: LucideIcon; role: "alert" | "note"; className: string }> = {
   error: {

@@ -33,12 +33,11 @@ export type TicketPlan = {
   unresolved: string[];
 };
 export type ExistingTicket = { id: string; title: string; domainId: string | null };
-export type VersionedComponent = { id: string; versions: { version: string }[] };
 
 export function knownDomains(all: Domain[], projectId: string): { list: Domain[]; ids: ResolvedIds } {
   const own = all.filter((d) => d.owner.scope === "project" && d.owner.projectId === projectId);
   const workspace = all.filter((d) => d.owner.scope === "workspace");
-  const list = domainsOf({ project: { domains: own, shared: false }, workspace });
+  const list = domainsOf({ project: { domains: own }, workspace });
   const domains = new Map([...list].reverse().map((d) => [d.name, d.id]));
   return { list, ids: { projectId, domains, workspaceDomains: new Set(workspace.map((d) => d.id)) } };
 }
@@ -138,24 +137,6 @@ export function planTickets(
   return plan;
 }
 
-const semverParts = (v: string) => v.split(".").map(Number);
-const newer = (a: string, b: string): boolean => {
-  const [pa, pb] = [semverParts(a), semverParts(b)];
-  for (let i = 0; i < 3; i++) if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0);
-  return false;
-};
-
-export function componentRefs(
-  installed: VersionedComponent[],
-  manifestVersions: ReadonlyMap<string, string>,
-): Map<string, string> {
-  const refs = new Map<string, string>();
-  for (const [id, version] of manifestVersions) refs.set(id, `${id}@${version}`);
-  for (const c of installed) {
-    const best = c.versions
-      .map((v) => v.version)
-      .reduce<string | null>((acc, v) => (acc === null || newer(v, acc) ? v : acc), null);
-    if (best !== null) refs.set(c.id, `${c.id}@${best}`);
-  }
-  return refs;
+export function componentRefs(manifestVersions: ReadonlyMap<string, string>): Map<string, string> {
+  return new Map([...manifestVersions].map(([id, version]) => [id, `${id}@${version}`]));
 }

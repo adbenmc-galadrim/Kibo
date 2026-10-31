@@ -10,8 +10,8 @@ export type ZoomAction =
 export const MIN_SCALE = 0.5;
 export const MAX_SCALE = 8;
 export const ZOOM_STEP = 1.25;
-export const KEY_PAN = 40;
-export const EDGE_MARGIN = 32;
+const KEY_PAN = 40;
+const EDGE_MARGIN = 32;
 export const FITTED: ZoomState = { scale: 1, pan: { x: 0, y: 0 } };
 
 export const clampScale = (s: number): number =>

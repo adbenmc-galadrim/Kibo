@@ -18,7 +18,7 @@ export type QuestionSummary = {
 };
 export type NoteSummary = { path: string; title: string };
 export type DetailExtras = { questions: QuestionSummary[]; notes: NoteSummary[]; brief: string | null };
-export type QuestionsSource = { questions: Question[]; questionRecipients: QuestionRecipient[] };
+type QuestionsSource = { questions: Question[]; questionRecipients: QuestionRecipient[] };
 type TicketIdentity = { id: string; key: string; planId: string | null };
 
 const isPending = (q: Question): boolean => !isArchived(q) && !isDelivered(q);

@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { type ProjectCommand, Ticket } from "@kibo/schema";
 import { seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
-import { defineServer } from "./server";
 
 const base = { id: "probe", version: "0.1.0", kind: "widget" as const, title: "Probe" };
 
@@ -15,12 +14,11 @@ test("every attempt is recorded in used, denials also in violations", async () =
   expect(m.violations).toEqual(["data", "net https://example.com/x"]);
 });
 
-test("data, programmed fetch and actions work in memory", async () => {
+test("data and programmed fetch work in memory, actions are refused", async () => {
   const m = createMockSdk(
     { ...base, reads: ["ticket"], writes: [], data: true, net: ["api.github.com"] },
     {
       fetch: (url) => ({ status: 200, headers: {}, body: url }),
-      server: defineServer({ actions: { count: async (ctx) => (await ctx.list("ticket")).length } }),
       seed: (run) => run({ method: "createTicket", title: "A" }),
     },
   );
@@ -28,76 +26,7 @@ test("data, programmed fetch and actions work in memory", async () => {
   expect(await m.sdk.data.get<{ a: number }>("k")).toEqual({ a: 1 });
   expect(await m.sdk.data.keys()).toEqual(["k"]);
   expect((await m.sdk.fetch("https://api.github.com/x")).body).toBe("https://api.github.com/x");
-  expect(await m.sdk.action<number>("count")).toBe(1);
   await expect(m.sdk.action("nope")).rejects.toThrow("PERMISSION_DENIED");
-});
-
-test("notes live in an in-memory folder with conflict detection", async () => {
-  const m = createMockSdk(
-    { ...base, reads: ["note", "ticket"], writes: ["note"] },
-    { notes: { "a.md": "# A\n\nVoir [[b]] et KIB-1.", "b.md": "# B" } },
-  );
-  const list = await m.sdk.list("note");
-  expect(list.map((n) => [n.path, n.title, n.links, n.tickets])).toEqual([
-    ["a.md", "A", ["b.md"], ["KIB-1"]],
-    ["b.md", "B", [], []],
-  ]);
-  const a = await m.sdk.notes.read("a.md");
-  m.touchNote("a.md", "# A modifiée");
-  await expect(m.sdk.notes.write("a.md", "# A2", a.mtime)).rejects.toThrow("CONFLICT");
-  await m.sdk.notes.write("a.md", "# A2", null);
-  expect((await m.sdk.notes.search("a2")).map((n) => n.path)).toEqual(["a.md"]);
-  expect((await m.sdk.notes.info()).displayDir).toBe("~/goinfre/Kibo/notes");
-});
-
-test("notes.create refuses an existing path and is used as write:note", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
-  await expect(m.sdk.notes.create("a.md", "# Autre")).rejects.toThrow("CONFLICT");
-  expect(m.notes.get("a.md")?.markdown).toBe("# A");
-  const created = await m.sdk.notes.create("b.md", "# B");
-  expect([created.path, created.title]).toEqual(["b.md", "B"]);
-  expect(m.used).toEqual(["write:note"]);
-});
-
-test("pasted images are attached and read back in memory, with the daemon's rules", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: ["note"] }, { notes: { "a.md": "# A" } });
-  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
-  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
-    path: "assets/a-20261004-101500.png",
-  });
-  expect(await m.sdk.notes.attach("a.md", "a-20261004-101500.png", "image/png", png)).toEqual({
-    path: "assets/a-20261004-101500-2.png",
-  });
-  const back = await m.sdk.notes.asset("assets/a-20261004-101500.png");
-  expect(back.mime).toBe("image/png");
-  expect([...back.bytes]).toEqual([...png]);
-  await expect(m.sdk.notes.asset("assets/none.png")).rejects.toThrow("NOT_FOUND");
-  await expect(m.sdk.notes.asset("assets/../a.md")).rejects.toThrow("INVALID_INPUT");
-  const html = new TextEncoder().encode("<html>");
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", html)).rejects.toThrow("INVALID_INPUT");
-  await expect(m.sdk.notes.attach("a.md", "../x.png", "image/png", png)).rejects.toThrow("INVALID_INPUT");
-  const big = new Uint8Array(2 * 1024 * 1024 + 1);
-  big.set(png);
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", big)).rejects.toThrow("TOO_LARGE");
-  expect(m.used).toEqual(["write:note", "read:note"]);
-});
-
-test("notes.attach needs write:note", async () => {
-  const m = createMockSdk({ ...base, reads: ["note"], writes: [] }, { notes: { "a.md": "# A" } });
-  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  await expect(m.sdk.notes.attach("a.md", "x.png", "image/png", png)).rejects.toThrow("PERMISSION_DENIED");
-  expect(m.violations).toEqual(["write note"]);
-});
-
-test("runs are served by list in both modes and notify run subscribers", async () => {
-  const m = createMockSdk({ ...base, reads: ["ticket", "run"], writes: [] });
-  const heard: string[] = [];
-  const off = m.sdk.subscribe(() => heard.push("run"), "run");
-  m.setRuns([{ ticketId: "1@1", runId: "r1", label: "opus-dev-1", state: "running", position: null }]);
-  off();
-  expect((await m.sdk.list("run")).map((r) => r.runId)).toEqual(["r1"]);
-  expect(heard).toEqual(["run"]);
-  expect(m.used).toEqual(["read:run"]);
 });
 
 test("the mock exposes the format, defaulting to the manifest's default format", async () => {
@@ -262,32 +191,4 @@ test("questions offer recipients and image urls, no delivery, and marking stays 
       at: 1,
     }),
   ).rejects.toThrow("PERMISSION_DENIED");
-});
-
-test("a ticket with a live run is not startable in snapshot() nor in list('ticket')", async () => {
-  const m = createMockSdk(
-    { ...base, reads: ["ticket"], writes: [] },
-    {
-      seed: (run) => {
-        run({ method: "createTicket", title: "A" });
-        run({ method: "createTicket", title: "B" });
-      },
-    },
-  );
-  const [a, b] = m.snapshot().tickets;
-  if (!a || !b) throw new Error("seed failed");
-  expect(a.startable).toBe(true);
-  let changes = 0;
-  m.sdk.subscribe(() => changes++, "ticket");
-  m.setRuns([
-    { ticketId: a.id, runId: "r1", label: "opus-dev-1", state: "waiting_input", position: null },
-    { ticketId: b.id, runId: "r2", label: "opus-dev-2", state: "done", position: null },
-  ]);
-  expect(changes).toBeGreaterThan(0);
-  const startable = (tickets: { id: string; startable: boolean }[]) =>
-    Object.fromEntries(tickets.map((t) => [t.id, t.startable]));
-  expect(startable(m.snapshot().tickets)).toEqual({ [a.id]: false, [b.id]: true });
-  expect(startable(await m.sdk.list("ticket"))).toEqual({ [a.id]: false, [b.id]: true });
-  m.setRuns([]);
-  expect(m.snapshot().tickets.find((t) => t.id === a.id)?.startable).toBe(true);
 });

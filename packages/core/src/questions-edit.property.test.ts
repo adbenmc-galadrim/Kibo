@@ -71,7 +71,6 @@ test("any accepted edit sequence keeps a valid question, a bounded history and o
         color: "#F97316",
         worktree: null,
         storybook: null,
-        duplication: null,
         delivery: null,
         tracking: null,
         description: null,

@@ -7,11 +7,9 @@ export type Host = {
   openSprint?(sprintId: string): void;
   editProject?(request: ProjectEditRequest): void;
   openNewTicket(d: NewTicketDefaults): void;
-  openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;
   openView(componentId: string, projectId?: string, spotlight?: Spotlight): void;
   openTarget(target: TabTarget, opts?: { newTab?: boolean; keep?: boolean }): void;
-  openRun?(runId: string): void;
   answerRun?(runId: string): void;
   openProjectAgent?(): void;
   projectId?: string | null;

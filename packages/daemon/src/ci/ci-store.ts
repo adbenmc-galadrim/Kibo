@@ -2,8 +2,8 @@ import type { Database } from "bun:sqlite";
 import { type CiJobSummary, type CiRun, RepoSlug } from "@kibo/schema";
 
 export type StoredRun = Omit<CiRun, "ticketKey" | "jobs"> & { projectId: string; notified: boolean };
-export type StoredJob = { repo: RepoSlug; completed: boolean; logPath: string | null; truncated: boolean };
-export type StoredLog = { path: string; at: number; truncated: boolean };
+type StoredJob = { repo: RepoSlug; completed: boolean; logPath: string | null; truncated: boolean };
+type StoredLog = { path: string; at: number; truncated: boolean };
 
 type RunRow = {
   repo: string;

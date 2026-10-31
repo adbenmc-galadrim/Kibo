@@ -4,12 +4,12 @@ import type { Docs } from "../docs";
 import type { Store } from "../store";
 
 export type FileTicketDeps = {
-  docs: Pick<Docs, "project" | "assertWritable" | "save" | "emit">;
+  docs: Pick<Docs, "project" | "save" | "emit">;
   store: Pick<Store, "transaction">;
   restore(projectId: string): void;
 };
-export type FileRequest = Extract<RpcRequest, { method: "fileTicket" }>;
-export type FiledTicket = { ticketId: string; key: string | null };
+type FileRequest = Extract<RpcRequest, { method: "fileTicket" }>;
+type FiledTicket = { ticketId: string; key: string | null };
 
 function restoreBoth(deps: FileTicketDeps, projectId: string, error: unknown): never {
   try {
@@ -29,7 +29,6 @@ export function createFileTicket(deps: FileTicketDeps): (req: FileRequest) => Fi
     if (isInbox(req.projectId))
       throw new KiboError("INVALID_INPUT", "a ticket cannot be filed into the inbox");
     const target = deps.docs.project(req.projectId);
-    deps.docs.assertWritable(req.projectId);
     const inbox = deps.docs.project(INBOX_ID);
     let filed: FiledTicket;
     try {

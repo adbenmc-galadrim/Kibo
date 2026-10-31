@@ -48,18 +48,18 @@ test.beforeEach(async ({ page }) => {
   silo = await loadSilo(page);
 });
 
-test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets and the palette", async ({
+test("execution hidden: no agent trace in the tabs, the sheet, Kanban and the palette", async ({
   page,
 }, info) => {
   await assignAgent(page, { kind: "agent", ref: PROFILE });
   const kanban = await pageTarget(page, "kanban@1.0.0");
-  const tickets = await pageTarget(page, "tickets@1.0.0");
+  const graph = await pageTarget(page, "graph@1.0.0");
   await rpc(page, {
     method: "saveTabs",
     state: {
       tabs: [
-        { id: "agents", target: { kind: "screen", screen: "agents" }, pinned: false, preview: false },
-        { id: "tickets", target: tickets, pinned: false, preview: false },
+        { id: "components", target: { kind: "screen", screen: "components" }, pinned: false, preview: false },
+        { id: "graph", target: graph, pinned: false, preview: false },
         { id: "kanban", target: kanban, pinned: false, preview: false },
       ],
       activeId: "kanban",
@@ -74,8 +74,8 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
     await expect(card).toBeVisible();
     await capture(page, info, "kanban");
     await expect.soft(tabs.getByRole("tab", { name: /Kanban/ })).toBeVisible();
-    await expect.soft(tabs.getByRole("tab", { name: /Tickets/ })).toBeVisible();
-    await expect.soft(tabs.getByRole("tab", { name: /^Agents/ })).toHaveCount(0);
+    await expect.soft(tabs.getByRole("tab", { name: /Graphe/ })).toBeVisible();
+    await expect.soft(tabs.getByRole("tab", { name: /^Composants/ })).toHaveCount(0);
     await expect.soft(page.getByText(AGENT_TRACES)).toHaveCount(0);
 
     await card.getByRole("button", { name: /Actions/ }).click();
@@ -98,16 +98,6 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
     await expect.soft(agentChoice).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    await page.goto(silo.pageUrl("tickets@1.0.0"));
-    await expect(page.locator("[data-row-title]").first()).toBeVisible();
-    await page.getByRole("button", { name: "Ouverts" }).click();
-    await capture(page, info, "tickets");
-    await expect(page.getByRole("menuitemradio", { name: "Moi" })).toBeVisible();
-    await expect(page.getByRole("menuitemradio", { name: "Tous" })).toBeVisible();
-    await expect.soft(page.getByRole("menuitemradio", { name: "Agents" })).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    await expect.soft(page.getByText(AGENT_TRACES)).toHaveCount(0);
-
     await page.keyboard.press("ControlOrMeta+k");
     const palette = page.getByRole("dialog");
     await palette.getByRole("combobox").fill("agent");
@@ -116,7 +106,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
       .soft(palette.getByRole("option", { name: /^Agents$|Assigner|Files d'attente|Répondre à/ }))
       .toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect.soft(tabs.getByRole("tab", { name: /^Agents/ })).toHaveCount(0);
+    await expect.soft(tabs.getByRole("tab", { name: /^Composants/ })).toHaveCount(0);
   } finally {
     await assignAgent(page, null);
   }

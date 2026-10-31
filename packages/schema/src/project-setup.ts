@@ -4,8 +4,7 @@ import { SprintDate } from "./sprint";
 
 export const SPRINT_COUNT_MAX = 52;
 
-export const SprintWeeks = z.union([z.literal(1), z.literal(2)]);
-export type SprintWeeks = z.infer<typeof SprintWeeks>;
+const SprintWeeks = z.union([z.literal(1), z.literal(2)]);
 
 export const ProjectSetup = z
   .object({
@@ -16,7 +15,7 @@ export const ProjectSetup = z
   .strict();
 export type ProjectSetup = z.infer<typeof ProjectSetup>;
 
-export type SetupPage = {
+type SetupPage = {
   title: string;
   component: z.infer<typeof ComponentRef>;
   config: Record<string, unknown>;

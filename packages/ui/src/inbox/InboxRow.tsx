@@ -7,10 +7,9 @@ import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entri
 import { TableCell, TableRow } from "@kibo/sdk/ui/table";
 import { Ellipsis, FolderInput } from "lucide-react";
 import { frInbox as t } from "../i18n/fr-inbox";
-import { useExecutionShown } from "../state/use-app-settings";
 import { inboxMenuEntries } from "./inbox-menu";
 
-export type InboxRowProps = {
+type InboxRowProps = {
   ticket: TicketView;
   workflow: readonly Status[];
   onOpen(): void;
@@ -22,7 +21,7 @@ const INBOX_CELL = "px-3 py-2";
 
 export function InboxRow({ ticket, workflow, onOpen, onFile, onRemove }: InboxRowProps) {
   const entries = inboxMenuEntries({ texts: t, actions: { open: onOpen, file: onFile, remove: onRemove } });
-  const { assignee } = useExecutionShown() ? ticket : withoutAgentAssignee(ticket);
+  const { assignee } = withoutAgentAssignee(ticket);
   const status = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
   return (
     <ContextMenu>

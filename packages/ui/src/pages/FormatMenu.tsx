@@ -12,7 +12,7 @@ import {
 import { ChevronDown } from "lucide-react";
 import { frLayout } from "../i18n/fr-layout";
 
-export type FormatMenuProps = {
+type FormatMenuProps = {
   title: string;
   current: ComponentFormat;
   formats: readonly ComponentFormat[];

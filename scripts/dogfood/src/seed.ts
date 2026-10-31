@@ -90,8 +90,7 @@ async function ensurePages({ client, desired, report }: Step, projectId: string)
   report.kept.page = desired.pages.length - pages.length;
 
   const after = await client.rpc({ method: "getProject", projectId });
-  const components = await client.rpc({ method: "listComponents" });
-  const plan = missingInstances(after, desired.pages, componentRefs(components, desired.manifestVersions));
+  const plan = missingInstances(after, desired.pages, componentRefs(desired.manifestVersions));
   for (const i of plan.add) await command({ method: "addInstance", ...i });
   const wanted = desired.pages.reduce((n, p) => n + p.instances.length, 0);
   report.created.instance = plan.add.length;

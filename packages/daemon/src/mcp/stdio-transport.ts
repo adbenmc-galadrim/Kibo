@@ -4,10 +4,10 @@ import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { signalGroup } from "../process-group";
 
-export type StdioOptions = { id: string; cmd: string[]; env: Record<string, string>; cwd: string };
+type StdioOptions = { id: string; cmd: string[]; env: Record<string, string>; cwd: string };
 const MAX_STDERR_LINE = 500;
-export const KILL_GRACE_MS = 2_000;
-export const MAX_MESSAGE_BYTES = 8 * 1_048_576;
+const KILL_GRACE_MS = 2_000;
+const MAX_MESSAGE_BYTES = 8 * 1_048_576;
 
 const spawnServer = (o: StdioOptions) =>
   Bun.spawn(o.cmd, {

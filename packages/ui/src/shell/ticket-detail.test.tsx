@@ -14,7 +14,6 @@ mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: { method: string }) => {
-        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
         if (req.method === "autoLinks.list") return [];
         return null;
       },
@@ -33,7 +32,6 @@ afterEach(cleanup);
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
   key: "KIB-12",
-  pendingSeq: null,
   hold: null,
   keyLabel: "KIB-12",
   title: "Schéma Loro des tickets",
@@ -96,7 +94,6 @@ const project = (t: TicketView, questions: Question[] = []): ProjectSnapshot => 
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -112,7 +109,6 @@ const project = (t: TicketView, questions: Question[] = []): ProjectSnapshot => 
   bindings: [],
   nextTicketKey: "KIB-13",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   tickets: [t],
 });
 
@@ -120,7 +116,6 @@ const views: string[] = [];
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: (id: string) => views.push(id),
   openTarget: () => undefined,

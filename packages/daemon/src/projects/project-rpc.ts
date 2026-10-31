@@ -3,7 +3,6 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   executeProjectCommand,
-  getKeyAllocator,
   getProjectMeta,
   listInstances,
   listProjects,
@@ -17,41 +16,30 @@ import {
   KiboError,
   type ProjectMeta,
   ProjectSetup,
-  type ProjectSyncInfo,
   type RpcRequest,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { isDemoProject } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
 import { markMigrated } from "../migrations/tracking";
 import type { ProjectSettings } from "../notes/settings";
-import {
-  localDelivery,
-  localDuplication,
-  localFolder,
-  localStorybook,
-  localWorktree,
-} from "../project-folder";
+import { localDelivery, localFolder, localStorybook, localWorktree } from "../project-folder";
 import { setupProject } from "./project-setup";
 
-export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
   workspace: LoroDoc;
   docs: Docs;
   icons: Pick<IconStore, "version">;
   settings: Pick<ProjectSettings, "get" | "set">;
-  collab(): CollabPort | null;
   adopt(id: string, doc: LoroDoc): void;
   fileTicket: ReturnType<typeof createFileTicket>;
 };
 
 export const NOT_HANDLED: unique symbol = Symbol("not handled");
 
-const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null =>
-  localFolder(deps.settings, meta, getKeyAllocator(deps.docs.project(meta.id)) === "server");
+const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null => localFolder(deps.settings, meta);
 
 function parsedSetup(setup: unknown): ProjectSetup | null {
   if (setup === undefined) return null;
@@ -83,7 +71,6 @@ function createProject(
     color: req.color,
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -101,14 +88,12 @@ function createProject(
 
 function getProject(deps: ProjectRpcDeps, projectId: string) {
   const doc = deps.docs.project(projectId);
-  const snapshot = {
+  return {
     ...readProject(doc, deps.docs.today(), deps.docs.activity(projectId)),
     meta: deps.docs.projectMeta(projectId),
     viewer: deps.docs.identity(projectId),
     icon: deps.icons.version(projectIcon(projectId)),
   };
-  const collab = deps.collab();
-  return collab ? { ...snapshot, sync: collab.syncInfo(projectId, doc) } : snapshot;
 }
 
 function runCommand(deps: ProjectRpcDeps, req: Extract<RpcRequest, { method: "command" }>): unknown {
@@ -133,11 +118,9 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
         folder: folderOf(deps, meta),
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),
-        duplication: localDuplication(deps.settings, meta.id),
         delivery: localDelivery(deps.settings, meta.id),
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),
-        demo: isDemoProject(deps.settings, meta.id),
       }));
     case "createProject":
       return createProject(deps, req);

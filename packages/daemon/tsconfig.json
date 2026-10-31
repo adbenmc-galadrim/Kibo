@@ -2,11 +2,5 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "outDir": "dist", "rootDir": "src", "lib": ["ES2022"] },
   "include": ["src", "src/**/*.json"],
-  "references": [
-    { "path": "../schema" },
-    { "path": "../core" },
-    { "path": "../devkit" },
-    { "path": "../trust" },
-    { "path": "../sync-server" }
-  ]
+  "references": [{ "path": "../schema" }, { "path": "../core" }]
 }

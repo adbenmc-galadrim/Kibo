@@ -14,29 +14,24 @@ import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
 import { fileScope, newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
-import { canEdit } from "../state/access";
 import type { DialogsState } from "./dialogs-state";
 import {
-  AssignDialog,
   ConfirmDialog,
   DeleteProjectDialog,
   EditProjectDialog,
   FileTicketDialog,
   HelpDialogs,
-  NewAgentDialog,
   NewPageDialog,
   NewProjectDialog,
-  NewSkillDialog,
   NewTicketDialog,
   RenamePageDialog,
-  StarterDialog,
   TicketSheet,
 } from "./lazy-dialogs";
-import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-screens";
+import { FilePreviewSheet } from "./lazy-screens";
 import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
-export { type DialogsState, type NewTicketRequest, NO_DIALOG, type SheetTicket } from "./dialogs-state";
+export { type DialogsState, NO_DIALOG } from "./dialogs-state";
 
 const SprintSheet = lazyPanel(() => import("./sprint/SprintSheet").then((m) => m.SprintSheet), fr.lazy, {
   fallback: "sr-only",
@@ -74,15 +69,11 @@ export function ShellDialogs({
   const { sheet, preview } = state;
   const openFile = (ref: FileRef) => set({ preview: ref });
   const newProjectOpened = useOpened(state.newProject);
-  const helpOpened = useOpened(
-    state.about || state.whatsNew || state.shortcutsHelp || state.report || state.tutorial,
-  );
-  const shareProject = state.share ? (snapshots.get(state.share) ?? null) : null;
+  const helpOpened = useOpened(state.about || state.whatsNew || state.shortcutsHelp || state.report);
   const editing = state.editProject ? (projects.find((x) => x.id === state.editProject) ?? null) : null;
   const doomedProject = state.deleteProject
     ? (projects.find((x) => x.id === state.deleteProject) ?? null)
     : null;
-  const assignProject = state.assign?.projectId ? (snapshots.get(state.assign.projectId) ?? null) : project;
   const inbox = snapshots.get(INBOX_ID);
   const filing = inbox?.tickets.find((x) => x.id === state.fileTicket?.ticketId) ?? null;
   const doomed =
@@ -105,7 +96,6 @@ export function ShellDialogs({
           parentId={state.newPageParent}
           open
           onOpenChange={(o) => !o && set({ newPageParent: undefined })}
-          onSuggest={() => set({ newPageParent: undefined, suggestFor: project.meta.id })}
         />
       )}
       {project && state.renamePage && (
@@ -135,13 +125,6 @@ export function ShellDialogs({
             });
           }}
           describeError={errorMessage}
-        />
-      )}
-      {state.suggestFor && (
-        <StarterDialog
-          projectId={state.suggestFor}
-          open
-          onOpenChange={(o) => !o && set({ suggestFor: null })}
         />
       )}
       {sheet && sheetProject && (
@@ -180,10 +163,7 @@ export function ShellDialogs({
         <NewTicketDialog
           projects={newTicketProjects(projects, snapshots)}
           snapshots={snapshots}
-          initialProjectId={
-            state.newTicket.projectId ??
-            (ticketProject && canEdit(ticketProject) ? ticketProject.meta.id : INBOX_ID)
-          }
+          initialProjectId={state.newTicket.projectId ?? (ticketProject ? ticketProject.meta.id : INBOX_ID)}
           lockProject={state.newTicket.parentId != null || state.newTicket.instanceId != null}
           viewer={viewer}
           defaults={state.newTicket}
@@ -200,38 +180,12 @@ export function ShellDialogs({
           onFiled={(projectId, ticketId) => set({ fileTicket: null, sheet: { projectId, ticketId } })}
         />
       )}
-      {state.assign && (
-        <AssignDialog
-          project={assignProject}
-          demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
-          ticketId={state.assign.ticketId}
-          config={config}
-          projects={projects}
-          onClose={() => set({ assign: null })}
-          onEditProject={(projectId) => set({ assign: null, editProject: projectId })}
-        />
-      )}
-      {state.newAgent && <NewAgentDialog projects={projects} onClose={() => set({ newAgent: false })} />}
-      {state.newSkill && (
-        <NewSkillDialog
-          projects={projects}
-          onClose={() => set({ newSkill: false })}
-          onCreated={(skill) => {
-            set({ newSkill: false });
-            p.onOpenTarget({ kind: "skill", skillId: skill.id }, false);
-          }}
-        />
-      )}
-      {shareProject && (
-        <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
-      )}
       {editing && (
         <EditProjectDialog
           project={editing}
           focus={state.editFocus ?? undefined}
           onClose={() => set({ editProject: null, editFocus: null })}
           config={config}
-          go={(target) => p.onOpenTarget(target, false)}
         />
       )}
       {doomedProject && (
@@ -248,10 +202,8 @@ export function ShellDialogs({
             set({ deleteProject: null });
             p.onCloseProject(projectId);
           }}
-          onShare={() => set({ deleteProject: null, share: doomedProject.id })}
         />
       )}
-      {state.join && <JoinProjectDialog open onOpenChange={(o) => !o && set({ join: false })} />}
       {preview && (
         <FilePreviewSheet
           fileRef={preview}
@@ -259,7 +211,7 @@ export function ShellDialogs({
           onOpenInTab={(edit) => p.onOpenFileTab(preview, edit)}
         />
       )}
-      {helpOpened && <HelpDialogs state={state} set={set} onOpen={(t) => p.onOpenTarget(t, false)} />}
+      {helpOpened && <HelpDialogs state={state} set={set} />}
     </>
   );
 }

@@ -1,9 +1,9 @@
 import { eventTouches, type FileContent, type FileRef, type Worktree } from "@kibo/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../api";
-import { resolveWorktree, useWorktrees } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { resolveWorktree, useWorktrees } from "../shell/git/use-worktrees";
 import { highlightLines, plainTokens, type Token } from "./highlight";
 import { languageOf } from "./language";
 

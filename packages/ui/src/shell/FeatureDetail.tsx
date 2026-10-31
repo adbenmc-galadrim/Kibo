@@ -1,22 +1,10 @@
-import {
-  type AgentExecution,
-  type FileRef,
-  featureSteps,
-  type ProjectSnapshot,
-  type TicketView,
-} from "@kibo/schema";
+import { type FileRef, featureSteps, type ProjectSnapshot, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { Lock, Plus, Truck } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
 import type { ReactNode } from "react";
-import { DeliverChildrenDialog } from "../delivery/lazy";
-import { useDeliver } from "../delivery/use-deliver";
-import { frDelivery } from "../i18n/fr-delivery";
 import { frFeature as t } from "../i18n/fr-group";
-import { canEdit } from "../state/access";
-import { useAgentsState } from "../state/agents-context";
 import { useNow } from "../state/use-agents";
-import { useAppSettings } from "../state/use-app-settings";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { DependenciesCard } from "./feature/DependenciesCard";
 import { ExpectedResult } from "./feature/ExpectedResult";
@@ -37,7 +25,6 @@ type Props = {
   project: ProjectSnapshot;
   ticket: TicketView;
   now?: number;
-  execution?: AgentExecution;
   actions?: (extra: MenuEntry[]) => ReactNode;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
@@ -50,32 +37,22 @@ export function FeatureDetail({
   project,
   ticket: f,
   now: fixedNow,
-  execution: forced,
   actions,
   onOpenFile,
   onOpenTicket,
 }: Props) {
   const liveNow = useNow(60_000);
-  const setting = useAppSettings().agentExecution;
-  const execution = forced ?? setting;
   const now = fixedNow ?? liveNow;
   const today = useDaemonToday(fixedNow);
   const host = useOptionalHost();
-  const agents = useAgentsState();
   const titleCommand = useTicketCommand(project.meta.id);
   const descriptionCommand = useTicketCommand(project.meta.id);
   const sprintCommand = useTicketCommand(project.meta.id);
   const linkCommand = useTicketCommand(project.meta.id);
-  const editable = canEdit(project);
-  const group = useDeliver(project.meta.id, f);
-  const deliveryEntries: MenuEntry[] =
-    execution === "shown" && editable
-      ? [{ label: frDelivery.deliverChildren, icon: Truck, onSelect: () => void group.deliver() }]
-      : [];
   const ciRuns = useProjectCiRuns(project.meta.id);
   const journal = useFeatureJournal(project, f.id);
   const proposal = useSprintProposal(project.meta.id, f.key);
-  const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
+  const steps = stepModels(project, f.id, { ciRuns, now });
   const { active, held } = splitHeld(steps);
   const next = nextStartableStep(active, project.tickets);
   const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
@@ -101,34 +78,21 @@ export function FeatureDetail({
             badge={featureBadge(f.feature)}
             steps={featureSteps({ feature: f.id, tickets: project.tickets, links: project.links })}
             held={held.length}
-            editable={editable}
+            editable
             command={titleCommand}
-            actions={actions?.(deliveryEntries)}
+            actions={actions?.([])}
           />
-          {group.error && (
-            <p role="alert" className="text-[12px] text-(--tracking-red)">
-              {group.error}
-            </p>
-          )}
-          {group.children && (
-            <DeliverChildrenDialog
-              projectId={project.meta.id}
-              parent={group.children.parent}
-              items={group.children.items}
-              onClose={group.closeChildren}
-            />
-          )}
           <ExpectedResult
             ticketId={f.id}
             description={f.description}
-            editable={editable}
+            editable
             command={descriptionCommand}
             onOpenFile={openFile}
           />
           <div className="flex min-h-[25px] w-full items-center gap-[8px]">
             <h2 className="text-[15px] leading-[18px] font-semibold">{t.journey}</h2>
             <span className="text-[12.5px] leading-[15px] text-(--tracking-dim)">{t.journeyHint}</span>
-            {editable && host && (
+            {host && (
               <Button
                 variant="ghost"
                 className={GHOST}
@@ -141,20 +105,11 @@ export function FeatureDetail({
           </div>
           <StepsTimeline
             steps={active}
-            held={{ steps: held, projectId: project.meta.id, editable }}
+            held={{ steps: held, projectId: project.meta.id, editable: true }}
             workflow={project.workflow}
             now={now}
             nextId={next?.step.ticketId ?? null}
-            nextAction={
-              next && (
-                <NextStepAction
-                  projectId={project.meta.id}
-                  step={next.step}
-                  reason={next.reason}
-                  execution={execution}
-                />
-              )
-            }
+            nextAction={next && <NextStepAction step={next.step} reason={next.reason} />}
             onOpenTicket={onOpenTicket}
           />
         </div>
@@ -162,7 +117,7 @@ export function FeatureDetail({
           <SprintCard
             facts={facts}
             sprints={project.sprints}
-            editable={editable}
+            editable
             proposal={proposal.proposal}
             onSetSprint={setSprint}
             onApplyProposal={proposal.apply}
@@ -174,23 +129,20 @@ export function FeatureDetail({
           )}
           <DependenciesCard
             dependencies={featureDependencies(project, f.id)}
-            {...(editable && {
-              adding: {
-                candidates: dependencyCandidates(project, f.id),
-                onAdd: (from: string) =>
-                  void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
-              },
-            })}
+            adding={{
+              candidates: dependencyCandidates(project, f.id),
+              onAdd: (from: string) =>
+                void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
+            }}
             onOpenTicket={onOpenTicket}
           />
           <QuestionsCard
             questions={featureQuestions(project, f.id, now)}
             onOpenQuestion={(id) => host?.openView("questions", undefined, { kind: "question", id })}
-            {...(editable &&
-              host && {
-                onNewQuestion: () =>
-                  host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
-              })}
+            {...(host && {
+              onNewQuestion: () =>
+                host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
+            })}
           />
           <ActivityCard items={activity} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">

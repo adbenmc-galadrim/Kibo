@@ -39,10 +39,12 @@ describe("plan actions", () => {
   });
 
   test("agents, notes, signals and reminders are refused", () => {
+    expect(
+      PlanAction.safeParse(action("assignAgent", { ticket: "SILO-12", profileId: "livraison" })).success,
+    ).toBe(false);
+    expect(PlanAction.safeParse(action("dismissSignal", { signal: "sig:1" })).success).toBe(false);
     const refused = [
-      action("assignAgent", { ticket: "SILO-12", profileId: "livraison" }),
       action("createNote", { path: "notes/a.md", content: "" }),
-      action("dismissSignal", { signal: "sig:1" }),
       action("remindQuestion", { questionId: "q1" }),
     ];
     for (const a of refused) {

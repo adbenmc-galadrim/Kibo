@@ -1,26 +1,24 @@
 import { expect, test } from "bun:test";
 import { Screen, salvageTabsState, TabTarget, targetProjectId } from "./tabs";
 
-test("creations is a screen a tab can open", () => {
-  expect(Screen.parse("creations")).toBe("creations");
-  expect(TabTarget.parse({ kind: "screen", screen: "creations" })).toEqual({
-    kind: "screen",
-    screen: "creations",
+test("retired screens and targets no longer parse, so a stored tab of theirs is dropped", () => {
+  for (const screen of ["agents", "queue", "skills", "creations"])
+    expect(Screen.safeParse(screen).success).toBe(false);
+  expect(TabTarget.safeParse({ kind: "run", runId: "r1" }).success).toBe(false);
+  expect(TabTarget.safeParse({ kind: "skill", skillId: "a:b" }).success).toBe(false);
+  expect(TabTarget.safeParse({ kind: "changes", projectId: "p1", worktree: null }).success).toBe(false);
+  const kept = {
+    id: "t2",
+    target: { kind: "ticket" as const, projectId: "p1", ticketId: "t1" },
+    pinned: false,
+  };
+  const run = { id: "t1", target: { kind: "run", runId: "r1" }, pinned: false };
+  expect(salvageTabsState({ tabs: [run, kept], activeId: "t1", recents: [run.target] })).toEqual({
+    tabs: [{ ...kept, preview: false }],
+    activeId: null,
+    recents: [],
   });
-});
-
-test("a run is a target a tab can open", () => {
-  expect(TabTarget.parse({ kind: "run", runId: "r1" })).toEqual({ kind: "run", runId: "r1" });
-  expect(TabTarget.safeParse({ kind: "run", runId: "" }).success).toBe(false);
-  expect(targetProjectId({ kind: "run", runId: "r1" })).toBeNull();
-  expect(targetProjectId({ kind: "screen", screen: "agents" })).toBeNull();
   expect(targetProjectId({ kind: "ticket", projectId: "p1", ticketId: "t1" })).toBe("p1");
-});
-
-test("skills is a screen and a skill a target", () => {
-  expect(Screen.parse("skills")).toBe("skills");
-  expect(TabTarget.parse({ kind: "skill", skillId: "a:b" })).toEqual({ kind: "skill", skillId: "a:b" });
-  expect(TabTarget.safeParse({ kind: "skill", skillId: "Bad" }).success).toBe(false);
 });
 
 test("a page target may point at one question, none by default", () => {

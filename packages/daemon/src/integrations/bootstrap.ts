@@ -4,17 +4,13 @@ import { ciModule } from "../ci/module";
 import { createCiPoller } from "../ci/poller";
 import type { ServedFile } from "../components/file-response";
 import { designModule } from "../design/module";
-import { createEmbedChecker } from "../embed/embed-check";
-import { createEmbedGate } from "../embed/embed-gate";
 import { createEmbedService } from "../embed/embed-service";
-import type { EmbedGate, EmbedService } from "../embed/types";
+import type { EmbedService } from "../embed/types";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
-import { createMcpGate } from "../mcp/component-gate";
 import { createMcpHub } from "../mcp/hub";
 import { mcpModule } from "../mcp/module";
-import { githubIssuesModule } from "../sync/adapter-module";
 import { createBunSecretStore } from "./bun-secret-store";
 import { migrateIntegrations } from "./db";
 import { createEventLog, type EventLog } from "./events";
@@ -79,7 +75,6 @@ export function parseIntegrationFlags(values: {
 export type StartedIntegrations = IntegrationRpc & {
   secrets: SecretStore;
   design: { open(token: string): Promise<ServedFile | null> };
-  embed: EmbedGate;
   relay: EmbedService["relay"];
 };
 
@@ -138,10 +133,6 @@ export function startIntegrations(
     devOrigins: flags.devOrigins ?? [],
     aliases,
   });
-  const embedGate = createEmbedGate({
-    service: embedService,
-    checker: createEmbedChecker({ fetch: net.fetch, now: host.now, uiOrigins: () => host.uiOrigins() }),
-  });
   const kit: IntegrationKit = {
     host,
     flags,
@@ -155,8 +146,6 @@ export function startIntegrations(
       observe,
       secret,
       ciRuns: (projectId) => ciPoller.runs(projectId, null),
-      mcp: createMcpGate(mcpHub, host),
-      embed: embedGate,
     },
     net,
     github,
@@ -170,7 +159,6 @@ export function startIntegrations(
     ciModule(kit, ciPoller, ciStore),
     mcpModule(kit, mcpHub),
     design,
-    githubIssuesModule(kit),
   ];
   const rpc = createIntegrationRpc({
     handlers: modules.flatMap((m) => (m.handlers ? [m.handlers] : [])),
@@ -183,7 +171,6 @@ export function startIntegrations(
     ...rpc,
     secrets,
     design: { open: design.open },
-    embed: embedGate,
     relay: (token) => embedService.relay(token),
   };
 }

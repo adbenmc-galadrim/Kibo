@@ -1,7 +1,7 @@
 import { KiboError, type McpCallResult, type McpContent } from "@kibo/schema";
 import { z } from "zod";
 
-export const MCP_MAX_RESULT_BYTES = 1_048_576;
+const MCP_MAX_RESULT_BYTES = 1_048_576;
 const Text = z.object({ type: z.literal("text"), text: z.string() });
 const Image = z.object({
   type: z.literal("image"),
@@ -56,7 +56,7 @@ function parse<T>(schema: z.ZodType<T>, raw: unknown): T {
   return r.data;
 }
 
-export type ResultOptions = { redact?: (text: string) => string; maxBytes?: number };
+type ResultOptions = { redact?: (text: string) => string; maxBytes?: number };
 
 function finish(items: McpContent[], opts: ResultOptions): { content: McpContent[]; truncated: boolean } {
   const redact = opts.redact ?? ((t: string) => t);

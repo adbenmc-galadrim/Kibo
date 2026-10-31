@@ -7,7 +7,6 @@ import {
   type ImportRef,
   KiboError,
   type Link,
-  type MemberInfo,
   type OnHold,
   type PrChecks,
   type PrReview,
@@ -44,7 +43,7 @@ export type PrSummary = {
   checks: PrChecks | null;
 };
 export type BranchSummary = { name: string; base: string | null };
-export type AssigneeSummary = Assignee & { name: string | null; me: boolean };
+export type AssigneeSummary = Assignee & { me: boolean };
 export type TicketSummary = {
   id: string;
   key: string;
@@ -69,23 +68,22 @@ export type TicketSummary = {
   startReason: StartReason | null;
   onHold: OnHold | null;
 } & TrackingFields;
-export type TicketsSource = {
+type TicketsSource = {
   workflow: Status[];
   tickets: TicketView[];
   links: Link[];
   sprints: readonly SprintSource[];
   viewer?: string;
-  sync?: { members: readonly MemberInfo[] };
 };
 
 const isPlanRef = (r: ExternalRef): r is ImportRef => r.kind === "import_ref" && r.source === "plan";
 
-export const planIdOf = (t: { externalRefs: ExternalRef[] }): string | null =>
+const planIdOf = (t: { externalRefs: ExternalRef[] }): string | null =>
   t.externalRefs.find(isPlanRef)?.id ?? null;
 
 const PR_RANK: Record<PrState, number> = { open: 0, draft: 0, merged: 1, closed: 2 };
 
-export function relevantPr(t: TicketView): PrSummary | null {
+function relevantPr(t: TicketView): PrSummary | null {
   const prs = t.externalRefs.filter((r): r is GithubPrRef => r.kind === "github_pr");
   const best = [...prs].sort((a, b) => PR_RANK[a.state] - PR_RANK[b.state] || b.number - a.number)[0];
   return best
@@ -101,9 +99,8 @@ function branchOf(t: TicketView): BranchSummary | null {
 function assigneeOf(t: TicketView, source: TicketsSource): AssigneeSummary | null {
   if (t.assignee === null) return null;
   const { kind, ref } = t.assignee;
-  if (kind === "agent") return { kind, ref, name: null, me: false };
-  const name = source.sync?.members.find((m) => m.userId === ref)?.name ?? null;
-  return { kind, ref, name, me: name === null && ref === source.viewer };
+  if (kind === "agent") return { kind, ref, me: false };
+  return { kind, ref, me: ref === source.viewer };
 }
 
 const refOf = (t: TicketView): TicketRef => ({

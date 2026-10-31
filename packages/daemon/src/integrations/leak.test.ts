@@ -1,14 +1,17 @@
+import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { RpcRequest, RpcResult } from "@kibo/schema";
 import { z } from "zod";
 import { type Daemon, startDaemon } from "../daemon";
+import { commandLineOf } from "../mcp/command-line";
+import { createMcpHub } from "../mcp/hub";
 import { ECHO_AUTH, type FakeGithub, LOGS_HOST } from "../testing/fake-github";
 import { FAKE_MCP_STDIO, startFakeMcpHttp } from "../testing/fake-mcp";
 import { parseIntegrationFlags } from "./bootstrap";
+import { createEventLog } from "./events";
 import {
   type CapturedOutput,
   captureIntervalsFrom,
@@ -32,18 +35,20 @@ import {
   PENPOT_TOKEN,
   startDesignFakes,
 } from "./leak-design.test-helper";
+import { createMemorySecretStore } from "./memory-secret-store";
+import { createFakeHost } from "./testing/fake-host";
 
 const SECRET = "ghp_TESTSECRET0123456789abcdefghijklmn";
 const MCP_ENV = "mcp-env-secret-0123456789";
+const MCP_RELAY_ENV = "mcp-relay-secret-9876543210";
 const MCP_BEARER = "mcp-bearer-secret-0123456789";
-const SECRETS = [SECRET, MCP_ENV, MCP_BEARER, FIGMA_TOKEN, PENPOT_TOKEN];
+const SECRETS = [SECRET, MCP_ENV, MCP_RELAY_ENV, MCP_BEARER, FIGMA_TOKEN, PENPOT_TOKEN];
 const FOREIGN_ECHO = JSON.stringify({ message: `upstream said ${MCP_ENV}` });
 
 type McpHttp = Awaited<ReturnType<typeof startFakeMcpHttp>>;
 type Command = Extract<RpcRequest, { method: "command" }>["command"];
 const Envelope = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 const Created = z.object({ id: z.string() });
-const McpText = z.object({ content: z.array(z.object({ type: z.literal("text"), text: z.string() })) });
 
 let gh: FakeGithub;
 let mcpHttp: McpHttp;
@@ -104,7 +109,6 @@ beforeAll(async () => {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
     redactor: output.redactor,
     integrations: parseIntegrationFlags({
@@ -155,25 +159,6 @@ async function addMcpServers(): Promise<void> {
   await ok({ method: "listMcpServers" });
 }
 
-async function syncedKanban(projectId: string) {
-  const binding = await ok({
-    method: "createBinding",
-    projectId,
-    config: { repo: "adam/kibo", project: null, importClosed: false, labels: [] },
-  });
-  const page = Created.parse(await run(projectId, { method: "addPage", title: "K", kind: "view" }));
-  const instance = Created.parse(
-    await run(projectId, {
-      method: "addInstance",
-      pageId: page.id,
-      component: "kanban@1.0.0",
-      config: { source: { bindingId: binding.id } },
-    }),
-  );
-  const sync = () => call({ method: "syncBinding", projectId, bindingId: binding.id });
-  return { instanceId: instance.id, sync };
-}
-
 async function githubScenario(): Promise<{ projectId: string; ticketId: string }> {
   await ok({ method: "connectGithub", auth: { mode: "token", token: SECRET } });
   const project = await ok({
@@ -183,15 +168,7 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
     folder: repo,
     color: "#71717A",
   });
-  const kanban = await syncedKanban(project.id);
-  gh.addIssue("adam/kibo", { title: "Depuis GitHub" });
-  gh.addIssue("adam/kibo", { title: `Echo ${SECRET}` });
-  await kanban.sync();
-  const created = Created.parse(
-    await run(project.id, { method: "createTicket", title: "Depuis Kibo" }, kanban.instanceId),
-  );
-  await kanban.sync();
-  expect(gh.repos.get("adam/kibo")?.issues.size).toBe(3);
+  const created = Created.parse(await run(project.id, { method: "createTicket", title: "Depuis Kibo" }));
 
   await run(project.id, {
     method: "upsertExternalRef",
@@ -217,12 +194,6 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   await ok({ method: "linkDesignFrame", projectId: project.id, ticketId: created.id, url: FIGMA_NODE });
   await ok({ method: "getDesignFrame", url: FIGMA_NODE, refresh: false });
 
-  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 500, ECHO_AUTH);
-  await kanban.sync();
-  gh.failNext("GET", /^\/repos\/adam\/kibo\/issues/, 422, FOREIGN_ECHO);
-  await kanban.sync();
-  const state = JSON.stringify(await ok({ method: "getSyncState", projectId: project.id }));
-  expect(state).toContain("upstream said ***");
   gh.failNext("GET", /^\/user$/, 401, ECHO_AUTH);
   await call({ method: "testIntegration", id: "github" });
   gh.failNext("GET", /^\/user$/, 401, FOREIGN_ECHO);
@@ -232,27 +203,35 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   return { projectId: project.id, ticketId: created.id };
 }
 
-async function mcpSourceScenario(projectId: string): Promise<void> {
-  const page = Created.parse(await run(projectId, { method: "addPage", title: "M", kind: "view" }));
-  const instance = Created.parse(
-    await run(projectId, {
-      method: "addInstance",
-      pageId: page.id,
-      component: "mcp-source@1.0.0",
-      config: { server: "fake", mode: "tool", tool: "env", args: "{}", itemsPointer: "/items" },
-    }),
-  );
-  const mcpCall = (tool: string) =>
-    ok({
-      method: "componentCall",
-      projectId,
-      instanceId: instance.id,
-      call: { kind: "mcp.call", server: "fake", tool, args: {} },
-    });
-  expect(McpText.parse(await mcpCall("env")).content[0]?.text).toContain('"hasToken":true');
-  expect(McpText.parse(await mcpCall("echo_env")).content[0]?.text).toBe("invalid token ***");
-  await mcpCall("log_env");
-  await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
+async function mcpRelayScenario(): Promise<void> {
+  const fake = createFakeHost();
+  const db = new Database(join(home, "kibo.db"), { strict: true });
+  const hub = createMcpHub({
+    host: { ...fake, db, home, transaction: (fn) => db.transaction(fn)() },
+    secrets: createMemorySecretStore(output.redactor),
+    events: createEventLog(db, output.redactor, Date.now),
+    redact: output.redactor.redact,
+  });
+  try {
+    const stdio = {
+      transport: "stdio" as const,
+      id: "direct",
+      name: "Direct",
+      command: process.execPath,
+      args: [FAKE_MCP_STDIO],
+      envNames: ["FAKE_TOKEN"],
+    };
+    await hub.add(stdio, commandLineOf(stdio), { FAKE_TOKEN: MCP_RELAY_ENV });
+    const echoed = await hub.call("direct", "echo_env", {}, null);
+    expect(echoed.content).toEqual([{ type: "text", text: "invalid token ***" }]);
+    await hub.call("direct", "log_env", {}, null);
+    await until(async () => output.lines().some((l) => l.includes("token ***")), "the relayed stderr line");
+    expect(output.lines().join("\n")).not.toContain(MCP_RELAY_ENV);
+  } finally {
+    await hub.stop();
+    db.close();
+    fake.close();
+  }
 }
 
 function journalsWereWritten(tables: Place[]): void {
@@ -260,8 +239,10 @@ function journalsWereWritten(tables: Place[]): void {
   const table = (name: string) =>
     tables.find(([where]) => where.startsWith(`table ${name} in `) && live(where))?.[1] ?? "";
   expect(table("mcp_calls")).toContain('"tool":"echo_env"');
+  expect(table("mcp_calls")).not.toContain(MCP_ENV);
+  expect(table("mcp_calls")).not.toContain(MCP_RELAY_ENV);
   expect(table("mcp_calls")).toContain('"tool":"get_screenshot"');
-  expect(table("integration_events")).toContain("upstream said ***");
+  expect(table("integration_events")).toContain("connected as adam (token)");
   expect(table("component_events")).not.toBe("");
   expect(tables.some(([where]) => where.startsWith("loro doc "))).toBe(true);
 }
@@ -269,14 +250,13 @@ function journalsWereWritten(tables: Place[]): void {
 test("after a full scenario, no secret appears anywhere", async () => {
   await addMcpServers();
   const { projectId, ticketId } = await githubScenario();
-  await mcpSourceScenario(projectId);
+  await mcpRelayScenario();
   await designScenario(design, { ok, call }, projectId, ticketId);
   await ok({ method: "listIntegrations" });
   const snapshot = await ok({ method: "getProject", projectId });
 
   expect(responses.some((r) => r.includes("Bad credentials: Bearer ***"))).toBe(true);
   expect(JSON.stringify(snapshot)).toContain("Depuis Kibo");
-  expect(JSON.stringify(snapshot)).toContain("Echo ***");
   expect(events.messages.length).toBeGreaterThan(0);
 
   const whileRunning = rawFiles(home).map(([where, content]): Place => [`${where} (running)`, content]);

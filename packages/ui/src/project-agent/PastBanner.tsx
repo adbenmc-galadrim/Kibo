@@ -1,8 +1,8 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { formatClock } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { shortDay } from "./agent-list";
+import { formatClock } from "./format";
 
 type Props = { startedAt: number; onBack(): void };
 

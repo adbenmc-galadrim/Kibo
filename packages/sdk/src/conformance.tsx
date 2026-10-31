@@ -4,14 +4,11 @@ import {
   diffPermissions,
   formatsOf,
   grantedOf,
-  type PresencePeer,
   type ProjectCommand,
-  type ProjectSnapshot,
   permissionList,
   secretHostsCovered,
   surfaceFor,
   type Theme,
-  type TicketRun,
   USED_MARKER,
 } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
@@ -20,25 +17,11 @@ import { LAZY_FALLBACK_SELECTOR } from "./lazy";
 import { createMockSdk, type MockSdkOptions } from "./mock";
 import { SdkProvider } from "./react";
 
-export type ConformanceModule = { manifest: unknown; Component: ComponentType };
-export type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
-export type ConformanceOptions = Pick<
-  MockSdkOptions,
-  "fetch" | "server" | "notes" | "config" | "noteAges" | "mcp" | "ciRuns"
-> & {
-  runs?: (snapshot: ProjectSnapshot) => TicketRun[];
-};
+type ConformanceModule = { manifest: unknown; Component: ComponentType };
+type ConformanceSeed = (run: (cmd: ProjectCommand) => unknown) => void;
+type ConformanceOptions = Pick<MockSdkOptions, "fetch" | "config" | "ciRuns">;
 
 const THEMES: Theme[] = ["dark", "light"];
-const COLLEAGUE: PresencePeer = {
-  deviceId: "conformance-device",
-  self: false,
-  userId: "u-lea",
-  name: "Léa",
-  pageId: null,
-  ticketId: null,
-  runs: [{ ticketKey: "KIB-1", profile: "opus-dev-1", state: "running" }],
-};
 const LAZY_LOAD_TIMEOUT_MS = 25_000;
 const RENDER_TEST_TIMEOUT_MS = 45_000;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -57,11 +40,8 @@ async function renderWithinPermissions(
   manifest: ComponentManifest,
   declared: string[],
   opts: MockSdkOptions,
-  runs: ConformanceOptions["runs"],
-  config: Record<string, unknown> | null,
 ): Promise<void> {
   const m = createMockSdk(manifest, opts);
-  if (opts.seed && runs) m.setRuns(runs(m.snapshot()));
   const { container } = render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -74,7 +54,7 @@ async function renderWithinPermissions(
     await settle();
     console.log(`${USED_MARKER}${JSON.stringify(m.used)}`);
     expect(m.violations).toEqual([]);
-    expect(diffPermissions(declared, m.used, config).missing).toEqual([]);
+    expect(diffPermissions(declared, m.used).missing).toEqual([]);
   } finally {
     cleanup();
   }
@@ -97,18 +77,12 @@ export function runConformance(
       expect(secretHostsCovered(manifest)).toEqual([]);
     });
     const declared = permissionList(grantedOf(manifest));
-    const { runs, ...mockOpts } = opts;
     const projects: [string, ConformanceSeed | undefined, Partial<MockSdkOptions>][] = [
       ["empty project", undefined, {}],
       ["seeded project", seed, {}],
-      [
-        "shared project with provisional keys",
-        seed,
-        { shared: true, presence: [COLLEAGUE], members: [{ userId: "u-lea", name: "Léa", role: "editor" }] },
-      ],
     ];
     const check = (options: MockSdkOptions) =>
-      renderWithinPermissions(mod.Component, manifest, declared, options, runs, mockOpts.config ?? null);
+      renderWithinPermissions(mod.Component, manifest, declared, options);
     for (const format of formatsOf(manifest)) {
       const surface = surfaceFor(manifest, format);
       for (const theme of THEMES) {
@@ -116,9 +90,7 @@ export function runConformance(
           test(
             `renders an ${label} as ${format} (${surface}) in ${theme} within its declared permissions`,
             () =>
-              withTheme(theme, () =>
-                check({ ...mockOpts, ...extra, surface, format, ...(s && { seed: s }) }),
-              ),
+              withTheme(theme, () => check({ ...opts, ...extra, surface, format, ...(s && { seed: s }) })),
             RENDER_TEST_TIMEOUT_MS,
           );
         }
@@ -128,7 +100,7 @@ export function runConformance(
     if (manifest.capabilities.includes("fullscreen"))
       test(
         "renders in focus mode within its declared permissions",
-        () => check({ ...mockOpts, ...seeded, focus: true }),
+        () => check({ ...opts, ...seeded, focus: true }),
         RENDER_TEST_TIMEOUT_MS,
       );
     if (manifest.selection) {
@@ -138,7 +110,7 @@ export function runConformance(
         "renders with a selection within its declared permissions",
         () =>
           check({
-            ...mockOpts,
+            ...opts,
             ...seeded,
             selection: firstTicketId ? { kind: "ticket", ids: [firstTicketId] } : null,
           }),

@@ -48,7 +48,6 @@ const renderFeature = () => {
       project={project}
       ticket={feature}
       now={NOW}
-      execution="hidden"
       onOpenFile={() => undefined}
       onOpenTicket={() => undefined}
     />,

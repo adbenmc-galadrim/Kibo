@@ -1,15 +1,5 @@
 import { expect, test } from "bun:test";
-import { runDeliverySteps } from "./delivery";
-import { machineLocks } from "./machine-lock";
-import { PROJECT_AGENT_MCP_TOOLS } from "./project-agent-tools";
-import {
-  keyBesideLabel,
-  openOverlapTotal,
-  type RunRecord,
-  runOverlapCounts,
-  runSubagents,
-  runSubjectBeside,
-} from "./run";
+import { keyBesideLabel, RunKind, type RunRecord, runSubjectBeside } from "./run";
 import { HookInput, HookPayload, permissionReply } from "./run-hook";
 
 const PAYLOAD = {
@@ -65,7 +55,7 @@ test("a hook input may carry the tool use id", () => {
 test("a run record names its agent scope and project key", () => {
   const record: RunRecord = {
     id: "r",
-    kind: "ticket",
+    kind: "project",
     seq: 1,
     projectId: "p",
     ticketId: "t",
@@ -81,7 +71,6 @@ test("a run record names its agent scope and project key", () => {
     resumedFrom: null,
   };
   expect(record.agentScope).toBe("project");
-  expect(PROJECT_AGENT_MCP_TOOLS).toContain("mcp__kibo__skill_review");
 });
 
 test("a run name that already names the ticket does not get its key a second time", () => {
@@ -93,18 +82,8 @@ test("a run name that already names the ticket does not get its key a second tim
   expect(runSubjectBeside({ ...run, label: "opus-dev-2" })).toBe("KIB-14 · Récepteur");
 });
 
-test("an agents state without overlaps counts none", () => {
-  expect(runOverlapCounts({})).toEqual([]);
-  expect(runOverlapCounts({ overlaps: [{ runId: "r1", open: 2 }] })).toEqual([{ runId: "r1", open: 2 }]);
-  expect(openOverlapTotal({})).toBe(0);
-  expect(openOverlapTotal({ overlapTotal: 1 })).toBe(1);
-});
-
-test("an agents state without locks nor delivery steps has none", () => {
-  expect(machineLocks({})).toEqual([]);
-  expect(runDeliverySteps({})).toEqual([]);
-});
-
-test("AgentsState without subagents lists none", () => {
-  expect(runSubagents({})).toEqual([]);
+test("RunKind n'accepte que project", () => {
+  expect(RunKind.options).toEqual(["project"]);
+  expect(RunKind.safeParse("project").success).toBe(true);
+  expect(RunKind.safeParse("ticket").success).toBe(false);
 });

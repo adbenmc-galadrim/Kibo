@@ -10,22 +10,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import {
-  Bug,
-  CircleHelp,
-  GraduationCap,
-  Info,
-  Keyboard,
-  type LucideIcon,
-  Settings,
-  Shield,
-  Sparkles,
-  SunMoon,
-} from "lucide-react";
+import { Bug, CircleHelp, Info, Keyboard, type LucideIcon, Settings, Sparkles, SunMoon } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { frSecurity } from "../i18n/fr-security";
+import { frAppearance } from "../i18n/fr-appearance";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
-import { useSyncServerStatus } from "../state/use-sync-server";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
 import { HELP_DIALOGS, type HelpDialog } from "./help-dialogs";
 import { helpLabel } from "./help-labels";
@@ -33,19 +21,11 @@ import { helpLabel } from "./help-labels";
 type Props = { viewer: string; onOpen(target: TabTarget): void; onHelp(key: HelpDialog): void };
 const HELP_ICONS: Record<HelpDialog, LucideIcon> = {
   shortcutsHelp: Keyboard,
-  tutorial: GraduationCap,
   whatsNew: Sparkles,
   report: Bug,
   about: Info,
 };
 const isPreference = (v: string): v is ThemePreference => THEME_PREFERENCES.some((p) => p === v);
-const hostOf = (url: string): string => {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-};
 
 function HelpSubmenu({ onHelp }: Pick<Props, "onHelp">) {
   return (
@@ -74,15 +54,9 @@ function HelpSubmenu({ onHelp }: Pick<Props, "onHelp">) {
 
 export function UserMenuContent({ viewer, onOpen, onHelp }: Props) {
   const preference = useThemePreference();
-  const { status } = useSyncServerStatus();
-  const account =
-    status?.user && status.serverUrl ? fr.header.account(status.user.name, hostOf(status.serverUrl)) : null;
   return (
     <>
-      <DropdownMenuLabel className="grid gap-0.5">
-        <span>{viewer}</span>
-        {account && <span className="text-xs font-normal text-muted-foreground">{account}</span>}
-      </DropdownMenuLabel>
+      <DropdownMenuLabel>{viewer}</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
@@ -98,17 +72,13 @@ export function UserMenuContent({ viewer, onOpen, onHelp }: Props) {
           >
             {THEME_PREFERENCES.map((p) => (
               <DropdownMenuRadioItem key={p} value={p}>
-                {frSecurity.appearance[p]}
+                {frAppearance[p]}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={() => onOpen({ kind: "screen", screen: "security" })}>
-        <Shield aria-hidden />
-        {fr.header.sessions}
-      </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => onOpen({ kind: "screen", screen: "general" })}>
         <Settings aria-hidden />
         {fr.header.settings}

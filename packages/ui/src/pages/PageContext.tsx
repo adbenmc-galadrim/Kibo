@@ -1,15 +1,13 @@
-import type { ComponentSummary, Spotlight } from "@kibo/schema";
+import type { Spotlight } from "@kibo/schema";
 import { createSpotlightStore, type SpotlightApi } from "@kibo/sdk";
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
-import { useComponents } from "../state/use-components";
 import { type FocusAction, focusReducer } from "./focus-mode";
 import { createSelectionBus, type SelectionBus } from "./selection-bus";
 
-export type PageState = {
+type PageState = {
   focusedId: string | null;
   dispatch(action: FocusAction): void;
   bus: SelectionBus;
-  components: ComponentSummary[] | null;
   spotlight: SpotlightApi;
 };
 
@@ -21,16 +19,11 @@ export function usePageState(focusable: readonly string[], target: Spotlight | n
   const [bus] = useState(createSelectionBus);
   const [spotlight] = useState(createSpotlightStore);
   useEffect(() => spotlight.set(target), [spotlight, target]);
-  const { components, error } = useComponents();
-  const known = error ? [] : components;
   const [requested, dispatch] = useReducer(focusReducer, null);
   const present = requested !== null && focusable.includes(requested);
   const focusedId = present ? requested : null;
   useEffect(() => {
     if (requested !== null && !present) dispatch({ type: "exit", id: requested });
   }, [requested, present]);
-  return useMemo(
-    () => ({ focusedId, dispatch, bus, components: known, spotlight }),
-    [focusedId, bus, known, spotlight],
-  );
+  return useMemo(() => ({ focusedId, dispatch, bus, spotlight }), [focusedId, bus, spotlight]);
 }

@@ -40,7 +40,7 @@ export type McpHub = {
   setReserved(id: "figma", url: string | null): Promise<void>;
   stop(): Promise<void>;
 };
-export type McpHubDeps = {
+type McpHubDeps = {
   host: IntegrationHost;
   secrets: SecretStore;
   events: EventLog;
@@ -53,8 +53,8 @@ export type McpHubDeps = {
 type Secret = { key: string; name: SecretName };
 
 const CONNECT_TIMEOUT_MS = 30_000;
-export const MCP_IDLE_MS = 10 * 60_000;
-export const MCP_CALL_TIMEOUT_MS = 60_000;
+const MCP_IDLE_MS = 10 * 60_000;
+const MCP_CALL_TIMEOUT_MS = 60_000;
 const PROBE_WAIT_MS = 2_000;
 
 function settlesWithin(work: Promise<unknown>, ms: number): Promise<boolean> {

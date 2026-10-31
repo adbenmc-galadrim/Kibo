@@ -93,11 +93,10 @@ export type SprintLanesInput = {
   links: readonly Link[];
   sprints: readonly SprintView[];
   questions: readonly Question[];
-  live: ReadonlySet<string>;
   today: string | null;
 };
 
-export const RESERVE_LANE = "reserve";
+const RESERVE_LANE = "reserve";
 
 type Feature = TicketView & { feature: FeatureState };
 type Facts = {
@@ -157,7 +156,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[], waitin
       title: s.title,
       tone: toneOf(s, blocking),
       git: gitOf(s),
-      session: byId.get(s.ticketId)?.session != null || input.live.has(s.ticketId),
+      session: byId.get(s.ticketId)?.session != null,
       hold: s.onHold,
       startable: !waiting && unblocked(byId.get(s.ticketId), blocking),
     })),

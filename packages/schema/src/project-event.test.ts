@@ -28,7 +28,8 @@ test("a project event parses with its id, project and time", () => {
 });
 
 test("the kinds and sources of the journal are closed", () => {
-  expect(ProjectEventKind.options).toHaveLength(19);
+  expect(ProjectEventKind.options).toHaveLength(20);
+  expect(ProjectEventKind.options).toContain("keys_assigned");
   expect(ProjectEventKind.options).toContain("question_deleted");
   expect(ProjectEventSource.options).toEqual([
     "git",

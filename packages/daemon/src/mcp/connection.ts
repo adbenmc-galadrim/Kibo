@@ -16,7 +16,7 @@ export type McpConnection = {
   client: Client;
   close(): Promise<void>;
 };
-export type ConnectionDeps = {
+type ConnectionDeps = {
   home: string;
   secret: SecretResolver;
   resolve: Resolver;

@@ -5,7 +5,6 @@ export const prUrl = (number: number): string => `https://github.com/silo-labs/s
 export const prTicket = (n: number, over: Partial<TicketView> = {}): TicketView => ({
   id: `t${n}`,
   key: `SILO-${n}`,
-  pendingSeq: null,
   hold: null,
   title: `Ticket ${n}`,
   description: "",

@@ -29,25 +29,15 @@ const environment: Environment = {
   },
 };
 
-const isolated = { kind: "sandbox-exec", available: true, reason: null, fix: null, allowUnsandboxed: false };
 const none = () => () => {};
 mock.module("../api", () =>
   apiMock({
     client: {
       pair: () => Promise.resolve(),
-      pairWithCode: () => Promise.resolve(),
-      rpc: async (req: { method: string }) =>
-        req.method === "listComponents" || req.method === "listDrafts"
-          ? []
-          : req.method === "getSandboxStatus"
-            ? isolated
-            : req.method === "getAppInfo"
-              ? environment.app
-              : environment,
+      rpc: async (req: { method: string }) => (req.method === "getAppInfo" ? environment.app : environment),
       subscribe: none,
       subscribeEvents: none,
       subscribeAi: none,
-      onRunChanged: none,
       onConnection: none,
       online: () => true,
     },
@@ -55,7 +45,6 @@ mock.module("../api", () =>
 );
 
 const { ProjectHome } = await import("../pages/ProjectHome");
-const { PairingScreen } = await import("./PairingScreen");
 const { ContentView } = await import("./ContentView");
 const { NewProjectDialog } = await import("../dialogs/NewProjectDialog");
 
@@ -68,7 +57,6 @@ const kibo: ProjectSummary = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -84,7 +72,6 @@ const empty: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -101,20 +88,12 @@ const empty: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 test("ProjectHome names the created project and its folder", () => {
-  render(<ProjectHome project={empty} onNewPage={() => {}} onSuggest={() => {}} />);
+  render(<ProjectHome project={empty} onNewPage={() => {}} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Projet créé : Kibo");
   expect(screen.getByText("~/goinfre/Kibo")).toBeTruthy();
-});
-
-test("PairingScreen shows the logo, a centred title and the security notice", () => {
-  render(<PairingScreen onPaired={() => {}} />);
-  expect(screen.getByRole("img", { name: "Kibo" })).toBeTruthy();
-  expect(screen.getByText("Appairer ce navigateur")).toBeTruthy();
-  expect(screen.getByText(/révocable dans Paramètres › Sécurité/)).toBeTruthy();
 });
 
 const contentProps = {
@@ -127,12 +106,9 @@ const contentProps = {
   startEditing: false,
   onNewProject: () => {},
   onImportProject: () => {},
-  onTutorial: () => {},
   onNewPage: () => {},
-  onSuggestPages: () => {},
   onOpen: () => {},
   onOpenFile: () => {},
-  onAssign: () => {},
   onOpenTicket: () => {},
 };
 
@@ -156,20 +132,17 @@ test("ContentView leads from the overview inbox card to the inbox screen", async
   expect(opened).toEqual([{ kind: "screen", screen: "inbox" }]);
 });
 
-test("the empty project home suggests pages for its project", async () => {
-  const asked: string[] = [];
+test("the empty project home no longer proposes starter pages", () => {
   render(
     <ContentView
       {...contentProps}
       target={{ kind: "project", projectId: "p1" }}
       project={empty}
       projects={[kibo]}
-      onSuggestPages={(id) => asked.push(id)}
     />,
   );
-  expect(screen.getByText("Pages de départ selon ton rôle")).toBeTruthy();
-  screen.getByRole("button", { name: "Proposer" }).click();
-  expect(asked).toEqual(["p1"]);
+  expect(screen.queryByText("Pages de départ selon ton rôle")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Proposer" })).toBeNull();
 });
 
 test("NewProjectDialog focuses the folder when importing", async () => {

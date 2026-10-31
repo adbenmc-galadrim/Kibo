@@ -41,7 +41,7 @@ export const WORKTREE_DEFAULTS: WorktreeSettings = {
   recipe: null,
 };
 
-export type WorktreeVars = {
+type WorktreeVars = {
   branch: string;
   slug: string;
   key: string;
@@ -118,21 +118,21 @@ export function resolveWorktreePath(root: string, template: string, vars: Worktr
   return `/${parts.join("/")}`;
 }
 
-export const worktreeBranchOf = (ticketKey: string, branchRef: GitBranchRef | null): string =>
+const worktreeBranchOf = (ticketKey: string, branchRef: GitBranchRef | null): string =>
   branchRef?.branch ?? ticketKey.toLowerCase();
 
-export const worktreeBaseOf = (
+const worktreeBaseOf = (
   settings: Pick<WorktreeSettings, "baseRef">,
   branchRef: GitBranchRef | null,
 ): string => branchRef?.base ?? settings.baseRef;
 
-export type WorktreePlanInput = {
+type WorktreePlanInput = {
   root: string;
   ticketKey: string;
   branchRef: GitBranchRef | null;
   settings: Pick<WorktreeSettings, "baseRef" | "pathTemplate">;
 };
-export type PlannedWorktree = { branch: string; base: string; path: string };
+type PlannedWorktree = { branch: string; base: string; path: string };
 
 export function plannedWorktree(input: WorktreePlanInput): PlannedWorktree {
   const branch = worktreeBranchOf(input.ticketKey, input.branchRef);

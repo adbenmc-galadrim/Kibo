@@ -7,7 +7,7 @@ S.topnavB = (p, active) => { const C = S.C;
   S.txt(n, "/", { size: 16, color: C.faint }); S.projectSwitch(n);
   S.box(n, { w: 12, h: 4 });
   const links = S.row(n, { gap: 22, align: "end", h: 64 });
-  for (const [l, c] of [["Aperçu"], ["Tickets", "27"], ["Kanban"], ["Graphe"], ["Notes"], ["Questions", "3"]]) {
+  for (const [l, c] of [["Aperçu"], ["Planning"], ["Kanban"], ["Graphe"], ["Questions", "3"]]) {
     const on = l === active, it = S.col(links, { gap: 0, h: 64, justify: "end" });
     const r = S.row(it, { gap: 5, h: 40 }); S.txt(r, l, { size: 13.5, weight: on ? 500 : 400, color: on ? C.fg : C.mfg }); if (c) S.txt(r, c, { size: 11, mono: true, color: C.dim });
     S.box(it, { w: 10, h: 2, fill: on ? C.fg : null, fx: true }); }

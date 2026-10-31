@@ -1,7 +1,7 @@
 import { KiboError, type Session } from "@kibo/schema";
 import { useCallback, useEffect, useState } from "react";
 import { client, onUnauthorized } from "./api";
-import { DaemonUnreachable, PairingScreen, preloadDaemonUnreachable } from "./shell/lazy-screens";
+import { DaemonUnreachable, preloadDaemonUnreachable, Unpaired } from "./shell/lazy-screens";
 import { Shell } from "./shell/Shell";
 import { LoadingScreen } from "./shell/Startup";
 import { inTauri } from "./shell/workspace-actions";
@@ -27,7 +27,7 @@ async function bootstrap(): Promise<Session | null> {
 type Boot =
   | { kind: "loading" }
   | { kind: "unreachable"; error: unknown; attempt: number; retryAt: number }
-  | { kind: "pairing" }
+  | { kind: "unpaired" }
   | { kind: "ready"; session: Session };
 
 type Props = { now?: () => number; retryMs?: number };
@@ -40,7 +40,7 @@ export function App({ now = Date.now, retryMs = 3000 }: Props) {
   const start = useCallback(
     (attempt: number) =>
       bootstrap().then(
-        (session) => setBoot(session ? { kind: "ready", session } : { kind: "pairing" }),
+        (session) => setBoot(session ? { kind: "ready", session } : { kind: "unpaired" }),
         (error: unknown) => setBoot({ kind: "unreachable", error, attempt, retryAt: now() + retryMs }),
       ),
     [now, retryMs],
@@ -50,7 +50,7 @@ export function App({ now = Date.now, retryMs = 3000 }: Props) {
       console.error("[kibo] startup screen failed to load", e),
     );
     void start(0);
-    return onUnauthorized(() => setBoot({ kind: "pairing" }));
+    return onUnauthorized(() => setBoot({ kind: "unpaired" }));
   }, [start]);
   const attempt = boot.kind === "unreachable" ? boot.attempt : null;
   useEffect(() => {
@@ -64,7 +64,7 @@ export function App({ now = Date.now, retryMs = 3000 }: Props) {
   }, [attempt, retryMs, start]);
 
   if (boot.kind === "loading") return <LoadingScreen />;
-  if (boot.kind === "pairing") return <PairingScreen onPaired={() => void start(0)} />;
+  if (boot.kind === "unpaired") return <Unpaired />;
   if (boot.kind === "unreachable")
     return (
       <DaemonUnreachable

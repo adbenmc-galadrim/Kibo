@@ -41,7 +41,7 @@ export function runModel(frontmatter: Pick<AgentFrontmatter, "model"> | null): {
     : { model, inherited: false };
 }
 
-export type SubagentDefinition = { description: string; prompt: string; tools?: string[]; model?: string };
+type SubagentDefinition = { description: string; prompt: string; tools?: string[]; model?: string };
 
 function definition(file: AgentFile): SubagentDefinition {
   const { description, tools, model } = file.frontmatter;
@@ -81,7 +81,6 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
   return {
     id: "example",
     key,
-    pendingSeq: null,
     title: "Ticket d'exemple",
     description: "Ticket fictif : il montre le brief que reçoit l'agent sur un ticket de ce projet.",
     statusId: "todo",

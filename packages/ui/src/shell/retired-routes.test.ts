@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { Screen } from "@kibo/schema";
-import { isRetiredScreen, isRetiredTarget, type RetiredRoute, retiredRoute } from "./retired-routes";
+import { targetToHash } from "../tabs/target-hash";
+import { isRetiredScreen, type RetiredRoute, retiredRoute } from "./retired-routes";
 
 const HOME: RetiredRoute = { kind: "home" };
 
@@ -15,6 +16,11 @@ test("the eight routes of the agent era lead back home", () => {
     "#/settings/domains",
     "#/code",
   ])
+    expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
+});
+
+test("the sync and security settings of the remote era lead back home", () => {
+  for (const hash of ["#/settings/sync", "#/settings/security", "#/settings/sync/"])
     expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
 });
 
@@ -49,14 +55,20 @@ test("the tracking routes stay", () => {
     expect([hash, retiredRoute(hash)]).toEqual([hash, null]);
 });
 
-test("retired screens and targets", () => {
-  const retired: Screen[] = ["agents", "queue", "skills", "creations", "components", "sources", "domains"];
+test("retired screens, and the hashes of the run, skill and changes tabs", () => {
+  const retired: Screen[] = ["components", "sources", "domains"];
   expect(retired.every(isRetiredScreen)).toBe(true);
   expect(isRetiredScreen("general")).toBe(false);
-  expect(isRetiredScreen(null)).toBe(false);
-  expect(isRetiredTarget({ kind: "changes", projectId: "p1", worktree: null })).toBe(true);
-  expect(isRetiredTarget({ kind: "run", runId: "r1" })).toBe(true);
-  expect(isRetiredTarget({ kind: "skill", skillId: "s" })).toBe(true);
-  expect(isRetiredTarget({ kind: "ticket", projectId: "p1", ticketId: "t1" })).toBe(false);
-  expect(isRetiredTarget({ kind: "screen", screen: "inbox" })).toBe(false);
+  const home = (hash: string) => retiredRoute(hash) !== null;
+  for (const hash of [
+    "#/agents",
+    "#/agents/queue",
+    "#/agents/skills",
+    "#/runs/r1",
+    "#/skills/s",
+    "#/p/p1/changes",
+  ])
+    expect([hash, home(hash)]).toEqual([hash, true]);
+  expect(home(targetToHash({ kind: "ticket", projectId: "p1", ticketId: "t1" }))).toBe(false);
+  expect(home(targetToHash({ kind: "screen", screen: "inbox" }))).toBe(false);
 });

@@ -6,7 +6,7 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 
 const base = kiboProject();
 
@@ -14,7 +14,6 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
   return {
     id: `inb${n}`,
     key: `INB-${n}`,
-    pendingSeq: null,
     hold: null,
     keyLabel: `INB-${n}`,
     title,
@@ -54,7 +53,6 @@ export const inboxSnapshot: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -78,8 +76,6 @@ export const fileTargets: ProjectSummary[] = [
   { ...base.meta, id: "p3", key: "FAC", name: "API Facturation", counts },
 ];
 
-const sync = base.sync;
-
 export const fileSnapshots: ReadonlyMap<string, ProjectSnapshot> = new Map([
   [INBOX_ID, inboxSnapshot],
   ["p1", { ...base, meta: fileTargets[0] ?? base.meta, nextTicketKey: "KIB-25" }],
@@ -88,9 +84,8 @@ export const fileSnapshots: ReadonlyMap<string, ProjectSnapshot> = new Map([
     {
       ...base,
       meta: fileTargets[1] ?? base.meta,
-      nextTicketKey: "POR-…",
+      nextTicketKey: "POR-7",
       sprints: [],
-      sync: { ...sync, shared: true, keyAllocator: "server", role: "owner", access: "write" },
     },
   ],
   [
@@ -100,7 +95,6 @@ export const fileSnapshots: ReadonlyMap<string, ProjectSnapshot> = new Map([
       meta: fileTargets[2] ?? base.meta,
       nextTicketKey: "FAC-3",
       sprints: [],
-      sync: { ...sync, shared: true, keyAllocator: "server", role: "viewer", access: "read-only" },
     },
   ],
 ]);

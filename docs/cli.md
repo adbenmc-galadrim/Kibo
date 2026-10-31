@@ -165,8 +165,8 @@ Règles :
 
 - **Tout ou rien à la validation** : une seule action invalide (référence inconnue, cycle, sprint sur une étape, statut inconnu…) et rien n'est écrit ; la sortie liste les problèmes (`#id type : message`) et sort en `1`.
 - **Arrêt à la première erreur à l'exécution** : si une action échoue malgré la validation, le plan s'arrête ; les actions suivantes sont ignorées, la sortie dit ce qui a déjà été créé (`Créés : new:1 → F2, new:2 → SILO-3`) et sort en `1`. Il n'y a pas de transaction : ce qui précède reste écrit. Retirez du fichier ce qui est passé avant de le relancer (relancer un fichier recrée ses tickets).
-- **Clés prédites** : les clés de `--dry-run` sont celles que prendront les tickets si rien d'autre n'écrit dans le projet entre-temps ; ce n'est pas une réservation. Elles sont inconnues (`(clé inconnue)`) sur un projet qui reçoit ses clés du serveur de synchronisation.
-- Le plan est refusé sur un projet en lecture seule et sur la boîte de réception.
+- **Clés prédites** : les clés de `--dry-run` sont celles que prendront les tickets si rien d'autre n'écrit dans le projet entre-temps ; ce n'est pas une réservation.
+- Le plan est refusé sur la boîte de réception.
 - `--json` écrit l'aperçu (`PlanPreview`) ou le résultat (`PlanOutcome`) ; les codes de sortie restent les mêmes.
 
 ### Format des actions

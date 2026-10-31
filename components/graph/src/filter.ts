@@ -1,7 +1,7 @@
 import { isGroup, type Link, type TicketView } from "@kibo/schema";
 import type { GraphEdge } from "./critical-path";
 
-export type Assignee = "all" | "mine-and-agents";
+type Assignee = "all" | "mine-and-agents";
 
 const assignedTo = (t: TicketView, assignee: Assignee, viewer: string): boolean =>
   assignee === "all" ||

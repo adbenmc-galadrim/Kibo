@@ -11,7 +11,7 @@ import {
   type ProjectAgentSession,
   type ProjectFingerprint,
   ProjectFingerprintSchema,
-  ProposedAction,
+  StoredProposedAction,
   type TimedBatchEvent,
 } from "@kibo/schema";
 import { z } from "zod";
@@ -77,7 +77,7 @@ type BatchDbRow = {
 };
 type EventRow = { id: number; at: number; data: string };
 
-const Actions = z.array(ProposedAction);
+const Actions = z.array(StoredProposedAction);
 const Expected = z.array(ExpectedState);
 
 function storedJson(text: string, what: string): unknown {

@@ -9,22 +9,12 @@ import {
 } from "@kibo/schema";
 import { lazyPanel } from "@kibo/sdk";
 import type { ReactNode } from "react";
-import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
 import { PageBoundary } from "../pages/PageBoundary";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { findTicket, targetToHash } from "../tabs/target-hash";
-import {
-  ChangesView,
-  FileTabView,
-  HiddenScreenNotice,
-  RunPage,
-  SkillsPage,
-  TicketTab,
-  Welcome,
-} from "./lazy-screens";
-import { ExecutionGate } from "./nav/ExecutionGate";
+import { FileTabView, TicketTab, Welcome } from "./lazy-screens";
 import { Overview } from "./Overview";
 
 type Props = {
@@ -38,9 +28,7 @@ type Props = {
   startEditing: boolean;
   onNewProject(): void;
   onImportProject(): void;
-  onTutorial(): void;
   onNewPage(): void;
-  onSuggestPages(projectId: string): void;
   onOpen(target: TabTarget | null, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(projectId: string, ticketId: string): void;
@@ -74,7 +62,6 @@ function content(p: Props): ReactNode {
       <Welcome
         onCreate={p.onNewProject}
         onImport={p.onImportProject}
-        onTutorial={p.onTutorial}
         onConnectGithub={() => p.onOpen({ kind: "screen", screen: "integrations" })}
       />
     );
@@ -89,27 +76,11 @@ function content(p: Props): ReactNode {
         onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
       />
     );
-  if (t.kind === "run" || t.kind === "skill")
-    return (
-      <ExecutionGate fallback={<HiddenScreenNotice onHome={home} />}>
-        {t.kind === "run" ? (
-          <RunPage key={t.runId} runId={t.runId} />
-        ) : (
-          <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />
-        )}
-      </ExecutionGate>
-    );
   if (!p.project) return unknownProject(p, t) ? <NotFound what="project" onHome={home} /> : null;
   switch (t.kind) {
     case "project":
       if (p.project.pages.length > 0) return null;
-      return (
-        <ProjectHome
-          project={p.project}
-          onNewPage={p.onNewPage}
-          onSuggest={() => p.onSuggestPages(t.projectId)}
-        />
-      );
+      return <ProjectHome project={p.project} onNewPage={p.onNewPage} />;
     case "page": {
       const page = p.project.pages.find((x) => x.id === t.pageId);
       if (!page) return missing(fr.tabs.missingPage);
@@ -123,28 +94,6 @@ function content(p: Props): ReactNode {
         />
       );
     }
-    case "changes":
-      return (
-        <ChangesView
-          project={p.project}
-          worktree={t.worktree}
-          onWorktreeChange={(worktree) => p.onOpen({ ...t, worktree })}
-          onOpenFile={p.onOpenFile}
-          onOpenInTab={(ref) =>
-            p.onOpen(
-              {
-                kind: "file",
-                projectId: ref.projectId,
-                worktree: ref.worktree,
-                path: ref.path,
-                line: ref.line,
-              },
-              true,
-            )
-          }
-          useSlots={useChangesSlots}
-        />
-      );
     case "file":
       return (
         <FileTabView
@@ -180,5 +129,7 @@ function content(p: Props): ReactNode {
           onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
         />
       );
+    default:
+      return null;
   }
 }

@@ -6,7 +6,7 @@ export type Thumb =
   | { state: "loading" }
   | { state: "ready"; frame: DesignFrame }
   | { state: "failed"; error: unknown };
-export type DesignThumbs = {
+type DesignThumbs = {
   thumbs: ReadonlyMap<string, Thumb>;
   refresh(url: string): void;
   refreshing(url: string): boolean;

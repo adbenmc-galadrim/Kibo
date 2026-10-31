@@ -46,7 +46,6 @@ const { DesignSection } = await import("./DesignSection");
 const ticket: TicketView = {
   id: "t45",
   key: "SILO-45",
-  pendingSeq: null,
   hold: null,
   keyLabel: "SILO-45",
   title: "Conflits de saisie",

@@ -5,18 +5,19 @@ import {
   type ActionResult,
   type Actor,
   type Batch,
+  isRetiredAction,
   KiboError,
   type ProjectEventSink,
   type ProposedAction,
+  RETIRED_ACTION_DETAIL,
+  type StoredProposedAction,
 } from "@kibo/schema";
 import { type ActionRunnerDeps, type Created, runAction } from "./apply-actions";
-import { type SignalRefsPort, signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
-export type ApplyBatchDeps = {
+type ApplyBatchDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
-  signals: SignalRefsPort;
   events?: ProjectEventSink;
   now?: () => number;
 };
@@ -25,13 +26,11 @@ const DETAIL_MAX = 1_000;
 type Run = { deps: ApplyBatchDeps; batch: Batch; ctx: BatchContext; by: Actor; refs: Map<string, Created> };
 
 const result = (
-  action: ProposedAction,
+  action: StoredProposedAction,
   outcome: ActionResult["outcome"],
   detail: string | null = null,
   created: Created | null = null,
 ): ActionResult => ({ actionId: action.id, outcome, detail: detail?.slice(0, DETAIL_MAX) ?? null, created });
-
-const failure = (e: KiboError): string => (e.code === "AGENT_EXECUTION_REMOVED" ? e.message : e.detail);
 
 async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchContext> {
   const { data } = deps;
@@ -41,11 +40,7 @@ async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchConte
     project,
     runs: deps.agents().state().runs,
     notes: notes.map((n) => ({ path: n.path, hash: n.hash })),
-    agents: data.agents(batch.projectId),
-    demoProject: data.isDemoProject(batch.projectId),
     viewer: data.viewer(batch.projectId),
-    agentExecution: "hidden",
-    ...signalRefs(deps.signals, batch.projectId),
   };
 }
 
@@ -64,9 +59,10 @@ const failedDependency = (action: ProposedAction, refs: RefTable): string | unde
 
 async function applyOne(
   run: Run,
-  action: ProposedAction,
+  action: StoredProposedAction,
   chosen: ReadonlySet<number>,
 ): Promise<ActionResult> {
+  if (isRetiredAction(action)) return result(action, "skipped", RETIRED_ACTION_DETAIL);
   if (isSkipped(action, chosen)) return result(action, "skipped", "décochée");
   const resolved = resolveRefs(action, run.refs, run.ctx.project);
   if (!resolved.ok) {
@@ -84,7 +80,7 @@ async function applyOne(
     if (created && action.type === "createTicket") run.refs.set(action.ref, created);
     return result(action, "applied", null, created);
   } catch (e) {
-    if (e instanceof KiboError) return result(action, "failed", failure(e));
+    if (e instanceof KiboError) return result(action, "failed", e.detail);
     throw e;
   }
 }

@@ -1,20 +1,18 @@
 {
   "name": "@kibo/desktop",
-  "version": "0.32.0-alpha.1",
+  "version": "0.33.0-alpha.1",
   "private": true,
   "type": "module",
   "scripts": {
     "sidecar": "bun scripts/build-sidecar.ts",
-    "toolchain": "bun scripts/build-toolchain.ts",
     "tauri": "tauri",
-    "build": "bun run sidecar && bun run toolchain && tauri build",
-    "build:debug": "bun run sidecar && bun run toolchain && tauri build --debug --no-bundle",
-    "dev": "bun run sidecar && bun run toolchain && tauri dev",
+    "build": "bun run sidecar && tauri build",
+    "build:debug": "bun run sidecar && tauri build --debug --no-bundle",
+    "dev": "bun run sidecar && tauri dev",
     "smoke": "bun scripts/desktop-smoke.ts",
     "test": "bun test scripts"
   },
   "devDependencies": {
-    "@kibo/devkit": "workspace:*",
     "@kibo/schema": "workspace:*",
     "@tauri-apps/cli": "2.11.5"
   }

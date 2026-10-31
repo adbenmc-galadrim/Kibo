@@ -3,10 +3,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
 import { LoroDoc } from "loro-crdt";
 import { kiboHome } from "./paths";
 import { loadDoc, openStore } from "./store";
+import { holdWriteLock } from "./testing/hold-write-lock";
 
 const dirs: string[] = [];
 const tmp = () => {

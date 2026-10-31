@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const conf = JSON.parse(readFileSync(join(import.meta.dir, "../src-tauri/tauri.conf.json"), "utf8"));
+const releaseWorkflow = readFileSync(join(import.meta.dir, "../../../.github/workflows/release.yml"), "utf8");
 
-test("macOS is signed ad hoc, without hardened runtime, Apple identity or entitlements", () => {
+test("macOS is signed ad hoc by default and with a stable identity in release, without Apple account", () => {
   expect(conf.bundle.macOS.signingIdentity).toBe("-");
+  expect(releaseWorkflow).toContain('APPLE_SIGNING_IDENTITY=Kibo Code Signing"');
   expect(conf.bundle.macOS.hardenedRuntime).toBe(false);
   expect(conf.bundle.macOS.minimumSystemVersion).toBe("12.0");
   expect(conf.bundle.macOS.entitlements).toBeUndefined();
@@ -55,12 +57,17 @@ test("the rpm payload is compressed with zstd", () => {
   expect(conf.bundle.linux.rpm.compression).toEqual({ type: "zstd", level: 3 });
 });
 
-test("three external binaries ship with the app: the daemon, the hook and the demo agent", () => {
-  expect(conf.bundle.externalBin).toEqual([
-    "binaries/kibo-daemon",
-    "binaries/kibo-hook",
-    "binaries/kibo-demo-agent",
-  ]);
+test("deux binaires externes accompagnent l'application : le démon et le hook", () => {
+  expect(conf.bundle.externalBin).toEqual(["binaries/kibo-daemon", "binaries/kibo-hook"]);
+});
+
+test("resources contain the UI only", () => {
+  expect(conf.bundle.resources).toEqual({ "../../../packages/ui/dist/": "ui/" });
+});
+
+test("the Linux packages depend on nothing beyond the system", () => {
+  expect(conf.bundle.linux.deb.depends).toBeUndefined();
+  expect(conf.bundle.linux.rpm.depends).toBeUndefined();
 });
 
 test("bundles explicit targets without msi, which refuses an alpha version", () => {

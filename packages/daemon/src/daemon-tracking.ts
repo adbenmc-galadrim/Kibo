@@ -4,28 +4,26 @@ import type { Clock } from "./clock";
 import type { PollPass } from "./code/pr-poller";
 import type { Closer } from "./daemon-shutdown";
 import { startProjectEvents } from "./events/bootstrap";
+import { restoreLocalKeys } from "./migrations/local-keys";
 import { migrateTracking } from "./migrations/tracking";
 import { createProjectSettings } from "./notes/settings";
 import type { ActivitySources } from "./project-activity";
 import type { RpcExtension } from "./rpc-extensions";
 import type { Service } from "./service";
-import { appSettingsRpc } from "./settings/app-settings-rpc";
-import { type AppSettingsStore, createAppSettingsStore } from "./settings/app-settings-store";
 import type { Store } from "./store";
 import { type SprintEndDeps, startSprintEndWatch } from "./tracking/sprint-end";
 import { createSprintEndStore } from "./tracking/sprint-end-store";
 
-export type DaemonTracking = {
+type DaemonTracking = {
   rpc: RpcExtension[];
-  appSettings: AppSettingsStore;
   sink: ProjectEventSink;
   projectEvents(input: ListProjectEventsInput): ProjectEventPage;
   passes(agent: SprintEndDeps["agent"]): PollPass[];
 };
 
-export type LateActivity = Required<ActivitySources> & { bind(sources: Required<ActivitySources>): void };
+type LateActivity = Required<ActivitySources> & { bind(sources: Required<ActivitySources>): void };
 
-export type DaemonTrackingInput = { store: Store; service: Service; clock: Clock; activity: LateActivity };
+type DaemonTrackingInput = { store: Store; service: Service; clock: Clock; activity: LateActivity };
 
 const NO_SESSIONS: ReadonlyMap<string, TicketSession> = new Map();
 const NO_EVENTS: ReadonlyMap<string, number> = new Map();
@@ -46,9 +44,9 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   const { store, service, clock } = input;
   const settings = createProjectSettings(store.db);
   migrateTracking({ docs: service.docs, settings, log: console.error, now: clock.now });
-  const appSettings = createAppSettingsStore(store.db, clock.now);
   const events = startProjectEvents({ store, service, now: Date.now });
   closers.push(() => events.stop());
+  restoreLocalKeys({ docs: service.docs, settings, sink: events.sink, now: clock.now });
   const emit: Service["docs"]["emit"] = (message) => service.docs.emit(message);
   const sessions = startTicketSessions({
     db: store.db,
@@ -61,8 +59,7 @@ export function startDaemonTracking(input: DaemonTrackingInput, closers: Closer[
   sessions.pass();
   const sprintEnds = createSprintEndStore(store.db, Date.now);
   return {
-    rpc: [appSettingsRpc({ store: appSettings, emit }), events.rpc, sessions.rpc],
-    appSettings,
+    rpc: [events.rpc, sessions.rpc],
     sink: events.sink,
     projectEvents: (req) => events.store.list(req),
     passes(agent) {

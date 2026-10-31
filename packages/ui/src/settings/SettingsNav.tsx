@@ -1,30 +1,12 @@
 import type { Screen } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import {
-  Building2,
-  Cloud,
-  Keyboard,
-  type LucideIcon,
-  Palette,
-  Plug,
-  Shield,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Building2, Keyboard, type LucideIcon, Palette, Plug, SlidersHorizontal } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { frCollab } from "../i18n/fr-collab";
 import { targetToHash } from "../tabs/target-hash";
 
 export type SettingsScreen = Extract<
   Screen,
-  | "general"
-  | "appearance"
-  | "domains"
-  | "integrations"
-  | "sync"
-  | "security"
-  | "sources"
-  | "shortcuts"
-  | "workspace"
+  "general" | "appearance" | "integrations" | "shortcuts" | "workspace"
 >;
 type Item = { id: string; label: string; icon: LucideIcon; screen: SettingsScreen };
 
@@ -33,8 +15,6 @@ const ITEMS: Item[] = [
   { id: "general", label: fr.settings.general, icon: SlidersHorizontal, screen: "general" },
   { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
-  { id: "sync", label: frCollab.sync.section, icon: Cloud, screen: "sync" },
-  { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },
 ];
 

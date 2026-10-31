@@ -2,7 +2,7 @@ import type { Spotlight } from "@kibo/schema";
 
 export type PageIntent = { token: number; intent: Spotlight };
 
-export type PageIntents = {
+type PageIntents = {
   request(pageId: string, intent: Spotlight): void;
   take(pageId: string): PageIntent | null;
   clear(): void;

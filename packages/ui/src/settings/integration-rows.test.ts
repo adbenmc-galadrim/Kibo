@@ -110,7 +110,7 @@ describe("integration rows (screen 16)", () => {
       action: "reconnect",
       badge: { tone: "error", label: "Erreur" },
     });
-    expect(integrationRow(s({ id: "github-issues", state: "error", error }), opts).action).toBe("reconnect");
+    expect(integrationRow(s({ id: "github-actions", state: "error", error }), opts).action).toBe("reconnect");
   });
   test("a dead mcp server is named in French", () => {
     const r = integrationRow(
@@ -125,7 +125,7 @@ describe("integration rows (screen 16)", () => {
     expect(r.error).toBe("Serveur sentry-staging injoignable");
   });
   test("a rate limit pauses with its resume time", () => {
-    const r = integrationRow(s({ id: "github-issues", state: "connected", resumeAt: 1 }), opts);
+    const r = integrationRow(s({ id: "github-actions", state: "connected", resumeAt: 1 }), opts);
     expect(r.badge).toEqual({ tone: "warn", label: "Limite GitHub atteinte, reprise à 14:32" });
   });
   test("penpot with an ignored token asks to reconnect", () => {

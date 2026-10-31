@@ -1,14 +1,12 @@
 const FIELDS: Record<string, string> = { filter: "Filtre" };
 const VALUES: Record<string, string> = {
-  "mine-and-agents": "Moi + agents",
+  "mine-and-agents": "Moi",
   all: "Tous",
   mine: "Mes tickets",
   soft: "Doux",
   studio: "Studio",
   contrast: "Contraste",
 };
-
-const HIDDEN_EXECUTION_VALUES: Record<string, string> = { "mine-and-agents": "Moi" };
 
 export const frWidgets = {
   title: (name: string) => `Réglages · ${name}`,
@@ -26,10 +24,7 @@ export const frWidgets = {
   invalid: (errors: string[]) => `Réglages refusés : ${errors.join(" ; ")}`,
   failed: "Impossible d'enregistrer les réglages.",
   fieldLabel: (key: string) => FIELDS[key] ?? key,
-  valueLabel: (value: string | number | boolean, executionShown = true) =>
-    (executionShown ? undefined : HIDDEN_EXECUTION_VALUES[String(value)]) ??
-    VALUES[String(value)] ??
-    String(value),
+  valueLabel: (value: string | number | boolean) => VALUES[String(value)] ?? String(value),
   frames: {
     add: "Ajouter un cadre",
     item: (n: number) => `Cadre ${n}`,

@@ -41,7 +41,6 @@ const project: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -58,7 +57,6 @@ const project: ProjectSnapshot = {
   bindings: [],
   nextTicketKey: "KIB-1",
   sprints: [],
-  sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
 const inbox: ProjectSnapshot = {
@@ -71,7 +69,6 @@ const inbox: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -80,7 +77,7 @@ const inbox: ProjectSnapshot = {
   nextTicketKey: "INB-4",
   sprints: [],
 };
-const shared: ProjectSnapshot = {
+const portfolio: ProjectSnapshot = {
   ...project,
   meta: {
     id: "p2",
@@ -90,25 +87,14 @@ const shared: ProjectSnapshot = {
     color: "#8B5CF6",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
     client: null,
   },
-  nextTicketKey: null,
+  nextTicketKey: "POR-3",
   sprints: [],
   viewer: "u-adam",
-  sync: {
-    shared: true,
-    keyAllocator: "server",
-    role: "owner",
-    access: "write",
-    members: [
-      { userId: "u-adam", name: "Adam", role: "owner" },
-      { userId: "u-lea", name: "Léa", role: "editor" },
-    ],
-  },
 };
 const kibo: ProjectSnapshot = {
   ...project,
@@ -118,7 +104,6 @@ const kibo: ProjectSnapshot = {
     {
       id: "12@1",
       key: "KIB-12",
-      pendingSeq: null,
       hold: null,
       keyLabel: "KIB-12",
       title: "Schéma Loro",
@@ -153,7 +138,7 @@ beforeEach(() => {
   calls.length = 0;
   outcome = () => Promise.resolve(null);
   snapshots.clear();
-  for (const s of [inbox, kibo, shared]) snapshots.set(s.meta.id, s);
+  for (const s of [inbox, kibo, portfolio]) snapshots.set(s.meta.id, s);
 });
 
 type User = ReturnType<typeof userEvent.setup>;
@@ -165,7 +150,7 @@ const options = async () => (await screen.findAllByRole("option")).map((o) => o.
 const ticketDialog = (p: Partial<Parameters<typeof NewTicketDialog>[0]> = {}) =>
   render(
     <NewTicketDialog
-      projects={[inboxMeta(), kibo.meta, shared.meta]}
+      projects={[inboxMeta(), kibo.meta, portfolio.meta]}
       snapshots={snapshots}
       initialProjectId="p1"
       lockProject={false}
@@ -215,28 +200,10 @@ test("opened from the inbox, the dialog keeps it selected and creates there", as
   );
 });
 
-test("a shared project offers its members as assignees and its key comes at sync", async () => {
-  ticketDialog({ initialProjectId: "p2" });
-  const user = userEvent.setup();
-  expect(await screen.findByText("Clé attribuée à la synchronisation")).toBeTruthy();
-  expect(screen.getByRole("combobox", { name: "Assigné" }).textContent).toBe("Moi (adam)");
-  await openSelect(user, "Assigné");
-  expect(await options()).toEqual(["Personne", "Moi (adam)", "Léa"]);
-  await user.click(screen.getByRole("option", { name: "Léa" }));
-  await user.type(screen.getByLabelText("Titre"), "Maquette");
-  await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
-  await waitFor(() =>
-    expect(created().at(-1)).toMatchObject({
-      projectId: "p2",
-      command: { assignee: { kind: "human", ref: "u-lea" } },
-    }),
-  );
-});
-
-test("me in a shared project is the sync identity, and nobody sends a null assignee", async () => {
+test("me is the identity of the project, and nobody sends a null assignee", async () => {
   const { unmount } = ticketDialog({ initialProjectId: "p2" });
   const user = userEvent.setup();
-  await screen.findByText("Clé attribuée à la synchronisation");
+  await screen.findByText("Clé POR-3");
   await user.type(screen.getByLabelText("Titre"), "Moi");
   await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
   await waitFor(() =>
@@ -359,23 +326,7 @@ test("NewPageDialog shows an alert when the daemon returns an invalid page", asy
   expect(onOpenChange).not.toHaveBeenCalled();
 });
 
-test("NewPageDialog offers to suggest pages, closing itself first", async () => {
-  const events: string[] = [];
-  render(
-    <NewPageDialog
-      projectId="p1"
-      projectName="Kibo"
-      parentId={null}
-      open
-      onOpenChange={(o) => events.push(`open:${o}`)}
-      onSuggest={() => events.push("suggest")}
-    />,
-  );
-  await userEvent.setup().click(screen.getByRole("button", { name: "Suggérer des pages" }));
-  expect(events).toEqual(["open:false", "suggest"]);
-});
-
-test("NewPageDialog hides the suggestion without a handler", () => {
+test("NewPageDialog offers no page suggestion", () => {
   render(<NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={() => {}} />);
   expect(screen.queryByRole("button", { name: "Suggérer des pages" })).toBeNull();
 });

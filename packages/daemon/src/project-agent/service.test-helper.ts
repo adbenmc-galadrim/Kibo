@@ -4,15 +4,13 @@ import { join } from "node:path";
 import { AGENTS, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
 import {
   type ActionResult,
-  type AgentExecution,
   type AgentsState,
   KiboError,
   type ProjectSnapshot,
   type RunLogEntry,
   type RunView,
 } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
-import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
+import type { Notice } from "../runs/notifier";
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";
 import type { ProjectAgentDataPort, ProjectAgentOps } from "./types";
@@ -37,7 +35,6 @@ const HOST: AgentsState["host"] = {
 export type Kit = {
   svc: ProjectAgentService;
   store: ProjectAgentStore;
-  signals: FakeSignals;
   calls: string[];
   notices: Notice[];
   emits: () => number;
@@ -47,11 +44,9 @@ export type Kit = {
   dir: string;
   setProject(next: ProjectSnapshot): void;
   current(): ProjectSnapshot;
-  setWritable(writable: boolean): void;
   setFolder(folder: string | null): void;
   setApply(apply: ProjectAgentOps["apply"]): void;
   setAgentBody(body: string): void;
-  setAgentExecution(execution: AgentExecution): void;
   cleanup(): void;
 };
 
@@ -70,9 +65,6 @@ function fakeAgents(
     const next = { ...current, ...patch };
     runs.set(id, next);
     return next;
-  };
-  const refuse = (name: string) => () => {
-    throw new KiboError("INTERNAL", `${name} is not faked`);
   };
   return {
     startProjectRun(input) {
@@ -95,9 +87,6 @@ function fakeAgents(
       calls.push(`cancel:${runId}`);
       return update(runId, { state: "cancelled" });
     },
-    ticketExecution: () => "removed",
-    assign: refuse("assign"),
-    deliverAnswers: refuse("deliverAnswers"),
     log: (runId) => {
       known(runId);
       return logs.get(runId) ?? [];
@@ -108,10 +97,7 @@ function fakeAgents(
       host: HOST,
       tokensToday: 0,
       resumable: [],
-      questions: [],
       projectAgents: [],
-      progress: [],
-      signals: [],
     }),
     hooks: { verify: (_runId, token) => token === GOOD_TOKEN, receive: () => null },
   };
@@ -136,12 +122,10 @@ export function serviceKit(): Kit {
       ticket({ id: "t11", key: "SILO-11", title: "Panneau", statusId: "in_progress" }),
     ],
   });
-  let writable = true;
   let folder: string | null = null;
   let apply = applyAll;
   let clock = 100;
   let agentBody = "";
-  let agentExecution: AgentExecution = "hidden";
   let emitted = 0;
   const calls: string[] = [];
   const notices: Notice[] = [];
@@ -155,13 +139,9 @@ export function serviceKit(): Kit {
     },
     projectName: () => snapshot.meta.name,
     projectFolder: () => folder,
-    assertWritable() {
-      if (!writable) throw new KiboError("FORBIDDEN", "read only");
-    },
     viewer: () => "adam",
     agents: () => AGENTS,
     guidelines: () => [],
-    isDemoProject: () => false,
     notes: async () => [...notes].map(([path, content]) => ({ path, title: path, hash: `h:${content}` })),
     readNote: async (_projectId, path) => notes.get(path) ?? null,
     async writeNote(_projectId, path, content, mode) {
@@ -174,11 +154,9 @@ export function serviceKit(): Kit {
     forecast: () => ({ nextTicketKey: null, nextFeatureSeq: null, usedShortKeys: [] }),
   };
   const agents = fakeAgents(runs, logs, calls);
-  const signals = fakeSignals();
   const svc = createProjectAgentService({
     store,
     data,
-    signals,
     agents: () => agents,
     ops: {
       tool: async (target, tool) => `${tool}:${target.id}`,
@@ -188,9 +166,7 @@ export function serviceKit(): Kit {
       },
     },
     notify: (notice) => notices.push(notice),
-    formatTime: (at) => `t${at}`,
     agentBody: () => agentBody,
-    agentExecution: () => agentExecution,
     emit: () => {
       emitted += 1;
     },
@@ -202,7 +178,6 @@ export function serviceKit(): Kit {
   return {
     svc,
     store,
-    signals,
     calls,
     notices,
     emits: () => emitted,
@@ -214,17 +189,11 @@ export function serviceKit(): Kit {
       snapshot = next;
     },
     current: () => snapshot,
-    setWritable: (next) => {
-      writable = next;
-    },
     setFolder: (next) => {
       folder = next;
     },
     setApply: (next) => {
       apply = next;
-    },
-    setAgentExecution: (next) => {
-      agentExecution = next;
     },
     setAgentBody: (next) => {
       agentBody = next;

@@ -16,11 +16,10 @@ export function useInstanceApis(
   projectId: string,
   instance: Instance,
   ref: RefObject<Element | null>,
-): InstanceApis | null {
+): InstanceApis {
   const page = usePageContext();
-  const components = page?.components ?? null;
   const { component } = instance;
-  const manifest = useMemo(() => manifestOf({ component }, components), [component, components]);
+  const manifest = useMemo(() => manifestOf({ component }), [component]);
   const capabilities = manifest?.capabilities ?? NONE;
   const selects = manifest?.selection ?? false;
   const bus = page?.bus;
@@ -41,9 +40,8 @@ export function useInstanceApis(
   const visibility = useMemo(() => visibilityApi(visible), [visible]);
   const selection = useMemo(() => (bus ? bus.api(selects) : NO_SELECTION), [bus, selects]);
   const spotlight = page?.spotlight;
-  const apis = useMemo(
+  return useMemo(
     () => ({ capabilities, focus, visibility, selection, spotlight }),
     [capabilities, focus, visibility, selection, spotlight],
   );
-  return manifest !== null || components !== null ? apis : null;
 }

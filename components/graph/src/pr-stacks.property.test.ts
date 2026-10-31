@@ -41,10 +41,6 @@ const ticketsArb = fc
   )
   .map((rows) => rows.map((r, n) => ticket(n, r.refs, r.parent === n ? null : r.parent, r.session)));
 
-const liveArb = fc
-  .array(fc.integer({ min: 0, max: 7 }), { maxLength: 4 })
-  .map((ns) => new Set(ns.map((n) => `t${n}`)));
-
 const flatten = (node: PrNode): PrNode[] => [node, ...node.children.flatMap(flatten)];
 const liveUrls = (tickets: readonly TicketView[]): Set<string> =>
   new Set(
@@ -55,8 +51,8 @@ const liveUrls = (tickets: readonly TicketView[]): Set<string> =>
 
 test("every live PR appears exactly once and no settled PR appears", () => {
   fc.assert(
-    fc.property(ticketsArb, liveArb, (tickets, live) => {
-      const model = prStacks({ tickets, live });
+    fc.property(ticketsArb, (tickets) => {
+      const model = prStacks({ tickets });
       const ids = model.stacks.flatMap((s) => flatten(s.root)).map((n) => n.id);
       expect(ids.length).toBe(new Set(ids).size);
       expect(new Set(ids)).toEqual(liveUrls(tickets));
@@ -69,8 +65,8 @@ test("every live PR appears exactly once and no settled PR appears", () => {
 
 test("stacks are sorted by stackOrder", () => {
   fc.assert(
-    fc.property(ticketsArb, liveArb, (tickets, live) => {
-      const { stacks } = prStacks({ tickets, live });
+    fc.property(ticketsArb, (tickets) => {
+      const { stacks } = prStacks({ tickets });
       expect([...stacks].sort(stackOrder)).toEqual(stacks);
     }),
   );
@@ -82,11 +78,10 @@ test("the model is deterministic and ignores the order of tickets", () => {
       ticketsArb.chain((tickets) =>
         fc.tuple(fc.constant(tickets), fc.shuffledSubarray(tickets, { minLength: tickets.length })),
       ),
-      liveArb,
-      ([tickets, shuffled], live) => {
-        const model = prStacks({ tickets, live });
-        expect(prStacks({ tickets, live })).toEqual(model);
-        expect(prStacks({ tickets: shuffled, live })).toEqual(model);
+      ([tickets, shuffled]) => {
+        const model = prStacks({ tickets });
+        expect(prStacks({ tickets })).toEqual(model);
+        expect(prStacks({ tickets: shuffled })).toEqual(model);
       },
     ),
   );
@@ -134,7 +129,7 @@ const anyTickets = fc.oneof(ticketsArb, cyclicArb);
 test("a root with a parent candidate is the cut of its own cycle, at its smallest PR", () => {
   fc.assert(
     fc.property(anyTickets, (tickets) => {
-      const model = prStacks({ tickets, live: new Set() });
+      const model = prStacks({ tickets });
       const nodes = model.stacks.flatMap((s) => flatten(s.root));
       expect(model.counts.open).toBe(nodes.length);
       for (const { root } of model.stacks) {
@@ -151,7 +146,7 @@ test("a root with a parent candidate is the cut of its own cycle, at its smalles
 test("every child sits on its parent's head and children go by number", () => {
   fc.assert(
     fc.property(anyTickets, (tickets) => {
-      const nodes = prStacks({ tickets, live: new Set() }).stacks.flatMap((s) => flatten(s.root));
+      const nodes = prStacks({ tickets }).stacks.flatMap((s) => flatten(s.root));
       for (const parent of nodes) {
         expect([...parent.children].sort(byNumber)).toEqual(parent.children);
         for (const child of parent.children) {

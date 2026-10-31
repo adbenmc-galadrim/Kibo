@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 
-export type ReasonDialogProps = {
+type ReasonDialogProps = {
   open: boolean;
   title: string;
   description: string;

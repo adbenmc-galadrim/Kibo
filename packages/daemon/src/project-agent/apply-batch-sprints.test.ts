@@ -31,12 +31,7 @@ function setup() {
     const batch = await propose(h, actions);
     before();
     const chosen = new Set(actions.map((a) => a.id));
-    return applyBatch(
-      { data: h.data, agents: () => h.agents, signals: h.signals, events },
-      batch,
-      chosen,
-      HUMAN,
-    );
+    return applyBatch({ data: h.data, agents: () => h.agents, events }, batch, chosen, HUMAN);
   };
   const sprintOf = (id: string) => h.data.project(h.project.id).tickets.find((t) => t.id === id)?.sprintId;
   return { h, s42, s43, f5, step, f9, recorded, apply, sprintOf };

@@ -16,7 +16,6 @@ const newDoc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -44,12 +43,6 @@ describe("keyForecast", () => {
       nextFeatureSeq: 3,
       usedShortKeys: ["F1", "F2"],
     });
-  });
-
-  test("a project keyed by the sync server forecasts nothing", () => {
-    const d = seeded();
-    d.getMap("meta").set("keyAllocator", "server");
-    expect(keyForecast(d)).toMatchObject({ nextTicketKey: null, nextFeatureSeq: null });
   });
 
   test("predicted keys are the keys the commands give", () => {

@@ -9,7 +9,7 @@ import { lookupTicket } from "../tickets/ticket-view";
 import { printJson, type SessionIo } from "./daemon-session";
 import { notFound, summaryOf } from "./tickets-context";
 
-export type SprintsContext = {
+type SprintsContext = {
   client: DaemonClient;
   snapshot: ProjectSnapshot;
   flags: Parsed["flags"];

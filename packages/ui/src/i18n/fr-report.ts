@@ -12,7 +12,6 @@ export const frReport = {
   copied: "Copié",
   copyFailed: "Copie impossible",
   openIssue: "Ouvrir une issue GitHub",
-  close: "Fermer",
   reportLabel: "Rapport",
   heading: "# Rapport Kibo",
   version: (version: string) => `Kibo ${version}`,

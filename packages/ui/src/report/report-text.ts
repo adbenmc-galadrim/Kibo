@@ -4,7 +4,7 @@ import { frReport as t } from "../i18n/fr-report";
 import { SOURCE_URL } from "../lib/kibo-links";
 
 export type ReportShell = "tauri" | "browser";
-export type ReportOptions = { log: boolean };
+type ReportOptions = { log: boolean };
 
 export const ISSUE_URL = `${SOURCE_URL}/issues/new?template=probleme.yml&title=${encodeURIComponent(t.issueTitle)}`;
 

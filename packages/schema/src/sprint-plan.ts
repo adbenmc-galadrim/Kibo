@@ -2,7 +2,7 @@ import { addDays } from "./iso-date";
 import type { ProjectSetup } from "./project-setup";
 import type { Sprint } from "./sprint";
 
-export type PlannedSprint = Pick<Sprint, "code" | "name" | "start" | "end">;
+type PlannedSprint = Pick<Sprint, "code" | "name" | "start" | "end">;
 
 const WEEK_DAYS = 7;
 const WEEKEND_DAYS = 3;

@@ -14,7 +14,7 @@ export type StepSpec = {
   optional?: boolean;
   description?: string;
 };
-export type FeatureSpec = {
+type FeatureSpec = {
   shortKey: string;
   n: number;
   title: string;
@@ -22,9 +22,9 @@ export type FeatureSpec = {
   result?: string;
   steps: StepSpec[];
 };
-export type SprintSpec = { code: SprintCode; name: string; start: string; end: string };
-export type LooseTicketSpec = StepSpec & { sprint: SprintCode | null };
-export type QuestionSpec = {
+type SprintSpec = { code: SprintCode; name: string; start: string; end: string };
+type LooseTicketSpec = StepSpec & { sprint: SprintCode | null };
+type QuestionSpec = {
   id: string;
   ticket: number;
   title: string;
@@ -45,10 +45,10 @@ export const INBOX_TITLES: readonly string[] = [
   "Idée : export CSV des contrats",
 ];
 export const SILO_CLIENT = "Silo SA";
-export const SILO_REPO_URL = "https://github.com/silo-labs/silo-location";
+const SILO_REPO_URL = "https://github.com/silo-labs/silo-location";
 export const SILO_BASE_BRANCH = "dev";
 export const SILO_LAST_TICKET = 93;
-export const DELIVERED_STEP = 11;
+const DELIVERED_STEP = 11;
 
 export const SILO_SPRINTS: readonly SprintSpec[] = [
   { code: "S41", name: "Accès", start: "2026-10-05", end: "2026-10-09" },
@@ -271,10 +271,8 @@ export const SILO_QUESTIONS: readonly QuestionSpec[] = [
 export const SILO_PAGES: readonly (readonly [string, string])[] = [
   ["Vue d'ensemble", "overview@1.0.0"],
   ["Planning", "planning@1.0.0"],
-  ["Tickets", "tickets@1.0.0"],
   ["Kanban", "kanban@1.0.0"],
   ["Graphe", "graph@1.0.0"],
-  ["Notes", "notes@1.0.0"],
   ["Questions", "questions@1.0.0"],
 ];
 

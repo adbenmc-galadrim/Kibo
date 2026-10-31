@@ -2,11 +2,9 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type { ProjectCommand, RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { createGitFixture, installFakeGh } from "./code/testing/git-fixture";
-import { fakeBuild, okReport } from "./components/service.test-helper";
 import { type Daemon, type DaemonOptions, startDaemon } from "./daemon";
 
 const FIXED_NOW = "2026-10-16T14:52:00+02:00";
@@ -28,7 +26,6 @@ const Snapshot = z.object({
   pages: z.array(z.object({ title: z.string() })),
 });
 type Snapshot = z.infer<typeof Snapshot>;
-const ConfigMessage = z.object({ topic: z.literal("config") });
 
 const cleanups: (() => Promise<void> | void)[] = [];
 afterEach(async () => {
@@ -45,10 +42,7 @@ async function launch(home: string, extra: Partial<DaemonOptions> = {}): Promise
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     home,
     ...extra,
   });
@@ -169,13 +163,6 @@ test("a branch, then its PR, then its merge move the ticket and deliver its feat
   const merged = await silo.reaches("SILO-1", "done");
   expect(silo.ticket(merged, "SILO-2").feature?.status).toBe("delivered");
   expect(silo.ticket(merged, "SILO-3").statusId).toBe("todo");
-});
-
-test("changing an app setting tells every client to reload the configuration", async () => {
-  const client = await launch(tempHome());
-  await client.rpc({ method: "setAppSettings", patch: {} });
-  const isConfig = (e: unknown) => ConfigMessage.safeParse(e).success;
-  await until(async () => client.events.find(isConfig), "config message");
 });
 
 test("an imported plan key becomes the feature's short key and a Planning page, once", async () => {

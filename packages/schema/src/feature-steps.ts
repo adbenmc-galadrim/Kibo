@@ -1,5 +1,4 @@
 import type { DeliveryStep } from "./delivery";
-import { topoByBlocks } from "./delivery-order";
 import { branchRefOf, type GithubPrRef } from "./external-ref";
 import type { Link } from "./link";
 import type { OnHold } from "./on-hold";
@@ -23,7 +22,7 @@ export type FeatureStepSource = Pick<
   TicketView,
   "id" | "key" | "title" | "parentId" | "statusId" | "optional" | "delivery" | "externalRefs" | "onHold"
 >;
-export type FeatureStepsInput = {
+type FeatureStepsInput = {
   feature: string;
   tickets: readonly FeatureStepSource[];
   links: readonly Pick<Link, "from" | "to" | "type">[];
@@ -31,6 +30,26 @@ export type FeatureStepsInput = {
 
 const prOf = (t: FeatureStepSource): GithubPrRef | null =>
   t.externalRefs.filter((r): r is GithubPrRef => r.kind === "github_pr").at(-1) ?? null;
+
+type Ranked = { id: string; key: string | null; rank: number };
+
+const byRank = (a: Ranked, b: Ranked): number =>
+  a.rank - b.rank || (a.key ?? a.id).localeCompare(b.key ?? b.id);
+
+function topoByBlocks<T extends Ranked>(items: readonly T[], edges: readonly [string, string][]): T[] {
+  const remaining = [...items].sort(byRank);
+  const waiting = new Map<string, Set<string>>(remaining.map((t) => [t.id, new Set<string>()]));
+  for (const [from, to] of edges) if (from !== to) waiting.get(to)?.add(from);
+  const order: T[] = [];
+  while (remaining.length > 0) {
+    const free = remaining.findIndex((t) => (waiting.get(t.id)?.size ?? 0) === 0);
+    const [next] = remaining.splice(free === -1 ? 0 : free, 1);
+    if (next === undefined) break;
+    order.push(next);
+    for (const blockers of waiting.values()) blockers.delete(next.id);
+  }
+  return order;
+}
 
 export function featureSteps(input: FeatureStepsInput): FeatureStep[] {
   const byId = new Map(input.tickets.map((t) => [t.id, t]));

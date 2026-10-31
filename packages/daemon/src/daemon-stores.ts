@@ -1,20 +1,22 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { osSandbox } from "@kibo/devkit";
+import { join } from "node:path";
 import { BACKUP_TICK_MS, type ChangeMessage } from "@kibo/schema";
-import { openRunStore, type RunStore } from "./agents/run-store";
 import { appVersion } from "./app-version";
 import { loadOrCreateToken } from "./auth";
 import { startBackupSchedule } from "./backups/schedule";
 import { type BackupsService, createBackupsService } from "./backups/service";
 import type { Closer } from "./daemon-shutdown";
 import { createRedactor, type Redactor } from "./integrations/redact";
-import { createSandboxService, type SandboxService } from "./sandbox/sandbox-service";
+import { runLegacyMigrations } from "./migrations/legacy";
+import { LEGACY_DATABASES } from "./migrations/legacy-backup";
+import { markSecretsPruned } from "./migrations/legacy-secrets";
+import { openRunStore, type RunStore } from "./runs/run-store";
 import { openLocalSettings } from "./settings";
 import { openStore, type Store } from "./store";
 
-export type DaemonStores = { store: Store; runs: RunStore; token: string; redactor: Redactor };
-export type LocalServices = {
-  sandbox: SandboxService;
+type DaemonStores = { store: Store; runs: RunStore; token: string; redactor: Redactor };
+type LocalServices = {
   backups: BackupsService;
   scheduleBackups(): Closer;
 };
@@ -23,10 +25,13 @@ export function openDaemonStores(
   opts: { home: string; redactor?: Redactor },
   closers: Closer[],
 ): DaemonStores {
+  const fresh = !LEGACY_DATABASES.some((file) => existsSync(join(opts.home, file)));
+  runLegacyMigrations(opts.home, Date.now, (line) => console.error(`[kibo-daemon] ${line}`));
   const store = openStore(opts.home);
   closers.push(() => store.close());
   const runs = openRunStore(opts.home);
   closers.push(() => runs.close());
+  if (fresh) markSecretsPruned(runs, Date.now);
   const token = loadOrCreateToken(opts.home);
   const redactor = opts.redactor ?? createRedactor();
   redactor.add(token);
@@ -38,7 +43,6 @@ export function createLocalServices(
   { store, runs }: Pick<DaemonStores, "store" | "runs">,
   emit: (message: ChangeMessage) => void,
 ): LocalServices {
-  const sandbox = createSandboxService({ sandbox: osSandbox(), settings: openLocalSettings(store), emit });
   const backups = createBackupsService({
     home: opts.home,
     userHome: opts.userHome ?? homedir(),
@@ -55,5 +59,5 @@ export function createLocalServices(
       intervalMs: BACKUP_TICK_MS,
       log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
     });
-  return { sandbox, backups, scheduleBackups };
+  return { backups, scheduleBackups };
 }

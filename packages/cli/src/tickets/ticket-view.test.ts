@@ -16,7 +16,6 @@ function ticket(
   return {
     id,
     key: `SILO-${id}`,
-    pendingSeq: null,
     hold: null,
     title: `Ticket ${id}`,
     description: `Description ${id}`,
@@ -171,23 +170,20 @@ describe("ticket view", () => {
     expect(none?.branch).toBeNull();
   });
 
-  test("names the assignee from the members, or as the viewer", () => {
+  test("names the assignee by its ref, or as the viewer", () => {
     const assigned = (assignee: TicketView["assignee"]) => ({ ...ticket("7", "todo"), assignee });
-    const members = [{ userId: "u-adam", name: "Adam", role: "owner" as const }];
     const tickets = [
       assigned({ kind: "human", ref: "u-adam" }),
       assigned({ kind: "human", ref: "u-me" }),
       assigned({ kind: "human", ref: "u-other" }),
       assigned({ kind: "agent", ref: "livraison" }),
     ];
-    const people = summarize({ ...snapshot, tickets, viewer: "u-me", sync: { members } }).map(
-      (t) => t.assignee,
-    );
+    const people = summarize({ ...snapshot, tickets, viewer: "u-me" }).map((t) => t.assignee);
     expect(people).toEqual([
-      { kind: "human", ref: "u-adam", name: "Adam", me: false },
-      { kind: "human", ref: "u-me", name: null, me: true },
-      { kind: "human", ref: "u-other", name: null, me: false },
-      { kind: "agent", ref: "livraison", name: null, me: false },
+      { kind: "human", ref: "u-adam", me: false },
+      { kind: "human", ref: "u-me", me: true },
+      { kind: "human", ref: "u-other", me: false },
+      { kind: "agent", ref: "livraison", me: false },
     ]);
   });
 

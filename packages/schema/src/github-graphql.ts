@@ -47,10 +47,3 @@ export const GITHUB_GRAPHQL = {
 }`,
 } as const;
 export type GithubOperation = keyof typeof GITHUB_GRAPHQL;
-export const GITHUB_OPERATION_NAMES: Record<GithubOperation, string> = {
-  projectItems: "KiboProjectItems",
-  addItem: "KiboAddItem",
-  setStatus: "KiboSetStatus",
-  issueItems: "KiboIssueItems",
-  listProjects: "KiboListProjects",
-};

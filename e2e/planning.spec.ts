@@ -1,6 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { SILO_FEATURES, SILO_LOOSE_TICKETS } from "./fixtures/silo-maquettes";
 import { PIXEL_WIDTH } from "./pixel-settings";
 import {
   attachRepo,
@@ -19,11 +18,6 @@ const BRANCH = "feat/silo-51-lecture-excel";
 test.describe.configure({ mode: "serial" });
 
 let silo: Silo;
-
-const S43_TITLES = [
-  ...SILO_FEATURES.filter((f) => f.sprint === "S43").flatMap((f) => f.steps.map((step) => step.title)),
-  ...SILO_LOOSE_TICKETS.filter((t) => t.sprint === "S43").map((t) => t.title),
-].sort();
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: 1000 });
@@ -178,15 +172,13 @@ test("the sheet of F5 names why its next step cannot start, with nothing to copy
   await expect(page.getByRole("button", { name: "Copier la commande" })).toHaveCount(0);
 });
 
-test("the sheet of S42 opens from its Tickets tab and its Planning name; the pencil edits it", async ({
+test("the sheet of S42 opens from its Planning name and edits it; the pencil edits it too", async ({
   page,
 }) => {
-  await page.goto(silo.pageUrl("tickets@1.0.0"));
-  const s42 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ });
-  await s42.click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Fiche du sprint" }).click();
+  await openPlanning(page);
+  const header = column(page, "S42 Saisie hors ligne");
+  await header.getByRole("button", { name: "Fiche du sprint S42 Saisie hors ligne" }).click();
   const sheet = page.getByRole("dialog", { name: /S42 · Saisie hors ligne/ });
-  await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
   await sheet.getByRole("button", { name: "Modifier" }).click();
   const dialog = page.getByRole("dialog", { name: "Modifier le sprint S42" });
@@ -195,15 +187,9 @@ test("the sheet of S42 opens from its Tickets tab and its Planning name; the pen
   await dialog.getByRole("button", { name: "Enregistrer" }).click();
   await expect(page.getByRole("dialog", { name: /S42 · Saisie sans réseau/ })).toBeVisible();
   await page.keyboard.press("Escape");
-  await openPlanning(page, "S42 Saisie sans réseau");
-  const header = column(page, "S42 Saisie sans réseau");
-  await header.getByRole("button", { name: "Fiche du sprint S42 Saisie sans réseau" }).click();
-  const fromPlanning = page.getByRole("dialog", { name: /S42 · Saisie sans réseau/ });
-  await expect(fromPlanning.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
-  await expect(page.getByRole("dialog", { name: "Modifier le sprint S42" })).toHaveCount(0);
-  await page.keyboard.press("Escape");
-  await expect(fromPlanning).toBeHidden();
-  await header.getByRole("button", { name: "Modifier le sprint", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: /S42 · Saisie sans réseau/ })).toBeHidden();
+  const renamed = column(page, "S42 Saisie sans réseau");
+  await renamed.getByRole("button", { name: "Modifier le sprint", exact: true }).click();
   const back = page.getByRole("dialog", { name: "Modifier le sprint S42" });
   await back.getByLabel("Nom").fill("Saisie hors ligne");
   await back.getByRole("button", { name: "Enregistrer" }).click();
@@ -219,25 +205,23 @@ test("the agent execution setting is gone and Agents and the agent bar never sho
   await expect(page.getByRole("region", { name: "Agents", exact: true })).toBeHidden();
 });
 
-test("the S43 tab of Tickets has nothing delivered, and a new branch puts SILO-51 In progress", async ({
-  page,
-}) => {
-  await page.goto(silo.pageUrl("tickets@1.0.0"));
-  const s43 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S43$/ });
-  await s43.click();
-  await expect(s43).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByText("Lecture du fichier Excel")).toBeVisible();
-  const titles = page.locator("[data-row-title]");
-  await expect(titles).toHaveCount(S43_TITLES.length);
-  expect((await titles.allTextContents()).sort()).toEqual(S43_TITLES);
-  await expect(page.getByText("Écran d'envoi hors ligne")).toBeHidden();
-  await expect(page.getByText(/^Terminés/)).toHaveCount(0);
+test("a new branch puts SILO-51 In progress, seen from its Kanban card", async ({ page }) => {
+  await page.goto(silo.pageUrl("kanban@1.0.0"));
+  const all = page.getByRole("main").getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await expect(column(page, "Bloqué").getByRole("article", { name: /^SILO-51 / })).toBeVisible();
+  await page.getByRole("main").getByRole("button", { name: "Actions SILO-51" }).click();
+  await page.getByRole("menuitem", { name: "Ouvrir" }).click();
+  const sheet = page.getByRole("dialog", { name: "Lecture du fichier Excel" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("combobox", { name: "Statut" })).toContainText("À faire");
   const repo = await attachRepo(page, silo);
   try {
     createBranch(repo, BRANCH);
-    const row = page.getByRole("listitem").filter({ has: page.getByText("SILO-51", { exact: true }) });
-    await expect(row).toContainText("En cours", { timeout: 20_000 });
-    await expect(row).toContainText(BRANCH);
+    await expect(sheet.getByRole("combobox", { name: "Statut" })).toContainText("En cours", {
+      timeout: 20_000,
+    });
+    await expect(sheet).toContainText(BRANCH);
   } finally {
     repo.remove();
   }

@@ -4,7 +4,6 @@ import {
   addLink,
   createProjectDoc,
   createTicket,
-  enableServerAllocation,
   getTicket,
   listLinks,
   listTickets,
@@ -21,7 +20,6 @@ const inboxMeta = {
   color: "#64748B",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -35,7 +33,6 @@ const kibo = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -138,16 +135,6 @@ describe("transferTicket", () => {
     expect(listTickets(fresh.from)).toHaveLength(4);
     expect(listTickets(fresh.to)).toHaveLength(1);
     expect([fresh.from.export({ mode: "snapshot" }), fresh.to.export({ mode: "snapshot" })]).toEqual(before);
-  });
-
-  test("into a shared project the keys are pending", () => {
-    const { from, to, root } = seeded();
-    enableServerAllocation(to);
-    const result = transferTicket(from, to, root.id, null);
-    expect(result.key).toBeNull();
-    expect(result.created.every((c) => c.key === null)).toBe(true);
-    expect(getTicket(to, result.ticketId).pendingSeq).not.toBeNull();
-    expect(readProject(to, "2026-10-16").nextTicketKey).toBeNull();
   });
 
   test("keys stay unique and ticketSeq consistent after any sequence of transfers", () => {

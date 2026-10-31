@@ -1,11 +1,11 @@
 import { fileURLToPath } from "node:url";
 import { type SprintCode, siloKey } from "./silo-maquettes";
 
-export type SessionSpec = { n: number; tool: string };
-export type BatchActionSpec =
+type SessionSpec = { n: number; tool: string };
+type BatchActionSpec =
   | { id: number; type: "setSprint"; ticket: string; sprint: SprintCode | null; why: string }
   | { id: number; type: "remindQuestion"; question: string; why: string };
-export type BatchSpec = { seq: number; summary: string; actions: readonly BatchActionSpec[] };
+type BatchSpec = { seq: number; summary: string; actions: readonly BatchActionSpec[] };
 
 export const SILO_SCENARIO = fileURLToPath(
   new URL("../agents/scenarios/silo-maquettes.json", import.meta.url),

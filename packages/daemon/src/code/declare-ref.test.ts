@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { type GitBranchRef, type GithubPrRef, KiboError, type StatusId, type Ticket } from "@kibo/schema";
+import type { GitBranchRef, GithubPrRef, StatusId, Ticket } from "@kibo/schema";
 import { KIBO_COMMAND } from "../docs";
 import { type EventsHarness, eventsHarness, PR_18, tick } from "../events/events.test-helper";
 import { dispatchRpc, LOCAL_CONTEXT } from "../rpc-extensions";
@@ -111,16 +111,6 @@ test("an unknown ticket is not found", () => {
   const run = () =>
     declareTicketRef(h.service, { projectId: h.project.id, ticketKey: "SILO-99", ref: BRANCH });
   expect(run).toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
-});
-
-test("a project that cannot be written refuses the declaration and moves nothing", () => {
-  const ticket = step();
-  const off = h.service.docs.setWriteGuard(() => {
-    throw new KiboError("FORBIDDEN", "read-only");
-  });
-  expect(() => declare(ticket, BRANCH)).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
-  off();
-  expect(statusOf(ticket.id)).toBe("todo");
 });
 
 test("the RPC answers on this machine only", async () => {

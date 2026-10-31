@@ -11,7 +11,6 @@ import { type Host, HostProvider } from "./Host";
 const calls: RpcRequest[] = [];
 
 const answer = (req: RpcRequest): unknown => {
-  if (req.method === "deliver") return { kind: "parent", items: [] };
   if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
   if (req.method === "listCiRuns") return [];
   if (req.method === "getProjectAgent") return viewFixture({ batches: [] });
@@ -39,7 +38,6 @@ const views: (Spotlight | undefined)[] = [];
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: (d) => void created.push(d),
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: (_id, _project, question) => void views.push(question),
   openTarget: () => undefined,
@@ -61,7 +59,6 @@ const renderFeature = (featureId: string, project: ProjectSnapshot = siloHeldPro
         project={project}
         ticket={feature}
         now={NOW}
-        execution="hidden"
         onOpenFile={() => undefined}
         onOpenTicket={() => undefined}
       />

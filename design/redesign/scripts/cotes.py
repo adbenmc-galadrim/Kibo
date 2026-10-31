@@ -15,7 +15,7 @@ def tok(hd, hl):
     ks = [k for k in ORDER if PD.get(k, "").upper() == a.upper() and (b is None or PL.get(k, "").upper() == b.upper())]
     s = ks[0] if ks else (a if (b is None or a.upper() == b.upper()) else f"{a} / {b}")
     return s + (f" ({op} %)" if op else "")
-SCREENS = [(1, "P1 bis · Vue d'ensemble", "proposition-vue-ensemble-v2"), (2, "P2 · Planning", "proposition-planning"), (3, "P3 · Fonctionnalité", "proposition-fonctionnalite"), (4, "P4 · Tickets", "proposition-tickets"), (5, "P5 · Graphe", "proposition-graphe")]
+SCREENS = [(1, "P1 bis · Vue d'ensemble", "proposition-vue-ensemble-v2"), (2, "P2 · Planning", "proposition-planning"), (3, "P3 · Fonctionnalité", "proposition-fonctionnalite"), (5, "P5 · Graphe", "proposition-graphe")]
 def size(png):
     o = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", png], capture_output=True, text=True).stdout
     return re.search(r"pixelWidth: (\d+)", o).group(1) + " × " + re.search(r"pixelHeight: (\d+)", o).group(1)
@@ -180,8 +180,8 @@ if "--phase27" in sys.argv:
 for i, name, png in SCREENS:
     screens_md.append(screen_md(i, name, png, f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"))
 head = ["# Cotes du redesign", "",
- "Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Silo » du fichier « Kibo » (écrans 210 à 214). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.",
- "", "Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Synchronisé · il y a 1 min », « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.",
+ "Relevé automatique des boards validés (P1 bis, P2, P3, P5 ; P4 · Tickets retiré en phase 33) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Silo » du fichier « Kibo » (écrans 210 à 214, sans 213). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.",
+ "", "Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.",
  "", "Règles générales : écrans de 1 440 px de large ; barre latérale 240 px ; panneau de l'agent 340 px (P1 bis) ; barre du haut 48 px ; polices Geist et Geist Mono ; icônes Lucide, trait 2 px. Les blocs sans fond, bordure ni enfant (espaceurs) sont omis : les positions des voisins en tiennent compte.",
  "", "## Tokens de couleur", "", "| Token | Sombre | Clair |", "|---|---|---|"]
 head += [f"| `{k}` | `{PD[k]}` | `{PL[k]}` |" for k in ORDER if k in PD]

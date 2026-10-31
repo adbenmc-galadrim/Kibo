@@ -66,7 +66,6 @@ const answered = (over: Partial<Question>): Question =>
 const ticket = (id: string, keyLabel: string): TicketView => ({
   id,
   key: keyLabel,
-  pendingSeq: null,
   hold: null,
   keyLabel,
   title: `Ticket ${keyLabel}`,
@@ -254,19 +253,9 @@ test("scopeFor opens « Archivées » for an archived question, « Toutes » oth
 
 test("canArchive follows the author rule and spares an open question of an active run", () => {
   const mine = question({ createdBy: { kind: "human", ref: "adam" } });
-  const run = (state: "running" | "done") => ({
-    ticketId: T1,
-    runId: "r",
-    label: "opus",
-    state,
-    position: null,
-  });
-  expect(canArchive(mine, "adam", null)).toBe(true);
-  expect(canArchive(mine, "lea", null)).toBe(false);
-  expect(canArchive(question({}), "adam", null)).toBe(false);
-  expect(canArchive(answered({}), "lea", null)).toBe(true);
-  expect(canArchive(question({ ...ARCHIVED }), "adam", null)).toBe(false);
-  expect(canArchive({ ...mine, runId: "r" }, "adam", run("running"))).toBe(false);
-  expect(canArchive({ ...mine, runId: "r" }, "adam", run("done"))).toBe(true);
-  expect(canArchive(answered({ runId: "r" }), "adam", run("running"))).toBe(true);
+  expect(canArchive(mine, "adam")).toBe(true);
+  expect(canArchive(mine, "lea")).toBe(false);
+  expect(canArchive(question({}), "adam")).toBe(false);
+  expect(canArchive(answered({}), "lea")).toBe(true);
+  expect(canArchive(question({ ...ARCHIVED }), "adam")).toBe(false);
 });

@@ -38,13 +38,6 @@ export function ComponentPreview({ id, icon: Icon }: { id: string; icon: LucideI
       </div>
     );
   }
-  if (id === "tickets" || id === "notes") {
-    return (
-      <div aria-hidden className="grid h-36 content-start gap-1.5 rounded-lg bg-muted/60 p-3">
-        <Bars n={5} />
-      </div>
-    );
-  }
   if (id === "graph") {
     return (
       <svg

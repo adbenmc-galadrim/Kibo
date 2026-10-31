@@ -3,7 +3,7 @@ import { useSpotlight } from "@kibo/sdk";
 import { useEffect, useRef } from "react";
 import { filterQuestions, type Scope, scopeFor } from "./questions-logic";
 
-export type Filters = { scope: Scope; ticketId: string | null; recipient: string | null };
+type Filters = { scope: Scope; ticketId: string | null; recipient: string | null };
 
 export function useSpotlightFilters(
   questions: readonly Question[],

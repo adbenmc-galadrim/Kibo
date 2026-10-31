@@ -1,32 +1,14 @@
 import { expect, test } from "bun:test";
 import {
-  doingStep,
   EMPTY_PROGRESS,
-  isTicketToolName,
-  latestReport,
-  PEEK_WORK_SPEC,
-  PEEK_WORK_TOOL,
-  PEEK_WORK_TOOL_NAME,
   PLAN_MAX,
   Plan,
-  PROGRESS_TOOL,
-  ProgressInput,
-  progressReply,
-  progressSummary,
   REPORTS_MAX,
   RunReport,
   RunReportInput,
-  reportOfRun,
-  SHARED_TOOL_SPECS,
   Step,
-  TICKET_MCP_TOOLS,
-  TICKET_PROGRESS_SPEC,
-  TICKET_TOOL_NAMES,
-  TICKET_TOOL_SPECS,
   TicketProgress,
-  todosToPlan,
 } from "./progress";
-import { ASK_TOOLS } from "./run-hook";
 
 const step = (id: string, status: Step["status"] = "todo"): Step => ({
   id,
@@ -59,99 +41,11 @@ test("a report fills its defaults", () => {
   expect(report("r1").check).toBeNull();
 });
 
-test("a progress call carries a plan or a report", () => {
-  expect(ProgressInput.safeParse({}).success).toBe(false);
-  expect(ProgressInput.safeParse({ plan: [step("a")] }).success).toBe(true);
-  expect(progressReply({ plan: [step("a")] })).toBe("Plan enregistré.");
-  expect(progressReply({ report: RunReportInput.parse({ done: "x" }) })).toBe("Compte rendu enregistré.");
-  expect(progressReply({ plan: [], report: RunReportInput.parse({ done: "x" }) })).toBe(
-    "Plan enregistré. Compte rendu enregistré.",
-  );
-});
-
-test("a todo list becomes an internal plan", () => {
-  expect(
-    todosToPlan([
-      { content: "Lire", status: "completed" },
-      { content: "Corriger", status: "in_progress", activeForm: "Correction" },
-      { content: "Tester", status: "pending" },
-    ]),
-  ).toEqual([
-    { id: "todo-1", title: "Lire", status: "done", note: null },
-    { id: "todo-2", title: "Corriger", status: "doing", note: null },
-    { id: "todo-3", title: "Tester", status: "todo", note: null },
-  ]);
-  expect(todosToPlan([{ content: "  ", status: "pending" }])).toEqual([]);
-});
-
-test("the step in progress and the run summary", () => {
-  const plan = [step("a", "done"), step("b", "doing"), step("c"), step("d"), step("e")];
-  expect(doingStep(plan)?.id).toBe("b");
-  expect(doingStep([step("a")])).toBeNull();
-  const progress = TicketProgress.parse({
-    plan,
-    planRunId: "r1",
-    planAt: 1,
-    reports: [report("r1", { toCheck: ["a", "b"], check: { undeclared: ["x.ts"], unchanged: [] } })],
-  });
-  expect(progressSummary("r1", progress)).toEqual({
-    runId: "r1",
-    step: { index: 2, total: 5, title: "Étape b" },
-    report: { toCheck: 2, undeclared: 1 },
-  });
-  expect(progressSummary("r2", progress)).toEqual({
-    runId: "r2",
-    step: { index: 2, total: 5, title: "Étape b" },
-    report: null,
-  });
-  expect(progressSummary("r1", EMPTY_PROGRESS)).toEqual({ runId: "r1", step: null, report: null });
-});
-
-test("reports are found by run and by date", () => {
-  const progress = TicketProgress.parse({ reports: [report("r1", { at: 5 }), report("r2", { at: 9 })] });
-  expect(latestReport(progress)?.runId).toBe("r2");
-  expect(reportOfRun(progress, "r1")?.at).toBe(5);
-  expect(reportOfRun(progress, "r3")).toBeNull();
-  expect(latestReport(EMPTY_PROGRESS)).toBeNull();
+test("the reports of a progress are bounded", () => {
+  expect(TicketProgress.safeParse({ reports: Array(REPORTS_MAX).fill(report("r")) }).success).toBe(true);
   expect(TicketProgress.safeParse({ reports: Array(REPORTS_MAX + 1).fill(report("r")) }).success).toBe(false);
 });
 
 test("an empty progress parses to the default", () => {
   expect(TicketProgress.parse({})).toEqual(EMPTY_PROGRESS);
-});
-
-test("the ticket tool is described for the agent", () => {
-  expect(TICKET_PROGRESS_SPEC.name).toBe("ticket_progress");
-  expect(Object.keys(TICKET_PROGRESS_SPEC.inputSchema.properties ?? {})).toEqual(["plan", "report"]);
-  expect(TICKET_MCP_TOOLS).toEqual([
-    ...ASK_TOOLS,
-    PROGRESS_TOOL,
-    "mcp__kibo__signal_project",
-    "mcp__kibo__peek_work",
-    "mcp__kibo__skill_review",
-  ]);
-});
-
-test("ticket runs may signal the project agent", () => {
-  expect(TICKET_MCP_TOOLS).toContain("mcp__kibo__signal_project");
-  expect(isTicketToolName("signal_project")).toBe(true);
-  expect(isTicketToolName("ticket_progress")).toBe(true);
-  expect(isTicketToolName("list_tickets")).toBe(false);
-  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual([
-    "ticket_progress",
-    "signal_project",
-    "peek_work",
-    "skill_review",
-  ]);
-  expect(SHARED_TOOL_SPECS.map((s) => s.name)).toEqual(["skill_review"]);
-});
-
-test("ticket runs may peek at the work of another run", () => {
-  expect(PEEK_WORK_TOOL).toBe("mcp__kibo__peek_work");
-  expect(TICKET_TOOL_NAMES).toContain(PEEK_WORK_TOOL_NAME);
-  expect(isTicketToolName("peek_work")).toBe(true);
-  expect(TICKET_MCP_TOOLS).toContain(PEEK_WORK_TOOL);
-  expect(PEEK_WORK_SPEC.name).toBe("peek_work");
-  expect(PEEK_WORK_SPEC.inputSchema.required).toEqual(["run"]);
-  expect(Object.keys(PEEK_WORK_SPEC.inputSchema.properties)).toEqual(["run", "path"]);
 });

@@ -75,8 +75,6 @@ export const frTicketTracking = {
   journalHint: "journal du ticket : branche, PR, review, CI, phases de livraison, sessions, statut",
   noJournal: "Rien dans le journal de ce ticket pour l'instant.",
   journalError: "Journal du ticket indisponible.",
-  oldRuns: "Anciens runs",
-  oldRunsHint: "runs d'agents d'avant la phase 27, en lecture seule",
   events: {
     branch: (name: string | null) => (name ? `Branche ${name} poussée` : "Branche poussée"),
     branchDeclared: (name: string | null) => (name ? `Branche ${name} déclarée` : "Branche déclarée"),

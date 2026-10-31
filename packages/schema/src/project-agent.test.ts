@@ -5,8 +5,10 @@ import {
   ACTION_GROUPS,
   type ActionResult,
   type BatchRow,
+  isRetiredAction,
   ProposeBatchInput,
   ProposedAction,
+  StoredProposedAction,
   TicketRef,
 } from "./project-agent";
 import { TicketPrintSchema } from "./project-agent-fingerprint";
@@ -14,7 +16,7 @@ import { TOOL_SPECS } from "./project-agent-tool-specs";
 
 const HUMAN = { kind: "human" as const, ref: "adam" };
 const OUTCOMES = ["applied", "stale", "failed", "skipped"] as const;
-const one = { id: 1, why: "", type: "deliverAnswers", ticket: "SILO-1" };
+const one = { id: 1, why: "", type: "setStatus", ticket: "SILO-1", statusId: "done" };
 const row: BatchRow = {
   id: "b1",
   projectId: "p1",
@@ -50,10 +52,18 @@ describe("project agent schema", () => {
       }).success,
     ).toBe(true);
     expect(
-      ProposedAction.safeParse({ id: 1, why: "x".repeat(301), type: "deliverAnswers", ticket: "new:1" })
+      ProposedAction.safeParse({
+        id: 1,
+        why: "x".repeat(301),
+        type: "setStatus",
+        ticket: "new:1",
+        statusId: "done",
+      }).success,
+    ).toBe(false);
+    expect(
+      ProposedAction.safeParse({ id: 0, why: "", type: "setStatus", ticket: "SILO-1", statusId: "done" })
         .success,
     ).toBe(false);
-    expect(ProposedAction.safeParse({ id: 0, why: "", type: "cancelRun", runId: "r1" }).success).toBe(false);
     expect(TicketRef.safeParse("new:0").success).toBe(false);
     expect(TicketRef.safeParse("silo-11").success).toBe(false);
     expect(
@@ -129,20 +139,32 @@ describe("project agent schema", () => {
   });
 });
 
-describe("signals in a batch", () => {
-  test("an action may cite up to twenty signals", () => {
-    const create = { id: 1, why: "", type: "createTicket", ref: "new:1", title: "T", signals: ["sig:1"] };
-    expect(ProposedAction.parse(create)).toMatchObject({ signals: ["sig:1"] });
-    const many = Array.from({ length: 21 }, (_, i) => `sig:${i + 1}`);
-    expect(ProposedAction.safeParse({ ...create, signals: many }).success).toBe(false);
-    expect(ProposedAction.safeParse({ ...create, signals: ["sig:0"] }).success).toBe(false);
+describe("retired actions", () => {
+  const assign = { id: 1, why: "", type: "assignAgent", ticket: "SILO-1", profileId: "global:dev" } as const;
+
+  test("une action assignAgent est refusée par le schéma", () => {
+    expect(ProposedAction.safeParse(assign).success).toBe(false);
+    expect(ProposeBatchInput.safeParse({ summary: "ok", actions: [assign] }).success).toBe(false);
   });
 
-  test("dismissSignal closes a signal in the signals group", () => {
-    const dismiss = { id: 2, why: "sans suite", type: "dismissSignal", signal: "sig:3" } as const;
-    expect(ProposedAction.parse(dismiss)).toEqual(dismiss);
-    expect(ProposedAction.safeParse({ ...dismiss, signal: "3" }).success).toBe(false);
-    expect(ACTION_GROUPS.dismissSignal).toBe("signals");
+  test("a stored batch still reads its retired actions and drops cited signals", () => {
+    const retired = StoredProposedAction.parse(assign);
+    expect(retired).toEqual(assign);
+    expect(isRetiredAction(retired)).toBe(true);
+    const create = { id: 2, why: "", type: "createTicket", ref: "new:1", title: "T" };
+    const cited = StoredProposedAction.parse({ ...create, signals: ["sig:1"] });
+    expect(cited).toEqual(ProposedAction.parse(create));
+    expect("signals" in cited).toBe(false);
+    expect(isRetiredAction(cited)).toBe(false);
+    const dismiss = StoredProposedAction.parse({
+      id: 3,
+      why: "",
+      type: "dismissSignal",
+      signal: "sig:3",
+      signals: ["sig:3"],
+    });
+    expect(dismiss).toEqual({ id: 3, why: "", type: "dismissSignal", signal: "sig:3" });
+    expect(isRetiredAction(dismiss)).toBe(true);
   });
 });
 

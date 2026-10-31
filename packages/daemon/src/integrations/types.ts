@@ -1,6 +1,5 @@
 import type { Database } from "bun:sqlite";
 import type {
-  Binding,
   CiRun,
   CommandResult,
   IntegrationEvent,
@@ -8,26 +7,20 @@ import type {
   IntegrationRpcRequest,
   IntegrationRpcResult,
   IntegrationStatus,
-  MappedRemote,
-  McpCallResult,
-  McpImportItem,
   ProjectCommand,
   ProjectMeta,
   ProjectSnapshot,
-  PullPage,
-  PushOp,
   SecretName,
-  Ticket,
   Worktree,
 } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
-import type { EmbedGate } from "../embed/types";
+import type { OrphanSecretName } from "../migrations/legacy-secrets";
 import type { ProjectSettings } from "../notes/settings";
+import type { Notice } from "../runs/notifier";
 
 export type { DesignGate } from "../design/gate";
-export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
+export type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
 export type SystemNotification = Notice;
 export type GhRunner = (args: string[]) => Promise<{ code: number; stdout: string; stderr: string }>;
 
@@ -59,7 +52,7 @@ export type SecretStore = {
   has(name: SecretName): Promise<boolean>;
   get(name: SecretName): Promise<string | null>;
   set(name: SecretName, value: string): Promise<void>;
-  delete(name: SecretName): Promise<void>;
+  delete(name: SecretName | OrphanSecretName): Promise<void>;
 };
 export type SecretResolver = (name: SecretName) => Promise<string | null>;
 
@@ -94,11 +87,6 @@ export type IntegrationFetch = (
   rules: InternalRule[],
 ) => Promise<IntegrationResponse>;
 
-export type AdapterRunner = {
-  pull(projectId: string, binding: Binding, cursor: string | null): Promise<PullPage>;
-  push(projectId: string, binding: Binding, op: PushOp): Promise<MappedRemote>;
-};
-
 export type IntegrationMethod = IntegrationRpcRequest["method"];
 export type IntegrationHandlers = {
   [M in IntegrationMethod]?: (
@@ -112,23 +100,10 @@ export type IntegrationProbe = {
   disconnect?(): Promise<void>;
 };
 
-export type McpCallContext = { projectId: string; instanceId: string };
-export type McpComponentGate = {
-  call(
-    ctx: McpCallContext,
-    server: string,
-    tool: string,
-    args: Record<string, unknown>,
-  ): Promise<McpCallResult>;
-  read(ctx: McpCallContext, server: string, uri: string): Promise<McpCallResult>;
-  importItem(ctx: McpCallContext, server: string, item: McpImportItem): Promise<Ticket>;
-};
 export type ComponentIntegrationHooks = {
   aliases: Map<string, URL>;
   observe(host: string, headers: Headers): void;
   secret: SecretResolver;
-  mcp: McpComponentGate | null;
   design: DesignGate | null;
-  embed: EmbedGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

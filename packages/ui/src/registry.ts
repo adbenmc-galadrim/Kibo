@@ -1,51 +1,28 @@
 import * as graph from "@kibo/component-graph";
 import * as kanban from "@kibo/component-kanban";
-import * as mcpSource from "@kibo/component-mcp-source";
 import * as mockup from "@kibo/component-mockup";
-import * as notes from "@kibo/component-notes";
 import * as overview from "@kibo/component-overview";
 import * as planning from "@kibo/component-planning";
 import * as questions from "@kibo/component-questions";
-import * as tickets from "@kibo/component-tickets";
-import * as viewer3d from "@kibo/component-viewer-3d";
 import type { ComponentManifest, Instance, Page } from "@kibo/schema";
 import type { ComponentModule } from "@kibo/sdk";
 import {
   AppWindow,
   Blocks,
-  Box,
   CalendarRange,
-  FileText,
   Frame,
   LayoutDashboard,
-  List,
   type LucideIcon,
   MessageCircleQuestion,
   Network,
-  Plug,
   SquareKanban,
 } from "lucide-react";
 
-export const BUILTIN_COMPONENTS: ComponentModule[] = [
-  kanban,
-  tickets,
-  graph,
-  notes,
-  mcpSource,
-  viewer3d,
-  mockup,
-  questions,
-  planning,
-  overview,
-];
+export const BUILTIN_COMPONENTS: ComponentModule[] = [kanban, graph, mockup, questions, planning, overview];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
-  tickets: List,
   graph: Network,
-  notes: FileText,
-  "mcp-source": Plug,
-  "viewer-3d": Box,
   mockup: Frame,
   questions: MessageCircleQuestion,
   planning: CalendarRange,

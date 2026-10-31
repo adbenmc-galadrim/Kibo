@@ -31,7 +31,7 @@ import { ticketsStep } from "./tickets-step";
 import { createCommand, moveCommand, updateCommand } from "./tickets-write";
 import { targetOf } from "./write-support";
 
-export type TicketsIo = SessionIo;
+type TicketsIo = SessionIo;
 type Flags = Parsed["flags"];
 
 const SUBCOMMANDS = new Set(["list", "get", "set", "create", "update", "move", "link", "unlink"]);

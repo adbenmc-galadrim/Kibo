@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
-import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { column, setupPlanning } from "./planning-kit";
 import { TODAY } from "./test-seed";
@@ -69,15 +69,6 @@ test("the sprint name opens its sheet, the pencil next to it opens the dialog", 
   await user.click(await pencil("S44 Rapports"));
   expect(await screen.findByRole("dialog", { name: "Modifier le sprint S44" })).toBeTruthy();
   expect(m.openedSprints).toHaveLength(1);
-});
-
-test("a reader opens the sheet from the name but has no pencil", async () => {
-  const { m, seeded } = setupPlanning(TODAY, { shared: true });
-  act(() => m.setAccess("read-only"));
-  const s43 = within(await column("S43 Import et contrats"));
-  await waitFor(() => expect(s43.queryByRole("button", { name: "Modifier le sprint" })).toBeNull());
-  await userEvent.setup().click(s43.getByRole("button", { name: "Fiche du sprint S43 Import et contrats" }));
-  expect(m.openedSprints).toEqual([seeded.sprints.s43.id]);
 });
 
 test("a sprint is edited from its column header", async () => {

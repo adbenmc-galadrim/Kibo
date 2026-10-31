@@ -20,11 +20,9 @@ import type { RunView } from "./run";
 export {
   Actor,
   ANSWER_TEXT_MAX,
-  AnswerKind,
   QUESTION_CONTEXT_MAX,
   QUESTION_OPTION_MAX,
   QUESTION_OPTIONS_MAX,
-  QUESTION_TITLE_MAX,
   QuestionAnswer,
   QuestionOption,
   QuestionTitle,
@@ -122,7 +120,7 @@ export const DeliveryResult = z.object({
 });
 export type DeliveryResult = z.infer<typeof DeliveryResult>;
 
-export type AnswerChoice = Omit<QuestionAnswer, "by" | "at" | "deliveredAt" | "deliveredRunId">;
+type AnswerChoice = Omit<QuestionAnswer, "by" | "at" | "deliveredAt" | "deliveredRunId">;
 
 export const isArchived = (q: Question): boolean => q.archivedAt !== null;
 export const isOpen = (q: Question): boolean => q.answer === null && !isArchived(q);
@@ -132,10 +130,6 @@ const isUndelivered = (q: Question): boolean => isAnswered(q) && !isDelivered(q)
 
 export function openQuestions(questions: readonly Question[], ticketId: string): Question[] {
   return questions.filter((q) => q.ticketId === ticketId && isOpen(q));
-}
-
-export function questionsOfRun(questions: readonly Question[], runId: string): Question[] {
-  return questions.filter((q) => q.runId === runId);
 }
 
 type RunTally = { open: number; undelivered: number; newestOpen: Question | null };
@@ -171,7 +165,7 @@ export function undeliveredAnswers(questions: readonly Question[], ticketId: str
     .sort((a, b) => (a.answer?.at ?? 0) - (b.answer?.at ?? 0) || a.id.localeCompare(b.id));
 }
 
-export const awaitsDelivery = (q: Question): boolean => isUndelivered(q) && q.answer?.by.kind !== "import";
+const awaitsDelivery = (q: Question): boolean => isUndelivered(q) && q.answer?.by.kind !== "import";
 
 export function answersToDeliver(questions: readonly Question[], ticketId: string): Question[] {
   return undeliveredAnswers(questions, ticketId).filter(awaitsDelivery);
@@ -216,7 +210,7 @@ export function deliveryPrompt(questions: readonly Question[]): string {
   return questions.map((q) => answerPrompt(q)).join("\n");
 }
 
-export type NoticeText = { title: string; body: string };
+type NoticeText = { title: string; body: string };
 type NoticeRun = Pick<RunView, "id" | "label" | "state" | "ticketKey">;
 
 export function askedNotice(run: Pick<RunView, "label" | "ticketKey">, title: string): NoticeText {

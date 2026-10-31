@@ -1,17 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { featureLabel, KiboError, type ProjectMeta } from "@kibo/schema";
-import { LoroDoc } from "loro-crdt";
+import type { LoroDoc } from "loro-crdt";
 import {
-  allocateTicketKeys,
   createProjectDoc,
   createTicket,
-  enableServerAllocation,
   executeProjectCommand,
   getTicket,
   moveTicket,
   updateTicket,
-  validateProjectUpdate,
-  validateSharedSnapshot,
 } from "./index";
 
 const META: ProjectMeta = {
@@ -22,7 +18,6 @@ const META: ProjectMeta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
@@ -97,95 +92,5 @@ describe("feature keys", () => {
     const doc = createProjectDoc(META);
     const created = executeProjectCommand(doc, { method: "createTicket", title: "Socle", feature: true });
     expect(created).toMatchObject({ key: "F1", shortKey: "F1" });
-  });
-});
-
-describe("feature keys in a shared project", () => {
-  function shared(): LoroDoc {
-    const doc = createProjectDoc(META);
-    createTicket(doc, { title: "Existant" });
-    enableServerAllocation(doc);
-    return doc;
-  }
-
-  const peer = (doc: LoroDoc, id: number): LoroDoc => {
-    const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
-    copy.setPeerId(id);
-    return copy;
-  };
-  const editor = { userId: "u1", role: "editor" } as const;
-
-  test("a feature waits for its key like a step, the server gives F<n> and SILO-n", () => {
-    const doc = peer(shared(), 5);
-    const feature = createTicket(doc, { title: "Socle", feature: true });
-    const step = createTicket(doc, { title: "Étape", parentId: feature.id });
-    const moved = createTicket(doc, { title: "Déplacée" });
-    moveTicket(doc, moved.id, feature.id);
-    expect([feature.key, getTicket(doc, feature.id).shortKey, step.key]).toEqual([null, null, null]);
-    expect(allocateTicketKeys(doc)).toEqual([
-      { ticketId: feature.id, key: "F1" },
-      { ticketId: step.id, key: "SILO-2" },
-      { ticketId: moved.id, key: "SILO-3" },
-    ]);
-    expect(getTicket(doc, feature.id)).toMatchObject({ key: "F1", shortKey: "F1" });
-    expect(seqOf(doc)).toBe(3);
-  });
-
-  test("two peers offline both creating the third feature get F3 and F4", () => {
-    const server = shared();
-    createTicket(server, { title: "Socle", feature: true });
-    createTicket(server, { title: "Clients", feature: true });
-    allocateTicketKeys(server);
-    const a = peer(server, 21);
-    const b = peer(server, 22);
-    const fa = createTicket(a, { title: "Planning", feature: true });
-    const fb = createTicket(b, { title: "Questions", feature: true });
-    expect(validateProjectUpdate(server, a, editor)).toEqual({ ok: true });
-    server.import(a.export({ mode: "update" }));
-    server.import(b.export({ mode: "update" }));
-    allocateTicketKeys(server);
-    const keys = [getTicket(server, fa.id).key, getTicket(server, fb.id).key].sort();
-    expect(keys).toEqual(["F3", "F4"]);
-  });
-
-  test("a client never writes a key, a feature one included", () => {
-    const before = shared();
-    const after = peer(before, 7);
-    const forged = after.getTree("tickets").createNode();
-    forged.data.set("key", "F8");
-    forged.data.set("shortKey", "F8");
-    after.commit();
-    expect(validateProjectUpdate(before, after, editor).ok).toBe(false);
-  });
-
-  test("a snapshot with features is valid", () => {
-    const doc = createProjectDoc(META);
-    const feature = createTicket(doc, { title: "Socle", feature: true });
-    createTicket(doc, { title: "Étape", parentId: feature.id });
-    doc.getMap("meta").delete("folder");
-    doc.commit();
-    expect(validateSharedSnapshot(doc, "p1", "u1")).toEqual({ ok: true });
-    const verdict = (edit: (d: LoroDoc) => void) => {
-      const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
-      edit(copy);
-      copy.commit();
-      return validateSharedSnapshot(copy, "p1", "u1").ok;
-    };
-    expect(verdict((d) => d.getTree("tickets").createNode().data.set("key", "F7"))).toBe(false);
-    expect(
-      verdict((d) => {
-        const node = d.getTree("tickets").createNode();
-        node.data.set("key", "F1000");
-        node.data.set("shortKey", "F1000");
-      }),
-    ).toBe(false);
-    expect(
-      verdict((d) => {
-        const root = d.getTree("tickets").roots()[0];
-        const child = root?.createNode();
-        child?.data.set("key", "F9");
-        child?.data.set("shortKey", "F9");
-      }),
-    ).toBe(false);
   });
 });

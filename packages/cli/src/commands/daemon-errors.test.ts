@@ -2,7 +2,6 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { runCli } from "../index";
 import { fakeSnapshot, SILO_META } from "./tickets-test-kit";
 
@@ -50,7 +49,7 @@ function fakeOldDaemon(answer: Rpc) {
     rmSync(home, { recursive: true, force: true });
   });
   const err: string[] = [];
-  const io = { home, toolchain: DEV_TOOLCHAIN, out: () => {}, err: (l: string) => err.push(l) };
+  const io = { home, out: () => {}, err: (l: string) => err.push(l) };
   return { err, run: (...argv: string[]) => runCli(argv, io) };
 }
 

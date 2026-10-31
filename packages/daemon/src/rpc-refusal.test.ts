@@ -9,11 +9,11 @@ const refusalOf = (raw: unknown): string => {
 };
 
 test("an invalid request is refused with a short, stable message naming its fields", () => {
-  expect(refusalOf({ method: "reviewComponentDraft", draftId: "x", version: "bad" })).toBe(
-    "invalid request: draftId, version, changes",
+  expect(refusalOf({ method: "decideBatch", projectId: "p", batchId: 3, decision: "maybe" })).toBe(
+    "invalid request: batchId, decision",
   );
-  expect(refusalOf({ method: "startComponentDraft", draft: { mode: "create" } })).toBe(
-    "invalid request: draft.id, draft.title, draft.kind, draft.withServer, draft.description",
+  expect(refusalOf({ method: "setIcon", owner: { kind: "project" }, icon: { mime: 3 } })).toBe(
+    "invalid request: owner.projectId, icon.mime, icon.data",
   );
   expect(refusalOf({ method: "nope" })).toBe("invalid request: method");
   expect(refusalOf(null)).toBe("invalid request");

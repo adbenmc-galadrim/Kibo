@@ -74,7 +74,7 @@ function FolderRow({ status, desktop, onReveal, onChoose, onDefault }: FolderPro
   );
 }
 
-export type BackupsCardProps = {
+type BackupsCardProps = {
   desktop?: boolean;
   pick?: (from: string | null) => Promise<string | null>;
   reveal?: (path: string) => Promise<void>;

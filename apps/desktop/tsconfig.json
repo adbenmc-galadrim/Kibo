@@ -8,7 +8,6 @@
   "include": ["scripts", "sidecar"],
   "references": [
     { "path": "../../packages/schema" },
-    { "path": "../../packages/devkit" },
     { "path": "../../packages/daemon" },
     { "path": "../../packages/cli" }
   ]

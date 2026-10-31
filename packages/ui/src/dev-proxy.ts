@@ -1,4 +1,4 @@
-export type ProxyRule = { target: string; changeOrigin: true; ws?: true };
+type ProxyRule = { target: string; changeOrigin: true; ws?: true };
 
 export function devProxy(daemon: string): Record<string, ProxyRule> {
   return {

@@ -15,9 +15,7 @@ import { ContextMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { type MouseEvent, type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { type Flash, useFlash } from "../lib/use-flash";
 import { pageIcon } from "../registry";
-import { canEdit } from "../state/access";
 import { NavCount } from "./nav/NavRow";
 import { PageRowMenu } from "./nav/PageRowMenu";
 import { pageBadge } from "./nav/page-badges";
@@ -37,8 +35,8 @@ type Props = {
 
 const wantsNewTab = (e: MouseEvent) => e.metaKey || e.ctrlKey;
 
-function RootDrop({ children, editable }: { children: ReactNode; editable: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({ id: zoneId({ kind: "root" }), disabled: !editable });
+function RootDrop({ children }: { children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: zoneId({ kind: "root" }) });
   return (
     <div ref={setNodeRef} className={cn("rounded-md", isOver && "ring-2 ring-ring")}>
       {children}
@@ -50,9 +48,7 @@ type RowProps = {
   page: Page;
   projectId: string;
   instance: Instance | null;
-  flash: Flash["flash"];
   entries: MenuEntry[];
-  editable: boolean;
   active: boolean;
   onClick(e: MouseEvent): void;
   onAuxClick(e: MouseEvent): void;
@@ -98,9 +94,7 @@ function PageRow({
   page,
   projectId,
   instance,
-  flash,
   entries,
-  editable,
   active,
   children,
   icon,
@@ -108,22 +102,18 @@ function PageRow({
   badge,
   ...handlers
 }: RowProps) {
-  const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
-  const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
-  const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
-  const drag = useDraggable({ id: page.id, disabled: !editable });
+  const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }) });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }) });
+  const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }) });
+  const drag = useDraggable({ id: page.id });
   return (
     <li className="group/menu-item relative">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div className={cn("k-page-row relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
-            {editable && (
-              <>
-                <ZoneLayer kind="before" setNodeRef={before.setNodeRef} />
-                <ZoneLayer kind="inside" setNodeRef={inside.setNodeRef} />
-                <ZoneLayer kind="after" setNodeRef={after.setNodeRef} />
-              </>
-            )}
+            <ZoneLayer kind="before" setNodeRef={before.setNodeRef} />
+            <ZoneLayer kind="inside" setNodeRef={inside.setNodeRef} />
+            <ZoneLayer kind="after" setNodeRef={after.setNodeRef} />
             {before.isOver && <DropLine className="-top-px" />}
             {after.isOver && <DropLine className="-bottom-px" />}
             <button
@@ -142,17 +132,9 @@ function PageRow({
             >
               {icon}
               <span>{page.title}</span>
-              {badge && <NavCount yields={editable}>{badge}</NavCount>}
+              {badge && <NavCount yields>{badge}</NavCount>}
             </button>
-            {editable && (
-              <PageRowMenu
-                title={page.title}
-                projectId={projectId}
-                instance={instance}
-                entries={entries}
-                flash={flash}
-              />
-            )}
+            <PageRowMenu title={page.title} projectId={projectId} instance={instance} entries={entries} />
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
@@ -167,9 +149,7 @@ function PageRow({
 export function ProjectPages(p: Props) {
   const { project, activeTarget, onOpen } = p;
   const projectId = project.meta.id;
-  const editable = canEdit(project);
   const [error, setError] = useState<string | null>(null);
-  const notice = useFlash();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const move = async (pageId: string, parentId: string | null, index?: number) => {
     setError(null);
@@ -188,7 +168,7 @@ export function ProjectPages(p: Props) {
     return pageMenuEntries({
       page,
       pages: project.pages,
-      editable,
+      editable: true,
       texts: fr.nav,
       actions: {
         openNewTab: () => onOpen({ kind: "page", projectId, pageId: page.id }, true),
@@ -221,9 +201,7 @@ export function ProjectPages(p: Props) {
           instance={
             page.kind === "view" ? (project.instances.find((i) => i.pageId === page.id) ?? null) : null
           }
-          flash={notice.flash}
           entries={entriesFor(page)}
-          editable={editable}
           active={active}
           onClick={(e) => onOpen(target, wantsNewTab(e))}
           onAuxClick={(e) => {
@@ -246,22 +224,11 @@ export function ProjectPages(p: Props) {
   const hasSub = children(null).length > 0;
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
-      <RootDrop editable={editable}>{p.header}</RootDrop>
+      <RootDrop>{p.header}</RootDrop>
       {hasSub && <ul className="k-list mt-[2px]">{renderPages(null, 0)}</ul>}
       {error && (
         <p role="alert" className="px-2 py-1 text-xs text-destructive">
           {error}
-        </p>
-      )}
-      {notice.message && (
-        <p
-          role={notice.tone === "error" ? "alert" : "status"}
-          className={cn(
-            "px-2 py-1 text-xs",
-            notice.tone === "error" ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {notice.message}
         </p>
       )}
     </DndContext>

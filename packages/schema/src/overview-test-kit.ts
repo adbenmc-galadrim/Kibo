@@ -84,7 +84,6 @@ const sprintId = (code: string | null) => (code === null ? null : code.toLowerCa
 export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "title">): TicketView {
   return {
     key: over.id.toUpperCase(),
-    pendingSeq: null,
     description: "",
     statusId: "todo",
     blockedReason: null,
@@ -223,7 +222,6 @@ export const META: ProjectMeta = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: "Location de box",

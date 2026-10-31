@@ -1,8 +1,8 @@
 import { KiboError } from "./errors";
 
 type Json = Record<string, unknown>;
-export type MigrationStep = { config?: (old: Json) => Json; data?: (old: Json) => Json };
-export type Migrations = Readonly<Record<number, MigrationStep>>;
+type MigrationStep = { config?: (old: Json) => Json; data?: (old: Json) => Json };
+type Migrations = Readonly<Record<number, MigrationStep>>;
 
 const isRecord = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
 

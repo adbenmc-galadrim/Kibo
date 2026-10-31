@@ -197,10 +197,6 @@ describe("notes calls", () => {
     svc.forget("p1");
     expect(watches.closed).toBe(before.closed + 1);
   });
-  test("non-note calls are refused", async () => {
-    const { svc } = setup();
-    await expect(svc.handle("p1", { kind: "data.keys" })).rejects.toThrow("INTERNAL");
-  });
 });
 
 describe("skipped notes", () => {

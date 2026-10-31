@@ -1,7 +1,5 @@
 import { expect, test } from "bun:test";
-import { ComponentManifest } from "@kibo/schema";
 import { startFakeGithub } from "../testing/fake-github";
-import { startFakeItch } from "../testing/fake-itch";
 import { parseIntegrationFlags, startIntegrations } from "./bootstrap";
 import { createRedactor } from "./redact";
 import { createFakeHost } from "./testing/fake-host";
@@ -75,54 +73,15 @@ test("the ci runs are served to the UI and to components", async () => {
   }
 });
 
-test("the daemon secret store is exposed for system secrets", async () => {
+test("the daemon secret store is exposed to the daemon", async () => {
   const host = createFakeHost();
   try {
     const flags = parseIntegrationFlags({ "test-origins": ORIGIN, "memory-secrets": true });
     const rpc = startIntegrations(host, flags, createRedactor());
-    await rpc.secrets.set("remote:tls", "key material");
-    expect(await rpc.secrets.get("remote:tls")).toBe("key material");
+    await rpc.secrets.set("penpot", "key material");
+    expect(await rpc.secrets.get("penpot")).toBe("key material");
     await rpc.stop();
   } finally {
-    host.close();
-  }
-});
-
-test("embedded frames are checked against the aliased site and relayed with its origin", async () => {
-  const itch = startFakeItch();
-  const host = createFakeHost();
-  try {
-    const flags = parseIntegrationFlags({ "test-origins": `itch.io=${itch.url}`, "memory-secrets": true });
-    const rpc = startIntegrations(
-      host,
-      { ...flags, devOrigins: ["http://localhost:5173"] },
-      createRedactor(),
-    );
-    const manifest = ComponentManifest.parse({
-      id: "frame",
-      version: "1.0.0",
-      kind: "both",
-      title: "Cadre intégré",
-      reads: [],
-      writes: [],
-      capabilities: ["embed"],
-      embeds: ["itch.io"],
-    });
-    const ctx = { projectId: host.projectId, instanceId: "w1", manifest };
-    const view = await rpc.hooks.embed?.open(ctx, "https://itch.io/embed-upload/1?color=333");
-    expect(view?.url).toStartWith("http://127.0.0.1:4999/e/");
-    expect(itch.requests).toEqual([{ method: "GET", path: "/embed-upload/1" }]);
-    const relay = rpc.relay(view?.url.split("/e/")[1] ?? "");
-    expect(relay?.html).toContain(`src="${itch.url}/embed-upload/1?color=333"`);
-    expect(relay?.headers["content-security-policy"]).toContain(`frame-src ${itch.url};`);
-    expect(relay?.headers["content-security-policy"]).toContain("'self' http://localhost:5173;");
-    await expect(rpc.hooks.embed?.open(ctx, "https://itch.io/embed-upload/2")).rejects.toThrow(
-      "EMBED_REFUSED",
-    );
-    expect(rpc.relay("0".repeat(64))).toBeNull();
-    await rpc.stop();
-  } finally {
-    itch.stop();
     host.close();
   }
 });

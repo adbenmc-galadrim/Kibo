@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RunLogEntry } from "@kibo/schema";
 import fc from "fast-check";
-import { NOW } from "../agents/fixtures";
+import { NOW } from "../lib/fixtures";
 import { buildConversation } from "./conversation";
 import { CONVERSATION_LOG } from "./fixtures";
 import { mergeOutbox, type OutboxItem, settleOutbox } from "./outbox";

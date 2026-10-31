@@ -4,8 +4,15 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { diffFingerprints, renderDigest } from "@kibo/core/project-agent/digest";
-import type { BatchEvent, ProjectFingerprint, ProposedAction, TicketPrint } from "@kibo/schema";
-import { openRunStore } from "../agents/run-store";
+import type {
+  BatchEvent,
+  ProjectFingerprint,
+  ProposedAction,
+  RetiredAction,
+  StoredProposedAction,
+  TicketPrint,
+} from "@kibo/schema";
+import { openRunStore } from "../runs/run-store";
 import { type NewBatch, openProjectAgentStore } from "./store";
 
 const dirs: string[] = [];
@@ -230,6 +237,32 @@ test("lastDecided gives the latest batch decided since a time", () => {
   expect(store.lastDecided("p1", 5)?.id).toBe("b1");
   expect(store.lastDecided("p1", 11)).toBeNull();
   expect(store.lastDecided("p2", 0)).toBeNull();
+  store.close();
+});
+
+test("a batch stored with a retired assignAgent reads back with its fields and stays decidable", () => {
+  const h = home();
+  const store = openProjectAgentStore(h);
+  const raw = new Database(join(h, "runs.db"));
+  const retired: RetiredAction = {
+    id: 2,
+    why: "Le prendre",
+    type: "assignAgent",
+    ticket: "SILO-2",
+    profileId: "global:opus",
+  };
+  const stored: StoredProposedAction[] = [ACTION, retired];
+  const cited = { ...ACTION, signals: ["sig-1"] };
+  raw
+    .query(
+      "INSERT INTO project_agent_batches (id, project_id, run_id, session_id, seq, summary, actions, expected, " +
+        "created_at) VALUES ('b1', 'p1', 'r1', 's1', 1, 'Ranger', $actions, '[]', 10)",
+    )
+    .run({ $actions: JSON.stringify([cited, retired]) });
+  raw.close();
+  expect(store.batch("b1")?.actions).toEqual(stored);
+  store.appendBatchEvent("b1", decided("apply"), 20);
+  expect(store.lastDecided("p1", 15)?.actions).toEqual(stored);
   store.close();
 });
 

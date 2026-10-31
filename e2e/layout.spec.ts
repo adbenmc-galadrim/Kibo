@@ -144,13 +144,13 @@ test.describe("fenêtre large", () => {
     await pairAndCreateProject(page, info, "LAY");
     await createDashboard(page);
     await addComponent(page, "Kanban");
-    await addComponent(page, "Tickets");
+    await addComponent(page, "Questions");
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
-    await expectLayout(widget(page, "Tickets"), "6,0,6,3");
+    await expectLayout(widget(page, "Questions"), "6,0,6,3");
 
     await editLayout(page);
     await expect(toolbar(page)).toContainText("Aucun changement");
-    await page.getByRole("button", { name: "Format de Tickets" }).click();
+    await page.getByRole("button", { name: "Format de Questions" }).click();
     await expect(page.getByRole("menuitemradio", { name: /Moyen · 6 × 3/ })).toHaveAttribute(
       "aria-checked",
       "true",
@@ -162,10 +162,10 @@ test.describe("fenêtre large", () => {
     await expect(page.getByRole("menu")).not.toContainText("Pas de place");
     await shot(page, info, "ecran-128");
     await page.getByRole("menuitemradio", { name: /Large · 6 × 6/ }).click();
-    await expectLayout(widget(page, "Tickets"), "6,0,6,6");
+    await expectLayout(widget(page, "Questions"), "6,0,6,6");
 
     const kanbanBox = await widget(page, "Kanban").boundingBox();
-    const handle = page.getByRole("button", { name: "Déplacer Tickets" });
+    const handle = page.getByRole("button", { name: "Déplacer Questions" });
     const box = await handle.boundingBox();
     if (!box || !kanbanBox) throw new Error("no handle");
     const column = (kanbanBox.width + 16) / 6;
@@ -176,29 +176,29 @@ test.describe("fenêtre large", () => {
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
     await shot(page, info, "ecran-127");
     await page.mouse.up();
-    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expectLayout(widget(page, "Questions"), "0,6,6,6");
     await expect(toolbar(page)).toContainText("1 changement");
     await saveAfterDrag(page);
     await page.reload();
-    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expectLayout(widget(page, "Questions"), "0,6,6,6");
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
 
     await editLayout(page);
-    await pickAndMove(page, "Tickets", times("ArrowUp", 6));
+    await pickAndMove(page, "Questions", times("ArrowUp", 6));
     await expect.poll(() => cellOf(ghostOf(page))).toBe("0,0");
     await expectLayout(widget(page, "Kanban"), "0,6,6,6");
     await shot(page, info, "ecran-127-compaction");
     await page.keyboard.press("Escape");
     await expect(ghostOf(page)).toHaveCount(0);
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
-    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expectLayout(widget(page, "Questions"), "0,6,6,6");
     await expect(toolbar(page)).toContainText("Aucun changement");
     await cancelWithEscape(page);
-    await expectLayout(widget(page, "Tickets"), "0,6,6,6");
+    await expectLayout(widget(page, "Questions"), "0,6,6,6");
 
     await editLayout(page);
-    await expect(widget(page, "Tickets").getByText("Taille · 6 × 6")).toBeVisible();
-    const cornerHandle = page.getByRole("button", { name: "Redimensionner Tickets (coin)" });
+    await expect(widget(page, "Questions").getByText("Taille · 6 × 6")).toBeVisible();
+    const cornerHandle = page.getByRole("button", { name: "Redimensionner Questions (coin)" });
     await cornerHandle.scrollIntoViewIfNeeded();
     const corner = await cornerHandle.boundingBox();
     if (!corner) throw new Error("no resize handle");
@@ -207,37 +207,39 @@ test.describe("fenêtre large", () => {
     await page.mouse.down();
     await page.mouse.move(start.x + column, start.y + 96, { steps: 8 });
     await expect(page.getByRole("status").filter({ hasText: "cases" })).toHaveText("7 × 7 cases");
-    await expect(widget(page, "Tickets").getByText("Taille · 7 × 7")).toBeVisible();
-    await expectLayout(widget(page, "Tickets"), "0,6,7,7");
+    await expect(widget(page, "Questions").getByText("Taille · 7 × 7")).toBeVisible();
+    await expectLayout(widget(page, "Questions"), "0,6,7,7");
     await shot(page, info, "redimensionnement");
     await page.mouse.up();
     await expect(toolbar(page)).toContainText("1 changement");
     await save(page);
     await page.reload();
-    await expectLayout(widget(page, "Tickets"), "0,6,7,7");
+    await expectLayout(widget(page, "Questions"), "0,6,7,7");
 
     await editLayout(page);
-    await page.getByRole("button", { name: "Redimensionner Tickets (droite)" }).focus();
+    await page.getByRole("button", { name: "Redimensionner Questions (droite)" }).focus();
     await page.keyboard.press("Shift+ArrowDown");
-    await expectLayout(widget(page, "Tickets"), "0,6,7,8");
-    await expect(page.getByRole("status").filter({ hasText: "cases" })).toHaveText("Tickets : 7 × 8 cases.");
+    await expectLayout(widget(page, "Questions"), "0,6,7,8");
+    await expect(page.getByRole("status").filter({ hasText: "cases" })).toHaveText(
+      "Questions : 7 × 8 cases.",
+    );
     await page.getByRole("button", { name: "Redimensionner Kanban (droite)" }).focus();
     for (const _ of times("ArrowLeft", 6)) await page.keyboard.press("Shift+ArrowLeft");
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
     await expect(toolbar(page)).toContainText("1 changement");
     await save(page);
     await page.reload();
-    await expectLayout(widget(page, "Tickets"), "0,6,7,8");
+    await expectLayout(widget(page, "Questions"), "0,6,7,8");
     await expectLayout(widget(page, "Kanban"), "0,0,6,6");
 
     await page.setViewportSize({ width: 900, height: 900 });
     await expect(page.getByRole("button", { name: "Modifier la disposition" })).toHaveCount(0);
     await expect(page.getByText("Élargis la fenêtre pour modifier la disposition.")).toBeVisible();
     await expectLayout(widget(page, "Kanban"), null);
-    expect(await layoutOf(widget(page, "Tickets"))).toBeNull();
-    const tickets = await widget(page, "Tickets").boundingBox();
+    expect(await layoutOf(widget(page, "Questions"))).toBeNull();
+    const questions = await widget(page, "Questions").boundingBox();
     const kanban = await widget(page, "Kanban").boundingBox();
-    expect(tickets && kanban && kanban.y < tickets.y).toBe(true);
+    expect(questions && kanban && kanban.y < questions.y).toBe(true);
     await shot(page, info, "ecran-129");
   });
 });
@@ -250,19 +252,19 @@ test.describe("widgets empilés", () => {
     await createDashboard(page);
     const projectId = projectIdOf(page);
     const pageId = pageIdOf(page);
-    for (const component of ["kanban@1.0.0", "tickets@1.0.0"]) {
+    for (const component of ["kanban@1.0.0", "questions@1.0.0"]) {
       await rpc(page, {
         method: "command",
         projectId,
         command: { method: "addInstance", pageId, component },
       });
     }
-    const titles = ["Kanban", "Tickets"];
+    const titles = ["Kanban", "Questions"];
     await expect
       .poll(async () => (await Promise.all(titles.map((t) => layoutOf(widget(page, t))))).sort())
       .toEqual(["0,0,12,6", "0,6,12,6"]);
-    const top = (await layoutOf(widget(page, "Kanban"))) === "0,0,12,6" ? "Kanban" : "Tickets";
-    const below = top === "Kanban" ? "Tickets" : "Kanban";
+    const top = (await layoutOf(widget(page, "Kanban"))) === "0,0,12,6" ? "Kanban" : "Questions";
+    const below = top === "Kanban" ? "Questions" : "Kanban";
 
     await editLayout(page);
     await page.getByRole("button", { name: `Format de ${top}` }).click();
@@ -286,8 +288,8 @@ test.describe("deux éditeurs", () => {
     await pairAndCreateProject(page, info, "LDE");
     await createDashboard(page);
     await addComponent(page, "Kanban");
-    await addComponent(page, "Tickets");
-    await expectLayout(widget(page, "Tickets"), "6,0,6,3");
+    await addComponent(page, "Questions");
+    await expectLayout(widget(page, "Questions"), "6,0,6,3");
     const other = await openSecondEditor(
       browser,
       page,
@@ -296,13 +298,13 @@ test.describe("deux éditeurs", () => {
     const editors = [page, other];
 
     for (const editor of editors) await editLayout(editor);
-    await moveByKeyboard(other, "Tickets", [...times("ArrowLeft", 6), ...times("ArrowDown", 6)], {
+    await moveByKeyboard(other, "Questions", [...times("ArrowLeft", 6), ...times("ArrowDown", 6)], {
       x: 0,
       y: 6,
     });
     await expect(toolbar(other)).toContainText("1 changement");
     await save(other);
-    await expectLayout(widget(page, "Tickets"), "0,6,6,3");
+    await expectLayout(widget(page, "Questions"), "0,6,6,3");
     await page.getByRole("button", { name: "Format de Kanban" }).click();
     await page.getByRole("menuitemradio", { name: /^Demi-page/ }).click();
     await expectLayout(widget(page, "Kanban"), "0,0,12,6");
@@ -310,7 +312,7 @@ test.describe("deux éditeurs", () => {
     await save(page);
     for (const editor of editors) {
       await expectLayout(widget(editor, "Kanban"), "0,0,12,6");
-      await expectLayout(widget(editor, "Tickets"), "0,6,6,3");
+      await expectLayout(widget(editor, "Questions"), "0,6,6,3");
     }
 
     const projectId = projectIdOf(page);
@@ -324,20 +326,20 @@ test.describe("deux éditeurs", () => {
           layout,
         },
       });
-    await expect(setLayout("Tickets", { x: 8, y: 0, w: 6, h: 3 })).rejects.toThrow(/INVALID_INPUT/);
+    await expect(setLayout("Questions", { x: 8, y: 0, w: 6, h: 3 })).rejects.toThrow(/INVALID_INPUT/);
     await setLayout("Kanban", { x: 0, y: 0, w: 5, h: 5 });
     await page.reload();
     await expectLayout(widget(page, "Kanban"), "0,0,5,5");
-    await expectLayout(widget(page, "Tickets"), "0,5,6,3");
+    await expectLayout(widget(page, "Questions"), "0,5,6,3");
 
     await editLayout(page);
     await page.getByRole("button", { name: "Retirer Kanban" }).click();
     const dialog = page.getByRole("alertdialog");
     await dialog.getByRole("button", { name: "Retirer" }).click();
     await expect(dialog).toBeHidden();
-    await expectLayout(widget(page, "Tickets"), "0,0,6,3");
+    await expectLayout(widget(page, "Questions"), "0,0,6,3");
     await cancelWithEscape(page);
-    for (const editor of editors) await expectLayout(widget(editor, "Tickets"), "0,0,6,3");
+    for (const editor of editors) await expectLayout(widget(editor, "Questions"), "0,0,6,3");
     await other.context().close();
   });
 });

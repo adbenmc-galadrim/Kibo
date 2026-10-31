@@ -8,8 +8,6 @@
   },
   "devDependencies": {
     "@kibo/sdk": "workspace:*",
-    "@kibo/sync-server": "workspace:*",
-    "@kibo/trust": "workspace:*",
     "@playwright/test": "1.55.0",
     "fast-check": "4.3.0"
   }

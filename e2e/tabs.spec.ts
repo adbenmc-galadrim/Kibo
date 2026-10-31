@@ -74,17 +74,17 @@ test("onglet fermé : aucun toast, ⌘⇧T, et Backspace ne ferme rien", async (
   await expect(inbox).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 
-  await createSidebarPage(page, `Kibo ${key}`, "Notes", "Vue");
-  await addComponent(page, "Notes");
-  const empty = page.getByText("Aucune note dans ce dossier.");
+  await createSidebarPage(page, `Kibo ${key}`, "Kanban", "Vue");
+  await addComponent(page, "Kanban");
+  const empty = page.getByText("Les étapes avancent seules avec git et les PR.");
   await expect(empty).toBeVisible();
-  const notesTab = bar.getByRole("tab", { name: `Kibo ${key} · Notes` });
-  await expect(notesTab).toHaveAttribute("aria-selected", "true");
+  const kanbanTab = bar.getByRole("tab", { name: `Kibo ${key} · Kanban` });
+  await expect(kanbanTab).toHaveAttribute("aria-selected", "true");
   await empty.click();
   await page.keyboard.press("Backspace");
   await page.keyboard.press("Delete");
   await expect(empty).toBeVisible();
-  await expect(notesTab).toHaveAttribute("aria-selected", "true");
+  await expect(kanbanTab).toHaveAttribute("aria-selected", "true");
 });
 
 test("onglet d'aperçu : navigation, double-clic, modification, rechargement", async ({ page }, info) => {
@@ -96,23 +96,28 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   const previews = bar.locator('[role="tab"][data-preview="true"]');
   const tab = (title: string) => bar.getByRole("tab", { name: title, exact: true });
 
+  await createSidebarPage(page, name, "Brouillon", "Vue");
   await createSidebarPage(page, name, "Kanban", "Vue");
-  await createSidebarPage(page, name, "Notes", "Vue");
-  await addComponent(page, "Notes");
+  await addComponent(page, "Kanban");
+  await page.getByRole("main").getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouveau ticket" });
+  await dialog.getByLabel("Titre", { exact: true }).fill("Journal");
+  await dialog.getByRole("button", { name: "Créer le ticket" }).click();
+  await expect(dialog).toBeHidden();
   if (await bar.isVisible()) {
-    await tab(`${name} · Notes`).click({ button: "right" });
+    await tab(`${name} · Kanban`).click({ button: "right" });
     await page.getByRole("menuitem", { name: "Fermer les autres onglets" }).click();
   }
-  await showTabBar(page, `${name} · Notes`);
-  await expect(tab(`${name} · Notes`)).toHaveAttribute("data-preview", "false");
-
-  await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
-  await expect(tab(`${name} · Kanban`)).toHaveAttribute("aria-selected", "true");
+  await showTabBar(page, `${name} · Kanban`);
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");
-  await expect(bar.getByRole("tab", { name: new RegExp(`${name} · Notes`) })).toHaveCount(0);
-  await sidebar.getByRole("button", { name: "Notes", exact: true }).click({ modifiers: ["ControlOrMeta"] });
-  await expect(tab(`${name} · Notes`)).toHaveAttribute("aria-selected", "true");
-  await expect(tab(`${name} · Kanban`)).toBeVisible();
+
+  await sidebar.getByRole("button", { name: "Brouillon", exact: true }).click();
+  await expect(tab(`${name} · Brouillon`)).toHaveAttribute("aria-selected", "true");
+  await expect(tab(`${name} · Brouillon`)).toHaveAttribute("data-preview", "false");
+  await expect(bar.getByRole("tab", { name: new RegExp(`${name} · Kanban`) })).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "Kanban", exact: true }).click({ modifiers: ["ControlOrMeta"] });
+  await expect(tab(`${name} · Kanban`)).toHaveAttribute("aria-selected", "true");
+  await expect(tab(`${name} · Brouillon`)).toBeVisible();
   await bar.getByRole("button", { name: "Fermer Mes tickets", exact: true }).click();
   await expect(tab("Mes tickets")).toHaveCount(0);
 
@@ -150,18 +155,20 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await expect(tab("Mes tickets · aperçu")).toHaveAttribute("aria-selected", "true");
   await expect(tab("Boîte de réception")).toBeVisible();
 
-  await bar.getByRole("button", { name: `Fermer ${name} · Notes`, exact: true }).click();
   await bar.getByRole("button", { name: `Fermer ${name} · Kanban`, exact: true }).click();
+  await bar.getByRole("button", { name: `Fermer ${name} · Brouillon`, exact: true }).click();
   await tab("Mes tickets · aperçu").click();
   await sidebar.getByRole("button", { name, exact: true }).click();
   await expect(previews).toHaveCount(1);
-  await sidebar.getByRole("button", { name: "Notes", exact: true }).click();
-  await expect(tab(`${name} · Notes · aperçu`)).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("main").getByRole("button", { name: "Nouvelle note" }).click();
-  const dialog = page.getByRole("dialog", { name: "Nouvelle note" });
-  await dialog.getByLabel("Titre").fill("Journal");
-  await dialog.getByRole("button", { name: "Créer" }).click();
-  await expect(tab(`${name} · Notes`)).toHaveAttribute("data-preview", "false");
+  await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
+  await expect(tab(`${name} · Kanban · aperçu`)).toHaveAttribute("aria-selected", "true");
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: `Actions ${key}-1` })
+    .click();
+  await page.getByRole("menuitem", { name: "Déplacer vers" }).click();
+  await page.getByRole("menuitem", { name: "En cours", exact: true }).click();
+  await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");
   await expect(previews).toHaveCount(0);
 
   await tab("Accueil").click();
@@ -172,5 +179,5 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
     .toContain('"screen":"mine"},"pinned":false,"preview":true');
   await page.reload();
   await expect(previews).toHaveAttribute("aria-label", "Mes tickets · aperçu");
-  await expect(tab(`${name} · Notes`)).toHaveAttribute("data-preview", "false");
+  await expect(tab(`${name} · Kanban`)).toHaveAttribute("data-preview", "false");
 });

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   addedPermissions,
   applyMigrations,
+  BUILTIN_IDS,
   COMMAND_WRITES,
   ComponentCall,
   ComponentManifest,
@@ -10,17 +11,13 @@ import {
   diffPermissions,
   GrantedPermissions,
   grantedOf,
-  isActive,
   isBuiltinId,
-  isEmbeddedSpecifier,
   isSafeNotePath,
   NetRule,
   permissionList,
   permissionOfCall,
   RpcRequest,
   ruleCovers,
-  SHARED_SPECIFIERS,
-  shortHash,
   splitRef,
   validateConfig,
 } from "./index";
@@ -33,6 +30,11 @@ test("the game and the snake are no longer built-ins", () => {
   expect(isBuiltinId("snake")).toBe(false);
 });
 
+test("only the six components of the suivi stay built-in", () => {
+  expect([...BUILTIN_IDS].sort()).toEqual(["graph", "kanban", "mockup", "overview", "planning", "questions"]);
+  for (const id of ["notes", "tickets", "mcp-source", "viewer-3d"]) expect(isBuiltinId(id)).toBe(false);
+});
+
 describe("manifest v1", () => {
   test("a v0 manifest is accepted with defaults", () => {
     const m = ComponentManifest.parse(v0);
@@ -42,8 +44,9 @@ describe("manifest v1", () => {
     expect(m.changes).toEqual([]);
     expect(m.sdk).toBe(1);
   });
-  test("note and run are builtin entities", () => {
-    expect(ComponentManifest.safeParse({ ...v0, reads: ["note", "run"] }).success).toBe(true);
+  test("runs and notes are no longer readable by a component", () => {
+    expect(ComponentManifest.safeParse({ ...v0, reads: ["run"] }).success).toBe(false);
+    expect(ComponentManifest.safeParse({ ...v0, reads: ["note"] }).success).toBe(false);
   });
   test("net rules are https host + path prefix only", () => {
     for (const ok of ["api.github.com", "api.github.com/graphql", "a.b-c.io/x/y_z.~"]) {
@@ -106,7 +109,6 @@ describe("permissions", () => {
   });
   test("each call maps to one permission", () => {
     expect(permissionOfCall({ kind: "list", entity: "status" })).toBe("read:status");
-    expect(permissionOfCall({ kind: "list", entity: "run" })).toBe("read:run");
     expect(permissionOfCall({ kind: "run", command: { method: "deleteTicket", ticketId: "1@1" } })).toBe(
       "write:ticket",
     );
@@ -117,9 +119,6 @@ describe("permissions", () => {
       }),
     ).toBe("write:setInstanceData");
     expect(permissionOfCall({ kind: "data.keys" })).toBe("data");
-    expect(permissionOfCall({ kind: "notes.search", query: "x" })).toBe("read:note");
-    expect(permissionOfCall({ kind: "notes.remove", path: "a.md" })).toBe("write:note");
-    expect(permissionOfCall({ kind: "notes.create", path: "a.md", markdown: "# A" })).toBe("write:note");
     expect(permissionOfCall({ kind: "action", name: "x", input: null })).toBeNull();
   });
   test("used net URLs are covered by declared rules", () => {
@@ -201,13 +200,6 @@ describe("versions", () => {
     expect(splitRef("acme.pr-bar@0.3.0")).toEqual({ id: "acme.pr-bar", version: "0.3.0" });
     expect(() => splitRef("nope")).toThrow("INVALID_INPUT");
   });
-  test("a version is active when its approved hash is its hash", () => {
-    const h = "a".repeat(64);
-    expect(isActive({ trust: "sandboxed", hash: h, approvedHash: h })).toBe(true);
-    expect(isActive({ trust: null, hash: h, approvedHash: h })).toBe(false);
-    expect(isActive({ trust: "trusted", hash: h, approvedHash: "b".repeat(64) })).toBe(false);
-    expect(shortHash(`3f9a${"0".repeat(56)}c21e`)).toBe("3f9a…c21e");
-  });
   test("migrations run from n-1 to n and refuse a downgrade", () => {
     const m = {
       1: { config: (c: Record<string, unknown>) => ({ ...c, v: 1 }) },
@@ -219,15 +211,4 @@ describe("versions", () => {
     });
     expect(() => applyMigrations(m, 2, 1, { config: {}, data: {} })).toThrow("INVALID_INPUT");
   });
-});
-
-test("embedded specifiers cover three and the kits", () => {
-  expect(isEmbeddedSpecifier("three")).toBe(true);
-  expect(isEmbeddedSpecifier("three/addons/controls/OrbitControls.js")).toBe(true);
-  expect(isEmbeddedSpecifier("@kibo/sdk/three")).toBe(true);
-  expect(isEmbeddedSpecifier("@kibo/sdk/game")).toBe(true);
-  expect(isEmbeddedSpecifier("threejs")).toBe(false);
-  expect(isEmbeddedSpecifier("@kibo/sdk/mock")).toBe(false);
-  expect(SHARED_SPECIFIERS).toContain("@kibo/sdk/ui/table");
-  expect(SHARED_SPECIFIERS).toContain("@kibo/sdk/ui/switch");
 });

@@ -1,7 +1,6 @@
-import type { CiRun, MemberInfo, Question, TicketRun, TicketView } from "@kibo/schema";
+import type { CiRun, Question, TicketView } from "@kibo/schema";
 import { DELIVERY_STEP_LABELS, FINAL_STATUSES } from "@kibo/schema";
 import {
-  assigneeLabel,
   DELIVERY_STEP_CHIP,
   GroupChip,
   type GroupRef,
@@ -12,9 +11,7 @@ import {
   useSdk,
 } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
-import { AgentChip } from "./AgentChip";
 import { BlockedBadge, CardBadges, HeldBadge, OptionalBadge } from "./CardBadges";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
@@ -38,12 +35,9 @@ const featureChipRef = (group: CardGroup): GroupRef => ({
 export type CardFacts = {
   ticket: TicketView;
   group: CardGroup | null;
-  run: TicketRun | null;
   ciRuns: CiRun[];
   blocked: boolean;
   blocking: Question | null;
-  members: MemberInfo[];
-  remote: { label: string; state: string }[];
   questions: QuestionsChipData;
 };
 
@@ -63,7 +57,7 @@ function StepChip({ ticket }: { ticket: TicketView }) {
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, run, ciRuns, blocked, blocking, members, remote, questions, menu, title } = props;
+  const { ticket: t, group, ciRuns, blocked, blocking, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
   const reason = startReasonText(t.startReason, t.waitingOn);
@@ -110,26 +104,7 @@ export function KanbanCardContent(props: Props) {
             <span className="truncate">{reason}</span>
           </Badge>
         )}
-        <AgentChip
-          agent={t.assignee?.kind === "agent" ? t.assignee.ref : null}
-          run={run}
-          className="max-w-full"
-        />
         <StepChip ticket={t} />
-        {remote.map((r) => (
-          <span
-            key={r.label}
-            className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
-          >
-            <Bot absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
-            <span className="truncate">{r.label}</span>
-          </span>
-        ))}
-        {t.assignee?.kind === "human" && members.length > 0 && (
-          <Badge variant="outline" className="max-w-full text-3xs font-normal">
-            <span className="truncate">{assigneeLabel(t.assignee, members)}</span>
-          </Badge>
-        )}
         {otherQuestions > 0 && (
           <QuestionsChip
             {...questions}

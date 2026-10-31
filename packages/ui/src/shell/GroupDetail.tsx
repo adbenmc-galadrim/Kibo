@@ -2,7 +2,6 @@ import type { FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
 import { Progress } from "@kibo/sdk/ui/progress";
 import { frGroup } from "../i18n/fr-group";
-import { canEdit } from "../state/access";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 
@@ -74,7 +73,7 @@ export function GroupDetail({ project, ticket: t, onOpenFile, onOpenTicket }: Pr
       <DescriptionEditor
         ticketId={t.id}
         description={t.description}
-        editable={canEdit(project)}
+        editable
         command={command}
         onOpenFile={open}
       />

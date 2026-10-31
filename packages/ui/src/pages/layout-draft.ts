@@ -14,7 +14,7 @@ import { type CellMetrics, dropTarget } from "../lib/format-grid";
 export type Draft = ReadonlyMap<string, Layout>;
 export type Preview = { layouts: Draft; landing: Layout };
 
-export const sameLayout = (a: Layout, b: Layout): boolean =>
+const sameLayout = (a: Layout, b: Layout): boolean =>
   a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 
 export const compactDraft = (layouts: Draft, first: readonly string[] = []): Draft =>

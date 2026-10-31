@@ -5,11 +5,11 @@ import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
 import { blockingFirst, filterQuestions, isOpenBlocking, lastReminder, relativeAge } from "./questions-logic";
-import { type QuestionsData, useQuestions } from "./use-questions";
+import { useQuestions } from "./use-questions";
 
-type RowProps = { question: Question; ticket: TicketView | null; data: QuestionsData; now: number };
+type RowProps = { question: Question; ticket: TicketView | null; now: number };
 
-function QuestionRow({ question: q, ticket, data, now }: RowProps) {
+function QuestionRow({ question: q, ticket, now }: RowProps) {
   const [open, setOpen] = useState(false);
   const reminded = lastReminder(q);
   return (
@@ -38,11 +38,7 @@ function QuestionRow({ question: q, ticket, data, now }: RowProps) {
         </span>
       </button>
       {open &&
-        (isOpen(q) ? (
-          !data.readOnly && <QuestionAnswerForm question={q} />
-        ) : (
-          <QuestionAnswerLine question={q} now={now} />
-        ))}
+        (isOpen(q) ? <QuestionAnswerForm question={q} /> : <QuestionAnswerLine question={q} now={now} />)}
     </li>
   );
 }
@@ -71,7 +67,6 @@ export function QuestionsWidget() {
           {fr.widgetTitle(openCount)}
         </h3>
         <span className="flex-1" />
-        {data.readOnly && <span className="text-2xs text-muted-foreground">{fr.readOnly}</span>}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!data.loading && shown.length === 0 ? (
@@ -79,7 +74,7 @@ export function QuestionsWidget() {
         ) : (
           <ul>
             {shown.map((q) => (
-              <QuestionRow key={q.id} question={q} ticket={data.ticketOf(q.ticketId)} data={data} now={now} />
+              <QuestionRow key={q.id} question={q} ticket={data.ticketOf(q.ticketId)} now={now} />
             ))}
           </ul>
         )}

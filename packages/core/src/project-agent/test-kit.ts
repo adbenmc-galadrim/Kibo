@@ -19,7 +19,6 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
   const key = p.key === undefined ? `SILO-${p.id.replace(/\D/g, "") || "1"}` : p.key;
   return {
     key,
-    pendingSeq: null,
     title: `Ticket ${p.id}`,
     description: "",
     statusId: "todo",
@@ -106,7 +105,6 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
       color: "#14B8A6",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
@@ -121,9 +119,8 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
     instances: [],
     rules: [],
     bindings: [],
-    nextTicketKey: null,
+    nextTicketKey: "SILO-1",
     sprints: [],
-    sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     ...p,
   };
 }
@@ -133,7 +130,7 @@ export function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
   seq += 1;
   return {
     seq,
-    kind: "ticket",
+    kind: "project",
     projectId: PROJECT_ID,
     ticketId: null,
     ticketKey: null,
@@ -227,10 +224,6 @@ export const questionContext = (p: Partial<BatchContext> = {}): BatchContext => 
   project: questionSnapshot(),
   runs: [run({ id: ACTIVE_RUN, ticketId: "t2", ticketKey: "SILO-2", label: "opus-dev-1", state: "running" })],
   notes: [],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
   ...p,
 });

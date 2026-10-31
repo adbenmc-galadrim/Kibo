@@ -20,20 +20,17 @@ Feuille de route : `docs/superpowers/plans/2026-09-25-kibo-feuille-de-route.md`.
 apps/desktop/        coque Tauri 2 (Rust minimal) qui lance le démon en sidecar
 packages/schema/     schémas Zod partagés (ticket, page, statut, lien, manifest) — aucune dépendance runtime hors zod
 packages/core/       domaine : docs Loro (workspace, projet), arbres, workflow — pur, sans I/O
-packages/devkit/     outillage des composants : empreinte, imports, build, validation (CLI et démon)
-packages/trust/      signatures Ed25519, codes, empreinte, X.509, paquets et index signés — sans I/O
-packages/sync-server/ serveur de sync kibo-sync (Bun, SQLite) et marketplace d'équipe
 packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, sert l'UI
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
-packages/cli/        commande kibo (création, test, aperçu, publication de composants)
+packages/cli/        commande kibo : lecture et écriture du suivi (tickets, fonctionnalités, sprints, questions, plan)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
-components/<id>/     composants intégrés (kanban, tickets, notes, graph, github-issues sans UI, mcp-source) écrits avec le SDK public
+components/<id>/     composants intégrés (overview, planning, kanban, graph, questions, mockup) écrits avec le SDK public
 e2e/                 parcours Playwright
 scripts/dogfood/     import du projet Kibo dans une instance Kibo, par l'API publique du démon
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← devkit ← daemon`, `devkit ← cli`, `schema ← trust ← {devkit, daemon, sync-server, cli}`, `schema ← core ← sync-server` ; `core ← sdk/mock` (SDK simulé uniquement). `sync-server` n'est qu'une `devDependency` du démon et d'`e2e`, pour leurs tests. `scripts/dogfood` ne dépend que de `schema`.
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← cli` ; `core ← sdk/mock` (SDK simulé uniquement). `scripts/dogfood` ne dépend que de `schema`.
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code

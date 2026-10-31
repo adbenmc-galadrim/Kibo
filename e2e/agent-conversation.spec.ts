@@ -95,7 +95,7 @@ test("a new agent closes the current one, which opens read-only from the list", 
   await button(panel, "Nouvel agent").click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Nouvel agent", exact: true }).click();
   await expect(batches(panel)).toHaveCount(0);
-  const compose = panel.getByRole("combobox", { name: "Message à l'agent de projet" });
+  const compose = panel.getByRole("textbox", { name: "Message à l'agent de projet" });
   await expect(compose).toHaveAttribute("placeholder", "Demande quelque chose sur Silo…");
 
   const list = await openAgentList(panel);

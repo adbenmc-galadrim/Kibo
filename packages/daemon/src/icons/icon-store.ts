@@ -12,8 +12,7 @@ export type IconStore = {
 type Row = { mime: string; bytes: Uint8Array; sha256: string };
 type Owner = { owner: string };
 
-export const sha256Hex = (bytes: Uint8Array): string =>
-  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+const sha256Hex = (bytes: Uint8Array): string => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
 export function ensureIconsTable(db: Database): void {
   db.exec(

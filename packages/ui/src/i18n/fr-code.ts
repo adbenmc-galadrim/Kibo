@@ -15,13 +15,9 @@ export const frCode = {
     closeTab: "Fermer",
     closeOthers: "Fermer les autres onglets",
     closeRight: "Fermer les onglets à droite",
-    changes: "Changements",
     missingProject: "Projet introuvable",
     missingPage: "Page introuvable",
     missingTicket: "Ticket introuvable",
-    run: "Run",
-    runTitle: (label: string) => `Run ${label}`,
-    dirty: "Changements non commités",
     title: (project: string, item: string) => `${project} · ${item}`,
     saveFailed: "Impossible d'enregistrer les onglets.",
     loadFailed: "Impossible de charger les onglets.",
@@ -48,7 +44,6 @@ export const frCode = {
     newSubTicket: (key: string) => `Créer un sous-ticket de ${key}`,
     newPage: "Nouvelle page",
     newProject: "Nouveau projet",
-    openChanges: (project: string) => `Voir les changements de ${project}`,
     toggleTheme: "Basculer le thème (système / clair / sombre)",
     agents: "Agents",
     reply: (agent: string, key: string) => `Répondre à ${agent} (${key})`,
@@ -71,11 +66,8 @@ export const frCode = {
     tooLarge: "Fichier trop volumineux pour l'aperçu (plus de 1 Mo).",
     save: "Enregistrer",
     saving: "Enregistrement…",
-    saved: "Enregistré",
     plainText: "Texte brut",
     languageFailed: "Coloration indisponible pour ce fichier.",
-    localOnly:
-      "Modifier ce fichier ou l'ouvrir dans l'éditeur externe n'est possible que sur l'ordinateur où tourne Kibo.",
   },
   time: {
     now: "à l'instant",
@@ -98,7 +90,6 @@ export const frCode = {
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
     FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
-    AGENT_EXECUTION_REMOVED:
-      "Kibo ne lance plus d'agent de ticket : le développement se fait dans T3 Code avec /full-delivery.",
+    BACKUP_FAILED: "La sauvegarde n'a pas pu être écrite.",
   },
 } as const;

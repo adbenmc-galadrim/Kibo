@@ -1,20 +1,16 @@
 import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { currentStep, type RpcRequest, TutorialState } from "@kibo/schema";
+import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import { readDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
-import { fakeBuild, okReport, writeDraft } from "./components/service.test-helper";
 import { type DaemonOptions, startDaemon } from "./daemon";
 import { commandLineOf } from "./mcp/command-line";
 import { pidsMatching, stubbornServer, survivors } from "./mcp/processes.test-helper";
 
 const VITE = "http://localhost:5173";
-const Published = z.object({ result: z.object({ version: z.object({ hash: z.string() }) }) });
-const ProjectSummaryRow = z.object({ key: z.string(), name: z.string(), demo: z.boolean().optional() });
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();
@@ -27,10 +23,7 @@ async function launch(opts: Partial<DaemonOptions> = {}) {
     sandboxPort: 0,
     uiDir: null,
     dev: false,
-    toolchain: DEV_TOOLCHAIN,
     user: "adam",
-    build: fakeBuild,
-    validate: okReport,
     ...opts,
     home,
   });
@@ -93,7 +86,6 @@ describe("startDaemon", () => {
     expect(body.result.map((s) => s.id)).toEqual([
       "git",
       "github",
-      "github-issues",
       "github-actions",
       "figma",
       "penpot",
@@ -107,7 +99,11 @@ describe("startDaemon", () => {
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
       .all();
     db.close();
-    expect(tables.map((t) => t.name)).toContain("integration_events");
+    const names = tables.map((t) => t.name);
+    expect(names).toContain("integration_events");
+    for (const gone of ["sync_items", "sync_cursors", "sync_outbox", "market_sources", "market_pins"])
+      expect(names).not.toContain(gone);
+    expect((await rpc({ method: "listIntegrations" })).status).toBe(200);
   });
 
   test("stopping the daemon kills every mcp server process", async () => {
@@ -128,38 +124,34 @@ describe("startDaemon", () => {
     expect(await survivors(pids)).toEqual([]);
   }, 15_000);
 
-  test("the sync client is wired and unconfigured by default", async () => {
+  test("team sync is gone: its RPCs are refused and no sync table is created", async () => {
     const { d, home } = await launch();
-    const rpc = await pair(d);
-    const status = await (await rpc({ method: "getSyncStatus" })).json();
-    expect(status).toMatchObject({
-      ok: true,
-      result: { state: "unconfigured", serverUrl: null, projects: [] },
+    const cookie = await pairCookie(d);
+    const res = await fetch(`${d.url}/api/rpc`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: d.url, cookie },
+      body: JSON.stringify({ method: "getSyncStatus" }),
     });
+    expect(res.status).toBe(400);
     const db = new Database(join(home, "kibo.db"), { readonly: true });
     const tables = db
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table'")
       .all();
     db.close();
-    expect(tables.map((t) => t.name)).toEqual(expect.arrayContaining(["sync_config", "sync_projects"]));
+    expect(tables.map((t) => t.name)).not.toContain("sync_config");
+    expect(tables.map((t) => t.name)).not.toContain("sync_projects");
   });
 
-  test("remote access is off by default and pairing codes are single use", async () => {
+  test("remote access is gone: /api/pair-code answers 404 and the daemon listens on 127.0.0.1", async () => {
     const { d } = await launch();
-    const rpc = await pair(d);
-    const status = await (await rpc({ method: "getRemoteAccess" })).json();
-    expect(status).toMatchObject({ ok: true, result: { enabled: false, url: null } });
-    const created = z
-      .object({ result: z.object({ code: z.string() }) })
-      .parse(await (await rpc({ method: "createPairingCode" })).json());
-    const redeem = () =>
-      fetch(`${d.url}/api/pair-code`, {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: d.url },
-        body: JSON.stringify({ code: created.result.code }),
-      });
-    expect((await redeem()).status).toBe(204);
-    expect((await redeem()).status).toBe(401);
+    const cookie = await pairCookie(d);
+    const res = await fetch(`${d.url}/api/pair-code`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: d.url, cookie },
+      body: JSON.stringify({ code: "ABCD-EFGH" }),
+    });
+    expect(res.status).toBe(404);
+    expect(d.url).toStartWith("http://127.0.0.1:");
   });
 
   test("an automatic backup runs at start, then createBackup from the RPC writes under <home>/backups and getBackups lists it", async () => {
@@ -255,27 +247,7 @@ describe("startDaemon", () => {
     }
   });
 
-  test("a sandboxed component is published, approved and served over HTTP", async () => {
-    const { d, home } = await launch();
-    const rpc = await pair(d);
-    const info = await (await rpc({ method: "getRuntimeInfo" })).json();
-    expect(info).toEqual({ ok: true, result: { sandboxOrigin: `http://127.0.0.1:${d.sandboxPort}` } });
-    writeDraft(home, "0.1.0");
-    const published = await rpc({ method: "publishComponent", id: "hello", strategy: "new-version" });
-    const { hash } = Published.parse(await published.json()).result.version;
-    const approve = (h: string) =>
-      rpc({ method: "approveComponent", id: "hello", version: "0.1.0", hash: h, trust: "sandboxed" });
-    const stale = await approve("0".repeat(64));
-    expect(stale.status).toBe(409);
-    expect(await stale.json()).toMatchObject({ ok: false, error: { code: "HASH_MISMATCH" } });
-    expect((await approve(hash)).status).toBe(200);
-    const page = `http://127.0.0.1:${d.sandboxPort}/c/hello/0.1.0/${hash}/index.html`;
-    expect((await fetch(page)).status).toBe(200);
-    await rpc({ method: "revokeComponent", id: "hello", version: "0.1.0" });
-    expect((await fetch(page)).status).toBe(404);
-  });
-
-  test("the sandbox listener answers draft previews with a 404 until a draft is previewed", async () => {
+  test("the sandbox listener serves no component bundle", async () => {
     const { d } = await launch();
     const draft = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
     for (const file of ["index.html", "ui.sandbox.js", "ui.css"]) {
@@ -338,61 +310,5 @@ describe("startDaemon", () => {
     expect((await fetch(icon, { headers: { cookie } })).status).toBe(404);
     expect(await (await rpc({ method: "listProjects" })).json()).toEqual({ ok: true, result: [] });
     expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
-  });
-
-  test("startTutorial creates the tracking demo; its steps follow daemon events, the review is simulated", async () => {
-    const { d, home } = await launch();
-    const rpc = await pair(d);
-    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
-    const started = TutorialState.parse(await result({ method: "startTutorial" }));
-    const state = TutorialState.parse(await result({ method: "getTutorial" }));
-    expect(state).toEqual(started);
-    expect([state.status, currentStep(state)]).toEqual(["active", "overview"]);
-    const projects = ProjectSummaryRow.array().parse(await result({ method: "listProjects" }));
-    expect(projects.map((p) => [p.key, p.name, p.demo])).toEqual([["DEMO", "Démo Kibo", true]]);
-    const projectId = state.projectId ?? "";
-    await result({ method: "markTutorialSeen", view: "overview" });
-    await result({
-      method: "command",
-      projectId,
-      command: { method: "createTicket", title: "Livraison", feature: true },
-    });
-    const after = TutorialState.parse(await result({ method: "getTutorial" }));
-    expect([after.completed, currentStep(after)]).toEqual([["overview", "feature"], "review"]);
-    const elsewhere = await rpc({ method: "simulateTutorialReview", projectId: "p-other" });
-    expect([elsewhere.status, await elsewhere.text()]).toEqual([
-      400,
-      expect.stringContaining("INVALID_INPUT"),
-    ]);
-    const reviewed = TutorialState.parse(await result({ method: "simulateTutorialReview", projectId }));
-    expect(reviewed.completed).toEqual(["overview", "feature", "review"]);
-    const project = (await result({ method: "getProject", projectId })) as {
-      tickets: { key: string; statusId: string }[];
-    };
-    expect(project.tickets.find((t) => t.key === "DEMO-4")?.statusId).toBe("in_review");
-    const folder = await rpc({ method: "updateProject", projectId, patch: { folder: home } });
-    expect([folder.status, await folder.text()]).toEqual([
-      400,
-      expect.stringContaining("the demo project stays local"),
-    ]);
-    await result({ method: "resetTutorial" });
-    const again = TutorialState.parse(await result({ method: "startTutorial" }));
-    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, ["review"]]);
-    expect(ProjectSummaryRow.array().parse(await result({ method: "listProjects" }))).toHaveLength(1);
-    expect(await result({ method: "deleteProject", projectId })).toBeNull();
-    expect(await result({ method: "listProjects" })).toEqual([]);
-    expect(existsSync(join(home, "notes", "DEMO"))).toBe(false);
-  });
-
-  test("notes left in notes/DEMO before the demo are never erased with it", async () => {
-    const { d, home } = await launch();
-    mkdirSync(join(home, "notes", "DEMO"), { recursive: true });
-    writeFileSync(join(home, "notes", "DEMO", "mes-idees.md"), "# Mes idées\n");
-    const rpc = await pair(d);
-    const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
-    const state = TutorialState.parse(await result({ method: "startTutorial" }));
-    expect(existsSync(join(home, "notes", "DEMO", ".kibo-demo"))).toBe(false);
-    expect(await result({ method: "deleteProject", projectId: state.projectId ?? "" })).toBeNull();
-    expect(existsSync(join(home, "notes", "DEMO", "mes-idees.md"))).toBe(true);
   });
 });

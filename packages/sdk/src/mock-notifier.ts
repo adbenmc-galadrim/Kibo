@@ -1,4 +1,4 @@
-export type Notifier = { emit(): void; subscribe(listener: () => void): () => void };
+type Notifier = { emit(): void; subscribe(listener: () => void): () => void };
 
 export function createNotifier(): Notifier {
   const listeners = new Set<() => void>();

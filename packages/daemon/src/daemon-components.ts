@@ -1,3 +1,4 @@
+import { type SandboxServerOptions, startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, type ComponentsService, createComponentsService } from "./components/service";
 import type { DaemonOptions } from "./daemon-options";
 import type { Closer } from "./daemon-shutdown";
@@ -6,42 +7,26 @@ import { createIntegrationHost, type HostParts } from "./integrations/host";
 import type { Redactor } from "./integrations/redact";
 import type { Service } from "./service";
 
-export type DaemonComponentsInput = Pick<
+type DaemonComponentsInput = Pick<
   ComponentsDeps,
-  | "db"
-  | "sandboxOrigin"
-  | "runs"
-  | "allowUnsandboxed"
-  | "integrations"
-  | "presence"
-  | "sharing"
-  | "peekRun"
-  | "delivery"
-  | "appSettings"
-  | "projectEvents"
+  "db" | "notes" | "sandboxOrigin" | "runs" | "integrations" | "projectEvents"
 >;
 
-export async function startDaemonComponents(
+export function startDaemonComponents(
   opts: DaemonOptions,
   service: Service,
   input: DaemonComponentsInput,
   closers: Closer[],
-): Promise<ComponentsService> {
+): ComponentsService {
   const components = createComponentsService({
     ...input,
     home: opts.home,
-    toolchain: opts.toolchain,
     docs: service.docs,
-    commands: service.commands,
-    ...(opts.build && { build: opts.build }),
-    ...(opts.validate && { validate: opts.validate }),
-    ...(opts.processCommand && { processCommand: opts.processCommand }),
     ...(opts.net && { net: opts.net }),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
   closers.push(service.attachComponents(components), () => components.stop());
-  await components.start();
   return components;
 }
 
@@ -62,4 +47,13 @@ export function startDaemonIntegrations(
   closers.push(parts.service.attachIntegrations(integrations));
   closers.push(() => integrations.stop());
   return integrations;
+}
+
+export function startDaemonSandbox(
+  opts: SandboxServerOptions,
+  front: Closer[],
+): { url: string; port: number } {
+  const sandbox = startSandboxServer(opts);
+  front.push(() => sandbox.stop());
+  return sandbox;
 }

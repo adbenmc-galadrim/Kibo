@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { BUILTIN_ADAPTER_IDS, BUILTIN_IDS, ComponentManifest } from "@kibo/schema";
+import { BUILTIN_IDS, ComponentManifest } from "@kibo/schema";
 import { BUILTIN_MANIFESTS, builtinManifestOf } from "./builtin-manifests";
 
 const COMPONENTS = join(import.meta.dir, "../../../../components");
-const ids: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];
+const ids: readonly string[] = BUILTIN_IDS;
 const onDisk = () =>
   readdirSync(COMPONENTS)
     .filter((dir) => ids.includes(dir))
@@ -22,8 +22,9 @@ test("the daemon copy equals components/*/kibo.component.json", () => {
 });
 
 test("builtinManifestOf resolves an exact id@version only", () => {
-  expect(builtinManifestOf("viewer-3d@1.0.0")?.configSchema).toHaveProperty("model");
-  expect(builtinManifestOf("viewer-3d@9.9.9")).toBeNull();
+  expect(builtinManifestOf("mockup@1.0.0")?.configSchema).toHaveProperty("frame");
+  expect(builtinManifestOf("mockup@9.9.9")).toBeNull();
+  expect(builtinManifestOf("notes@1.0.0")).toBeNull();
   expect(builtinManifestOf("ghost@1.0.0")).toBeNull();
 });
 

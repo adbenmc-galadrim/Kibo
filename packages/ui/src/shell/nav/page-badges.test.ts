@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { Instance, ProjectSnapshot, Question, SprintView, TicketView } from "@kibo/schema";
-import { kiboProject } from "../../agents/fixtures";
+import type { Instance, ProjectSnapshot, Question, SprintView } from "@kibo/schema";
+import { kiboProject } from "../../lib/fixtures";
 import { pageBadge } from "./page-badges";
 
 const instance = (pageId: string, component: string): Instance => ({
@@ -64,7 +64,7 @@ function project(over: Partial<ProjectSnapshot>): ProjectSnapshot {
     ...base,
     instances: [
       instance("p-plan", "planning@1.0.0"),
-      instance("p-tickets", "tickets@1.0.0"),
+      instance("p-notes", "notes@1.0.0"),
       instance("p-questions", "questions@1.0.0"),
       instance("p-kanban", "kanban@1.0.0"),
     ],
@@ -86,22 +86,14 @@ test("the Planning page shows the current sprint", () => {
   ).toBeNull();
 });
 
-test("the Tickets page counts the open tickets that are not features", () => {
-  const base = kiboProject();
-  const first = base.tickets[0];
-  if (!first) throw new Error("expected a ticket");
-  const feature: TicketView = { ...first, id: "f1", progress: { done: 0, total: 2 } };
-  const p = project({ tickets: [...base.tickets, feature] });
-  expect(pageBadge("p-tickets", p)).toBe("3");
-});
-
 test("the Questions page counts the open questions", () => {
   const p = project({ questions: [question("q1", false), question("q2", true), question("q3", false)] });
   expect(pageBadge("p-questions", p)).toBe("2");
   expect(pageBadge("p-questions", project({ questions: [] }))).toBeNull();
 });
 
-test("other pages have no badge", () => {
+test("other pages, retired ones included, have no badge", () => {
   expect(pageBadge("p-kanban", project({}))).toBeNull();
+  expect(pageBadge("p-notes", project({}))).toBeNull();
   expect(pageBadge("missing", project({}))).toBeNull();
 });

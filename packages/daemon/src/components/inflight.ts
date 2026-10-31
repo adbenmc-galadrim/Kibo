@@ -1,4 +1,4 @@
-export type Inflight = {
+type Inflight = {
   track<T>(work: Promise<T>): Promise<T>;
   drain(boundMs: number): Promise<void>;
 };

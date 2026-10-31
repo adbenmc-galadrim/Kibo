@@ -8,7 +8,6 @@ import {
   trackingProjects,
 } from "./pixel-projects";
 import { isSiloScenario } from "./pixel-settings";
-import { SYNC_PORTS } from "./sync-fixture";
 import { seedReadyPort } from "./token";
 
 const THEMES = ["dark", "light"] as const;
@@ -27,13 +26,6 @@ const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
 
 const daemons = ALL_DAEMONS.filter((d) => inTheme(d.scheme));
 const servers = [...daemons, ...SCENARIO_DAEMONS.filter((d) => inTheme(d.scheme))];
-
-const allSyncProjects = [
-  { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
-  { name: "sync-light", scheme: "light", port: SYNC_PORTS.light.a, after: ["sync-dark"] },
-] as const;
-const syncProjects = allSyncProjects.filter((p) => inTheme(p.scheme));
-const syncNames: readonly string[] = syncProjects.map((p) => p.name);
 
 type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown[]>;
 
@@ -55,31 +47,14 @@ export default defineConfig({
     ...trackingProjects(daemons.map((d) => d.name)),
     ...agentConversationProjects(daemons.map((d) => d.name)),
     ...THEMES.filter(inTheme).flatMap(scenarioProjectsOf),
-    ...syncProjects.map(
-      (p): Project => ({
-        name: p.name,
-        testMatch: /sync\.spec\.ts/,
-        dependencies: p.after.filter((name) => syncNames.includes(name)),
-        use: { browserName: "chromium", colorScheme: p.scheme, baseURL: `http://127.0.0.1:${p.port}` },
-      }),
-    ),
   ],
-  webServer: [
-    ...servers.map(
-      (d): WebServer => ({
-        command: serveCommand(d),
-        url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
-        reuseExistingServer: false,
-        timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
-        gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-      }),
-    ),
-    {
-      command: "bun serve-sync.ts",
-      url: `http://127.0.0.1:${SYNC_PORTS.control}/`,
+  webServer: servers.map(
+    (d): WebServer => ({
+      command: serveCommand(d),
+      url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
       reuseExistingServer: false,
-      timeout: 120_000,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
-    },
-  ],
+      timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
+    }),
+  ),
 });

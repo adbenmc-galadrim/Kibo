@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { isTerminal, type ProposedAction, type Question, RunState, StatusId } from "@kibo/schema";
+import { type ProposedAction, type Question, RunState, StatusId } from "@kibo/schema";
 import fc from "fast-check";
 import { commandsFor, isSkipped, resolveRefs, staleReason } from "./apply-plan";
-import { AGENTS, answered, HUMAN, project, question, run, ticket } from "./test-kit";
+import { answered, HUMAN, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, captureExpected, validateBatch } from "./validate";
 
 const base: BatchContext = {
@@ -20,12 +20,7 @@ const base: BatchContext = {
   }),
   runs: [run({ id: "r1", ticketId: "t2", state: "running" })],
   notes: [{ path: "a.md", hash: "h1" }],
-  agents: AGENTS,
-  demoProject: false,
   viewer: "adam",
-  signals: [],
-  closedSignals: [],
-  agentExecution: "shown",
 };
 
 const why = "";
@@ -36,9 +31,6 @@ const ACTIONS: ProposedAction[] = [
   { id: 4, why, type: "answerQuestion", questionId: "q1", answer: { kind: "text", text: "oui" } },
   { id: 5, why, type: "updateNote", path: "a.md", content: "x" },
   { id: 6, why, type: "createNote", path: "b.md", content: "x" },
-  { id: 7, why, type: "cancelRun", runId: "r1" },
-  { id: 8, why, type: "deliverAnswers", ticket: "SILO-3" },
-  { id: 9, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" },
   { id: 10, why, type: "link", from: "SILO-1", to: "SILO-3", kind: "blocks" },
   { id: 11, why, type: "updateQuestion", questionId: "q1", title: "Renommée" },
   { id: 12, why, type: "reopenQuestion", questionId: "q2" },
@@ -116,12 +108,6 @@ function changed(id: number, m: Mutation): boolean {
       return m.noteA !== "h1";
     case 6:
       return m.noteB;
-    case 7:
-      return isTerminal(m.r1State);
-    case 8:
-      return m.extraAnswer || m.q2Open;
-    case 9:
-      return m.t3Run !== null && !isTerminal(m.t3Run);
     case 11:
       return m.q1Title !== "Question q1";
     case 12:

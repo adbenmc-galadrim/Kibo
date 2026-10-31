@@ -1,4 +1,4 @@
-export type ImageSize = { width: number; height: number };
+type ImageSize = { width: number; height: number };
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const JPEG_SOF = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);

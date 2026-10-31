@@ -12,7 +12,7 @@ type Input = {
   ciRuns: readonly CiRun[];
 };
 
-export type BoardView = {
+type BoardView = {
   filters: readonly KanbanFilterKey[];
   choose: (filters: readonly KanbanFilterKey[]) => void;
   clear: () => void;

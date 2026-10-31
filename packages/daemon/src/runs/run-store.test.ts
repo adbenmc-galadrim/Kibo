@@ -1,0 +1,365 @@
+import { Database } from "bun:sqlite";
+import { afterEach, expect, test } from "bun:test";
+import { cpSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { KiboError, RunEvent } from "@kibo/schema";
+import { z } from "zod";
+import { holdWriteLock } from "../testing/hold-write-lock";
+import { FIXTURE_HOME_021 } from "../testing/make-home-0.21";
+import { type NewRun, openRunStore } from "./run-store";
+
+const dirs: string[] = [];
+const home = () => {
+  const d = mkdtempSync(join(tmpdir(), "kibo-runs-"));
+  dirs.push(d);
+  return d;
+};
+afterEach(() => {
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+const newRun = (id: string): NewRun => ({
+  id,
+  kind: "project",
+  projectId: "p1",
+  ticketId: "t1",
+  ticketKey: "KIB-14",
+  ticketTitle: "Récepteur de hooks",
+  profileId: "global:opus",
+  profileName: "opus-dev",
+  agentScope: "global",
+  projectKey: null,
+  sessionId: `s-${id}`,
+  brief: "",
+  resumedFrom: null,
+});
+
+test("runs get increasing sequence numbers and survive a reopen", () => {
+  const h = home();
+  const a = openRunStore(h);
+  expect(a.create(newRun("r1"), 0, 10)).toEqual({ ...newRun("r1"), seq: 1, createdAt: 10 });
+  a.create(newRun("r2"), 1, 20);
+  const second = a.append("r1", { type: "admitted", lane: 1 }, 12);
+  expect(second).toMatchObject({ at: 12, event: { type: "admitted", lane: 1 } });
+  a.close();
+  const b = openRunStore(h);
+  expect(b.records().map((r) => [r.id, r.seq])).toEqual([
+    ["r1", 1],
+    ["r2", 2],
+  ]);
+  expect(b.log("r1").map((e) => e.event)).toEqual([
+    { type: "enqueued", rank: 0 },
+    { type: "admitted", lane: 1 },
+  ]);
+  expect(b.events().map((e) => [e.runId, e.event.type])).toEqual([
+    ["r1", "enqueued"],
+    ["r2", "enqueued"],
+    ["r1", "admitted"],
+  ]);
+  b.close();
+});
+
+test("a mixed base reads without error and only yields project runs", () => {
+  const h = home();
+  const s = openRunStore(h);
+  s.create(newRun("r1"), 0, 10);
+  s.create(newRun("r2"), 1, 20);
+  s.close();
+  const raw = new Database(join(h, "runs.db"));
+  raw.exec("DROP TRIGGER IF EXISTS runs_no_update");
+  raw.exec("UPDATE runs SET kind = 'ticket' WHERE id = 'r2'");
+  raw.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => r.id)).toEqual(["r1"]);
+  expect(again.events().map((e) => e.runId)).toEqual(["r1"]);
+  again.close();
+});
+
+test("a 0.21 home keeps its project agent run and hides its ticket runs", () => {
+  const h = home();
+  cpSync(FIXTURE_HOME_021, h, { recursive: true });
+  const s = openRunStore(h);
+  expect(s.records().map((r) => [r.id, r.kind])).toEqual([["r4", "project"]]);
+  expect(s.events()).toEqual([]);
+  s.close();
+});
+
+test("a write waits for another process to release its lock", async () => {
+  const h = home();
+  const s = openRunStore(h);
+  const lock = await holdWriteLock(join(h, "runs.db"), 300);
+  s.create(newRun("r1"), 0, 10);
+  expect(await lock.released).toBe(0);
+  expect(s.records().map((r) => r.id)).toEqual(["r1"]);
+  s.close();
+});
+
+test("a run without ticket is stored with null ticket fields", () => {
+  const s = openRunStore(home());
+  const task = { ...newRun("t"), projectId: null, ticketId: null, ticketKey: null, ticketTitle: "Générer" };
+  s.create(task, 0, 1);
+  expect(s.records()).toEqual([{ ...task, seq: 1, createdAt: 1 }]);
+  s.close();
+});
+
+test("the log is append-only, even through raw SQL", () => {
+  const h = home();
+  const s = openRunStore(h);
+  s.create(newRun("r1"), 0, 1);
+  s.saveTokenHash("r1", "h1", 1);
+  const raw = new Database(join(h, "runs.db"));
+  expect(() => raw.exec("UPDATE runs SET brief = 'x'")).toThrow("append-only");
+  expect(() => raw.exec("DELETE FROM run_events")).toThrow("append-only");
+  expect(() => raw.exec("DELETE FROM run_tokens")).toThrow("append-only");
+  raw.close();
+  s.close();
+});
+
+test("events of an unknown run are refused", () => {
+  const s = openRunStore(home());
+  expect(() => s.append("nope", { type: "cancelled" }, 1)).toThrow("NOT_FOUND");
+  s.close();
+});
+
+test("the latest token hash of a run wins", () => {
+  const s = openRunStore(home());
+  s.create(newRun("r1"), 0, 1);
+  expect(s.tokenHash("r1")).toBeNull();
+  s.saveTokenHash("r1", "h1", 1);
+  s.saveTokenHash("r1", "h2", 2);
+  expect(s.tokenHash("r1")).toBe("h2");
+  s.close();
+});
+
+test("host settings are merged, validated and kept", () => {
+  const h = home();
+  const s = openRunStore(h);
+  expect(s.hostSettings()).toEqual({});
+  s.saveHostSettings({ hostSlots: 4 });
+  s.saveHostSettings({ paused: true });
+  s.close();
+  const again = openRunStore(h);
+  expect(again.hostSettings()).toEqual({ hostSlots: 4, paused: true });
+  again.close();
+});
+
+test("the database is private to the user", () => {
+  const h = home();
+  openRunStore(h).close();
+  expect(statSync(join(h, "runs.db")).mode & 0o777).toBe(0o600);
+});
+
+test("a corrupted file or event is reported, never ignored", () => {
+  const h = home();
+  writeFileSync(join(h, "runs.db"), "not a database at all, just text".repeat(100));
+  expect(() => openRunStore(h)).toThrow("STORE_CORRUPT");
+  const h2 = home();
+  const s = openRunStore(h2);
+  s.create(newRun("r1"), 0, 1);
+  const raw = new Database(join(h2, "runs.db"));
+  raw.exec("INSERT INTO run_events (run_id, at, data) VALUES ('r1', 1, '{\"type\":\"teleported\"}')");
+  raw.close();
+  expect(() => s.log("r1")).toThrow("STORE_CORRUPT");
+  s.close();
+});
+
+test("vacuumInto writes a readable snapshot of the runs", () => {
+  const h = home();
+  const store = openRunStore(h);
+  store.create(newRun("r1"), 0, 1);
+  const target = join(h, "copy.db");
+  store.vacuumInto(target);
+  store.close();
+  const db = new Database(target, { readonly: true });
+  expect(db.query("SELECT id FROM runs").all()).toEqual([{ id: "r1" }]);
+  db.close();
+});
+
+const V016_RUNS =
+  "CREATE TABLE runs (id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE, project_id TEXT, " +
+  "ticket_id TEXT, ticket_key TEXT, ticket_title TEXT NOT NULL, profile_id TEXT NOT NULL, " +
+  "profile_name TEXT NOT NULL, session_id TEXT NOT NULL, brief TEXT NOT NULL, created_at INTEGER NOT NULL)";
+
+test("a v0.16 database opens, its ticket runs stay hidden, and new runs keep their origin", () => {
+  const h = home();
+  const old = new Database(join(h, "runs.db"), { create: true });
+  old.exec(V016_RUNS);
+  old.exec(
+    "INSERT INTO runs VALUES ('r1', 1, 'p1', 't1', 'KIB-14', 'Récepteur de hooks', 'opus', 'opus-dev', 's-r1', '', 5)",
+  );
+  old.close();
+  const s = openRunStore(h);
+  s.create({ ...newRun("r2"), sessionId: "s-r1", resumedFrom: "r1" }, 1, 10);
+  s.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => [r.id, r.sessionId, r.resumedFrom])).toEqual([["r2", "s-r1", "r1"]]);
+  again.close();
+});
+
+test("a database without run kinds opens, old runs are hidden ticket runs, a project run stays", () => {
+  const h = home();
+  const old = new Database(join(h, "runs.db"), { create: true });
+  old.exec(V016_RUNS);
+  old.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+  old.exec(
+    "INSERT INTO runs VALUES ('r1', 1, 'p1', 't1', 'KIB-14', 'Récepteur de hooks', 'opus', 'opus-dev', 's-r1', '', 5, NULL)",
+  );
+  old.close();
+  const s = openRunStore(h);
+  const project = { ...newRun("r2"), kind: "project" as const, ticketId: null, ticketKey: null };
+  s.create(project, 1, 10);
+  s.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => [r.id, r.kind])).toEqual([["r2", "project"]]);
+  again.close();
+});
+
+const V016_SPAWNED = z.object({
+  type: z.literal("spawned"),
+  pid: z.number().int(),
+  resume: z.boolean(),
+  workspace: z.string(),
+  cwd: z.string().optional(),
+  guidelines: z.number().int().nonnegative(),
+});
+const V016_EVENT = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("enqueued"), rank: z.number() }),
+  z.object({ type: z.literal("admitted"), lane: z.number().int().positive() }),
+  V016_SPAWNED,
+]);
+const replayByV016 = (h: string): string[] => {
+  const db = new Database(join(h, "runs.db"), { readonly: true });
+  const rows = db.query("SELECT data FROM run_events ORDER BY id").all() as { data: string }[];
+  db.close();
+  return rows.map((row) => {
+    const parsed = V016_EVENT.safeParse(JSON.parse(row.data));
+    if (!parsed.success) throw new KiboError("STORE_CORRUPT", parsed.error.message);
+    return parsed.data.type;
+  });
+};
+
+test("a journal with a session is refused by an older daemon, an old one reads unchanged", () => {
+  const withSession = home();
+  const s = openRunStore(withSession);
+  s.create(newRun("r1"), 0, 1);
+  s.append("r1", { type: "admitted", lane: 1 }, 2);
+  s.append("r1", { type: "session", mode: "fresh", reason: "transcript_missing" }, 3);
+  s.append(
+    "r1",
+    { type: "spawned", pid: 7, resume: false, workspace: "repo", sessionId: "s-new", guidelines: 0 },
+    4,
+  );
+  s.close();
+  expect(() => replayByV016(withSession)).toThrow("STORE_CORRUPT");
+
+  const old = home();
+  const legacy = openRunStore(old);
+  legacy.create(newRun("r1"), 0, 1);
+  legacy.append("r1", { type: "admitted", lane: 1 }, 2);
+  const spawned: RunEvent = { type: "spawned", pid: 7, resume: false, workspace: "repo", guidelines: 0 };
+  legacy.append("r1", spawned, 3);
+  legacy.close();
+  expect(replayByV016(old)).toEqual(["enqueued", "admitted", "spawned"]);
+  const reopened = openRunStore(old);
+  expect(reopened.log("r1").map((e) => e.event)).toEqual([
+    { type: "enqueued", rank: 0 },
+    { type: "admitted", lane: 1 },
+    RunEvent.parse(spawned),
+  ]);
+  reopened.close();
+});
+
+const oldDatabase = (h: string) => {
+  const old = new Database(join(h, "runs.db"), { create: true, strict: true });
+  old.exec(V016_RUNS);
+  old.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+  old.exec("ALTER TABLE runs ADD COLUMN kind TEXT NOT NULL DEFAULT 'ticket'");
+  old.exec(
+    "CREATE TRIGGER runs_no_update BEFORE UPDATE ON runs BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+  );
+  const insert = old.query(
+    "INSERT INTO runs VALUES ($id, $seq, 'p1', $ticket, $key, 'Titre', $profile, $name, $sid, '', 5, NULL, $kind)",
+  );
+  insert.run({
+    id: "r1",
+    seq: 1,
+    ticket: "t1",
+    key: "KIB-14",
+    profile: "uuid-opus",
+    name: "opus",
+    sid: "s1",
+    kind: "ticket",
+  });
+  insert.run({
+    id: "r2",
+    seq: 2,
+    ticket: null,
+    key: null,
+    profile: "project-agent",
+    name: "project-agent",
+    sid: "s2",
+    kind: "project",
+  });
+  insert.run({
+    id: "r3",
+    seq: 3,
+    ticket: "t2",
+    key: "KIB-15",
+    profile: "uuid-gone",
+    name: "ancien",
+    sid: "s3",
+    kind: "ticket",
+  });
+  old.close();
+};
+
+test("the agent columns are added once, the scope defaults to global", () => {
+  const h = home();
+  oldDatabase(h);
+  openRunStore(h).close();
+  const s = openRunStore(h);
+  expect(s.records().map((r) => [r.id, r.agentScope])).toEqual([["r2", "global"]]);
+  s.close();
+});
+
+test("agent references are rewritten in a transaction and the runs stay append-only afterwards", () => {
+  const h = home();
+  oldDatabase(h);
+  const s = openRunStore(h);
+  const count = s.rewriteAgentRefs(
+    { "uuid-opus": "global:opus", "project-agent": "system:project-agent" },
+    { p1: "KIB" },
+  );
+  expect(count).toBe(2);
+  expect(s.records().map((r) => [r.profileId, r.profileName, r.agentScope, r.projectKey])).toEqual([
+    ["system:project-agent", "kibo-project-agent", "system", "KIB"],
+  ]);
+  s.close();
+  const raw = new Database(join(h, "runs.db"));
+  expect(() => raw.exec("UPDATE runs SET brief = ''")).toThrow("append-only");
+  raw.close();
+});
+
+test("a new run keeps its agent scope and project key", () => {
+  const h = home();
+  const s = openRunStore(h);
+  s.create(
+    { ...newRun("r1"), profileId: "system:project-agent", agentScope: "system", projectKey: "BOU" },
+    0,
+    1,
+  );
+  expect(s.records()[0]).toMatchObject({ agentScope: "system", projectKey: "BOU" });
+  s.close();
+});
+
+test("markers are kept next to the host settings without disturbing them", () => {
+  const h = home();
+  const s = openRunStore(h);
+  expect(s.marker("agents_migrated_at")).toBeNull();
+  s.saveHostSettings({ hostSlots: 3 });
+  s.setMarker("agents_migrated_at", "2026-10-12T10:00:00.000Z");
+  expect(s.marker("agents_migrated_at")).toBe("2026-10-12T10:00:00.000Z");
+  expect(s.hostSettings()).toEqual({ hostSlots: 3 });
+  s.close();
+});

@@ -1,7 +1,7 @@
 import { basename, isAbsolute } from "node:path";
 import { KiboError } from "@kibo/schema";
 
-export const ALLOWED_EDITORS: readonly string[] = [
+const ALLOWED_EDITORS: readonly string[] = [
   "code",
   "code-insiders",
   "cursor",

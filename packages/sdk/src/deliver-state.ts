@@ -1,87 +1,16 @@
-import {
-  type AgentExecution,
-  type DeliveryKind,
-  deliveryBrief,
-  FINAL_STATUSES,
-  isTerminal,
-  NOT_STARTED_STATUSES,
-  type TicketRun,
-  type TicketView,
-  updateDeliveryBrief,
-} from "@kibo/schema";
-import { Copy, Truck } from "lucide-react";
+import { deliveryBrief, FINAL_STATUSES, type TicketView, updateDeliveryBrief } from "@kibo/schema";
+import { Copy } from "lucide-react";
 import { copyCommand } from "./copy-command";
 import { deliveryTexts } from "./fr-delivery";
 import type { KiboSdk } from "./types";
 import type { MenuAction } from "./ui/menu-entries";
 
-export type DeliverEntry = { disabledReason: string | null };
-export type DeliverInput = {
-  ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
-  editable: boolean;
-  agentKnown: boolean;
-  parent: boolean;
-  run: Pick<TicketRun, "label" | "state"> | null;
-};
-
-function disabledReason({ ticket, parent, run }: DeliverInput): string | null {
-  if (run && !isTerminal(run.state)) return deliveryTexts.busy(run.label);
-  if (parent || ticket.startable || !NOT_STARTED_STATUSES.includes(ticket.statusId)) return null;
-  return ticket.waitingOn.length > 0
-    ? deliveryTexts.blockedBy(ticket.waitingOn)
-    : deliveryTexts.blockingQuestion;
-}
-
-export function deliverEntry(input: DeliverInput): DeliverEntry | null {
-  const { ticket, editable, agentKnown } = input;
-  if (!editable || !agentKnown || ticket.key === null || FINAL_STATUSES.includes(ticket.statusId))
-    return null;
-  return { disabledReason: disabledReason(input) };
-}
-
-export function retouchEntry(input: DeliverInput): DeliverEntry | null {
-  const { ticket, editable, agentKnown, run } = input;
-  if (!editable || !agentKnown || ticket.key === null || !FINAL_STATUSES.includes(ticket.statusId))
-    return null;
-  return { disabledReason: run && !isTerminal(run.state) ? deliveryTexts.busy(run.label) : null };
-}
-
-export const menuDeliverEntry = (input: DeliverInput): DeliverEntry | null =>
-  FINAL_STATUSES.includes(input.ticket.statusId) ? retouchEntry(input) : deliverEntry(input);
-
-export const updateBrief = updateDeliveryBrief;
-
-export const deliverMenuActions = (
-  entry: DeliverEntry | null,
-  onSelect: () => void,
-  label: string = deliveryTexts.deliver,
-): MenuAction[] =>
-  entry === null
-    ? []
-    : [
-        {
-          label,
-          icon: Truck,
-          disabled: entry.disabledReason !== null,
-          hint: entry.disabledReason ?? undefined,
-          onSelect,
-        },
-      ];
-
-export type DeliveryMenu = {
+type DeliveryMenu = {
   sdk: Pick<KiboSdk, "toast">;
   ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
-  execution: AgentExecution;
-  entry: DeliverEntry | null;
-  deliver(mode: DeliveryKind): void;
 };
 
 export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
-  const retouch = FINAL_STATUSES.includes(menu.ticket.statusId);
-  if (menu.execution === "shown")
-    return retouch
-      ? deliverMenuActions(menu.entry, () => menu.deliver("update"), deliveryTexts.retouch)
-      : deliverMenuActions(menu.entry, () => menu.deliver("delivery"));
   const command = deliveryCommand(menu.ticket);
   if (command === null) return [];
   return [
@@ -95,7 +24,7 @@ export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
 
 export function deliveryCommand({ key, statusId }: Pick<TicketView, "key" | "statusId">): string | null {
   if (key === null) return null;
-  return FINAL_STATUSES.includes(statusId) ? updateBrief(key) : deliveryBrief(key);
+  return FINAL_STATUSES.includes(statusId) ? updateDeliveryBrief(key) : deliveryBrief(key);
 }
 
 export { type CopyTicket, copyCommand, copyDeliveryCommand } from "./copy-command";

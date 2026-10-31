@@ -3,11 +3,9 @@ import { expect, spyOn, test } from "bun:test";
 import { STORYBOOK_DEFAULTS } from "@kibo/schema";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import {
-  LOCAL_DUPLICATION_KEY,
   LOCAL_FOLDER_KEY,
   LOCAL_STORYBOOK_KEY,
   LOCAL_WORKTREE_KEY,
-  localDuplication,
   localFolder,
   localStorybook,
   storybookSettingsOf,
@@ -22,32 +20,21 @@ const meta = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: null,
   client: null,
 };
 
-test("a shared project gets its folder back from the local settings", () => {
-  const db = new Database(":memory:", { strict: true });
-  ensureSettingsTable(db);
-  const settings = createProjectSettings(db);
-  expect(withLocalSettings(meta, settings, false).folder).toBeNull();
-  settings.set("p1", LOCAL_FOLDER_KEY, "/Users/adam/goinfre/Kibo");
-  expect(withLocalSettings(meta, settings, true).folder).toBe("/Users/adam/goinfre/Kibo");
-  expect(withLocalSettings({ ...meta, folder: "/ailleurs" }, settings, true).folder).toBe(
-    "/Users/adam/goinfre/Kibo",
-  );
-});
-
-test("a shared project never takes its folder from the doc", () => {
-  const db = new Database(":memory:", { strict: true });
-  ensureSettingsTable(db);
-  const settings = createProjectSettings(db);
-  expect(withLocalSettings({ ...meta, folder: "/tmp/evil" }, settings, true).folder).toBeNull();
-  expect(withLocalSettings({ ...meta, folder: "/Users/adam/Perso" }, settings, false).folder).toBe(
+test("the local folder wins over the folder of the doc", () => {
+  const settings = localSettings();
+  expect(withLocalSettings(meta, settings).folder).toBeNull();
+  expect(withLocalSettings({ ...meta, folder: "/Users/adam/Perso" }, settings).folder).toBe(
     "/Users/adam/Perso",
+  );
+  settings.set("p1", LOCAL_FOLDER_KEY, "/Users/adam/goinfre/Kibo");
+  expect(withLocalSettings({ ...meta, folder: "/ailleurs" }, settings).folder).toBe(
+    "/Users/adam/goinfre/Kibo",
   );
 });
 
@@ -64,12 +51,11 @@ function localSettings() {
   return createProjectSettings(db);
 }
 
-test("worktree settings come from the local settings only, shared or not", () => {
+test("worktree settings come from the local settings only", () => {
   const settings = localSettings();
-  expect(withLocalSettings({ ...meta, worktree }, settings, false).worktree).toBeNull();
+  expect(withLocalSettings({ ...meta, worktree }, settings).worktree).toBeNull();
   settings.set("p1", LOCAL_WORKTREE_KEY, JSON.stringify(worktree));
-  expect(withLocalSettings(meta, settings, false).worktree).toEqual(worktree);
-  expect(withLocalSettings(meta, settings, true).worktree).toEqual(worktree);
+  expect(withLocalSettings(meta, settings).worktree).toEqual(worktree);
 });
 
 test("corrupt worktree settings are ignored with a warning, never thrown", () => {
@@ -78,7 +64,7 @@ test("corrupt worktree settings are ignored with a warning, never thrown", () =>
   try {
     for (const raw of ["{not json", JSON.stringify({ ...worktree, pathTemplate: "" }), "null"]) {
       settings.set("p1", LOCAL_WORKTREE_KEY, raw);
-      expect(withLocalSettings(meta, settings, false).worktree).toBeNull();
+      expect(withLocalSettings(meta, settings).worktree).toBeNull();
     }
     expect(warn).toHaveBeenCalledTimes(3);
   } finally {
@@ -88,14 +74,13 @@ test("corrupt worktree settings are ignored with a warning, never thrown", () =>
 
 const storybook = { origin: "https://sb.example.com", portEnv: "SB_PORT" };
 
-test("storybook settings come from the local settings only, shared or not", () => {
+test("storybook settings come from the local settings only", () => {
   const settings = localSettings();
   expect(localStorybook(settings, "p1")).toBeNull();
-  expect(withLocalSettings({ ...meta, storybook }, settings, false).storybook).toBeNull();
+  expect(withLocalSettings({ ...meta, storybook }, settings).storybook).toBeNull();
   settings.set("p1", LOCAL_STORYBOOK_KEY, JSON.stringify(storybook));
   expect(localStorybook(settings, "p1")).toEqual(storybook);
-  expect(withLocalSettings(meta, settings, false).storybook).toEqual(storybook);
-  expect(withLocalSettings(meta, settings, true).storybook).toEqual(storybook);
+  expect(withLocalSettings(meta, settings).storybook).toEqual(storybook);
 });
 
 test("corrupt storybook settings are ignored with a warning and fall back to the defaults", () => {
@@ -121,36 +106,10 @@ test("a project without storybook settings uses the defaults", () => {
   expect(storybookSettingsOf(localSettings(), "p1")).toEqual(STORYBOOK_DEFAULTS);
 });
 
-test("duplication settings come from the local settings only, corrupt ones fall back to null", () => {
+test("localFolder reads the local setting, then the doc", () => {
   const settings = localSettings();
-  const duplication = {
-    enabled: false,
-    minLines: 10,
-    compareTests: false,
-    ignore: [],
-    genericExports: ["main"],
-  };
-  expect(withLocalSettings({ ...meta, duplication }, settings, false).duplication).toBeNull();
-  settings.set("p1", LOCAL_DUPLICATION_KEY, JSON.stringify(duplication));
-  expect(withLocalSettings(meta, settings, true).duplication).toEqual(duplication);
-  expect(localDuplication(settings, "p1")).toEqual(duplication);
-  const warn = spyOn(console, "error").mockImplementation(() => {});
-  try {
-    settings.set("p1", LOCAL_DUPLICATION_KEY, JSON.stringify({ ...duplication, minLines: 99 }));
-    expect(localDuplication(settings, "p1")).toBeNull();
-  } finally {
-    warn.mockRestore();
-  }
-});
-
-test("the local folder wins, and a shared project never falls back on the folder of its doc", () => {
-  const db = new Database(":memory:", { strict: true });
-  ensureSettingsTable(db);
-  const settings = createProjectSettings(db);
   const withDocFolder = { ...meta, folder: "/doc" };
-  expect(localFolder(settings, withDocFolder, false)).toBe("/doc");
-  expect(localFolder(settings, withDocFolder, true)).toBeNull();
+  expect(localFolder(settings, withDocFolder)).toBe("/doc");
   settings.set("p1", LOCAL_FOLDER_KEY, "/local");
-  expect(localFolder(settings, withDocFolder, false)).toBe("/local");
-  expect(localFolder(settings, withDocFolder, true)).toBe("/local");
+  expect(localFolder(settings, withDocFolder)).toBe("/local");
 });

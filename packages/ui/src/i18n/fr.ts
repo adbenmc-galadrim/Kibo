@@ -1,7 +1,6 @@
-import type { KiboErrorCode } from "@kibo/schema";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
-import { frIntegrationRows } from "./fr-integration-rows";
+import { frRetired } from "./fr-retired";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
 
@@ -21,7 +20,6 @@ export const fr = {
     iconAlt: (name: string) => `Image du workspace ${name}`,
   },
   nav: {
-    demo: "Démo",
     breadcrumb: "Fil d'Ariane",
     overview: "Accueil",
     mine: "Mes tickets",
@@ -36,7 +34,6 @@ export const fr = {
     queue: "Files d'attente",
     skills: "Skills",
     newAgent: "Nouvel agent",
-    newSkill: "Nouveau skill",
     settings: "Paramètres",
     general: "Général",
     domains: "Domaines & guidelines",
@@ -46,10 +43,7 @@ export const fr = {
     search: "Rechercher",
     toggleSidebar: "Afficher ou masquer la barre latérale",
     addProject: "Ajouter un projet",
-    synced: "Synchronisé",
-    syncOffline: "Hors ligne",
-    syncError: "Erreur de sync",
-    syncReconnecting: "Hors connexion · reconnexion…",
+    offline: "Hors connexion · reconnexion…",
     openNewTab: "Ouvrir dans un nouvel onglet",
     rename: "Renommer…",
     moveUp: "Monter",
@@ -74,72 +68,22 @@ export const fr = {
     moveFailed: "Impossible de déplacer la page.",
   },
   header: {
-    runHistory: "Historique des runs",
-    unseen: (n: number) => `${n} nouveau${n > 1 ? "x" : ""}`,
-    noRuns: "Aucun run pour l'instant.",
-    reply: "Répondre",
     userMenu: (user: string) => `Menu de ${user}`,
     theme: "Thème",
-    sessions: "Sessions",
     settings: "Paramètres",
     help: "Aide",
     helpShortcuts: "Raccourcis clavier",
-    helpTutorial: "Didacticiel",
     helpWhatsNew: "Quoi de neuf",
     helpReport: "Signaler un problème",
     helpAbout: "À propos de Kibo",
-    account: (name: string, host: string) => `${name} · ${host}`,
-    creations: (awaiting: number, running: number) => {
-      const parts = [
-        ...(awaiting > 0 ? [`${awaiting} ${awaiting > 1 ? "attendent" : "attend"} une action`] : []),
-        ...(running > 0 ? [`${running} en cours`] : []),
-      ];
-      return parts.length > 0 ? `Créations · ${parts.join(", ")}` : "Créations";
-    },
-  },
-  pairing: {
-    title: "Appairer ce navigateur",
-    help: "Dans l'app Kibo : Paramètres › Sécurité › Accès web › Générer un code. Entre le code à 6 caractères ci-dessous.",
-    code: "Code d'appairage",
-    digit: (n: number) => `Caractère ${n} sur 6`,
-    validity: "Code valable 5 minutes · usage unique",
-    submit: "Appairer",
-    invalid: "Code invalide ou expiré.",
-    rateLimited: "Trop d'essais : génère un nouveau code dans l'app Kibo.",
-    security:
-      "Le démon n'écoute que sur 127.0.0.1. Le code est échangé contre un cookie HttpOnly, révocable dans Paramètres › Sécurité.",
   },
   overview: {
     greeting: (user: string) => `Bonjour ${user}`,
     summary: (projects: number, open: number) =>
       `${projects} projet${projects > 1 ? "s" : ""} · ${open} ticket${open > 1 ? "s" : ""} ouvert${open > 1 ? "s" : ""}`,
     empty: "Aucun projet pour l'instant.",
-    inProgress: "en cours",
-    todo: "à faire",
-    blocked: "bloqué",
     progress: (done: number, total: number) => `${done} terminé${done > 1 ? "s" : ""} sur ${total}`,
     inbox: (n: number) => `Boîte de réception · ${n} ticket${n > 1 ? "s" : ""} sans projet`,
-  },
-  newProject: {
-    title: "Nouveau projet",
-    subtitle: "Un projet Kibo est lié à un dossier local (repo git). Tout reste sur ta machine.",
-    name: "Nom",
-    key: "Clé",
-    keyHelp: "2 à 6 majuscules, préfixe des tickets (KIB-12).",
-    keyReserved: (key: string) => `La clé ${key} est réservée à la boîte de réception.`,
-    folder: "Dossier du projet",
-    folderHelp: "Facultatif. Chemin absolu du dépôt.",
-    start: "Démarrer depuis",
-    startEmpty: "Projet vide",
-    startEmptyHelp: "Aucune page, aucun composant.",
-    submit: "Créer le projet",
-    errors: {
-      INVALID_INPUT: "Projet refusé : cette clé est peut-être déjà prise, ou un champ est invalide.",
-      STORE_CORRUPT: "Le stockage du workspace est illisible.",
-      UNAUTHORIZED: "Ce navigateur n'est plus appairé : recharge la page.",
-      TIMEOUT: "Le démon n'a pas répondu à temps.",
-      INTERNAL: "Erreur interne du démon.",
-    } satisfies Partial<Record<KiboErrorCode, string>>,
   },
   newPage: {
     title: "Nouvelle page",
@@ -156,22 +100,12 @@ export const fr = {
   projectHome: {
     created: (name: string) => `Projet créé : ${name}`,
     help: "Ajoute une première page pour y poser un Kanban ou une liste de tickets.",
-    suggestPagesHelp: "Pages de départ selon ton rôle",
-    propose: "Proposer",
   },
   mine: {
-    tabs: "Filtre des tickets",
-    assigned: "Assignés à moi",
-    agents: "Mes agents",
     summary: (tickets: number, projects: number) =>
       `${tickets} ticket${tickets > 1 ? "s" : ""} · ${projects} projet${projects > 1 ? "s" : ""}`,
-    assign: "Assigner",
-    noFolder: "Ajoute un dossier au projet pour lancer un agent.",
-    file: "Rattacher…",
-    noFolderInbox: "Rattache d'abord ce ticket à un projet pour le confier à un agent.",
     empty: {
       assigned: "Aucun ticket ouvert ne t'est assigné.",
-      agents: "Aucun ticket ouvert n'est confié à un agent.",
     },
   },
   page: {
@@ -179,12 +113,11 @@ export const fr = {
     addComponent: "Ajouter un composant",
     editLayout: "Modifier la disposition",
     editLayoutNarrow: "Élargis la fenêtre pour modifier la disposition.",
-    unknownComponent: (ref: string) => `Composant introuvable : ${ref}`,
+    retired: frRetired,
   },
   newTicket: {
     title: "Nouveau ticket",
     key: (key: string) => `Clé ${key}`,
-    keyPending: "Clé attribuée à la synchronisation",
     project: "Projet",
     projectFixed: (project: string) => `Projet : ${project}`,
     projectLocked: "Un sous-ticket reste dans le projet de son parent.",
@@ -208,63 +141,11 @@ export const fr = {
     description: "Description",
     domain: "Domaine",
     noDomain: "Aucun",
-    assignAgent: "Assigner à un agent",
     domainFailed: "Impossible de changer le domaine.",
     prState: { open: "ouverte", draft: "brouillon", merged: "fusionnée", closed: "fermée" },
   },
   agents: {
-    bar: "Agents",
-    summary: (used: number, total: number, queued: number, waiting: number, subagents = 0) =>
-      [
-        `${used}/${total} place${used > 1 ? "s" : ""}`,
-        subagents > 0 && `${subagents} sous-agent${subagents > 1 ? "s" : ""}`,
-        queued > 0 && `${queued} en file`,
-        waiting > 0 && `${waiting} attend${waiting > 1 ? "ent" : ""} une réponse`,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-    stepShort: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
-    resize: "Redimensionner le volet des agents",
-    waitingShort: "attend une réponse",
-    answer: "Répondre",
-    answerTo: (label: string) => `Répondre à ${label}`,
-    daemon: "Kibo · connecté",
-    daemonOffline: "Kibo · hors ligne",
-    expand: "Déplier les agents",
-    moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
-    collapse: "Replier les agents",
-    launch: "Lancer un agent",
-    journal: (label: string) => `Journal de ${label}`,
-    reply: {
-      label: (label: string) => `Réponse à ${label}`,
-      placeholder: "Ta réponse…",
-      hint: "Reprend la session",
-      send: "Envoyer",
-      failed: "Impossible d'envoyer la réponse.",
-    },
-    pause: "Mettre en pause l'admission",
-    resume: "Reprendre l'admission",
-    pauseFailed: "Action impossible.",
-    stop: "Arrêter",
-    stopFailed: "Impossible d'arrêter le run.",
-    events: {
-      loaded: (n: number) => `brief.md + ${n} guideline${n > 1 ? "s" : ""} chargé${n > 1 ? "s" : ""}`,
-      resumed: "reprise de la session",
-      denied: (tools: string) => `actions refusées : ${tools}`,
-      exitCode: (code: number) => `code de sortie ${code}`,
-    },
     questionCount,
-    position: (n: number) => `En file #${n}`,
-    resumeHint: "réponse reçue · reprise de la session",
-    messageHint: "message reçu · reprise de la session",
-    failedWith: (error: string) => `Échec : ${error}`,
-    failedAtLaunch: (error: string) => `Échec au lancement : ${error}`,
-    modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
-    workspace: {
-      worktree: (branch: string) => `worktree ${branch}`,
-      repo: "dossier du projet",
-      isolated: "dossier isolé",
-    },
     errors: {
       WORKSPACE_FAILED: "espace de travail indisponible",
       PROJECT_FOLDER_MISSING: "projet sans dossier local",
@@ -276,60 +157,23 @@ export const fr = {
       NOT_FOUND: "ticket ou agent introuvable",
     },
   },
-  strategies: {
-    worktree: "Worktree par ticket",
-    isolated: "Dossier isolé",
-    repo: "Dossier du projet",
-  },
   settings: {
     title: "Paramètres",
     workspace: "Workspace",
     general: "Général",
     appearance: "Apparence",
-    domains: "Domaines & guidelines",
     integrations: "Intégrations",
-    security: "Sécurité",
-    components: "Composants",
     shortcuts: "Raccourcis",
     generalSubtitle: "Mises à jour et outils en ligne de commande.",
   },
-  notify: {
-    enable: "Activer les notifications",
-    waiting: (label: string) => `${label} attend une réponse`,
-    done: (label: string) => `${label} a terminé`,
-    failed: (label: string) => `${label} a échoué`,
-    batch: "Lot à valider",
-  },
-  integrations: { rows: frIntegrationRows },
-  security: {
-    remoteFrame:
-      "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",
-  },
-  market: {
-    backendStopped: "Backend arrêté — isolation OS indisponible",
-    backendStoppedHelp:
-      "L'interface reste utilisable. Les commandes d'installation sont sur la page Composants.",
-  },
   marketSources: { title: "Sources de composants" },
-  sync: {
-    title: "Synchronisation",
-    indicator: {
-      synced: "synchronisé",
-      syncing: "synchronisation…",
-      offline: "sync hors ligne",
-      error: "erreur de sync",
-    },
-  },
   ...frCode,
   ...frComponents,
   common: {
     cancel: "Annuler",
     close: "Fermer",
     error: "Une erreur est survenue.",
-    confirm: "Confirmer",
     delete: "Supprimer",
     rename: "Renommer",
-    save: "Enregistrer",
-    copied: "Copié",
   },
 } as const;

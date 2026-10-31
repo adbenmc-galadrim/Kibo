@@ -9,10 +9,10 @@ import {
   Ticket,
   type TicketView,
 } from "@kibo/schema";
-import { cleanupTmp, git, repo, tmp } from "../agents/git-test-kit";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { call, createService } from "../service";
 import { openStore } from "../store";
+import { cleanupTmp, git, repo, tmp } from "../testing/git-test-kit";
 import { startTicketSessions } from "./bootstrap";
 
 afterEach(cleanupTmp);

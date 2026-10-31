@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { KiboError, Question } from "@kibo/schema";
 import { noteHashOf } from "../notes/note-hash";
-import { type Harness, harness, readOnly } from "./fakes.test-helper";
+import { type Harness, harness } from "./fakes.test-helper";
 
 const open: Harness[] = [];
 afterEach(() => {
@@ -82,22 +82,11 @@ test("runCommand goes through the user command path: the question actor becomes 
   expect(created.createdBy).toEqual({ kind: "human", ref: "adam" });
 });
 
-test("assertWritable and runCommand refuse a read-only project", async () => {
-  const h = setup();
-  h.data.assertWritable(h.project.id);
-  readOnly(h);
-  expect(await codeOf(() => h.data.assertWritable(h.project.id))).toBe("FORBIDDEN");
-  expect(await codeOf(() => h.data.runCommand(h.project.id, { method: "createTicket", title: "x" }))).toBe(
-    "FORBIDDEN",
-  );
-});
-
-test("agents, guidelines and the demo flag come from the injected dependencies", () => {
+test("agents and guidelines come from the injected dependencies", () => {
   const h = setup();
   expect(h.data.agents(h.project.id).map((a) => [a.ref, a.description])).toEqual([
     ["global:opus", "Agent opus-dev"],
     ["system:assistant", "Agent kibo-assistant"],
   ]);
   expect(h.data.guidelines(h.project.id)).toEqual([]);
-  expect(h.data.isDemoProject(h.project.id)).toBe(false);
 });

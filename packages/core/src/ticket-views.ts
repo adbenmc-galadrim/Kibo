@@ -16,7 +16,7 @@ import {
 import { openCountByTicket } from "./questions";
 import { firstBlockingQuestions, type HeldTicket, startabilityOf } from "./ticket-start";
 
-export type ViewFacts = {
+type ViewFacts = {
   projectKey: string;
   tickets: readonly Ticket[];
   links: readonly Link[];

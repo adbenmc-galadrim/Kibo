@@ -75,7 +75,7 @@ export function downloadPercent(state: UpdateStatus): number | null {
   return Math.min(100, Math.round((state.received / state.total) * 100));
 }
 
-export type UpdateFailure = "check" | "noRelease" | "invalid" | "backup" | "install" | "appImageOnly";
+type UpdateFailure = "check" | "noRelease" | "invalid" | "backup" | "install" | "appImageOnly";
 
 const APPIMAGE_ONLY = /appimage|unsupported linux package/i;
 const NO_RELEASE = /could not fetch a valid release json/i;

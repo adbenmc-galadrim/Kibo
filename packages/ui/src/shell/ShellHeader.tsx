@@ -1,50 +1,28 @@
-import type { AgentsState, ProjectSnapshot, Screen, Session, TabTarget } from "@kibo/schema";
+import type { AgentsState, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
-import { CreationsIndicator, ProjectAgentButton, ScreenActions } from "./lazy-screens";
-import { ExecutionGate } from "./nav/ExecutionGate";
+import { ProjectAgentButton } from "./lazy-screens";
+import { OfflineChip } from "./nav/OfflineChip";
 import { SidebarToggle } from "./nav/SidebarToggle";
-import { SyncChip } from "./nav/SyncChip";
-import { PageActionsSlot, PagePresenceSlot } from "./page-actions";
-import { RunHistoryButton } from "./RunHistoryButton";
+import { PageActionsSlot } from "./page-actions";
 
 type Props = {
   active: TabTarget | null;
   screen: Screen | null;
   project: ProjectSnapshot | null;
-  branch: string | null;
   gitError: string | null;
   agents: AgentsState | null;
   agentPanel: { available: boolean; open: boolean; toggle(): void; show(): void };
-  notifications: Session["notifications"];
-  now: number;
-  onNewAgent: () => void;
-  onNewSkill: () => void;
-  onOpenRun(runId: string): void;
   onOpen(target: TabTarget, keep?: boolean): void;
 };
 
-const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "skills", "mine"]);
+const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["mine"]);
 
-export function ShellHeader({
-  active,
-  screen,
-  project,
-  branch,
-  gitError,
-  agents,
-  agentPanel,
-  notifications,
-  now,
-  onNewAgent,
-  onNewSkill,
-  onOpenRun,
-  onOpen,
-}: Props) {
+export function ShellHeader({ active, screen, project, gitError, agents, agentPanel, onOpen }: Props) {
   return (
     <header className="k-top">
       <SidebarToggle whenClosed />
       <Breadcrumb
-        crumbs={crumbsFor(active, { project, branch, runs: agents?.runs })}
+        crumbs={crumbsFor(active, { project })}
         heading={screen !== null && HEADING_SCREENS.has(screen)}
         onOpen={onOpen}
       />
@@ -54,23 +32,16 @@ export function ShellHeader({
           {gitError}
         </p>
       )}
-      <SyncChip project={project} />
-      <PagePresenceSlot />
+      <OfflineChip />
       <PageActionsSlot />
-      <ScreenActions screen={screen} agents={agents} onNewAgent={onNewAgent} onNewSkill={onNewSkill} />
       {project && agentPanel.available && (
         <ProjectAgentButton
           projectId={project.meta.id}
           agents={agents}
           open={agentPanel.open}
           onToggle={agentPanel.toggle}
-          onOpen={agentPanel.show}
         />
       )}
-      <ExecutionGate>
-        <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
-        <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
-      </ExecutionGate>
     </header>
   );
 }

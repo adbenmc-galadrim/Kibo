@@ -65,7 +65,7 @@ test("files into the chosen editable project, explains the new key, children and
   await waitFor(() => expect(filed).toEqual([["p1", "new-id"]]));
 });
 
-test("a shared target says the key comes from the server; a read-only project is not offered", async () => {
+test("every project is offered, each with its next key", async () => {
   renderDialog();
   expect(screen.queryByText("Ses sous-tickets suivent.")).toBeNull();
   expect(screen.queryByText(/liens vers d'autres tickets/)).toBeNull();
@@ -73,10 +73,9 @@ test("a shared target says the key comes from the server; a read-only project is
   screen.getByRole("combobox", { name: "Projet" }).focus();
   await user.keyboard("{ArrowDown}");
   const options = (await screen.findAllByRole("option")).map((o) => o.textContent);
-  expect(options).toEqual(["Kibo", "Portfolio"]);
+  expect(options).toEqual(["Kibo", "Portfolio", "API Facturation"]);
   await user.click(screen.getByRole("option", { name: "Portfolio" }));
-  expect(await screen.findByText("Sa clé sera attribuée par le serveur de sync.")).toBeTruthy();
-  expect(screen.queryByText(/la prochaine est/)).toBeNull();
+  expect(await screen.findByText(/la prochaine est POR-7/)).toBeTruthy();
 });
 
 test("without an editable project the dialog explains and cannot file", () => {

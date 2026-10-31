@@ -4,19 +4,15 @@ import { TOOL_SPECS } from "./project-agent-tool-specs";
 import {
   AgentMcpRequest,
   ListQuestionsInput,
-  ListSignalsInput,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_TOOLS,
   TOOL_INPUTS,
 } from "./project-agent-tools";
 import { RpcRequest } from "./rpc";
-import { isProjectRun } from "./run";
-import { isSignalRequest } from "./signal-rpc";
 
 describe("project agent tools", () => {
-  test("twelve project tools and the shared review tool, prefixed for the kibo server", () => {
-    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(13);
-    expect(PROJECT_AGENT_TOOLS).toContain("list_signals");
+  test("eleven project tools, prefixed for the kibo server", () => {
+    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(11);
     expect(PROJECT_AGENT_TOOLS).toContain("list_sprints");
     expect(TOOL_INPUTS.list_sprints.safeParse({}).success).toBe(true);
     expect(PROJECT_AGENT_MCP_TOOLS.every((name) => name.startsWith("mcp__kibo__"))).toBe(true);
@@ -40,25 +36,8 @@ describe("project agent tools", () => {
   test("an MCP request names a project tool and defaults its input", () => {
     expect(AgentMcpRequest.parse({ tool: "project_overview" }).input).toEqual({});
     expect(AgentMcpRequest.safeParse({ tool: "ask_user" }).success).toBe(false);
-    expect(AgentMcpRequest.safeParse({ tool: "signal_project" }).success).toBe(true);
-    expect(AgentMcpRequest.safeParse({ tool: "skill_review" }).success).toBe(true);
-    expect(PROJECT_AGENT_MCP_TOOLS).toContain("mcp__kibo__skill_review");
-  });
-
-  test("list_signals reads open signals by default, with a cursor", () => {
-    expect(ListSignalsInput.parse({})).toEqual({ state: "open" });
-    expect(TOOL_INPUTS.list_signals.safeParse({ state: "closed", cursor: "50" }).success).toBe(true);
-    expect(TOOL_INPUTS.list_signals.safeParse({ state: "later" }).success).toBe(false);
-    expect(TOOL_SPECS.find((s) => s.name === "list_signals")).toBeDefined();
-  });
-
-  test("an action may cite signals and dismiss one", () => {
-    const batch = TOOL_SPECS.find((s) => s.name === "propose_batch");
-    const actions = Object(Object(batch?.inputSchema.properties).actions);
-    const properties = Object(Object(actions.items).properties);
-    expect(properties.signals.maxItems).toBe(20);
-    expect(properties.signal.pattern).toBe("^sig:[1-9]\\d{0,5}$");
-    expect(properties.type.enum).toContain("dismissSignal");
+    expect(AgentMcpRequest.safeParse({ tool: "signal_project" }).success).toBe(false);
+    expect(AgentMcpRequest.safeParse({ tool: "skill_review" }).success).toBe(false);
   });
 
   test("list_questions reads archived questions and filters by recipient", () => {
@@ -78,18 +57,6 @@ describe("project agent tools", () => {
     }
     expect(properties.recipient.description).toBeDefined();
     expect(properties.name.description).toBeDefined();
-  });
-
-  test("a run of kind project is a project run", () => {
-    expect(isProjectRun({ kind: "project" })).toBe(true);
-    expect(isProjectRun({ kind: "ticket" })).toBe(false);
-  });
-
-  test("the signal RPC is part of the daemon RPC", () => {
-    const req = RpcRequest.parse({ method: "ignoreSignal", projectId: "p", signalId: "s" });
-    expect(isSignalRequest(req)).toBe(true);
-    expect(isSignalRequest(RpcRequest.parse({ method: "listSignals", projectId: "p" }))).toBe(true);
-    expect(isSignalRequest(RpcRequest.parse({ method: "getSession" }))).toBe(false);
   });
 
   test("the project agent RPC is part of the daemon RPC", () => {

@@ -5,7 +5,7 @@ import { observeBranches } from "./branch-observer";
 import { type Log, readBranches } from "./refs-reader";
 
 export type Delay = (fn: () => void, ms: number) => () => void;
-export type TrackingDeps = {
+type TrackingDeps = {
   service: Service;
   poller: Pick<PrPoller, "beforePoll">;
   refsChanged(listener: (projectId: string) => void): () => void;
@@ -16,7 +16,7 @@ export type TrackingDeps = {
 };
 export type Tracking = { observe(): Promise<void>; idle(): Promise<void>; stop(): void };
 
-export const REFS_GROUPING_MS = 500;
+const REFS_GROUPING_MS = 500;
 
 const timeout: Delay = (fn, ms) => {
   const timer = setTimeout(fn, ms);

@@ -1,4 +1,5 @@
 export const frStartup = {
+  unpaired: "Démon introuvable · relance Kibo",
   unreachable: {
     title: "Kibo ne répond pas",
     explain: "Kibo n'est pas lancé, ou il ne répond pas à cette adresse.",

@@ -1,10 +1,10 @@
 import { listProjects, readProject } from "@kibo/core";
 import { type CommandResult, KiboError, type ProjectCommand, type Worktree } from "@kibo/schema";
-import type { Notice } from "../agents/notifier";
 import { openRepo } from "../code/repo";
 import { createGit, runGh } from "../code/run";
 import type { CommandMeta } from "../docs";
 import { createProjectSettings } from "../notes/settings";
+import type { Notice } from "../runs/notifier";
 import type { Service } from "../service";
 import type { Store } from "../store";
 import type { IntegrationHost } from "./types";

@@ -1,13 +1,11 @@
 import { expect, test } from "bun:test";
-import type { Batch } from "@kibo/schema";
+import type { Batch, StoredProposedAction } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, runFixture } from "../agents/fixtures";
-import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
-import { AgentsProvider } from "../state/agents-context";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
 import { partialBatch, pendingBatch, questionsProject, siloProject } from "./fixtures";
+import { projectQuestionLinks, QuestionLinksContext } from "./QuestionText";
 
 function show(batch: Batch, readOnly = false) {
   const decisions: Decision[] = [];
@@ -15,7 +13,6 @@ function show(batch: Batch, readOnly = false) {
     <BatchCard
       batch={batch}
       labels={projectLabels(siloProject())}
-      signals={[]}
       afterWakeup={false}
       readOnly={readOnly}
       onDecide={async (d) => {
@@ -38,7 +35,7 @@ test("a pending batch is compact: header, one checked line per action, no summar
   expect(boxes).toHaveLength(7);
   expect(boxes.every((b) => b.getAttribute("aria-checked") === "true")).toBe(true);
   expect(card.getAllByRole("button").map((b) => b.textContent)).toEqual(["Valider (7)", "Refuser"]);
-  expect(card.getByText("En cours")).toBeTruthy();
+  expect(card.getAllByText("En cours")).toHaveLength(2);
   expect(card.getByText("En review")).toBeTruthy();
   expect(card.getByText("Export CSV")).toBeTruthy();
   expect(card.getByText("Le code est prêt")).toBeTruthy();
@@ -48,7 +45,7 @@ test("a pending batch is compact: header, one checked line per action, no summar
 test("Valider counts the checked boxes and sends only them, in order", async () => {
   const { card, decisions } = show(pendingBatch());
   const user = userEvent.setup();
-  await user.click(card.getByRole("checkbox", { name: "Assigner SILO-12 à opus" }));
+  await user.click(card.getByRole("checkbox", { name: "SILO-12 : passer en En cours" }));
   await user.click(card.getByRole("checkbox", { name: /^Question sur SILO-12/ }));
   await user.click(card.getByRole("button", { name: "Valider (5)" }));
   expect(decisions).toEqual([{ decision: "apply", actionIds: [1, 2, 3, 6, 7] }]);
@@ -112,7 +109,6 @@ test("superseded, abandoned and rejected batches carry only their label", () => 
       <BatchCard
         batch={pendingBatch({ status })}
         labels={defaultLabels}
-        signals={[]}
         afterWakeup={false}
         readOnly={false}
         onDecide={async () => {}}
@@ -130,37 +126,6 @@ test("a pending batch read from an old agent cannot be decided", () => {
   const { card } = show(pendingBatch(), true);
   expect(card.queryAllByRole("checkbox")).toHaveLength(0);
   expect(card.queryByRole("button", { name: /Valider/ })).toBeNull();
-});
-
-test("an agent action names the existing run of its ticket, and a cancel names its run, as mentions", () => {
-  const base = agentsFixture();
-  const agents = {
-    ...base,
-    runs: [
-      ...base.runs,
-      runFixture({ id: "e1", ticketKey: "SILO-12", label: "opus-dev-4", state: "done", createdAt: 1 }),
-      runFixture({ id: "e2", ticketKey: "SILO-12", label: "opus-dev-5", state: "running", createdAt: 2 }),
-    ],
-  };
-  const batch = pendingBatch({
-    actions: [...pendingBatch().actions, { id: 8, type: "cancelRun", runId: "e1", why: "Doublon" }],
-  });
-  render(
-    <AgentsProvider agents={agents}>
-      <BatchCard
-        batch={batch}
-        labels={projectLabels(siloProject())}
-        signals={[]}
-        afterWakeup={false}
-        readOnly={false}
-        onDecide={async () => {}}
-      />
-    </AgentsProvider>,
-  );
-  const agentsGroup = within(screen.getByRole("region", { name: "Lot n° 1" }));
-  expect(agentsGroup.getByText("Assigner SILO-12 à opus")).toBeTruthy();
-  expect(agentsGroup.getByRole("button", { name: "opus-dev-5" })).toBeTruthy();
-  expect(agentsGroup.getByRole("button", { name: "opus-dev-4" })).toBeTruthy();
 });
 
 test("a question line names its question, previews it and opens it", async () => {
@@ -183,11 +148,10 @@ test("a question line names its question, previews it and opens it", async () =>
     expected: [{ actionId: 3, fields: { title: "Client - Logo ?", recipient: "client", delivered: false } }],
   });
   render(
-    <QuestionLinksContext.Provider value={projectQuestionLinks(project, [], (id) => opened.push(id))}>
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, (id) => opened.push(id))}>
       <BatchCard
         batch={batch}
         labels={projectLabels(project)}
-        signals={[]}
         afterWakeup={false}
         readOnly={false}
         onDecide={async () => {}}
@@ -227,13 +191,11 @@ test("a question line says an old delivered answer is answered, without naming a
         : q,
     ),
   };
-  const runs = [runFixture({ id: "e1", ticketKey: "SILO-12", label: "opus-dev-4", state: "done" })];
   render(
-    <QuestionLinksContext.Provider value={projectQuestionLinks(project, runs, () => {})}>
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, () => {})}>
       <BatchCard
         batch={pendingBatch({ actions: [{ id: 1, type: "reopenQuestion", questionId: "q-port", why: "" }] })}
         labels={projectLabels(project)}
-        signals={[]}
         afterWakeup={false}
         readOnly={false}
         onDecide={async () => {}}
@@ -252,4 +214,28 @@ test("a partly decided batch shows the result of its decided actions and decides
   expect(card.getAllByText("Appliquée")).toHaveLength(1);
   await userEvent.setup().click(card.getByRole("button", { name: "Valider (6)" }));
   expect(decisions).toEqual([{ decision: "apply", actionIds: [2, 3, 4, 5, 6, 7] }]);
+});
+
+test("a stored assignAgent action shows as retired, without a box, and Valider leaves it out", async () => {
+  const retired: StoredProposedAction = {
+    id: 9,
+    type: "assignAgent",
+    ticket: "SILO-12",
+    profileId: "opus",
+    why: "Personne n'y travaille",
+  };
+  const batch = pendingBatch({
+    actions: [
+      { id: 1, type: "setStatus", ticket: "SILO-11", statusId: "in_review", why: "Le code est prêt" },
+      retired,
+    ],
+  });
+  const { card, decisions } = show(batch);
+  const line = card.getByText("Action retirée : Kibo ne lance plus d'agent de ticket");
+  expect(line.closest("li")?.querySelector("[role=checkbox]")).toBeNull();
+  expect(line.closest("li")?.querySelector("button")).toBeNull();
+  expect(card.getAllByRole("checkbox")).toHaveLength(1);
+  expect(card.queryByText(/opus/)).toBeNull();
+  await userEvent.setup().click(card.getByRole("button", { name: "Valider (1)" }));
+  expect(decisions).toEqual([{ decision: "apply", actionIds: [1] }]);
 });

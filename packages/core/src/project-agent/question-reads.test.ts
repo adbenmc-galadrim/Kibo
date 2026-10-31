@@ -96,9 +96,7 @@ describe("get_ticket and project_overview", () => {
       queue: [],
       notes: [],
       agents: AGENTS,
-      demoProject: false,
       memory: "",
-      openSignals: 0,
     });
     expect(overview.recipients).toEqual([...DEFAULT_RECIPIENTS]);
     expect(overview.openQuestions.map((q) => [q.id, q.recipient])).toEqual([

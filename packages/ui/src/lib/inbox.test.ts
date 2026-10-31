@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type StatusId } from "@kibo/schema";
-import { kiboProject, projectsFixture } from "../agents/fixtures";
+import { kiboProject, projectsFixture } from "./fixtures";
 import {
   displayName,
   fileScope,
@@ -26,7 +26,6 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
       color: "#64748B",
       worktree: null,
       storybook: null,
-      duplication: null,
       delivery: null,
       tracking: null,
       description: null,
@@ -68,7 +67,6 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
     color: "#64748B",
     worktree: null,
     storybook: null,
-    duplication: null,
     delivery: null,
     tracking: null,
     description: null,
@@ -76,17 +74,9 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
   });
 });
 
-test("a new ticket can go to the inbox first, then to the projects one can write to", () => {
+test("a new ticket can go to the inbox first, then to the loaded projects", () => {
   const kibo = kiboProject();
-  const readOnly: ProjectSnapshot = {
-    ...kibo,
-    meta: { ...kibo.meta, id: "fac" },
-    sync: { shared: true, keyAllocator: "server", role: "viewer", access: "read-only", members: [] },
-  };
-  const snapshots = new Map([
-    ["kibo", kibo],
-    ["fac", readOnly],
-  ]);
+  const snapshots = new Map([["kibo", kibo]]);
   expect(newTicketProjects(projectsFixture, snapshots).map((p) => p.id)).toEqual([INBOX_ID, "kibo"]);
 });
 

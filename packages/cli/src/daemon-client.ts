@@ -9,7 +9,7 @@ export type DaemonClient = {
   close(): Promise<void>;
 };
 
-export type DaemonIdentity = { home: string; version: string | null };
+type DaemonIdentity = { home: string; version: string | null };
 
 export class DaemonError extends KiboError {
   constructor(

@@ -84,14 +84,10 @@ const preview = (refused: boolean) => {
       <KanbanCardPreview
         ticket={ticket}
         group={null}
-        run={null}
         ciRuns={[]}
         blocked
         blocking={question}
-        members={[]}
-        remote={[]}
-        questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}
-        readOnly={false}
+        questions={{ questions: [], recipients: [], onOpen: () => {} }}
         refused={refused}
       />
     </SdkProvider>,

@@ -1,18 +1,12 @@
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { addBinding, createProjectDoc, createTicket, upsertExternalRef } from "@kibo/core";
-import {
-  type GrantedPermissions,
-  type Instance,
-  NO_ACTIVITY,
-  type ProjectEventInput,
-  type ProjectMeta,
-} from "@kibo/schema";
+import { type Instance, NO_ACTIVITY, type ProjectEventInput, type ProjectMeta } from "@kibo/schema";
 import { createEventStore } from "../events/store";
 import { createEventLog } from "./events";
 import { createGate } from "./gate";
 import { createGateHandlers } from "./gate-handlers";
-import { eventsDb, idleHandlers, refused, stubDocs, stubHandlerDeps } from "./gate-test-kit";
+import { eventsDb, idleHandlers, stubDocs, stubHandlerDeps } from "./gate-test-kit";
 import { createQuotas } from "./quotas";
 
 const event = (featureId: string | null, number: number): ProjectEventInput => ({
@@ -47,29 +41,19 @@ test("without the journal started, listing it fails with a stable code", async (
   await expect(h.list("p1", "project_event")).rejects.toThrow("NOT_CONNECTED");
 });
 
-const READER: GrantedPermissions = {
-  reads: ["project_event"],
-  writes: [],
-  data: false,
-  net: [],
-  secrets: [],
-  mcp: [],
-  capabilities: [],
-};
 const FEATURE_CARD: Instance = {
   id: "card",
   pageId: "pg",
-  component: "journal@1.0.0",
+  component: "overview@1.0.0",
   layout: { x: 0, y: 0, w: 6, h: 4 },
   config: { featureId: "f1" },
   componentHash: null,
 };
 
-test("the gate gives the instance config to the journal and never lets a reader write", async () => {
+test("the gate gives the instance config to the journal", async () => {
   const configs: unknown[] = [];
   const gate = createGate({
     instance: () => FEATURE_CARD,
-    active: (ref) => ({ ref, trust: "sandboxed", granted: READER }),
     handlers: {
       ...idleHandlers,
       list: async (_projectId, entity, config) => {
@@ -82,11 +66,6 @@ test("the gate gives the instance config to the journal and never lets a reader 
   });
   await gate.call("p1", "card", { kind: "list", entity: "project_event" });
   expect(configs).toEqual([["project_event", { featureId: "f1" }]]);
-  await refused(gate.call("p1", "card", { kind: "list", entity: "ticket" }), "PERMISSION_DENIED");
-  await refused(
-    gate.call("p1", "card", { kind: "run", command: { method: "createTicket", title: "Écrit" } }),
-    "PERMISSION_DENIED",
-  );
 });
 
 const META: ProjectMeta = {
@@ -97,7 +76,6 @@ const META: ProjectMeta = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
-  duplication: null,
   delivery: null,
   tracking: null,
   description: "Location de box",

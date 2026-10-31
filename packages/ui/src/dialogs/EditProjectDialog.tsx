@@ -1,20 +1,14 @@
 import {
-  type DuplicationSettings,
   type IconInput,
   iconUrl,
   KiboError,
   type KiboErrorCode,
-  type ProjectDelivery,
   type ProjectEditField,
-  type ProjectMeta,
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
-  type TabTarget,
   type TrackingSettings,
-  WORKTREE_DEFAULTS,
   type WorkspaceConfig,
-  type WorktreeSettings,
 } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
@@ -26,10 +20,6 @@ import { client } from "../api";
 import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
-import { isRemoteView } from "../lib/remote-view";
-import { DuplicationFields } from "../overlaps/DuplicationFields";
-import { ExecutionGate } from "../shell/nav/ExecutionGate";
-import { DeliverySection } from "./DeliverySection";
 import { DescriptionField } from "./DescriptionField";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { GuidelinesField } from "./GuidelinesField";
@@ -38,38 +28,26 @@ import { projectPatch } from "./project-patch";
 import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
 import { TrackingSection } from "./TrackingSection";
-import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
 
 type Props = {
   project: ProjectSummary;
   onClose(): void;
-  remote?: boolean;
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
   config?: WorkspaceConfig | null;
-  go?(target: TabTarget): void;
   focus?: ProjectEditField;
 };
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
 
-export function editFailure(e: unknown): string {
+function editFailure(e: unknown): string {
   if (e instanceof KiboError && e.code === "CONFLICT") return t.folderBusy;
   const known = e instanceof KiboError ? KNOWN[e.code] : undefined;
   if (!known) console.error(e);
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({
-  project,
-  onClose,
-  remote = isRemoteView(),
-  canBrowse,
-  pick,
-  config,
-  go,
-  focus,
-}: Props) {
+export function EditProjectDialog({ project, onClose, canBrowse, pick, config, focus }: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -77,50 +55,28 @@ export function EditProjectDialog({
   const [color, setColor] = useState<string>(project.color);
   const [description, setDescription] = useState(project.description ?? "");
   const [folder, setFolder] = useState(project.folder ?? "");
-  const [worktree, setWorktree] = useState<WorktreeSettings | null>(project.worktree ?? WORKTREE_DEFAULTS);
   const [storybook, setStorybook] = useState<StorybookSettings | null>(
     project.storybook ?? STORYBOOK_DEFAULTS,
   );
-  const [duplication, setDuplication] = useState<DuplicationSettings | null>(project.duplication);
-  const [delivery, setDelivery] = useState<ProjectDelivery | null>(project.delivery);
   const [tracking, setTracking] = useState<TrackingSettings | null>(project.tracking);
-  const [problems, setProblems] = useState<{ recipe: string | null; delivery: string | null }>({
-    recipe: null,
-    delivery: null,
-  });
-  const [saved, setSaved] = useState<ProjectSummary>(project);
-  const [revision, setRevision] = useState(0);
+  const [saved] = useState<ProjectSummary>(project);
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const showWorktree = !remote && folder.trim().length > 0;
+  const showWorktree = folder.trim().length > 0;
   const patch = projectPatch(saved, {
     name,
     color,
     description,
     tracking,
-    folder: remote ? (project.folder ?? "") : folder,
-    ...(showWorktree && { worktree, delivery }),
-    ...(!remote && { storybook, duplication }),
+    folder,
+    storybook,
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
-  const worktreeInvalid =
-    showWorktree &&
-    ((worktree !== null && worktreeProblem(worktree) !== null) ||
-      problems.recipe !== null ||
-      problems.delivery !== null);
   const storybookInvalid = storybook !== null && storybookProblem(storybook) !== null;
-  const dirty =
-    name.trim().length > 0 && !worktreeInvalid && !storybookInvalid && (patch !== null || iconChanged);
+  const dirty = name.trim().length > 0 && !storybookInvalid && (patch !== null || iconChanged);
   const currentUrl = project.icon ? iconUrl({ kind: "project", projectId: project.id }, project.icon) : null;
-
-  const imported = (meta: ProjectMeta) => {
-    setWorktree(meta.worktree ?? WORKTREE_DEFAULTS);
-    setDelivery(meta.delivery);
-    setProblems({ recipe: null, delivery: null });
-    setRevision((r) => r + 1);
-  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -192,73 +148,30 @@ export function EditProjectDialog({
             }}
             onError={setError}
           />
-          {!remote && (
-            <div className="grid gap-1.5">
-              <Label htmlFor={folderId}>{t.folder}</Label>
-              <FolderField
-                id={folderId}
-                value={folder}
-                onChange={setFolder}
-                describedBy={folderHelpId}
-                canBrowse={canBrowse}
-                pick={pick}
-                onError={setError}
-                autoFocus={focus === "folder"}
-              />
-              <p id={folderHelpId} className="text-xs text-muted-foreground">
-                {t.folderHelp}
-              </p>
-            </div>
-          )}
-          {showWorktree && (
-            <ExecutionGate>
-              <WorktreeFields
-                key={`worktree-${revision}`}
-                value={worktree}
-                onChange={setWorktree}
-                onRecipeProblem={(recipe) => setProblems((p) => ({ ...p, recipe }))}
-                disabled={busy}
-              />
-              <DeliverySection
-                key={`delivery-${revision}`}
-                value={delivery}
-                worktree={worktree}
-                projectId={project.id}
-                disabled={busy}
-                onChange={setDelivery}
-                onProblem={(problem) => setProblems((p) => ({ ...p, delivery: problem }))}
-                onImported={(meta) => {
-                  setSaved((s) => ({ ...s, worktree: meta.worktree, delivery: meta.delivery }));
-                  imported(meta);
-                }}
-              />
-            </ExecutionGate>
-          )}
-          {!remote && (
-            <StorybookFields
-              value={storybook}
-              onChange={setStorybook}
-              withPortEnv={showWorktree}
-              disabled={busy}
+          <div className="grid gap-1.5">
+            <Label htmlFor={folderId}>{t.folder}</Label>
+            <FolderField
+              id={folderId}
+              value={folder}
+              onChange={setFolder}
+              describedBy={folderHelpId}
+              canBrowse={canBrowse}
+              pick={pick}
+              onError={setError}
+              autoFocus={focus === "folder"}
             />
-          )}
-          {config && go && (
-            <GuidelinesField
-              project={project}
-              config={config}
-              go={(target) => {
-                onClose();
-                go(target);
-              }}
-            />
-          )}
-          <TrackingSection value={tracking} onChange={setTracking} disabled={busy} />
-          <DuplicationFields
-            value={duplication}
-            onChange={setDuplication}
-            projectId={project.id}
-            disabled={remote}
+            <p id={folderHelpId} className="text-xs text-muted-foreground">
+              {t.folderHelp}
+            </p>
+          </div>
+          <StorybookFields
+            value={storybook}
+            onChange={setStorybook}
+            withPortEnv={showWorktree}
+            disabled={busy}
           />
+          {config && <GuidelinesField project={project} config={config} />}
+          <TrackingSection value={tracking} onChange={setTracking} disabled={busy} />
           <RecipientsFields projectId={project.id} />
           {error && (
             <p role="alert" className="text-sm text-destructive">
