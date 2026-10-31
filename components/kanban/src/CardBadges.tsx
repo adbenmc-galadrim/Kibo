@@ -37,11 +37,18 @@ const PR_ICON: Record<GithubPrRef["state"], { icon: LucideIcon; tone: string }> 
   closed: { icon: GitPullRequestClosed, tone: "text-(--tracking-red)" },
 };
 
-function PrBadge({ number, state }: { number: number; state: GithubPrRef["state"] }) {
+type PrBadgeProps = { number: number; state: GithubPrRef["state"]; quiet: boolean };
+
+function PrBadge({ number, state, quiet }: PrBadgeProps) {
   const { icon: Icon, tone } = PR_ICON[state];
   return (
     <span data-pr={state} className={OUTLINED}>
-      <Icon absoluteStrokeWidth size={11} aria-hidden className={cn("size-[11px] shrink-0", tone)} />
+      <Icon
+        absoluteStrokeWidth
+        size={11}
+        aria-hidden
+        className={cn("size-[11px] shrink-0", !quiet && tone)}
+      />
       <span className="font-mono text-(--tracking-fg)">{`#${number}`}</span>
     </span>
   );
@@ -113,21 +120,22 @@ function BranchBadge({ name }: { name: string }) {
   );
 }
 
-type Props = { ticket: Pick<TicketView, "externalRefs">; ciRuns: readonly CiRun[] };
+type Props = { ticket: Pick<TicketView, "externalRefs">; ciRuns: readonly CiRun[]; signaled?: boolean };
 
-export function CardBadges({ ticket, ciRuns }: Props) {
+export function CardBadges({ ticket, ciRuns, signaled = false }: Props) {
   const pr = ticketPr(ticket);
   const tone = (pr === null ? null : prCiTone(pr, ciRuns)) ?? worstCiTone(ciRuns);
   const latestRun = [...ciRuns].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const number = pr?.number ?? latestRun?.prNumber ?? null;
   const changes = pr !== null && liveReview(pr) === "changes_requested";
   const branch = branchRefOf(ticket.externalRefs);
+  const hasSignal = signaled || changes || tone === "error";
   return (
     <>
-      {number !== null && <PrBadge number={number} state={pr?.state ?? "open"} />}
+      {number !== null && <PrBadge number={number} state={pr?.state ?? "open"} quiet={hasSignal} />}
       {changes && <ChangesBadge />}
       {pr === null && branch !== null && <BranchBadge name={branch.branch} />}
-      {tone !== null && <CiBadge tone={tone} />}
+      {tone !== null && !(hasSignal && tone === "ok") && <CiBadge tone={tone} />}
     </>
   );
 }

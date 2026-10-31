@@ -59,3 +59,11 @@ test("a delivered card without touch-up shows no step chip", () => {
   });
   expect(c.querySelector("[data-delivery-step]")).toBeNull();
 });
+
+test("the reason of a blocked ticket is zinc and holds on one line", () => {
+  const c = renderCard({ blockedReason: "Attente du client" });
+  const reason = screen.getByText("Motif : Attente du client");
+  expect(reason.className).not.toContain("red");
+  expect(reason.className).toContain("truncate");
+  expect(c.contains(reason)).toBe(true);
+});

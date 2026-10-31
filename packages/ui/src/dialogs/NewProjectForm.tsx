@@ -116,7 +116,7 @@ export function NewProjectForm(p: Props) {
         <Button type="button" variant="outline" onClick={p.onCancel}>
           {t.cancel}
         </Button>
-        <Button type="submit" variant="agent" disabled={!p.validation.ok || p.busy}>
+        <Button type="submit" disabled={!p.validation.ok || p.busy}>
           {t.submit}
         </Button>
       </DialogFooter>

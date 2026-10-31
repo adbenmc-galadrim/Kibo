@@ -7,9 +7,6 @@ import { fr } from "./fr";
 import { type AnswerForm, answerFrom } from "./questions-logic";
 import { useAnswer } from "./use-questions";
 
-export const AGENT_ACCENT =
-  "border-orange-500/40 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400";
-
 type Props = {
   question: Question;
   initial?: QuestionAnswer;
@@ -68,7 +65,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
               variant="outline"
               size="sm"
               aria-pressed={pressed(choice.confirm)}
-              className={`h-7 text-xs ${AGENT_ACCENT} aria-pressed:border-orange-500 aria-pressed:bg-orange-500/15`}
+              className="h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent"
               disabled={busy}
               onClick={() => pick({ ...EMPTY, confirm: true })}
             >

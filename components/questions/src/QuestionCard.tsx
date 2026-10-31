@@ -17,7 +17,7 @@ import { ExportButton } from "./ExportButton";
 import { dayMonth, exportLabels } from "./export-text";
 import { fr } from "./fr";
 import { PasteAnswerForm } from "./PasteAnswerForm";
-import { AGENT_ACCENT, QuestionAnswerForm } from "./QuestionAnswerForm";
+import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { HistoryToggle, QuestionHistory } from "./QuestionHistory";
 import { QuestionImages } from "./QuestionImages";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
@@ -154,35 +154,27 @@ export function QuestionCard(props: Props) {
   const by = { kind: "human", ref: sdk.viewer } as const;
   const context = renderContext(q.context);
   const editedAnswer = editing && isAnswered(q) ? q.answer : null;
-  const blocking = isOpenBlocking(q);
   return (
     <article
       ref={spotlight.ref}
       tabIndex={-1}
       data-spotlight={spotlight.spotlit ?? undefined}
       aria-label={q.title}
-      className={`grid scroll-my-4 gap-2.5 rounded-[10px] border bg-card px-3.5 py-3 text-sm outline-none ${blocking ? "border-destructive" : ""}`}
+      className={`grid scroll-my-4 gap-2.5 rounded-[10px] border bg-card px-3.5 py-3 text-sm outline-none`}
     >
       <header className="flex flex-wrap items-center gap-2">
-        <span
-          className={`font-mono text-[12.5px] font-semibold ${blocking ? "text-destructive" : "text-muted-foreground"}`}
-        >
+        <span className="font-mono text-[12.5px] font-semibold text-muted-foreground">
           {questionLabel(q)}
         </span>
         <h4 className="min-w-0 break-words text-[13.5px] leading-[1.2] font-semibold">{q.title}</h4>
-        {blocking && <BlockingPill />}
+        {isOpenBlocking(q) && <BlockingPill />}
         <span className="min-w-8 flex-1" />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
           {open && (
             <ExportOne question={q} impact={impact} name={recipientName(recipients, q.recipient, client)} />
           )}
           {open && !pasting && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${HEADER_ACTION} ${AGENT_ACCENT}`}
-              onClick={() => setPasting(true)}
-            >
+            <Button variant="outline" size="sm" className={HEADER_ACTION} onClick={() => setPasting(true)}>
               <ClipboardPaste aria-hidden />
               {fr.paste.open}
             </Button>

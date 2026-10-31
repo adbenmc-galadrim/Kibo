@@ -150,3 +150,33 @@ test("the hold chip is full cyan like the blocked one, its label and text unchan
   expect(badge.className).toContain("bg-(--tracking-hold-soft) text-(--tracking-hold)");
   expect(badge.className).not.toContain("border-dashed");
 });
+
+const greenRun = (): CiRun => run("success");
+
+test("a card with requested changes shows the amber badge and a neutral PR chip, no CI chip", () => {
+  const { container } = render(
+    <CardBadges ticket={ticket([pr({ review: "changes_requested" })])} ciRuns={[greenRun()]} />,
+  );
+  expect(screen.getByRole("note", { name: "changements demandés" })).toBeTruthy();
+  const chip = container.querySelector("[data-pr]");
+  expect(chip?.textContent).toBe("#20");
+  expect(chip?.querySelector("svg")?.getAttribute("class")).not.toContain("tracking-purple");
+  expect(container.querySelector("[data-ci]")).toBeNull();
+});
+
+test("a signal elsewhere on the card quiets the PR chip and the green CI", () => {
+  const { container } = render(<CardBadges ticket={ticket([pr()])} ciRuns={[greenRun()]} signaled />);
+  expect(container.querySelector("[data-pr] svg")?.getAttribute("class")).not.toContain("tracking-purple");
+  expect(container.querySelector("[data-ci]")).toBeNull();
+});
+
+test("a broken CI stays visible beside another signal", () => {
+  const { container } = render(<CardBadges ticket={ticket([pr()])} ciRuns={[run("failure")]} signaled />);
+  expect(container.querySelector("[data-ci='error']")).toBeTruthy();
+});
+
+test("without a signal the PR keeps its colour", () => {
+  const { container } = render(<CardBadges ticket={ticket([pr()])} ciRuns={[greenRun()]} />);
+  expect(container.querySelector("[data-pr] svg")?.getAttribute("class")).toContain("tracking-purple");
+  expect(container.querySelector("[data-ci='ok']")).toBeTruthy();
+});

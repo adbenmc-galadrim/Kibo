@@ -85,7 +85,7 @@ export function KanbanCardContent(props: Props) {
       {title}
       <LabelChips labels={t.labels} />
       {t.blockedReason && (
-        <p className="text-2xs text-red-600 wrap-anywhere dark:text-red-400">
+        <p title={t.blockedReason} className="truncate text-2xs text-muted-foreground">
           {fr.blockedReason(t.blockedReason)}
         </p>
       )}
@@ -98,7 +98,7 @@ export function KanbanCardContent(props: Props) {
             <span className="truncate">{fr.waitingOn(k)}</span>
           </Badge>
         ))}
-        <CardBadges ticket={t} ciRuns={ciRuns} />
+        <CardBadges ticket={t} ciRuns={ciRuns} signaled={blocked || t.onHold !== null} />
         {reason !== null && (
           <Badge variant="outline" className="max-w-full text-3xs">
             <span className="truncate">{reason}</span>
