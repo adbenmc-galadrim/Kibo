@@ -3,6 +3,7 @@ import { CalendarRange, Inbox } from "lucide-react";
 import { CollapsedFrame } from "./CollapsedFrame";
 import { EmptyGraph } from "./EmptyGraph";
 import { FeatureFrame } from "./FeatureFrame";
+import type { LaunchProject } from "./FrameStepRow";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
 import { GraphLegend } from "./GraphLegend";
@@ -54,11 +55,12 @@ const laneLabel = (lane: Lane): string =>
 type Props = {
   model: SprintLanesModel;
   onOpen(id: string): void;
+  project?: LaunchProject | null;
   onNewFeature(): void;
   onToggle?(id: string): void;
 };
 
-export function SprintLanes({ model, onOpen, onNewFeature, onToggle }: Props) {
+export function SprintLanes({ model, onOpen, onNewFeature, onToggle, project }: Props) {
   return (
     <div className="relative h-full min-h-0 bg-(--tracking-canvas)">
       <section aria-label={fr.sprints.canvas} className="h-full overflow-auto">
@@ -84,7 +86,13 @@ export function SprintLanes({ model, onOpen, onNewFeature, onToggle }: Props) {
               frame.folded && onToggle !== undefined ? (
                 <CollapsedFrame key={frame.id} frame={frame} onToggle={onToggle} />
               ) : (
-                <FeatureFrame key={frame.id} frame={frame} onOpen={onOpen} onToggle={onToggle} />
+                <FeatureFrame
+                  key={frame.id}
+                  frame={frame}
+                  onOpen={onOpen}
+                  onToggle={onToggle}
+                  project={project}
+                />
               ),
             ),
           )}

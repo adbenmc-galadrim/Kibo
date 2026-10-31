@@ -1,6 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { CircleCheck, ClockAlert, Lock, Pause } from "lucide-react";
-import { FrameStepRow } from "./FrameStepRow";
+import { FrameStepRow, type LaunchProject } from "./FrameStepRow";
 import { fr } from "./fr";
 import { FRAME_PAD, type TitleLines } from "./frame-geometry";
 import type { FrameFooter, FrameSegment, LaneFrame, StepTone } from "./sprint-lanes";
@@ -63,9 +63,14 @@ export function HeldCount({ held }: { held: number }) {
   );
 }
 
-type Props = { frame: LaneFrame; onOpen(id: string): void; onToggle?(id: string): void };
+type Props = {
+  frame: LaneFrame;
+  onOpen(id: string): void;
+  onToggle?(id: string): void;
+  project?: LaunchProject | null;
+};
 
-export function FeatureFrame({ frame, onOpen, onToggle }: Props) {
+export function FeatureFrame({ frame, onOpen, onToggle, project }: Props) {
   return (
     <article
       aria-label={`${frame.shortKey} ${frame.title}`}
@@ -104,7 +109,7 @@ export function FeatureFrame({ frame, onOpen, onToggle }: Props) {
       {frame.steps.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {frame.steps.map((s) => (
-            <FrameStepRow key={s.ticketId} step={s} onOpen={onOpen} />
+            <FrameStepRow key={s.ticketId} step={s} onOpen={onOpen} project={project} />
           ))}
         </ul>
       )}

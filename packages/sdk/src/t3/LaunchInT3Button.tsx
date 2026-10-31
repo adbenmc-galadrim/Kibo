@@ -14,18 +14,19 @@ type LaunchInT3Props = {
   done: boolean;
   thread: T3Thread | null;
   folderMissing?: boolean;
-  size?: "xs" | "sm" | "default";
+  size?: "2xs" | "xs" | "sm" | "default";
   variant?: "primary" | "inline";
 };
 
 const BADGE_REFRESH_MS = 60_000;
 const SIZES = {
+  "2xs": "h-[19px] gap-1.5 px-2 text-[11.5px] [&_svg]:size-3",
   xs: "h-[22px] gap-1.5 px-2 text-xs [&_svg]:size-[13px]",
   sm: "h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]",
   default: "",
 };
 
-function useMinuteClock(): number {
+export function useMinuteClock(): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), BADGE_REFRESH_MS);

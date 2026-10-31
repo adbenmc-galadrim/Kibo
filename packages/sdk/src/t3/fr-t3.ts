@@ -6,6 +6,7 @@ const duration = (ms: number): string => {
 
 export const frT3 = {
   launch: "Lancer dans T3",
+  pill: "T3",
   open: "Ouvrir dans T3",
   running: (ms: number) => `T3 · en cours depuis ${duration(ms)}`,
   waiting: "T3 · attend ta réponse",

@@ -26,6 +26,7 @@ import {
   useSelection,
   withoutAgentAssignee,
 } from "@kibo/sdk";
+import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
@@ -55,6 +56,7 @@ type Blocking = { ticket: TicketView; drop: Drop | null };
 
 export function Kanban() {
   const sdk = useSdk();
+  const project = useProject();
   const { data: tickets, loading } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
   const { data: questionList } = useEntities("question");
@@ -214,6 +216,7 @@ export function Kanban() {
                   {...factsOf(t)}
                   selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
+                  project={project}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}

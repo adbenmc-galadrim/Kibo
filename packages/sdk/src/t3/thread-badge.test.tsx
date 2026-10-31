@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
-import { ThreadBadge } from "./ThreadBadge";
+import { ThreadBadge, ThreadPill } from "./ThreadBadge";
 import { ACTIVE_THREAD } from "./t3-test-kit";
 
 afterEach(cleanup);
@@ -32,4 +32,29 @@ test("Ouvrir dans T3 is an anchor on the thread link", () => {
 test("a thread without a link offers nothing to open", () => {
   render(<ThreadBadge thread={{ ...ACTIVE_THREAD, link: "" }} now={NOW} />);
   expect(screen.queryByRole("link")).toBeNull();
+});
+
+test("compact is a chip without the link, as on a card", () => {
+  render(<ThreadBadge thread={ACTIVE_THREAD} now={NOW} compact />);
+  expect(screen.getByText("T3 · en cours depuis 12 min").className).toContain("text-[11px]");
+  expect(screen.queryByRole("link")).toBeNull();
+});
+
+test("the pill of a step reads T3, and says the state to a screen reader", () => {
+  render(<ThreadPill thread={ACTIVE_THREAD} now={NOW} />);
+  const pill = screen.getByRole("img", { name: "T3 · en cours depuis 12 min" });
+  expect(pill.textContent).toBe("T3");
+  expect(pill.className).toContain("--tracking-brand-soft");
+});
+
+test("the pill of a waiting step turns amber", () => {
+  render(<ThreadPill thread={{ ...ACTIVE_THREAD, status: "waiting" }} now={NOW} />);
+  expect(screen.getByRole("img", { name: "T3 · attend ta réponse" }).className).toContain(
+    "--tracking-amber-soft",
+  );
+});
+
+test("a finished thread shows no pill", () => {
+  const { container } = render(<ThreadPill thread={{ ...ACTIVE_THREAD, status: "done" }} now={NOW} />);
+  expect(container.firstChild).toBeNull();
 });

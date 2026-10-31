@@ -6,11 +6,13 @@ import { frT3 as t } from "./fr-t3";
 const STYLES = {
   running: {
     box: "border-(--tracking-brand-line) bg-(--tracking-brand-soft)",
+    soft: "bg-(--tracking-brand-soft)",
     dot: "bg-(--tracking-brand)",
     text: "text-(--tracking-brand-text)",
   },
   waiting: {
     box: "border-(--tracking-amber)/40 bg-(--tracking-amber-soft)",
+    soft: "bg-(--tracking-amber-soft)",
     dot: "bg-(--tracking-amber)",
     text: "text-(--tracking-amber)",
   },
@@ -28,10 +30,47 @@ export function ThreadOpenLink({ link }: { link: string }) {
   );
 }
 
-export function ThreadBadge({ thread, now }: { thread: T3Thread; now: number }) {
+type ThreadMarkProps = { thread: T3Thread; now: number };
+
+const stateText = (thread: T3Thread, now: number): string =>
+  thread.status === "waiting" ? t.waiting : t.running(now - thread.startedAt);
+
+const styleOf = (thread: T3Thread) => (thread.status === "waiting" ? STYLES.waiting : STYLES.running);
+
+export function ThreadPill({ thread, now }: ThreadMarkProps) {
   if (!isActiveT3Status(thread.status)) return null;
-  const waiting = thread.status === "waiting";
-  const style = waiting ? STYLES.waiting : STYLES.running;
+  const style = styleOf(thread);
+  return (
+    <span
+      role="img"
+      aria-label={stateText(thread, now)}
+      className={cn(
+        "inline-flex h-[17px] shrink-0 items-center gap-1 rounded-[9px] px-1.5 text-[11px] font-semibold",
+        style.soft,
+        style.text,
+      )}
+    >
+      <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+      {t.pill}
+    </span>
+  );
+}
+
+export function ThreadBadge({ thread, now, compact = false }: ThreadMarkProps & { compact?: boolean }) {
+  if (!isActiveT3Status(thread.status)) return null;
+  const style = styleOf(thread);
+  if (compact)
+    return (
+      <span
+        className={cn(
+          "inline-flex h-[18px] w-fit max-w-full items-center gap-[5px] rounded-[10px] px-[7px]",
+          style.soft,
+        )}
+      >
+        <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+        <span className={cn("truncate text-[11px] font-medium", style.text)}>{stateText(thread, now)}</span>
+      </span>
+    );
   return (
     <span
       className={cn(
@@ -41,7 +80,7 @@ export function ThreadBadge({ thread, now }: { thread: T3Thread; now: number }) 
     >
       <span aria-hidden className={cn("size-[7px] shrink-0 rounded-full", style.dot)} />
       <span className={cn("text-xs font-medium whitespace-nowrap", style.text)}>
-        {waiting ? t.waiting : t.running(now - thread.startedAt)}
+        {stateText(thread, now)}
       </span>
       {thread.link !== "" && <ThreadOpenLink link={thread.link} />}
     </span>

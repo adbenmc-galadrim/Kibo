@@ -1,4 +1,5 @@
 import { useSdk } from "@kibo/sdk";
+import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useMemo, useState } from "react";
 import { foldLanes } from "./fit-width";
 import { fr } from "./fr";
@@ -23,6 +24,7 @@ export function GraphView() {
   const [body, setBody] = useState<HTMLElement | null>(null);
   const { width } = useElementSize(body);
   const lanes = useSprintLanes();
+  const project = useProject();
   const shown = useMemo(
     () => (unfolded === null ? lanes : foldLanes(lanes, unfolded, width)),
     [lanes, unfolded, width],
@@ -61,6 +63,7 @@ export function GraphView() {
             onOpen={(id) => sdk.openTicket(id)}
             onNewFeature={onNewFeature}
             onToggle={unfolded === null ? undefined : onToggle}
+            project={project}
           />
         )}
       </div>

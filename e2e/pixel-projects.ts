@@ -25,6 +25,7 @@ const GRAPHE_LIGHT_PORT = 4490;
 const T3_DARK_PORT = 4491;
 const T3_LIGHT_PORT = 4492;
 const T3_PIXEL_SPEC = /pixel-fiche-t3\.spec\.ts$/;
+const T3_SPEC = /\/t3\.spec\.ts$/;
 const APERCU_PIXEL_SPEC = /pixel-apercu\.spec\.ts$/;
 const GRAPHE_PIXEL_SPEC = /pixel-graphe-attente\.spec\.ts$/;
 const PRS_PIXEL_SPEC = /pixel-prs\.spec\.ts$/;
@@ -209,7 +210,7 @@ export const grapheProjects = (scheme: Scheme): Project[] =>
   scenarioProjects(GRAPHE_DAEMONS, { prefix: "graphe", pixel: GRAPHE_PIXEL_SPEC }, scheme);
 
 export const t3Projects = (scheme: Scheme): Project[] =>
-  scenarioProjects(T3_DAEMONS, { prefix: "t3", pixel: T3_PIXEL_SPEC }, scheme);
+  scenarioProjects(T3_DAEMONS, { prefix: "t3", pixel: T3_PIXEL_SPEC, journey: T3_SPEC }, scheme);
 
 export const scenarioProjectsOf = (scheme: Scheme): Project[] => [
   ...attenteProjects(scheme),

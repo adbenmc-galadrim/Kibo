@@ -1,7 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
-import type { Status, StatusId } from "@kibo/schema";
+import { isActiveT3Status, type ProjectInfo, type Status, type StatusId } from "@kibo/schema";
 import { stepTitle, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
+import { LaunchInT3Button } from "@kibo/sdk/t3";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
@@ -15,16 +16,20 @@ import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from 
 
 const stopDrag = (e: PointerEvent) => e.stopPropagation();
 
+const REVEAL_CLASS =
+  "-mt-2 h-0 overflow-hidden group-hover/card:mt-0 group-hover/card:h-auto group-hover/card:overflow-visible group-focus-within/card:mt-0 group-focus-within/card:h-auto group-focus-within/card:overflow-visible";
+
 type Props = CardFacts & {
   selected: boolean | null;
   statuses: Status[];
+  project?: Pick<ProjectInfo, "id" | "hasFolder"> | null;
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
 };
 
 export function KanbanCard(props: Props) {
-  const { ticket: t, selected, statuses, onOpen, onMove, onRemove } = props;
+  const { ticket: t, selected, statuses, onOpen, onMove, onRemove, project = null } = props;
   const sdk = useSdk();
   const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
@@ -69,6 +74,23 @@ export function KanbanCard(props: Props) {
       {stepTitle(t, props.group)}
     </button>
   );
+  const threadActive = t.thread !== null && isActiveT3Status(t.thread.status);
+  const launch = t.startable &&
+    !threadActive &&
+    t.key !== null &&
+    project !== null &&
+    sortable.active === null && (
+      <div data-dnd-ignore="true" className={REVEAL_CLASS} onPointerDown={stopDrag}>
+        <LaunchInT3Button
+          projectId={project.id}
+          ticketKey={t.key}
+          done={false}
+          thread={null}
+          folderMissing={!project.hasFolder}
+          size="xs"
+        />
+      </div>
+    );
   return (
     <ContextMenu>
       <CardTooltip ticket={t} suppressed={sortable.active !== null}>
@@ -84,7 +106,8 @@ export function KanbanCard(props: Props) {
             data-selected={selected === true}
             className={cn(
               CARD_CLASS,
-              "cursor-grab touch-none",
+              "group/card cursor-grab touch-none",
+              launch && "hover:border-foreground/70 focus-within:border-foreground/70",
               isDragging && "opacity-40",
               insertion &&
                 "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
@@ -94,7 +117,7 @@ export function KanbanCard(props: Props) {
               selected === false && !isDragging && "opacity-50",
             )}
           >
-            <KanbanCardContent {...props} menu={menu} title={title} />
+            <KanbanCardContent {...props} menu={menu} title={title} launch={launch} />
           </article>
         </ContextMenuTrigger>
       </CardTooltip>

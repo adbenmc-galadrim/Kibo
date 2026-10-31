@@ -12,6 +12,7 @@ import {
   type SprintView,
   sortSprints,
   sprintState,
+  type T3Thread,
   type TicketView,
 } from "@kibo/schema";
 import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
@@ -43,6 +44,7 @@ export type LaneStep = {
   session: boolean;
   hold: OnHold | null;
   startable: boolean;
+  thread: T3Thread | null;
 };
 export type FrameSegment = { ticketId: string; tone: StepTone };
 export type FrameFooter =
@@ -160,6 +162,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[], waitin
       session: byId.get(s.ticketId)?.session != null,
       hold: s.onHold,
       startable: !waiting && unblocked(byId.get(s.ticketId), blocking),
+      thread: byId.get(s.ticketId)?.thread ?? null,
     })),
     footer: footerOf(f, facts, sorted),
   };

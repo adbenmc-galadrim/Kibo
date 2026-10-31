@@ -7,6 +7,7 @@ import {
   TicketKeyLabel,
   useSdk,
 } from "@kibo/sdk";
+import { ThreadBadge, useMinuteClock } from "@kibo/sdk/t3";
 import type { ReactNode } from "react";
 import { PrBadge, SignalBadge } from "./CardBadges";
 import { cardProgress, cardSignal } from "./card-signal";
@@ -34,7 +35,11 @@ export type CardFacts = {
   blocking: Pick<Question, "number" | "importRef"> | null;
 };
 
-type Props = CardFacts & { menu: ReactNode; title: ReactNode };
+type Props = CardFacts & { menu: ReactNode; title: ReactNode; launch?: ReactNode };
+
+function CardThread({ thread }: { thread: NonNullable<TicketView["thread"]> }) {
+  return <ThreadBadge thread={thread} now={useMinuteClock()} compact />;
+}
 
 function StepChip({ delivery }: { delivery: NonNullable<TicketView["delivery"]> }) {
   const step = stepLabelShort(delivery.step);
@@ -46,7 +51,7 @@ function StepChip({ delivery }: { delivery: NonNullable<TicketView["delivery"]> 
 }
 
 export function KanbanCardContent(props: Props) {
-  const { ticket: t, group, blocked, blocking, menu, title } = props;
+  const { ticket: t, group, blocked, blocking, menu, title, launch } = props;
   const sdk = useSdk();
   const signal = cardSignal(t, blocked, blocking);
   const progress = cardProgress(t);
@@ -72,6 +77,7 @@ export function KanbanCardContent(props: Props) {
         {menu}
       </div>
       {title}
+      {launch}
       {t.blockedReason && (
         <p title={t.blockedReason} className="truncate text-2xs text-muted-foreground">
           {fr.blockedReason(t.blockedReason)}
@@ -84,6 +90,7 @@ export function KanbanCardContent(props: Props) {
           {progress?.delivery && <StepChip delivery={progress.delivery} />}
         </div>
       )}
+      {t.thread && <CardThread thread={t.thread} />}
     </>
   );
 }

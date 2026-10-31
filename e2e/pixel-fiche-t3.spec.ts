@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
 import { PIXEL_HEIGHTS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
@@ -31,4 +31,43 @@ test("a running thread replaces the button on the sheet and matches the mockup",
 
 test("a waiting thread turns amber on the sheet and matches the mockup", async ({ page }) => {
   await measureThread(page, "Conflits de saisie", "T3 · attend ta réponse", "p34-fiche-attend");
+});
+
+const OUT_DIR = screensDir("2026-10-31-p34-t13");
+
+async function measureHover(page: Page, screen: string, hovered: Locator) {
+  await measureScreen(page, {
+    screen,
+    height: HEIGHT,
+    masks: [],
+    content: contentBox(241, HEIGHT),
+    root: (p) => p.locator("[data-view-body]"),
+    outDir: OUT_DIR,
+    contentInformative: true,
+    pose: async () => {
+      await hovered.hover();
+      await expect(hovered.getByRole("button", { name: "Lancer dans T3" })).toBeVisible();
+    },
+    release: () => settlePointer(page, HEIGHT),
+  });
+}
+
+test("the Kanban reveals Lancer dans T3 on hover and shows the T3 badge as in the mockup", async ({
+  page,
+}) => {
+  await pairBrowser(page);
+  await openPixelPage(page, await siloPageUrl(page, "Kanban"), HEIGHT);
+  await page.reload();
+  await expect(page.getByText("T3 · en cours depuis 12 min")).toBeVisible();
+  await measureHover(page, "p34-kanban-survol-t3", page.getByRole("article", { name: /^SILO-46 / }));
+});
+
+test("the Graphe reveals Lancer dans T3 on hover and shows the T3 pill as in the mockup", async ({
+  page,
+}) => {
+  await pairBrowser(page);
+  await openPixelPage(page, await siloPageUrl(page, "Graphe"), PIXEL_HEIGHTS.graphe);
+  await page.reload();
+  await expect(page.getByRole("img", { name: "T3 · en cours depuis 12 min" })).toBeVisible();
+  await measureHover(page, "p34-graphe-survol-t3", page.locator('li[data-startable="true"]').first());
 });

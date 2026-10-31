@@ -287,7 +287,7 @@ test("without a selection: no chip and no fading", async () => {
   setup();
   const card = await screen.findByRole("article", { name: /Sync/ });
   expect(card.getAttribute("data-selected")).toBe("false");
-  expect(document.querySelector(".opacity-50")).toBeNull();
+  expect(document.querySelector("article.opacity-50")).toBeNull();
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
 });
 
