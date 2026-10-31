@@ -7,6 +7,7 @@ export const fr = {
   mode: {
     all: "Tous",
     sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
+    sprintCounter: "sprint courant",
     startable: "Démarrable",
     toFix: "À reprendre",
     held: "En attente",
@@ -17,8 +18,15 @@ export const fr = {
     own: (reason: string) => `En attente : ${reason}`,
     dependency: (key: string) => `En attente de ${key}`,
   },
-  counter: (shown: number, mode: string, mine: string | null) =>
-    `${shown} ticket${shown > 1 ? "s" : ""} · ${mode}${mine === null ? "" : ` · ${mine}`}`,
+  tickets: (n: number) => `${n} ticket${n > 1 ? "s" : ""}`,
+  tooltip: {
+    labels: "Étiquettes",
+    branch: "Branche",
+    held: "En attente",
+    questions: "Questions",
+    reason: "Motif",
+    open: (n: number) => `${n} ouverte${n > 1 ? "s" : ""}`,
+  },
   labelFilter: {
     label: "Filtrer par étiquette",
     all: "Étiquette : toutes",
@@ -54,22 +62,11 @@ export const fr = {
   phaseHint: (step: number) =>
     `Étape ${step} sur ${DELIVERY_STEP_MAX + 1} de ${FULL_DELIVERY_AGENT} : ${DELIVERY_STEP_LABELS[step] ?? ""}`,
   waitingOn: (key: string) => `attend ${key}`,
-  questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
-  questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
-  ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
-  ciShort: { ok: "CI", error: "CI cassée", running: "CI en cours", neutral: "CI" },
   changesRequested: "changements demandés",
   blocked: "bloqué",
   blockedBy: (question: string) => `bloqué · ${question}`,
-  optional: "facultative",
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
-  reason: {
-    sprint: (code: string) => `sprint ${code}`,
-    unplanned: "sans sprint",
-    limit: (count: number, limit: number) => `limite ${count}/${limit}`,
-  },
-  branch: (name: string) => `Branche ${name}`,
   changesShort: "changements",
   block: {
     title: (key: string) => `Bloquer ${key}`,

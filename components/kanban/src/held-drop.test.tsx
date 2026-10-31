@@ -81,15 +81,7 @@ const preview = (refused: boolean) => {
   if (!ticket) throw new Error("no seeded ticket");
   render(
     <SdkProvider sdk={m.sdk}>
-      <KanbanCardPreview
-        ticket={ticket}
-        group={null}
-        ciRuns={[]}
-        blocked
-        blocking={question}
-        questions={{ questions: [], recipients: [], onOpen: () => {} }}
-        refused={refused}
-      />
+      <KanbanCardPreview ticket={ticket} group={null} blocked blocking={question} refused={refused} />
     </SdkProvider>,
   );
   const found = document.querySelector('[data-slot="kanban-drag-preview"]');

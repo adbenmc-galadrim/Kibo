@@ -13,7 +13,6 @@ export * from "./markdown-lite";
 export * from "./phase-label";
 export * from "./question-preview";
 export * from "./question-preview-text";
-export * from "./questions-chip";
 export * from "./react";
 export * from "./sdk";
 export * from "./selection-chip";

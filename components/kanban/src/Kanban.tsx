@@ -15,7 +15,6 @@ import {
   readSource,
   SelectionChip,
   useEntities,
-  useQuestionsChipData,
   useSdk,
   useSelection,
   withoutAgentAssignee,
@@ -28,6 +27,7 @@ import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
 import { type Drop, dropInColumn } from "./drop";
 import { type KanbanFilter, projectLabels } from "./filter";
+import { foldedFirst } from "./fold-collision";
 import { fr } from "./fr";
 import { KanbanCard } from "./KanbanCard";
 import type { CardFacts } from "./KanbanCardContent";
@@ -38,7 +38,6 @@ import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
 import { RemoveDialog } from "./RemoveDialog";
 import { ToolbarAlerts } from "./ToolbarAlerts";
-import { ticketCiRuns } from "./ticket-pr";
 import { useBoardView } from "./use-board-view";
 import { useCardMoves } from "./use-card-moves";
 import { useColumnOrder } from "./use-column-order";
@@ -51,7 +50,6 @@ export function Kanban() {
   const sdk = useSdk();
   const { data: tickets, loading } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
-  const questions = useQuestionsChipData();
   const { data: questionList } = useEntities("question");
   const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
@@ -85,10 +83,8 @@ export function Kanban() {
   const factsOf = (t: TicketView): CardFacts => ({
     ticket: withoutAgentAssignee(t),
     group: groupOf(t),
-    ciRuns: ticketCiRuns(t, ciRuns),
     blocked: isBlocked(t, questionList),
     blocking: blockingQuestion(t, questionList),
-    questions,
   });
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
@@ -180,6 +176,7 @@ export function Kanban() {
       {!loading && scoped.length === 0 && <KanbanEmpty onNew={() => sdk.openNewTicket({})} />}
       <DndContext
         sensors={sensors}
+        collisionDetection={foldedFirst(ordered.map((s) => s.id).filter((id) => visible[id]?.length === 0))}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragCancel={endDrag}
@@ -197,6 +194,7 @@ export function Kanban() {
               ids={visible[s.id] ?? []}
               targeted={targetColumn === s.id}
               forbidden={forbidden(s.id)}
+              loading={loading}
               onAdd={() => sdk.openNewTicket({ statusId: s.id })}
             >
               {(columns.get(s.id) ?? []).map((t) => (

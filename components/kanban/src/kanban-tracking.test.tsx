@@ -49,23 +49,20 @@ test("a step with an open blocking question says « bloqué · Q14 » in Bloqué
   expect(within(column("À faire")).getByText("Lecture du fichier Excel")).toBeTruthy();
 });
 
-test("a « Démo client » step is titled after its feature, an optional one says so", async () => {
+test("a « Démo client » step is titled after its feature", async () => {
   setup();
-  const optional = await card("Démo · F1");
-  expect(within(optional).getByText("facultative")).toBeTruthy();
-  const required = await card("Démo · F2");
-  expect(within(required).queryByText("facultative")).toBeNull();
+  expect(await card("Démo · F1")).toBeTruthy();
   expect(screen.queryByText("Démo client")).toBeNull();
 });
 
-test("a card shows its PR, the requested changes and the broken CI", async () => {
+test("a card shows its PR and the requested changes, never the CI", async () => {
   setup();
   const conflicts = await card("Conflits de saisie");
   expect(within(conflicts).getByText("#20")).toBeTruthy();
   expect(within(conflicts).getByLabelText("changements demandés")).toBeTruthy();
-  expect(within(conflicts).getByLabelText("CI cassée")).toBeTruthy();
+  expect(within(conflicts).queryByLabelText("CI cassée")).toBeNull();
   const expo = await card("Passage à Expo SDK 54");
-  expect(within(expo).getByLabelText("CI en cours")).toBeTruthy();
+  expect(within(expo).queryByLabelText("CI en cours")).toBeNull();
   expect(within(expo).queryByLabelText("changements demandés")).toBeNull();
 });
 
@@ -96,18 +93,10 @@ test("a ticket with the Bloqué status and its reason sits in Bloqué the same w
   expect(within(blocked).getByText("Motif : Fichier client")).toBeTruthy();
 });
 
-test("no card says « Démarrable »; a step waiting for its sprint says which one", async () => {
+test("no card says « Démarrable » nor the sprint it waits for", async () => {
   setup();
   const later = await card("Écran d'import");
-  expect(within(later).getByText("sprint S43")).toBeTruthy();
+  expect(within(later).queryByText("sprint S43")).toBeNull();
   for (const article of screen.getAllByRole("article"))
     expect(within(article).queryByText("Démarrable")).toBeNull();
-  expect(within(await card("Démo · F1")).queryByText(/^sprint/)).toBeNull();
-});
-
-test("a step with a branch and no PR shows its branch, a step with a PR does not", async () => {
-  setup();
-  const later = await card("Écran d'import");
-  expect(within(later).getByLabelText("Branche feat/silo-import")).toBeTruthy();
-  expect(within(await card("Conflits de saisie")).queryByLabelText(/^Branche/)).toBeNull();
 });

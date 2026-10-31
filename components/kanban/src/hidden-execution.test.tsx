@@ -28,6 +28,6 @@ test("a card shows no agent profile", async () => {
 
 test("an instance set to « mine » says Moi, not Moi + agents", async () => {
   board({ filter: "mine-and-agents" });
-  expect(await screen.findByText("1 ticket · Tous · Moi")).toBeTruthy();
+  expect(await screen.findByText("1 ticket · Moi")).toBeTruthy();
   expect(screen.queryByText(/Moi \+ agents/)).toBeNull();
 });

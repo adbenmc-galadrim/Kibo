@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sd
 import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entries";
 import { MoreHorizontal } from "lucide-react";
 import type { PointerEvent } from "react";
+import { CardTooltip } from "./CardTooltip";
 import { cardMenuEntries } from "./card-menu";
 import { fr } from "./fr";
 import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
@@ -70,31 +71,33 @@ export function KanbanCard(props: Props) {
   );
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <article
-          ref={ref}
-          style={style}
-          {...attributes}
-          {...listeners}
-          tabIndex={attributes.tabIndex}
-          aria-label={`${t.keyLabel} ${t.title}`}
-          data-key={t.keyLabel}
-          data-selected={selected === true}
-          className={cn(
-            CARD_CLASS,
-            "cursor-grab touch-none",
-            isDragging && "opacity-40",
-            insertion &&
-              "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
-            t.key === null && "border-dashed",
-            t.session && "border-(--tracking-brand-line)",
-            selected === true && "ring-2 ring-ring ring-inset",
-            selected === false && !isDragging && "opacity-50",
-          )}
-        >
-          <KanbanCardContent {...props} menu={menu} title={title} />
-        </article>
-      </ContextMenuTrigger>
+      <CardTooltip ticket={t} suppressed={sortable.active !== null}>
+        <ContextMenuTrigger asChild>
+          <article
+            ref={ref}
+            style={style}
+            {...attributes}
+            {...listeners}
+            tabIndex={attributes.tabIndex}
+            aria-label={`${t.keyLabel} ${t.title}`}
+            data-key={t.keyLabel}
+            data-selected={selected === true}
+            className={cn(
+              CARD_CLASS,
+              "cursor-grab touch-none",
+              isDragging && "opacity-40",
+              insertion &&
+                "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
+              t.key === null && "border-dashed",
+              t.session && "border-(--tracking-brand-line)",
+              selected === true && "ring-2 ring-ring ring-inset",
+              selected === false && !isDragging && "opacity-50",
+            )}
+          >
+            <KanbanCardContent {...props} menu={menu} title={title} />
+          </article>
+        </ContextMenuTrigger>
+      </CardTooltip>
       <ContextMenuContent>
         <ContextMenuEntries entries={entries} />
       </ContextMenuContent>
