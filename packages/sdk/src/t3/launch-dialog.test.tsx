@@ -75,6 +75,21 @@ test("T3_THREAD_ACTIVE switches to Ouvrir dans T3", async () => {
   expect(screen.queryByRole("button", { name: "Lancer" })).toBeNull();
 });
 
+test("T3_THREAD_ACTIVE without a link no longer offers Lancer and says why", async () => {
+  open({
+    status: AVAILABLE,
+    launchError: new KiboError("T3_THREAD_ACTIVE", "already running"),
+    thread: { ...ACTIVE_THREAD, link: "" },
+  });
+  await screen.findByText(/thread start/);
+  await userEvent.click(screen.getByRole("button", { name: "Lancer" }));
+  expect((await screen.findByRole("status")).textContent).toBe(
+    "Un fil T3 est déjà en cours sur ce ticket, sans lien à ouvrir.",
+  );
+  expect(screen.queryByRole("button", { name: "Lancer" })).toBeNull();
+  expect(screen.queryByRole("link")).toBeNull();
+});
+
 test("a preview that fails is shown in the dialog", async () => {
   open({ status: AVAILABLE, previewError: new KiboError("PROJECT_FOLDER_MISSING", "no folder") });
   expect((await screen.findByRole("alert")).textContent).toContain("no folder");

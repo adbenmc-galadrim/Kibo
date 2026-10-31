@@ -10,7 +10,6 @@ import {
   type GithubPrRef,
   isLivePr,
   latestCiRunPerWorkflow,
-  liveReview,
   type ProjectEvent,
   type ProjectEventKind,
   type ProjectSnapshot,

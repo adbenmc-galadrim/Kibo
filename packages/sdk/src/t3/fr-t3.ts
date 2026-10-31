@@ -19,5 +19,6 @@ export const frT3 = {
   defaultModel: "par défaut",
   cancel: "Annuler",
   confirm: "Lancer",
+  activeNoLink: "Un fil T3 est déjà en cours sur ce ticket, sans lien à ouvrir.",
   failed: (key: string, message: string) => `T3 n'a pas pu lancer ${key} · ${message}`,
 };

@@ -1,4 +1,4 @@
-import { KiboError, type T3Preview, type T3Thread } from "@kibo/schema";
+import { KiboError, type T3Preview } from "@kibo/schema";
 import { Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { emitToast } from "../toast-bus";
@@ -8,6 +8,7 @@ import { frT3 as t } from "./fr-t3";
 import { ThreadOpenLink } from "./ThreadBadge";
 import { useT3 } from "./t3-context";
 
+type ActiveThread = { link: string };
 type Props = { projectId: string; ticketKey: string; onClose(): void };
 
 const messageOf = (e: unknown): string => (e instanceof KiboError ? e.detail : String(e));
@@ -18,7 +19,7 @@ function useLaunch({ projectId, ticketKey, onClose }: Props) {
   const { api } = useT3(projectId);
   const [preview, setPreview] = useState<T3Preview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState<T3Thread | null>(null);
+  const [active, setActive] = useState<ActiveThread | null>(null);
   const [busy, setBusy] = useState(false);
   const started = useRef(false);
   useEffect(() => {
@@ -35,6 +36,14 @@ function useLaunch({ projectId, ticketKey, onClose }: Props) {
       alive = false;
     };
   }, [api, ticketKey]);
+  const activeLink = async (): Promise<ActiveThread> => {
+    try {
+      return { link: (await api.threadOf(ticketKey))?.link ?? "" };
+    } catch (e) {
+      console.warn("[kibo] t3.threadOf failed", e);
+      return { link: "" };
+    }
+  };
   const launch = async () => {
     if (started.current) return;
     started.current = true;
@@ -43,7 +52,7 @@ function useLaunch({ projectId, ticketKey, onClose }: Props) {
       await api.launch(ticketKey);
       onClose();
     } catch (e) {
-      if (e instanceof KiboError && e.code === "T3_THREAD_ACTIVE") setActive(await api.threadOf(ticketKey));
+      if (e instanceof KiboError && e.code === "T3_THREAD_ACTIVE") setActive(await activeLink());
       else emitToast(t.failed(ticketKey, messageOf(e)));
       started.current = false;
       setBusy(false);
@@ -89,6 +98,9 @@ export function LaunchDialog(props: Props) {
             </p>
           </>
         )}
+        {active && !active.link && (
+          <output className="block text-[12.5px] text-muted-foreground">{t.activeNoLink}</output>
+        )}
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
@@ -98,9 +110,8 @@ export function LaunchDialog(props: Props) {
           >
             {t.cancel}
           </Button>
-          {active?.link ? (
-            <ThreadOpenLink link={active.link} />
-          ) : (
+          {active?.link && <ThreadOpenLink link={active.link} />}
+          {!active && (
             <Button
               size="sm"
               className="h-[25px] gap-1.5 px-2.5 text-xs [&_svg]:size-[13px]"
