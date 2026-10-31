@@ -111,6 +111,9 @@ if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
   chmodSync(gh, 0o755);
 }
+const fakeT3 = join(ghDir, "t3");
+copyFileSync(join(root, "packages/daemon/src/t3/fake-t3.ts"), fakeT3);
+chmodSync(fakeT3, 0o755);
 type Fakes = { origins: string[]; stop(): void | Promise<void> };
 async function startFakes(): Promise<Fakes> {
   const github = startFakeGithub({ token: E2E_GH_TOKEN, port: fakeGithubPort(Number(port)) });
@@ -207,6 +210,9 @@ const proc = Bun.spawn(
       KIBO_GH: gh,
       FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
+      KIBO_T3: fakeT3,
+      FAKE_T3_STATE: join(ghDir, "t3-state.json"),
+      FAKE_T3_LOG: join(ghDir, "t3-log.jsonl"),
       ...(siloScenario ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: SILO_PR_POLL_MS } : {}),
     },
     stdout: "inherit",
