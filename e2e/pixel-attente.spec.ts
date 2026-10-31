@@ -8,6 +8,7 @@ import {
   measureScreen,
   openPixelPage,
   type Phase,
+  schemeOf,
   screensDir,
   settlePointer,
 } from "./pixel-screen";
@@ -133,26 +134,83 @@ test("the feature sheet of F5 with three steps on hold matches the mockup on the
   });
 });
 
-test("the Kanban of Silo on « Tous » with the « En attente » filter matches the mockup on the whole screen", async ({
-  page,
-}) => {
-  const height = PIXEL_HEIGHTS["attente-kanban"];
+const KANBAN_OUT = screensDir("2026-10-31-p34-t11");
+const KANBAN_HEIGHT = PIXEL_HEIGHTS["attente-kanban"];
+
+async function openKanban(page: Page): Promise<void> {
   await pairBrowser(page);
-  await openPixelPage(page, await siloPageUrl(page, "Kanban"), height);
-  const all = page.getByRole("button", { name: "Tous", exact: true });
-  await expect(all).toHaveAttribute("aria-pressed", "true");
+  await openPixelPage(page, await siloPageUrl(page, "Kanban"), KANBAN_HEIGHT);
+  await expect(page.getByRole("button", { name: "Tous", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeVisible();
   await expect(page.getByRole("button", { name: /^En attente/ })).toBeVisible();
-  await settlePointer(page, height);
+}
+
+const kanbanRun = {
+  height: KANBAN_HEIGHT,
+  masks: PIXEL_MASKS["attente-kanban"],
+  content: contentBox(241, KANBAN_HEIGHT),
+  root: (p: Page) => p.locator("[data-view-body]"),
+  outDir: KANBAN_OUT,
+  contentInformative: true,
+};
+
+test("the Kanban of Silo with its empty column folded matches the mockup on the whole screen", async ({
+  page,
+}) => {
+  await openKanban(page);
+  await expect(page.getByRole("region", { name: "Backlog" })).toHaveAttribute("data-collapsed", "true");
+  await expect(page.getByText("41 tickets", { exact: true })).toBeVisible();
+  await settlePointer(page, KANBAN_HEIGHT);
+  await measureScreen(page, { ...kanbanRun, screen: "attente-kanban", reference: "p34-kanban-replie" });
+});
+
+test("the tooltip of a card matches the mockup on the whole screen", async ({ page }) => {
+  await openKanban(page);
+  const pose = async () => {
+    await page.getByRole("article", { name: /SILO-33/ }).hover();
+    await expect(page.locator('[data-slot="tooltip-rows"]')).toBeVisible();
+  };
   await measureScreen(page, {
-    screen: "attente-kanban",
-    height,
-    masks: PIXEL_MASKS["attente-kanban"],
-    content: contentBox(241, height),
-    root: (p) => p.locator("[data-view-body]"),
-    outDir: OUT,
-    contentInformative: true,
+    ...kanbanRun,
+    screen: "p34-kanban-infobulle",
+    pose,
+    release: () => settlePointer(page, KANBAN_HEIGHT),
   });
+});
+
+test("a card dragged over a folded column unfolds it, and whole cards are counted", async ({
+  page,
+}, info) => {
+  await openKanban(page);
+  const whole = (name: string) =>
+    page.getByRole("region", { name }).evaluate((column) => {
+      const list = column.querySelector("[data-slot=kanban-cards]")?.getBoundingClientRect();
+      if (!list) return 0;
+      return Array.from(column.querySelectorAll("article")).filter(
+        (a) => a.getBoundingClientRect().bottom <= list.bottom,
+      ).length;
+    });
+  await page.setViewportSize({ width: PIXEL_WIDTH, height: 900 });
+  console.log(
+    `[kanban] cartes entières : À faire ${await whole("À faire")}, Bloqué ${await whole("Bloqué")}`,
+  );
+  await page.setViewportSize({ width: PIXEL_WIDTH, height: KANBAN_HEIGHT });
+  const card = await page.getByRole("article", { name: /SILO-46/ }).boundingBox();
+  const band = await page.getByRole("region", { name: "Backlog" }).boundingBox();
+  if (!card || !band) throw new Error("the card or the band is not on screen");
+  await page.mouse.move(card.x + 20, card.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(card.x + 10, card.y + 30, { steps: 4 });
+  await page.mouse.move(band.x + 20, band.y + 200, { steps: 12 });
+  const backlog = page.getByRole("region", { name: "Backlog" });
+  await expect(backlog).not.toHaveAttribute("data-collapsed", "true");
+  await page.screenshot({ path: `${KANBAN_OUT}/kanban-glisser-${schemeOf(info.project.name)}.png` });
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await expect(backlog).toHaveAttribute("data-collapsed", "true");
 });
 
 test("the sheet of SILO-45 on hold opened from the Kanban matches the mockup on the whole screen", async ({

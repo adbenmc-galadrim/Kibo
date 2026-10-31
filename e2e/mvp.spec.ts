@@ -23,7 +23,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   );
   const todo = page.getByRole("region", { name: "À faire" });
   await expect(todo.getByText(`${key}-1`)).toBeVisible();
-  await expect(page.getByText("1 ticket · Tous", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 ticket", { exact: true })).toBeVisible();
 
   await todo.getByRole("button", { name: `Actions ${key}-1` }).click();
   await page.getByRole("menuitem", { name: "Déplacer vers" }).click();
@@ -93,7 +93,7 @@ test("tableau de bord Kanban, sous-ticket et fiche", async ({ page }, info) => {
 
   const chip = "Ouvrir l'ensemble F1 · Préparer la démo";
   await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
-  await expect(page.getByTitle("1 ticket · Tous", { exact: true })).toBeAttached();
+  await expect(page.getByTitle("1 ticket", { exact: true })).toBeAttached();
 
   await todo.getByRole("article").getByRole("button", { name: chip }).click();
   const sheet = page.getByRole("dialog");
