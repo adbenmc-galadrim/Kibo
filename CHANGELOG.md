@@ -2,6 +2,14 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.34.0-alpha.2 — 2026-11-02
+
+Le mode sombre est nettement moins noir et le Graphe se lit mieux.
+
+- Fonds, cartes et bordures sont plus clairs dans toute l'application ; le mode clair ne change pas.
+- Graphe : les cadres des fonctionnalités se détachent du fond au lieu de faire des trous noirs.
+- Texte atténué et couleurs de statut éclaircis pour rester lisibles ; bordures des champs plus visibles.
+
 ## 0.34.0-alpha.1 — 2026-11-01
 
 L'application s'allège et devient plus fluide, sans nouvel écran à apprendre, et Kibo peut lancer une livraison dans T3 Code.
