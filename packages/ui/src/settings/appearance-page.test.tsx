@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setThemePreference } from "../theme";
 import { AppearancePage } from "./AppearancePage";
 
 beforeEach(() => localStorage.clear());
@@ -23,17 +24,16 @@ test("the theme segment reflects and sets the preference (screen 110)", async ()
   expect(screen.queryByText("Accès web")).toBeNull();
 });
 
-const inDark = async () => {
+const inDark = () => {
+  setThemePreference("dark");
   render(<AppearancePage />);
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("radio", { name: "Sombre" }));
-  return user;
+  return userEvent.setup();
 };
 
 afterEach(() => document.documentElement.removeAttribute("style"));
 
 test("simple mode applies a chosen theme to the whole application", async () => {
-  const user = await inDark();
+  const user = inDark();
   expect(screen.queryByRole("region", { name: "Surfaces" })).toBeNull();
   await user.click(screen.getByRole("button", { name: /^Noir/ }));
   expect(document.documentElement.style.getPropertyValue("--tracking-bg")).toBe("#09090B");
@@ -43,7 +43,7 @@ test("simple mode applies a chosen theme to the whole application", async () => 
 });
 
 test("custom mode edits every color from the chosen theme, live", async () => {
-  const user = await inDark();
+  const user = inDark();
   await user.click(screen.getByRole("radio", { name: "Personnalisé" }));
   await user.click(screen.getByRole("button", { name: /^Prune/ }));
   const hex = screen.getByRole("textbox", { name: "Code de la couleur : Fond" });
@@ -57,7 +57,7 @@ test("custom mode edits every color from the chosen theme, live", async () => {
 });
 
 test("a half-typed code changes nothing", async () => {
-  const user = await inDark();
+  const user = inDark();
   await user.click(screen.getByRole("radio", { name: "Personnalisé" }));
   const hex = screen.getByRole("textbox", { name: "Code de la couleur : Fond" });
   await user.clear(hex);
@@ -67,7 +67,7 @@ test("a half-typed code changes nothing", async () => {
 });
 
 test("clicking an element of the preview selects its color, and its tabs switch the view", async () => {
-  const user = await inDark();
+  const user = inDark();
   await user.click(screen.getByRole("radio", { name: "Personnalisé" }));
   const preview = screen.getByRole("region", { name: "Aperçu interactif" });
   await user.click(within(preview).getAllByRole("button", { name: "Carte" })[0] as HTMLElement);
@@ -82,7 +82,7 @@ test("clicking an element of the preview selects its color, and its tabs switch 
 });
 
 test("an unreadable color is reported and can be fixed", async () => {
-  const user = await inDark();
+  const user = inDark();
   await user.click(screen.getByRole("radio", { name: "Personnalisé" }));
   expect(screen.getByText("Tout est lisible.")).toBeTruthy();
   const hex = screen.getByRole("textbox", { name: "Code de la couleur : Texte atténué" });
@@ -94,7 +94,7 @@ test("an unreadable color is reported and can be fixed", async () => {
 });
 
 test("an own theme is created, kept and deleted", async () => {
-  const user = await inDark();
+  const user = inDark();
   await user.click(screen.getByRole("radio", { name: "Personnalisé" }));
   await user.click(screen.getByRole("button", { name: "Nouveau thème" }));
   expect(screen.getByRole("button", { name: "Enregistrer" })).toHaveProperty("disabled", true);

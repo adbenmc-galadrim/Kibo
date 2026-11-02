@@ -23,15 +23,14 @@ export const PaletteRoles = z.object({
 });
 export type PaletteRoles = z.infer<typeof PaletteRoles>;
 
-export const PaletteScheme = z.enum(["dark", "light"]);
+const PaletteScheme = z.enum(["dark", "light"]);
 
-export const CustomTheme = z.object({
+const CustomTheme = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   scheme: PaletteScheme,
   roles: PaletteRoles,
 });
-export type CustomTheme = z.infer<typeof CustomTheme>;
 
 export const StoredPalette = z.object({
   active: z.object({ dark: z.string().optional(), light: z.string().optional() }).default({}),
