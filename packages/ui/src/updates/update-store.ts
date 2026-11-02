@@ -49,10 +49,15 @@ export function createUpdateStore(port: UpdaterPort, now: () => number = Date.no
 
   const check = async (): Promise<void> => {
     if (checking) return checking;
-    dispatch({ type: "check" });
+    const status = reduceUpdate(current.status, { type: "check" });
+    if (status === current.status) return;
+    publish({ ...current, status });
     checking = port.check().then(
       (update) => dispatch(update ? { type: "found", update } : { type: "none", at: now() }),
-      (e: unknown) => dispatch({ type: "checkFailed", detail: detailOf(e) }),
+      (e: unknown) => {
+        console.error("[kibo-ui] update check failed", e);
+        dispatch({ type: "checkFailed", detail: detailOf(e) });
+      },
     );
     await checking;
     checking = null;

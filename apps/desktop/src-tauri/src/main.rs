@@ -93,6 +93,7 @@ impl OpenUrlScope {
 
 const PLAIN_PERMISSIONS: &[&str] = &[
     "updater:default",
+    "core:resources:allow-close",
     "process:allow-restart",
     "core:app:allow-version",
     "core:window:allow-set-title",
@@ -425,6 +426,7 @@ mod tests {
             PLAIN_PERMISSIONS,
             &[
                 "updater:default",
+                "core:resources:allow-close",
                 "process:allow-restart",
                 "core:app:allow-version",
                 "core:window:allow-set-title",
