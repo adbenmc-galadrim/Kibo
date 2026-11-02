@@ -20,7 +20,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "0.34.0-alpha.3",
+      "version": "0.34.0-alpha.4",
       "devDependencies": {
         "@kibo/schema": "workspace:*",
         "@tauri-apps/cli": "2.11.5",

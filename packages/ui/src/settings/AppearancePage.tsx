@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
+import { CustomizationCard } from "../appearance/CustomizationCard";
 import { frAppearance } from "../i18n/fr-appearance";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
 import { SettingsLayout } from "./SettingsLayout";
@@ -48,6 +49,7 @@ export function AppearancePage() {
             <ThemeSegment />
           </CardContent>
         </Card>
+        <CustomizationCard />
       </div>
     </SettingsLayout>
   );

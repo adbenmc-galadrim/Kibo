@@ -2,6 +2,14 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.34.0-alpha.4 — 2026-11-02
+
+Le thème se choisit et se personnalise directement dans Kibo, dans Paramètres → Apparence.
+
+- Mode Simple : une galerie de thèmes pour le sombre (Graphite, Noir, Gris moyen, Ardoise, Lagon, Prune) et pour le clair (Clair, Sable, Brume).
+- Mode Personnalisé : pars d'un thème, puis règle chacune des 17 couleurs ; l'aperçu interactif montre le résultat et un clic sur un élément sélectionne sa couleur.
+- Tes thèmes : enregistre tes couleurs sous un nom, modifie-les ensuite ou supprime-les. Kibo signale ce qui devient illisible et propose de le corriger.
+
 ## 0.34.0-alpha.3 — 2026-11-02
 
 - Mises à jour : une nouvelle recherche, quand une version est déjà disponible, n'affiche plus à tort « Impossible de joindre GitHub ».

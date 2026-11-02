@@ -1,5 +1,6 @@
 import type { Theme } from "@kibo/schema";
 import { useSyncExternalStore } from "react";
+import { applyPalette, PALETTE_KEY } from "./appearance/palette-store";
 import { readPref, subscribePref, writePref } from "./lib/local-pref";
 
 export type ThemePreference = "system" | "light" | "dark";
@@ -18,6 +19,7 @@ export function readThemePreference(): ThemePreference {
 function apply(preference: ThemePreference): void {
   const dark = preference === "dark" || (preference === "system" && media().matches);
   document.documentElement.classList.toggle("dark", dark);
+  applyPalette(dark ? "dark" : "light");
 }
 
 export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
@@ -44,6 +46,9 @@ export const useThemePreference = (): ThemePreference =>
 export function followSystemTheme(): void {
   apply(readThemePreference());
   media().addEventListener("change", () => apply(readThemePreference()));
+  subscribePref(PALETTE_KEY, (external) => {
+    if (external) apply(readThemePreference());
+  });
 }
 
 export const currentTheme = (): Theme =>
