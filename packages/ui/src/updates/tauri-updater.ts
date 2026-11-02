@@ -20,7 +20,11 @@ export function createTauriUpdaterPort(backup: () => Promise<void>): UpdaterPort
     },
     async check() {
       const { check } = await import("@tauri-apps/plugin-updater");
-      await pending?.close();
+      const previous = pending;
+      pending = null;
+      await previous
+        ?.close()
+        .catch((e: unknown) => console.error("[kibo-ui] previous update could not be released", e));
       pending = await check();
       return pending ? toUpdateInfo(pending) : null;
     },

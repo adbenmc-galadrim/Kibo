@@ -169,4 +169,21 @@ describe("update store", () => {
     await store.install();
     expect(calls).toEqual([]);
   });
+
+  test("a check during a download changes nothing and never reaches the updater", async () => {
+    const pendingInstall = deferred<void>();
+    const { port, calls } = fakePort({ downloadAndInstall: () => pendingInstall.promise });
+    const store = createUpdateStore(port);
+    await store.check();
+    const installing = store.install();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.snapshot().status.phase).toBe("downloading");
+    calls.length = 0;
+    await store.check();
+    expect(calls).toEqual([]);
+    expect(store.snapshot().status.phase).toBe("downloading");
+    pendingInstall.resolve();
+    await installing;
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, spyOn, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
 import type { DownloadEvent } from "./update-store";
 
@@ -69,5 +69,16 @@ describe("tauri updater port", () => {
     });
     await port.backup();
     expect(backups).toEqual(["update"]);
+  });
+
+  test("a previous update that cannot be closed does not fail the next checks", async () => {
+    const errors = spyOn(console, "error").mockImplementation(() => {});
+    const denied = { ...found, close: () => Promise.reject(new Error("resources.close not allowed")) };
+    found = denied;
+    const port = createTauriUpdaterPort(async () => {});
+    await port.check();
+    await expect(port.check()).resolves.not.toBeNull();
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
   });
 });
