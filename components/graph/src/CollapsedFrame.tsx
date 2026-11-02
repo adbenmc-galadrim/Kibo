@@ -15,7 +15,7 @@ export function CollapsedFrame({ frame, onToggle }: Props) {
       data-key={frame.shortKey}
       data-folded="true"
       data-late={frame.late ? "true" : undefined}
-      className={cn("absolute rounded-[10px] border bg-(--tracking-bg)", frameBorder(frame.late))}
+      className={cn("absolute rounded-[10px] border bg-(--tracking-frame)", frameBorder(frame.late))}
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
     >
       <button

@@ -3259,3 +3259,14 @@ Remplis au jalon depuis la section « Écarts » du plan.
 - **Pastille « T3 »** (T13) : taille `2xs` de 19 px, à la place de l'icône de droite ; l'attente n'y est distinguée que par la couleur.
 - **« Livrée aujourd'hui »** (décision du chef d'équipe, T14) : F4 affiche « 4/4 étapes » alors que le sprint affiche 3/4 avec une étape en attente. Maquette `attente-vue-ensemble` redessinée en conséquence, barre « i » retirée.
 - **Mesure de fluidité** (T0, T14) : faite par le projet WebKit de Playwright sur les données de test, ni dans l'application, ni sur de vraies données ; pas de mesure « avant » comparable.
+
+## 51. Mode sombre relevé (demande d'Adam du 2026-11-02)
+
+Le mode sombre était presque noir et les cadres du Graphe plus foncés que leur fond. Adam a choisi la proposition A « Graphite » parmi trois, comparées sur les vraies pages (page « Palette sombre · Propositions » de « Kibo · Redesign »).
+
+- **Surfaces** : fond `#212124`, panneau `#26262A`, carte `#2D2D31`, muted `#343439`, survol `#3A3A3F`, bordure `#47474D`, fond du Graphe `#242427`.
+- **Texte et statuts** relevés pour rester au-dessus de 4,5:1 sur ces surfaces (`--tracking-dim` `#ABABB4`, bleu `#7FB5FB`, violet `#CFA1FD`, vert `#4ADE80`, rouge `#FC9494`, ambre `#FBBF24`).
+- **`--tracking-frame`** : surface propre des cadres du Graphe, entre le fond et les cartes d'étape (`#2A2A2E` ; blanc en clair).
+- **`--tracking-on-fill`** : numéro lisible sur un aplat de statut (`#09090B` en sombre ; blanc en clair).
+- **`--input`** devient une bordure opaque à 3:1 en sombre (`#85858E`). Le mode clair ne change pas.
+- **Écart connu** : les maquettes sombres et leurs exports `design/redesign/exports/*-dark.png` gardent l'ancienne palette. Les comparaisons pixel en sombre passent encore (44/44), car leur tolérance (seuil 0,3) absorbe ce décalage de fond : elles ne valident donc pas ces nouvelles couleurs.

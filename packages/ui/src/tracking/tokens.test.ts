@@ -51,36 +51,38 @@ const LAYOUT: Record<string, string> = {
 };
 
 const COLORS: Record<string, [light: string, dark: string]> = {
-  "--tracking-bg": ["#ffffff", "#09090b"],
-  "--tracking-panel": ["#fafafa", "#0c0c0e"],
-  "--tracking-card": ["#ffffff", "#111113"],
-  "--tracking-muted": ["#f4f4f5", "#18181b"],
-  "--tracking-hover": ["#f4f4f5", "#1c1c1f"],
-  "--tracking-border": ["#e4e4e7", "#27272a"],
-  "--tracking-soft": ["#eeeef0", "#1f1f23"],
+  "--tracking-bg": ["#ffffff", "#212124"],
+  "--tracking-panel": ["#fafafa", "#26262a"],
+  "--tracking-card": ["#ffffff", "#2d2d31"],
+  "--tracking-muted": ["#f4f4f5", "#343439"],
+  "--tracking-hover": ["#f4f4f5", "#3a3a3f"],
+  "--tracking-border": ["#e4e4e7", "#47474d"],
+  "--tracking-soft": ["#eeeef0", "#38383d"],
   "--tracking-fg": ["#09090b", "#fafafa"],
-  "--tracking-mfg": ["#52525b", "#a1a1aa"],
-  "--tracking-dim": ["#71717a", "#71717a"],
-  "--tracking-faint": ["#a1a1aa", "#52525b"],
+  "--tracking-mfg": ["#52525b", "#cfcfd6"],
+  "--tracking-dim": ["#71717a", "#ababb4"],
+  "--tracking-faint": ["#a1a1aa", "#7a7a83"],
   "--tracking-brand": ["#ea580c", "#f97316"],
   "--tracking-brand-btn": ["#c2410c", "#c2410c"],
-  "--tracking-brand-soft": ["#fff7ed", "#2a1406"],
-  "--tracking-brand-line": ["#fdba74", "#7c2d12"],
+  "--tracking-brand-soft": ["#fff7ed", "#4e382d"],
+  "--tracking-brand-line": ["#fdba74", "#935024"],
   "--tracking-brand-text": ["#c2410c", "#fb923c"],
-  "--tracking-blue": ["#2563eb", "#3b82f6"],
-  "--tracking-purple": ["#9333ea", "#a855f7"],
-  "--tracking-green": ["#16a34a", "#22c55e"],
-  "--tracking-red": ["#dc2626", "#ef4444"],
-  "--tracking-amber": ["#d97706", "#f59e0b"],
-  "--tracking-blue-soft": ["#eff6ff", "#0b1426"],
-  "--tracking-purple-soft": ["#faf5ff", "#1a1024"],
-  "--tracking-green-soft": ["#f0fdf4", "#0d1f12"],
-  "--tracking-red-soft": ["#fef2f2", "#2a0f0f"],
-  "--tracking-amber-soft": ["#fffbeb", "#1f1608"],
+  "--tracking-blue": ["#2563eb", "#7fb5fb"],
+  "--tracking-purple": ["#9333ea", "#cfa1fd"],
+  "--tracking-green": ["#16a34a", "#4ade80"],
+  "--tracking-red": ["#dc2626", "#fc9494"],
+  "--tracking-amber": ["#d97706", "#fbbf24"],
+  "--tracking-blue-soft": ["#eff6ff", "#343841"],
+  "--tracking-purple-soft": ["#faf5ff", "#3a3641"],
+  "--tracking-green-soft": ["#f0fdf4", "#2f3b37"],
+  "--tracking-red-soft": ["#fef2f2", "#3e3539"],
+  "--tracking-amber-soft": ["#fffbeb", "#3d3930"],
   "--tracking-hold": ["#0e7490", "#22d3ee"],
-  "--tracking-hold-soft": ["#ecfeff", "#082f35"],
-  "--tracking-canvas": ["#fafafa", "#0b0b0d"],
-  "--tracking-grid": ["#ededef", "#1a1a1d"],
+  "--tracking-hold-soft": ["#ecfeff", "#2c3a40"],
+  "--tracking-canvas": ["#fafafa", "#242427"],
+  "--tracking-grid": ["#ededef", "#323236"],
+  "--tracking-frame": ["#ffffff", "#2a2a2e"],
+  "--tracking-on-fill": ["#ffffff", "#09090b"],
 };
 
 const SPRINT_TINTS: Record<string, string> = {
@@ -132,4 +134,17 @@ test("the font files and their OFL license ship in the public folder", async () 
   expect(await Bun.file(new URL("LICENSE-geist.txt", fontsDir)).text()).toContain(
     "SIL Open Font License, Version 1.1",
   );
+});
+
+const themeCss = await Bun.file(new URL("../../../sdk/src/theme.css", import.meta.url)).text();
+
+test("the shadcn dark surfaces follow the tracking dark surfaces", () => {
+  const dark = themeCss.slice(themeCss.indexOf(".dark {"));
+  const value = (name: string) => dark.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1];
+  expect(value("--background")).toBe("#212124");
+  expect(value("--card")).toBe("#2d2d31");
+  expect(value("--muted")).toBe("#343439");
+  expect(value("--border")).toBe("#47474d");
+  expect(value("--input")).toBe("#85858e");
+  expect(value("--sidebar")).toBe("#26262a");
 });

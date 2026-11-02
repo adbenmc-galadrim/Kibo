@@ -102,10 +102,12 @@
   --tracking-hold-soft: #ecfeff;
   --tracking-canvas: #fafafa;
   --tracking-grid: #ededef;
+  --tracking-frame: #ffffff;
+  --tracking-on-fill: #ffffff;
 }
 
 .dark {
-  --code-comment: #8b949e;
+  --code-comment: #a8b0ba;
   --code-keyword: #ff7b72;
   --code-constant: #79c0ff;
   --code-string: #a5d6ff;
@@ -114,36 +116,40 @@
   --code-variable: #ffa657;
   --code-type: #ffa657;
   --code-invalid: #ffa198;
-  --tracking-bg: #09090b;
-  --tracking-panel: #0c0c0e;
-  --tracking-card: #111113;
-  --tracking-muted: #18181b;
-  --tracking-hover: #1c1c1f;
-  --tracking-border: #27272a;
-  --tracking-soft: #1f1f23;
+  --tracking-bg: #212124;
+  --tracking-panel: #26262a;
+  --tracking-card: #2d2d31;
+  --tracking-muted: #343439;
+  --tracking-hover: #3a3a3f;
+  --tracking-border: #47474d;
+  --tracking-soft: #38383d;
   --tracking-fg: #fafafa;
-  --tracking-mfg: #a1a1aa;
-  --tracking-dim: #71717a;
-  --tracking-faint: #52525b;
+  --tracking-mfg: #cfcfd6;
+  --tracking-dim: #ababb4;
+  --tracking-faint: #7a7a83;
   --tracking-brand: #f97316;
   --tracking-brand-btn: #c2410c;
-  --tracking-brand-soft: #2a1406;
-  --tracking-brand-line: #7c2d12;
+  --tracking-brand-soft: #4e382d;
+  --tracking-brand-line: #935024;
   --tracking-brand-text: #fb923c;
-  --tracking-blue: #3b82f6;
-  --tracking-purple: #a855f7;
-  --tracking-green: #22c55e;
-  --tracking-red: #ef4444;
-  --tracking-amber: #f59e0b;
-  --tracking-blue-soft: #0b1426;
-  --tracking-purple-soft: #1a1024;
-  --tracking-green-soft: #0d1f12;
-  --tracking-red-soft: #2a0f0f;
-  --tracking-amber-soft: #1f1608;
+  --tracking-blue: #7fb5fb;
+  --tracking-purple: #cfa1fd;
+  --tracking-green: #4ade80;
+  --tracking-red: #fc9494;
+  --tracking-amber: #fbbf24;
+  --tracking-blue-soft: #343841;
+  --tracking-purple-soft: #3a3641;
+  --tracking-green-soft: #2f3b37;
+  --tracking-red-soft: #3e3539;
+  --tracking-amber-soft: #3d3930;
   --tracking-hold: #22d3ee;
-  --tracking-hold-soft: #082f35;
-  --tracking-canvas: #0b0b0d;
-  --tracking-grid: #1a1a1d;
+  --tracking-hold-soft: #2c3a40;
+  --tracking-canvas: #242427;
+  --tracking-grid: #323236;
+  --tracking-frame: #2a2a2e;
+  --tracking-on-fill: #09090b;
+  --color-red-400: #fc9494;
+  --color-purple-400: #cfa1fd;
 }
 
 .shiki-token {
