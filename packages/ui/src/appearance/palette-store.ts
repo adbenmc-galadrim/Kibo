@@ -18,7 +18,7 @@ export function parsePalette(raw: string): Palette {
   return EMPTY_PALETTE;
 }
 
-export const readPalette = (): Palette => parsePalette(readPref(PALETTE_KEY, ""));
+const readPalette = (): Palette => parsePalette(readPref(PALETTE_KEY, ""));
 
 export function writePalette(next: Palette, scheme: Scheme): void {
   writePref(PALETTE_KEY, JSON.stringify(next));

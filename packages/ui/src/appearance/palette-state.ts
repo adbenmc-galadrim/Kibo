@@ -4,7 +4,7 @@ import type { Role, Roles, Scheme } from "./palette-roles";
 
 export const EMPTY_PALETTE: StoredPalette = { active: {}, drafts: {}, custom: [] };
 
-export type ActiveTheme = {
+type ActiveTheme = {
   theme: ThemeDef;
   roles: Roles;
   modified: boolean;
