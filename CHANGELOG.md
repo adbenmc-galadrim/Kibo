@@ -2,6 +2,11 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.34.0-alpha.3 — 2026-11-02
+
+- Mises à jour : une nouvelle recherche, quand une version est déjà disponible, n'affiche plus à tort « Impossible de joindre GitHub ».
+- Mises à jour : une recherche automatique ne peut plus interrompre un téléchargement en cours et le faire repartir de zéro.
+
 ## 0.34.0-alpha.2 — 2026-11-02
 
 Le mode sombre est nettement moins noir et le Graphe se lit mieux.
