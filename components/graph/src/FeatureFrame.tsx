@@ -78,7 +78,7 @@ export function FeatureFrame({ frame, onOpen, onToggle, project }: Props) {
       data-late={frame.late ? "true" : undefined}
       data-title-lines={frame.titleLines}
       className={cn(
-        "absolute flex flex-col gap-1.5 rounded-[10px] border bg-(--tracking-bg) p-[9px]",
+        "absolute flex flex-col gap-1.5 rounded-[10px] border bg-(--tracking-frame) p-[9px]",
         frameBorder(frame.late),
       )}
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}

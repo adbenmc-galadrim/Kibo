@@ -309,3 +309,10 @@ test("no arrow is drawn behind the frames, a startable step has a solid green ou
   const f7 = within(screen.getByRole("article", { name: /^F7 / })).getAllByRole("listitem");
   expect(f7.every((r) => r.getAttribute("data-startable") === null)).toBe(true);
 });
+
+test("a feature frame sits on its own surface above the lane", () => {
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
+  expect(screen.getByRole("article", { name: "F4 Saisir un constat hors ligne" }).className).toContain(
+    "bg-(--tracking-frame)",
+  );
+});

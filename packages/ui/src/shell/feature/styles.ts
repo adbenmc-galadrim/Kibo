@@ -25,7 +25,7 @@ export const CASE_SEGMENT: Record<CaseTone, string> = {
 };
 
 export const STEP_CIRCLE: Partial<Record<StatusId, string>> = {
-  in_review: "bg-(--tracking-purple) text-white",
-  in_progress: "bg-(--tracking-blue) text-white",
-  blocked: "bg-(--tracking-red) text-white",
+  in_review: "bg-(--tracking-purple) text-(--tracking-on-fill)",
+  in_progress: "bg-(--tracking-blue) text-(--tracking-on-fill)",
+  blocked: "bg-(--tracking-red) text-(--tracking-on-fill)",
 };
