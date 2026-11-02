@@ -64,6 +64,7 @@ export * from "./note";
 export * from "./on-hold";
 export * from "./overview";
 export * from "./page";
+export * from "./palette";
 export * from "./permissions";
 export * from "./plan";
 export * from "./plan-rpc";

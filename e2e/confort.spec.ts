@@ -82,3 +82,25 @@ test("Kanban filtré et réordonné", async ({ page }, info) => {
   await page.reload();
   await expect.poll(keys).toEqual(moved);
 });
+
+test("a theme is chosen, customized from the preview, saved and kept after a reload", async ({ page }) => {
+  await pair(page);
+  await page.goto("/#/settings/appearance");
+  const bg = () =>
+    page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--tracking-bg").trim());
+  await page.getByRole("radio", { name: "Personnalisé" }).click();
+  const preview = page.getByRole("region", { name: "Aperçu interactif" });
+  await preview.getByRole("button", { name: "Carte" }).first().click();
+  const card = page.getByRole("textbox", { name: "Code de la couleur : Carte" });
+  await expect(card.locator("xpath=..")).toHaveAttribute("data-selected", "true");
+  await page.getByRole("textbox", { name: "Code de la couleur : Fond" }).fill("#1A1030");
+  await expect.poll(bg).toBe("#1A1030");
+  await page.getByRole("button", { name: "Nouveau thème" }).click();
+  await page.getByRole("textbox", { name: "Nom du thème" }).fill("Mon thème");
+  await page.getByRole("button", { name: "Enregistrer" }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: /^Mon thème/ })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(bg).toBe("#1A1030");
+  await page.getByRole("button", { name: "Supprimer le thème Mon thème" }).click();
+  await expect(page.getByRole("button", { name: /^Mon thème/ })).toHaveCount(0);
+});

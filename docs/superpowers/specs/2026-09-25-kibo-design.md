@@ -3270,3 +3270,15 @@ Le mode sombre était presque noir et les cadres du Graphe plus foncés que leur
 - **`--tracking-on-fill`** : numéro lisible sur un aplat de statut (`#09090B` en sombre ; blanc en clair).
 - **`--input`** devient une bordure opaque à 3:1 en sombre (`#85858E`). Le mode clair ne change pas.
 - **Écart connu** : les maquettes sombres et leurs exports `design/redesign/exports/*-dark.png` gardent l'ancienne palette. Les comparaisons pixel en sombre passent encore (44/44), car leur tolérance (seuil 0,3) absorbe ce décalage de fond : elles ne valident donc pas ces nouvelles couleurs.
+
+## 52. Thème personnalisable (demande d'Adam du 2026-11-02)
+
+Dans Paramètres → Apparence, deux modes :
+
+- **Simple** : une galerie de thèmes, un clic applique le thème.
+- **Personnalisé** : on part d'un thème, puis chacune des 17 couleurs se règle (surfaces, texte, statuts, marque), avec un aperçu interactif : cliquer un élément de l'aperçu sélectionne sa couleur.
+- **Mes thèmes** : « Nouveau thème » enregistre les couleurs en cours sous un nom ; un thème créé se modifie directement et se supprime. Un thème fourni n'est jamais écrasé : ses retouches se gardent à part et « Revenir au thème » les retire.
+- **Sombre et clair** ont chacun leur thème actif. Les couleurs s'appliquent à toute l'application en direct.
+- **Lisibilité** : Kibo signale chaque couleur sous 4,5:1 (3:1 pour l'accent) sans l'interdire ; « Corriger » l'ajuste. Dégradés, bordures de champ et texte orange se calculent depuis ces 17 couleurs.
+
+Décisions du chef d'équipe : Graphite et Clair restent les thèmes par défaut ; le réglage reste sur la machine (`kibo.palette`), hors CRDT. Les couleurs Tailwind brutes hors tokens ne suivent pas le thème. La règle « orange réservé aux agents » devient « la couleur Agents est réservée aux agents », sa teinte étant réglable. Maquettes : page « Thème personnalisable · Propositions » de « Kibo · Redesign ».
