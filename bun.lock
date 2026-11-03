@@ -215,6 +215,15 @@
         "fast-check": "4.3.0",
       },
     },
+    "packages/remote-server": {
+      "name": "@kibo/remote-server",
+      "version": "0.0.0",
+      "dependencies": {
+        "@kibo/remote": "workspace:*",
+        "@kibo/schema": "workspace:*",
+        "zod": "3.25.76",
+      },
+    },
     "packages/schema": {
       "name": "@kibo/schema",
       "version": "0.0.0",
@@ -603,6 +612,8 @@
     "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 
     "@kibo/remote": ["@kibo/remote@workspace:packages/remote"],
+
+    "@kibo/remote-server": ["@kibo/remote-server@workspace:packages/remote-server"],
 
     "@kibo/schema": ["@kibo/schema@workspace:packages/schema"],
 
