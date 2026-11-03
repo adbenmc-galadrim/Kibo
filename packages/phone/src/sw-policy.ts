@@ -1,6 +1,12 @@
 type SwStrategy = "network" | "shell" | "asset";
 
-type ManifestChunk = { file: string; css?: string[]; imports?: string[]; isEntry?: boolean };
+type ManifestChunk = {
+  file: string;
+  css?: string[];
+  imports?: string[];
+  dynamicImports?: string[];
+  isEntry?: boolean;
+};
 
 const SHELL_ENTRY = "index.html";
 const ALWAYS = ["/", "/index.html", "/manifest.webmanifest"];
@@ -19,6 +25,7 @@ export function shellFiles(manifest: Record<string, ManifestChunk>): string[] {
     files.add(`/${chunk.file}`);
     for (const css of chunk.css ?? []) files.add(`/${css}`);
     for (const imported of chunk.imports ?? []) visit(imported);
+    for (const loaded of chunk.dynamicImports ?? []) visit(loaded);
   };
   visit(SHELL_ENTRY);
   return [...files];

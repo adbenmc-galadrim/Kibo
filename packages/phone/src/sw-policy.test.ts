@@ -37,6 +37,38 @@ test("the shell lists the entry, its css and static imports, never the service w
   );
 });
 
+test("the shell follows dynamic imports, so screens loaded on demand open offline", () => {
+  const manifest = {
+    "index.html": {
+      file: "assets/index-1.js",
+      dynamicImports: ["src/screens/agent/AgentScreen.tsx"],
+      isEntry: true,
+    },
+    "src/screens/agent/AgentScreen.tsx": {
+      file: "assets/AgentScreen-5.js",
+      css: ["assets/AgentScreen-6.css"],
+      imports: ["_floating.js"],
+      dynamicImports: ["src/AgentMarkdown.tsx"],
+      isDynamicEntry: true,
+    },
+    "_floating.js": { file: "assets/floating-7.js" },
+    "src/AgentMarkdown.tsx": { file: "assets/AgentMarkdown-8.js", isDynamicEntry: true },
+    "src/unused.tsx": { file: "assets/unused-9.js", isDynamicEntry: true },
+  };
+  expect(shellFiles(manifest).sort()).toEqual(
+    [
+      "/",
+      "/assets/AgentMarkdown-8.js",
+      "/assets/AgentScreen-5.js",
+      "/assets/AgentScreen-6.css",
+      "/assets/floating-7.js",
+      "/assets/index-1.js",
+      "/index.html",
+      "/manifest.webmanifest",
+    ].sort(),
+  );
+});
+
 test("each build has its own cache and activation drops every other one", () => {
   expect(cacheName("lq3x9a")).toBe("kibo-phone-lq3x9a");
   expect(staleCaches(["kibo-phone-old", "kibo-phone-lq3x9a", "other"], "kibo-phone-lq3x9a")).toEqual([
