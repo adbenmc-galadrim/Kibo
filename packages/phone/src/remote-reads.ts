@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import { authenticatedJson } from "./authenticated";
 import type { InstanceDataStore } from "./instance-data";
+import { redated } from "./late-features";
 
 export type SnapshotReader = {
   index(): Promise<ProjectsIndex>;
@@ -135,7 +136,7 @@ export async function serveLocally(deps: ReadDeps, req: RpcRequest): Promise<Ser
     case "listProjects":
       return { value: await listProjects(r) };
     case "getProject":
-      return { value: await project(r, req.projectId) };
+      return { value: redated(await project(r, req.projectId), deps.today()) };
     case "listProjectEvents":
       return { value: await listEvents(r, req) };
     case "listCiRuns":
