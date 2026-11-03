@@ -2,16 +2,19 @@ import type { Database } from "bun:sqlite";
 import { REQUEST_TIMEOUT_MS, SNAPSHOT_MAX_BYTES } from "@kibo/remote/protocol";
 import type { Server, ServerWebSocket } from "bun";
 import { assertSetupCode, bearerOf, createAccount } from "./account";
+import { createChallenges } from "./challenges";
 import { openDb } from "./db";
 import { fail, handled, readJson } from "./http";
 import { CLOSE_UNAUTHORIZED, createMacChannel } from "./mac-socket";
 import { createPairTokens } from "./pair-tokens";
+import { createPasskeys } from "./passkeys";
 import { createPhoneHub } from "./phone-hub";
 import { phoneRoute } from "./phone-routes";
 import { revokePhone } from "./phone-sessions";
 import { createRelay } from "./relay";
 import { createSnapshotStore } from "./snapshots";
 import { createStatic } from "./static";
+import { createWebauthn } from "./webauthn";
 import type { WebauthnPort } from "./webauthn-port";
 
 export type RemoteServerOptions = {
@@ -49,6 +52,15 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
   const pairTokens = createPairTokens(db, now);
   const account = createAccount(db, opts.setupCode, now);
   const phones = createPhoneHub<WsData>();
+  const auth = {
+    db,
+    now,
+    account,
+    pairTokens,
+    passkeys: createPasskeys(db, now),
+    challenges: createChallenges(db, now),
+    webauthn: opts.webauthn ?? createWebauthn({ rpId: opts.rpId, origin: opts.origin }),
+  };
   const revoke = () => {
     revokePhone(db);
     phones.closeAll(CLOSE_UNAUTHORIZED, "phone revoked");
@@ -90,12 +102,12 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
     if (url.pathname === "/api/mac") return macUpgrade(req, server);
     if (url.pathname.startsWith("/api/phone/"))
       return phoneRoute(req, url, {
-        db,
+        ...auth,
         snapshots,
         relay,
-        now,
         origin: opts.origin,
-        upgradeEvents: (upgrade) => server.upgrade(upgrade, { data: { role: "phone" } }),
+        upgradeEvents: (upgrade, headers) =>
+          server.upgrade(upgrade, { headers: new Headers(headers), data: { role: "phone" } }),
       });
     return fail("NOT_FOUND", "unknown route");
   };

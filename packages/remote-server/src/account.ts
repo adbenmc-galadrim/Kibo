@@ -14,7 +14,8 @@ export function assertSetupCode(setupCode: string): void {
 
 const RegisterBody = z.object({ setupCode: z.string(), macToken: z.string() });
 
-type Account = {
+export type Account = {
+  accountId(): string | null;
   register(body: unknown): { accountId: string };
   authenticateMac(token: string | null): void;
 };
@@ -25,6 +26,7 @@ export function createAccount(db: Database, setupCode: string, now: () => number
     "SELECT account_id, mac_token_hash FROM account WHERE id = 1",
   );
   return {
+    accountId: () => current.get()?.account_id ?? null,
     register: (body) => {
       const parsed = RegisterBody.safeParse(body);
       if (!parsed.success) throw new KiboError("INVALID_INPUT", "register needs setupCode and macToken");

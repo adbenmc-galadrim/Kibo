@@ -1,10 +1,10 @@
-import type { Database } from "bun:sqlite";
 import { SealedRequest } from "@kibo/remote/protocol";
 import { SnapshotKind } from "@kibo/remote/snapshot-kinds";
 import { KiboError } from "@kibo/schema";
 import { z } from "zod";
 import { fail, readJson } from "./http";
-import { sessionOf } from "./phone-sessions";
+import { authHandler, type PhoneAuthDeps } from "./phone-auth-routes";
+import { renewSession, sessionCookie, sessionOf } from "./phone-sessions";
 import type { Relay } from "./relay";
 import type { SnapshotStore } from "./snapshots";
 
@@ -14,15 +14,13 @@ const RequestBody = z.object({ sealed: SealedRequest });
 const ProjectQuery = z.object({ projectId: z.string().min(1) });
 const SnapshotQuery = ProjectQuery.extend({ kind: SnapshotKind });
 
-const WRITES_OR_SOCKETS = new Set(["GET /api/phone/events", "POST /api/phone/request"]);
+const EVENTS = "GET /api/phone/events";
 
-type PhoneRouteDeps = {
-  db: Database;
+type PhoneRouteDeps = PhoneAuthDeps & {
   snapshots: SnapshotStore;
   relay: Relay;
-  now(): number;
   origin: string;
-  upgradeEvents(req: Request): boolean;
+  upgradeEvents(req: Request, headers: Record<string, string>): boolean;
 };
 
 function query<S extends z.ZodTypeAny>(schema: S, url: URL): z.infer<S> {
@@ -37,18 +35,26 @@ async function relayRequest(req: Request, relay: Relay): Promise<Response> {
   return Response.json({ sealed: await relay.send(parsed.data.sealed) });
 }
 
-export async function phoneRoute(
+const writesOrListens = (req: Request, route: string) => req.method !== "GET" || route === EVENTS;
+
+function withCookie(res: Response | undefined, cookie: Record<string, string>): Response | undefined {
+  for (const [name, value] of Object.entries(cookie)) res?.headers.set(name, value);
+  return res;
+}
+
+async function sessionRoute(
   req: Request,
   url: URL,
+  route: string,
   deps: PhoneRouteDeps,
+  session: { expiresAt: number },
+  cookie: Record<string, string>,
 ): Promise<Response | undefined> {
-  if (!sessionOf(deps.db, req, deps.now())) return fail("UNAUTHORIZED", "no phone session");
-  const route = `${req.method} ${url.pathname}`;
-  if (WRITES_OR_SOCKETS.has(route) && req.headers.get("origin") !== deps.origin)
-    return fail("FORBIDDEN", "origin not allowed");
   switch (route) {
-    case "GET /api/phone/events":
-      return deps.upgradeEvents(req) ? undefined : fail("INVALID_INPUT", "websocket expected");
+    case EVENTS:
+      return deps.upgradeEvents(req, cookie) ? undefined : fail("INVALID_INPUT", "websocket expected");
+    case "GET /api/phone/session":
+      return Response.json({ ok: true, expiresAt: session.expiresAt });
     case "GET /api/phone/snapshots":
       return Response.json(deps.snapshots.list(query(ProjectQuery, url).projectId));
     case "GET /api/phone/snapshot": {
@@ -63,4 +69,23 @@ export async function phoneRoute(
     default:
       return fail("NOT_FOUND", "unknown phone route");
   }
+}
+
+export async function phoneRoute(
+  req: Request,
+  url: URL,
+  deps: PhoneRouteDeps,
+): Promise<Response | undefined> {
+  const route = `${req.method} ${url.pathname}`;
+  const sameOrigin = req.headers.get("origin") === deps.origin;
+  const auth = authHandler(route);
+  if (auth) return sameOrigin ? auth(req, deps) : fail("FORBIDDEN", "origin not allowed");
+  const now = deps.now();
+  const session = sessionOf(deps.db, req, now);
+  if (!session) return fail("UNAUTHORIZED", "no phone session");
+  if (writesOrListens(req, route) && !sameOrigin) return fail("FORBIDDEN", "origin not allowed");
+  const renewed = renewSession(deps.db, session, now);
+  const cookie: Record<string, string> = renewed ? { "set-cookie": sessionCookie(renewed.token) } : {};
+  const res = await sessionRoute(req, url, route, deps, renewed ?? session, cookie);
+  return withCookie(res, cookie);
 }

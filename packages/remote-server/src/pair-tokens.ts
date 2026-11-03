@@ -10,7 +10,8 @@ export type Redemption = "ok" | "invalid" | "rate-limited";
 
 export type PairTokens = {
   create(): { pairToken: string; expiresAt: number };
-  redeem(pairToken: string): Redemption;
+  check(pairToken: string): Redemption;
+  consume(pairToken: string): boolean;
 };
 
 export function createPairTokens(db: Database, now: () => number): PairTokens {
@@ -20,8 +21,12 @@ export function createPairTokens(db: Database, now: () => number): PairTokens {
     { maxFailures: PAIR_TOKEN_ATTEMPTS, windowMs: PAIR_TOKEN_TTL_MS, blockMs: PAIR_TOKEN_BLOCK_MS },
     now,
   );
+  const live = db.query<{ found: number }, [Uint8Array, number]>(
+    "SELECT 1 AS found FROM pair_tokens WHERE token_hash = ? AND expires_at > ?",
+  );
   return {
     create: () => {
+      db.run("DELETE FROM pair_tokens WHERE expires_at <= ?", [now()]);
       const pairToken = randomToken(PAIR_TOKEN_BYTES);
       const expiresAt = now() + PAIR_TOKEN_TTL_MS;
       db.run("INSERT INTO pair_tokens (token_hash, expires_at) VALUES (?, ?)", [
@@ -30,14 +35,16 @@ export function createPairTokens(db: Database, now: () => number): PairTokens {
       ]);
       return { pairToken, expiresAt };
     },
-    redeem: (pairToken) => {
+    check: (pairToken) => {
       if (limit.blocked()) return "rate-limited";
-      db.run("DELETE FROM pair_tokens WHERE expires_at <= ?", [now()]);
-      if (db.run("DELETE FROM pair_tokens WHERE token_hash = ?", [sha256(pairToken)]).changes > 0) {
+      if (live.get(sha256(pairToken), now())) {
         limit.succeed();
         return "ok";
       }
       return limit.fail() ? "rate-limited" : "invalid";
     },
+    consume: (pairToken) =>
+      db.run("DELETE FROM pair_tokens WHERE token_hash = ? AND expires_at > ?", [sha256(pairToken), now()])
+        .changes > 0,
   };
 }

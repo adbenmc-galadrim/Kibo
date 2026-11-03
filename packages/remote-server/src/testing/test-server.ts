@@ -3,7 +3,7 @@ import { z } from "zod";
 import { openDb } from "../db";
 import { createSession } from "../phone-sessions";
 import { type RemoteServerOptions, serveRemote } from "../server";
-import type { WebauthnPort } from "../webauthn-port";
+import { fakeWebauthn } from "./fake-webauthn";
 import { openSocket, type SocketQueue } from "./ws-queue";
 
 const SETUP_CODE = "test-setup";
@@ -23,17 +23,6 @@ export type FakeMac = SocketQueue<ServerMessage> & { put(message: MacMessage): v
 export type RequestHandler = (
   request: Extract<ServerMessage, { type: "request" }>,
 ) => SealedRequest | null | Promise<SealedRequest | null>;
-
-const unreachable = (): never => {
-  throw new Error("webauthn is not available in this test server");
-};
-
-const fakeWebauthn = (): WebauthnPort => ({
-  registrationOptions: async () => unreachable(),
-  verifyRegistration: async () => unreachable(),
-  authenticationOptions: async () => unreachable(),
-  verifyAuthentication: async () => unreachable(),
-});
 
 const randomMacToken = () => {
   const bytes = new Uint8Array(32);

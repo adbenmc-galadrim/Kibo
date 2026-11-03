@@ -10,6 +10,7 @@
   "dependencies": {
     "@kibo/remote": "workspace:*",
     "@kibo/schema": "workspace:*",
+    "@simplewebauthn/server": "13.3.3",
     "zod": "3.25.76"
   }
 }
