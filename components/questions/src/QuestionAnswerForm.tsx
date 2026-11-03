@@ -120,7 +120,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
         <Button
           type="submit"
           size="sm"
-          className={`h-6.5 px-2.5 text-xs font-medium disabled:opacity-100 ${PHONE_ACTION}`}
+          className={`h-6.5 px-2.5 text-xs font-medium ${blocked === null ? "disabled:opacity-100" : ""} ${PHONE_ACTION}`}
           disabled={busy || !ready}
           title={blocked ?? undefined}
         >

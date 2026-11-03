@@ -44,7 +44,9 @@ test("read-only, the answer form and the recipient are greyed with the reason", 
   mountReadOnly();
   const row = await openRow(Q14);
   expect(disabled(within(row).getByRole("textbox", { name: fr.yourAnswer }))).toBe(true);
-  expect(disabled(within(row).getByRole("button", { name: fr.reply }))).toBe(true);
+  const reply = within(row).getByRole("button", { name: fr.reply });
+  expect(disabled(reply)).toBe(true);
+  expect(reply.className).not.toContain("disabled:opacity-100");
   expect(disabled(within(row).getByRole("button", { name: fr.paste.open }))).toBe(true);
   const recipient = within(row).getByRole("button", { name: /^Destinataire/ });
   expect(disabled(recipient)).toBe(true);
