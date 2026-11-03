@@ -22,7 +22,7 @@ import { recordedAgentApis } from "./mock-recorded";
 import { createMockSettings } from "./mock-settings";
 import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
-import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
+import { createSignal, focusApi, selectionApi, visibilityApi, writesApi } from "./signal";
 import { createSpotlightStore } from "./spotlight";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
@@ -78,6 +78,7 @@ export function createMockSdk(
   const visible = createSignal(opts.visible ?? true);
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
+  const writeBlock = createSignal<string | null>(opts.writeBlock ?? null);
   const settings = createMockSettings(doc, changes.emit);
   const today = opts.today ?? UNDATED;
 
@@ -118,6 +119,7 @@ export function createMockSdk(
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
     spotlight,
+    writes: writesApi(writeBlock),
   });
 
   const markUsed = (permission: string) => {
@@ -194,5 +196,6 @@ export function createMockSdk(
     setFocus: focus.set,
     setSelection: selection.set,
     setSpotlight: spotlight.set,
+    setWriteBlock: writeBlock.set,
   };
 }

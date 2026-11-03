@@ -83,3 +83,12 @@ test("the status is read once for several buttons", async () => {
   );
   await waitFor(() => expect(reads).toBe(1));
 });
+
+test("is disabled with the write block as its tooltip when writes are blocked", async () => {
+  const { mock, wrap } = mockWithT3({ status: AVAILABLE });
+  mock.setWriteBlock("Mac éteint");
+  render(wrap(<LaunchInT3Button {...PROPS} />));
+  const button = screen.getByRole("button", { name: "Lancer dans T3" }) as HTMLButtonElement;
+  expect(button.disabled).toBe(true);
+  expect(button.parentElement?.title).toBe("Mac éteint");
+});

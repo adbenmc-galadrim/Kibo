@@ -1,6 +1,7 @@
 import { isActiveT3Status, type T3Thread } from "@kibo/schema";
 import { Play } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useWriteBlock } from "../react";
 import { Button } from "../ui/button";
 import { frT3 as t } from "./fr-t3";
 import { LaunchDialog } from "./LaunchDialog";
@@ -35,6 +36,19 @@ export function useMinuteClock(): number {
   return now;
 }
 
+type Look = { variant: "outline" | "default"; size: "sm"; className: string };
+
+function DisabledLaunch({ look, reason }: { look: Look; reason: string }) {
+  return (
+    <span title={reason} className="inline-flex">
+      <Button {...look} disabled>
+        <Play aria-hidden />
+        {t.launch}
+      </Button>
+    </span>
+  );
+}
+
 export function LaunchInT3Button({
   projectId,
   ticketKey,
@@ -48,13 +62,15 @@ export function LaunchInT3Button({
   const status = useT3Status(api.status);
   const now = useMinuteClock();
   const [confirming, setConfirming] = useState(false);
+  const writeBlock = useWriteBlock();
   if (thread && isActiveT3Status(thread.status)) return <ThreadBadge thread={thread} now={now} />;
   if (done) return null;
-  const look = {
+  const look: Look = {
     variant: variant === "inline" ? "outline" : "default",
     size: "sm",
     className: SIZES[size],
-  } as const;
+  };
+  if (writeBlock !== null) return <DisabledLaunch look={look} reason={writeBlock} />;
   if (folderMissing)
     return (
       <Button
@@ -69,14 +85,7 @@ export function LaunchInT3Button({
       </Button>
     );
   if (status && !status.available)
-    return (
-      <span title={status.reason === "missing" ? t.missing : t.serverDown} className="inline-flex">
-        <Button {...look} disabled>
-          <Play aria-hidden />
-          {t.launch}
-        </Button>
-      </span>
-    );
+    return <DisabledLaunch look={look} reason={status.reason === "missing" ? t.missing : t.serverDown} />;
   return (
     <>
       <Button {...look} onClick={() => setConfirming(true)}>

@@ -1,5 +1,5 @@
 import type { Selection } from "@kibo/schema";
-import type { FocusApi, SelectionApi, VisibilityApi } from "./types";
+import type { FocusApi, SelectionApi, VisibilityApi, WritesApi } from "./types";
 
 export type Signal<T> = { get(): T; set(value: T): void; subscribe(listener: () => void): () => void };
 
@@ -49,3 +49,10 @@ export const selectionApi = (
 export const NO_FOCUS: FocusApi = focusApi(createSignal(false), () => undefined);
 export const ALWAYS_VISIBLE: VisibilityApi = visibilityApi(createSignal(true));
 export const NO_SELECTION: SelectionApi = selectionApi(createSignal<Selection | null>(null));
+
+export const writesApi = (block: Signal<string | null>): WritesApi => ({
+  blocked: block.get,
+  subscribe: block.subscribe,
+});
+
+export const ALWAYS_WRITABLE: WritesApi = writesApi(createSignal<string | null>(null));

@@ -87,6 +87,8 @@ export type SpotlightApi = {
   get(): Spotlight | null;
   subscribe(listener: () => void): () => void;
 };
+
+export type WritesApi = { blocked(): string | null; subscribe(listener: () => void): () => void };
 export type SprintInput = Pick<Sprint, "code" | "name" | "start" | "end">;
 export type SprintsApi = {
   list(): Promise<SprintView[]>;
@@ -146,6 +148,7 @@ export type KiboSdk = {
   visibility: VisibilityApi;
   selection: SelectionApi;
   spotlight: SpotlightApi;
+  writes: WritesApi;
 };
 
 export type ProjectBackend = {
@@ -169,7 +172,7 @@ export type SdkContext = Pick<
   | "openFile"
   | "openView"
 > &
-  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight">> & {
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "writes">> & {
     openSprint?(sprintId: string): void;
     editProject?(request: ProjectEditRequest): void;
   };

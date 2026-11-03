@@ -114,3 +114,6 @@ export function ContextMenuEntries({ entries }: { entries: readonly MenuEntry[] 
 export function DropdownMenuEntries({ entries }: { entries: readonly MenuEntry[] }) {
   return <Entries entries={entries} parts={DROPDOWN} />;
 }
+
+export const blockedBy = (block: string | null): Pick<MenuAction, "disabled" | "hint"> =>
+  block === null ? {} : { disabled: true, hint: block };
