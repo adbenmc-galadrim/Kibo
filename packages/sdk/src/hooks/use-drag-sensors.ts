@@ -2,10 +2,11 @@ import {
   type KeyboardCoordinateGetter,
   KeyboardSensor,
   PointerSensor,
-  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { HoldTouchSensor } from "./hold-touch-sensor";
+import { TOUCH_DRAG_HOLD_MS, TOUCH_MENU_HOLD_MS, TOUCH_TOLERANCE_PX } from "./use-touch-hold";
 
 const isTouch = (event: Event): boolean => "pointerType" in event && event.pointerType === "touch";
 
@@ -20,7 +21,11 @@ export class NonTouchPointerSensor extends PointerSensor {
 export function useDragSensors(coordinateGetter: KeyboardCoordinateGetter) {
   return useSensors(
     useSensor(NonTouchPointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(HoldTouchSensor, {
+      hold: TOUCH_DRAG_HOLD_MS,
+      tolerance: TOUCH_TOLERANCE_PX,
+      giveUpAfter: TOUCH_MENU_HOLD_MS,
+    }),
     useSensor(KeyboardSensor, { coordinateGetter }),
   );
 }
