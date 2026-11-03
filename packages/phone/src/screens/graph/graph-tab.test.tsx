@@ -19,3 +19,13 @@ test("the Graphe tab mounts the graph component on the project snapshot of the p
   expect(within(main).getByRole("button", { name: "Tout voir" })).toBeTruthy();
   expect(await within(main).findByText("Les fonctionnalités et leurs étapes apparaissent ici.")).toBeTruthy();
 });
+
+test("on the Graphe tab the main area is a flex column that does not scroll, so each column scrolls alone", async () => {
+  const { runtime } = await phoneFixture();
+  render(<App runtime={runtime} />);
+  const main = await screen.findByRole("main");
+  await within(main).findByRole("group", { name: "Vue" });
+  for (const cls of ["flex", "flex-col", "overflow-hidden"]) expect(main.className).toContain(cls);
+  expect(main.className).not.toContain("overflow-y-auto");
+  expect(main.firstElementChild?.className).toContain("flex-1");
+});

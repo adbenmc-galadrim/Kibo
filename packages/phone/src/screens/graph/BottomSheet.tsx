@@ -1,9 +1,12 @@
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { frGraph } from "../../i18n/fr-graph";
+
+const OPENING_GUARD_MS = 300;
 
 type Props = { label: string; onClose(): void; done?: boolean; children: ReactNode };
 
 export function BottomSheet({ label, onClose, done = false, children }: Props) {
+  const openedAt = useRef(performance.now());
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -17,7 +20,9 @@ export function BottomSheet({ label, onClose, done = false, children }: Props) {
         type="button"
         tabIndex={-1}
         aria-label={frGraph.close}
-        onClick={onClose}
+        onClick={() => {
+          if (performance.now() - openedAt.current >= OPENING_GUARD_MS) onClose();
+        }}
         className="fixed inset-0 z-40 bg-black/40 dark:bg-black/60"
       />
       <div

@@ -3,6 +3,9 @@ import { useLayoutEffect, useRef } from "react";
 import { COLUMN_WIDTH, startLane } from "./graph-columns";
 import { PhoneFeatureFrame } from "./PhoneFeatureFrame";
 
+const SAFE_SIDES =
+  "pr-[calc(16px+env(safe-area-inset-right))] pl-[calc(16px+env(safe-area-inset-left))] scroll-pl-[calc(16px+env(safe-area-inset-left))]";
+
 type FrameActions = {
   unfolded: ReadonlySet<string> | null;
   onToggle(id: string): void;
@@ -39,21 +42,23 @@ function SprintColumn({ lane, ...actions }: { lane: Lane } & FrameActions) {
       data-lane={lane.code ?? lane.id}
       data-lane-id={lane.id}
       data-state={lane.state ?? undefined}
-      className="m-0 h-full min-w-0 shrink-0 snap-start overflow-y-auto overscroll-contain border-0 p-0 pb-6"
+      className="m-0 h-full min-w-0 shrink-0 snap-start border-0 p-0"
       style={{ width: COLUMN_WIDTH }}
     >
-      <ColumnHeader lane={lane} />
-      <div className="flex flex-col gap-3">
-        {lane.frames.map((frame) => (
-          <PhoneFeatureFrame
-            key={frame.id}
-            frame={frame}
-            folded={unfolded !== null && !unfolded.has(frame.id)}
-            onToggle={unfolded === null ? undefined : actions.onToggle}
-            onOpen={actions.onOpen}
-            onMenu={actions.onMenu}
-          />
-        ))}
+      <div data-slot="column-scroll" className="h-full overflow-y-auto overscroll-contain pb-6">
+        <ColumnHeader lane={lane} />
+        <div className="flex flex-col gap-3">
+          {lane.frames.map((frame) => (
+            <PhoneFeatureFrame
+              key={frame.id}
+              frame={frame}
+              folded={unfolded !== null && !unfolded.has(frame.id)}
+              onToggle={unfolded === null ? undefined : actions.onToggle}
+              onOpen={actions.onOpen}
+              onMenu={actions.onMenu}
+            />
+          ))}
+        </div>
       </div>
     </fieldset>
   );
@@ -72,7 +77,7 @@ export function SprintColumns({ lanes, ...actions }: { lanes: readonly Lane[] } 
     <section
       ref={scroller}
       aria-label={fr.sprints.canvas}
-      className="flex h-full snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-px-4 px-4"
+      className={`flex h-full snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain ${SAFE_SIDES}`}
     >
       {lanes.map((lane) => (
         <SprintColumn key={lane.id} lane={lane} {...actions} />

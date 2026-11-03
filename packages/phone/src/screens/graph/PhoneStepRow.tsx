@@ -32,7 +32,7 @@ export function PhoneStepRow({ step, onOpen, onMenu }: Props) {
         type="button"
         title={step.key}
         {...press}
-        className={`flex min-h-11 w-full items-center gap-2.5 rounded-[7px] px-3 text-left ${PRESS}`}
+        className={`flex min-h-11 w-full items-center gap-2.5 rounded-[7px] px-3 text-left active:bg-(--tracking-hover) ${PRESS}`}
       >
         <StepDot tone={step.tone} className="size-2" />
         <span

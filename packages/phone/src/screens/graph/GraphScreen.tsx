@@ -48,7 +48,7 @@ export function PhoneGraph({ writable }: { writable: boolean }) {
   const features = view === "features";
   const FoldIcon = unfolded === null ? Shrink : Expand;
   return (
-    <div className="flex h-full flex-col bg-(--tracking-canvas)">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-(--tracking-canvas)">
       <div className="flex h-14 shrink-0 items-center gap-2 border-(--tracking-border) border-b bg-(--tracking-bg) px-4">
         <ViewSwitch
           view={view}

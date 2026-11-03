@@ -74,11 +74,21 @@ test("a column is 86 % wide and the next one peeks", async () => {
   setup();
   const groups = await columns();
   const scroller = screen.getByRole("region", { name: "Fonctionnalités par sprint" });
-  for (const cls of ["snap-x", "snap-mandatory", "overflow-x-auto", "px-4", "gap-4", "scroll-px-4"])
+  for (const cls of [
+    "snap-x",
+    "snap-mandatory",
+    "overflow-x-auto",
+    "gap-4",
+    "pl-[calc(16px+env(safe-area-inset-left))]",
+    "pr-[calc(16px+env(safe-area-inset-right))]",
+    "scroll-pl-[calc(16px+env(safe-area-inset-left))]",
+  ])
     expect(scroller.className).toContain(cls);
   for (const g of groups) {
     expect(g.style.width).toBe(COLUMN_WIDTH);
     expect(g.className).toContain("snap-start");
+    expect(g.className).not.toContain("overflow");
+    expect(g.querySelector("[data-slot=column-scroll]")?.className).toContain("overflow-y-auto");
   }
 });
 
@@ -185,4 +195,28 @@ test("the PR legend lists review and CI states", async () => {
   const sheet = screen.getByRole("dialog", { name: "Légende" });
   for (const text of ["Brouillon", "Changements demandés", "CI rouge", "Toucher : fiche du ticket"])
     expect(sheet.textContent).toContain(text);
+});
+
+test("the release click of the long press does not close the sheet that opened under the finger", async () => {
+  setup();
+  const button = await startableStep();
+  fireEvent.pointerDown(button, { clientX: 10, clientY: 10 });
+  await screen.findByRole("dialog", { name: /^KIB-\d+ / });
+  fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
+  expect(screen.getByRole("dialog", { name: /^KIB-\d+ / })).toBeTruthy();
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("after a long press without a click, the next tap opens the ticket", async () => {
+  const { m } = setup();
+  const button = await startableStep();
+  fireEvent.pointerDown(button, { clientX: 10, clientY: 10 });
+  await screen.findByRole("dialog", { name: /^KIB-\d+ / });
+  fireEvent.pointerUp(button);
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  fireEvent.keyDown(document, { key: "Escape" });
+  fireEvent.click(button);
+  expect(m.opened).toHaveLength(1);
 });

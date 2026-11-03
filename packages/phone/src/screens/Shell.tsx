@@ -84,7 +84,9 @@ function ProjectShell({
           onBack={back}
         />
         <OfflineBand presence={presence} />
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <main
+          className={`min-h-0 flex-1 overscroll-contain ${tab === "graph" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
+        >
           {tab === "graph" ? (
             <GraphScreen
               projectId={route.projectId}
