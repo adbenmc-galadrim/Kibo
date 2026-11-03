@@ -24,5 +24,5 @@ test("the settings list the tracking sections only", () => {
     </SettingsLayout>,
   );
   const links = screen.getAllByRole("link").map((l) => l.textContent);
-  expect(links).toEqual(["Workspace", "Général", "Apparence", "Intégrations", "Raccourcis"]);
+  expect(links).toEqual(["Workspace", "Général", "Apparence", "Intégrations", "Raccourcis", "Téléphone"]);
 });

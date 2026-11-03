@@ -1,12 +1,20 @@
 import type { Screen } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Building2, Keyboard, type LucideIcon, Palette, Plug, SlidersHorizontal } from "lucide-react";
+import {
+  Building2,
+  Keyboard,
+  type LucideIcon,
+  Palette,
+  Plug,
+  SlidersHorizontal,
+  Smartphone,
+} from "lucide-react";
 import { fr } from "../i18n/fr";
 import { targetToHash } from "../tabs/target-hash";
 
 export type SettingsScreen = Extract<
   Screen,
-  "general" | "appearance" | "integrations" | "shortcuts" | "workspace"
+  "general" | "appearance" | "integrations" | "shortcuts" | "workspace" | "phone"
 >;
 type Item = { id: string; label: string; icon: LucideIcon; screen: SettingsScreen };
 
@@ -16,6 +24,7 @@ const ITEMS: Item[] = [
   { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },
+  { id: "phone", label: fr.settings.phone, icon: Smartphone, screen: "phone" },
 ];
 
 const ENTRY = "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm";

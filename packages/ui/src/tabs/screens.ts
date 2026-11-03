@@ -9,6 +9,7 @@ import {
   Puzzle,
   Settings,
   SlidersHorizontal,
+  Smartphone,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
 
@@ -43,4 +44,5 @@ export const SCREENS: Record<Screen, ScreenInfo> = {
     icon: Building2,
     crumbs: [fr.nav.settings, fr.settings.workspace],
   },
+  phone: { title: fr.settings.phone, icon: Smartphone, crumbs: [fr.nav.settings, fr.settings.phone] },
 };

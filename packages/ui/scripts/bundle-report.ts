@@ -78,6 +78,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-delivery\.ts$/,
+  /\/node_modules\/qrcode\//,
+  /\/packages\/ui\/src\/(settings\/(PhonePage|PhoneProjectsCard|PairPhoneDialog)\.tsx|settings\/use-remote-status\.ts|i18n\/fr-phone\.ts)$/,
   /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
   /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
   /\/packages\/ui\/src\/i18n\/fr-hold\.ts$/,

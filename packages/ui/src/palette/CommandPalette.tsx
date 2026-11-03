@@ -71,6 +71,7 @@ const ICONS = {
   sources: SCREENS.sources.icon,
   shortcuts: SCREENS.shortcuts.icon,
   workspace: SCREENS.workspace.icon,
+  phone: SCREENS.phone.icon,
 };
 const FILTER_LABEL: Record<PaletteFilter, string> = {
   all: fr.palette.all,

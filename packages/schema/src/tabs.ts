@@ -14,6 +14,7 @@ export const Screen = z.enum([
   "sources",
   "shortcuts",
   "workspace",
+  "phone",
 ]);
 export type Screen = z.infer<typeof Screen>;
 
