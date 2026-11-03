@@ -1,17 +1,37 @@
-import { realpathSync, statSync } from "node:fs";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { KiboError } from "@kibo/schema";
 
-const HEADERS = {
-  "content-security-policy":
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; object-src 'none'; " +
-    "font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; " +
-    "frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+const NONCE_BYTES = 16;
+
+const policy = (styleSrc: string) =>
+  `default-src 'self'; script-src 'self'; ${styleSrc}; img-src 'self' data: blob:; object-src 'none'; ` +
+  "font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; " +
+  "frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+
+const headers = (styleSrc = "style-src 'self'"): Record<string, string> => ({
+  "content-security-policy": policy(styleSrc),
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
-};
+});
 
-const page = (body: Blob | string, status = 200) => new Response(body, { status, headers: HEADERS });
+const page = (body: Blob | string, status = 200) => new Response(body, { status, headers: headers() });
+
+const freshNonce = (): string =>
+  Buffer.from(crypto.getRandomValues(new Uint8Array(NONCE_BYTES))).toString("base64");
+
+function withNonce(html: string, nonce: string): string {
+  const meta = `<meta property="csp-nonce" content="${nonce}">`;
+  const head = html.indexOf("</head>");
+  return head === -1 ? meta + html : html.slice(0, head) + meta + html.slice(head);
+}
+
+function shell(path: string): Response {
+  const nonce = freshNonce();
+  return new Response(withNonce(readFileSync(path, "utf8"), nonce), {
+    headers: { ...headers(`style-src 'self' 'nonce-${nonce}'`), "content-type": "text/html;charset=utf-8" },
+  });
+}
 
 const isFile = (path: string): boolean => {
   try {
@@ -45,6 +65,7 @@ export function createStatic(staticDir: string | null): (pathname: string) => Re
     const target = isFile(requested) ? requested : index;
     if (!isFile(target)) return page("not found", 404);
     const real = realpathSync(target);
-    return inside(root, real) ? page(Bun.file(real)) : page("forbidden", 403);
+    if (!inside(root, real)) return page("forbidden", 403);
+    return target === index ? shell(real) : page(Bun.file(real));
   };
 }

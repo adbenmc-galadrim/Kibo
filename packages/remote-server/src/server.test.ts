@@ -56,7 +56,7 @@ describe("remote server", () => {
     stop = test.stop;
     const page = await fetch(`${test.url}/graph/p1`);
     expect(page.status).toBe(200);
-    expect(await page.text()).toBe("<p>kibo phone</p>");
+    expect(await page.text()).toMatch(/^<meta property="csp-nonce" content="[^"]+"><p>kibo phone<\/p>$/);
     expect(page.headers.get("x-content-type-options")).toBe("nosniff");
     expect(page.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
     expect(await (await fetch(`${test.url}/assets/app.js`)).text()).toBe("console.log(1)");
