@@ -12,7 +12,7 @@ type Props = {
   description: string;
   editable: boolean;
   command: TicketCommand;
-  onOpenFile(ref: { path: string; line: number | null }): void;
+  onOpenFile?(ref: { path: string; line: number | null }): void;
 };
 
 export function DescriptionEditor({ ticketId, description, editable, command, onOpenFile }: Props) {
@@ -50,7 +50,7 @@ export function DescriptionEditor({ ticketId, description, editable, command, on
       {draft === null ? (
         description && (
           <p className="whitespace-pre-wrap text-muted-foreground">
-            <LinkifiedText text={description} onOpen={onOpenFile} />
+            {onOpenFile ? <LinkifiedText text={description} onOpen={onOpenFile} /> : description}
           </p>
         )
       ) : (

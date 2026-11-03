@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../ui/dialog";
 import { frT3 as t } from "./fr-t3";
 import { ThreadOpenLink } from "./ThreadBadge";
-import { useT3 } from "./t3-context";
+import { useT3, useT3OpenLinks } from "./t3-context";
 
 type ActiveThread = { link: string };
 type Props = { projectId: string; ticketKey: string; onClose(): void };
@@ -62,6 +62,7 @@ function useLaunch({ projectId, ticketKey, onClose }: Props) {
 }
 
 export function LaunchDialog(props: Props) {
+  const openLinks = useT3OpenLinks();
   const { preview, error, active, busy, launch } = useLaunch(props);
   return (
     <Dialog open onOpenChange={(open) => !open && props.onClose()}>
@@ -110,7 +111,7 @@ export function LaunchDialog(props: Props) {
           >
             {t.cancel}
           </Button>
-          {active?.link && <ThreadOpenLink link={active.link} />}
+          {openLinks && active?.link && <ThreadOpenLink link={active.link} />}
           {!active && (
             <Button
               size="sm"

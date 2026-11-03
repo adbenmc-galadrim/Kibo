@@ -185,3 +185,27 @@ test("the details read Suivi, Description, Dépendances, Questions, then Domaine
   expect(screen.getByRole("button", { name: /^Domaine/ }).getAttribute("aria-expanded")).toBe("false");
   expect(screen.getByRole("button", { name: /^Maquettes/ }).getAttribute("aria-expanded")).toBe("false");
 });
+
+test("a surface without design leaves out the mockups and keeps the fields read-only", async () => {
+  const t = ticket({ description: "Voir src/schema.ts" });
+  render(
+    <HostProvider host={host}>
+      <TicketDetail
+        project={project(t)}
+        ticket={t}
+        onOpenTicket={() => {}}
+        surface={{ design: false, editable: false }}
+      />
+    </HostProvider>,
+  );
+  await act(async () => {});
+  expect(screen.queryByText("Maquettes")).toBeNull();
+  expect(screen.queryByRole("button", { name: "src/schema.ts" })).toBeNull();
+  expect(screen.getByText("Voir src/schema.ts")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+});
+
+test("the desktop surface keeps the mockups", async () => {
+  await show(ticket());
+  expect(screen.getByText("Maquettes")).toBeTruthy();
+});

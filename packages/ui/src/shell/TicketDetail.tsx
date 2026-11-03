@@ -9,6 +9,7 @@ import { FoldSection } from "../ticket/FoldSection";
 import { OptionalToggle } from "../ticket/OptionalToggle";
 import { QuestionsSection } from "../ticket/QuestionsSection";
 import { TrackingSection } from "../ticket/TrackingSection";
+import { DESKTOP_SURFACE, type TicketSurface } from "../ticket/ticket-surface";
 import { headerContext } from "../ticket/tracking-model";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import type { TicketJournal } from "../ticket/use-ticket-tracking";
@@ -21,8 +22,9 @@ type Props = {
   domains?: Domain[];
   ciRuns?: readonly CiRun[];
   journal?: TicketJournal;
-  onOpenFile(ref: FileRef): void;
+  onOpenFile?(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
+  surface?: TicketSurface;
 };
 
 const NO_JOURNAL: TicketJournal = { events: [], error: false };
@@ -40,6 +42,7 @@ export function TicketDetail({
   journal = NO_JOURNAL,
   onOpenFile,
   onOpenTicket,
+  surface = DESKTOP_SURFACE,
 }: Props) {
   const now = useNow(60_000);
   const host = useOptionalHost();
@@ -48,14 +51,17 @@ export function TicketDetail({
   const children = project.tickets.filter((x) => x.parentId === t.id);
   const domain = domains?.find((d) => d.id === t.domainId)?.name ?? fr.ticket.noDomain;
   const mockups = t.externalRefs.filter((r) => DESIGN_KINDS.has(r.kind)).length;
-  const open = (r: { path: string; line: number | null }) =>
-    onOpenFile({
-      projectId: project.meta.id,
-      worktree: null,
-      path: r.path,
-      line: r.line,
-      origin: t.keyLabel,
-    });
+  const { editable } = surface;
+  const open =
+    onOpenFile &&
+    ((r: { path: string; line: number | null }) =>
+      onOpenFile({
+        projectId: project.meta.id,
+        worktree: null,
+        path: r.path,
+        line: r.line,
+        origin: t.keyLabel,
+      }));
   return (
     <div className="grid grid-cols-1 gap-4">
       <TrackingSection
@@ -69,7 +75,7 @@ export function TicketDetail({
             <OptionalToggle
               ticket={t}
               feature={headerContext(t, project).feature}
-              editable
+              editable={editable}
               command={optionalCommand}
             />
           )
@@ -84,12 +90,12 @@ export function TicketDetail({
       <DescriptionEditor
         ticketId={t.id}
         description={t.description}
-        editable
+        editable={editable}
         command={descriptionCommand}
         onOpenFile={open}
       />
       <div className={LINE} />
-      <DependenciesSection project={project} ticket={t} editable onOpenTicket={onOpenTicket} />
+      <DependenciesSection project={project} ticket={t} editable={editable} onOpenTicket={onOpenTicket} />
       <div className={LINE} />
       <QuestionsSection
         ticket={t}
@@ -115,21 +121,23 @@ export function TicketDetail({
       )}
       {ciRuns.length > 0 && (
         <div className="-mx-4">
-          <CiSection projectId={project.meta.id} ticketId={t.id} />
+          <CiSection projectId={project.meta.id} ticketId={t.id} offlineText={surface.ciLogOffline} />
         </div>
       )}
       <div className={LINE} />
       <FoldSection title={tt.domain} hint={domain}>
-        {domains && <DomainSelect project={project} ticket={t} domains={domains} />}
+        {domains && editable && <DomainSelect project={project} ticket={t} domains={domains} />}
       </FoldSection>
-      <FoldSection title={tt.mockups} hint={String(mockups)}>
-        <dl className="grid grid-cols-[106px_1fr] items-center text-xs">
-          <DesignProperty ticket={t} />
-        </dl>
-        <div className="-mx-4">
-          <DesignSection projectId={project.meta.id} ticket={t} />
-        </div>
-      </FoldSection>
+      {surface.design && (
+        <FoldSection title={tt.mockups} hint={String(mockups)}>
+          <dl className="grid grid-cols-[106px_1fr] items-center text-xs">
+            <DesignProperty ticket={t} />
+          </dl>
+          <div className="-mx-4">
+            <DesignSection projectId={project.meta.id} ticket={t} />
+          </div>
+        </FoldSection>
+      )}
     </div>
   );
 }

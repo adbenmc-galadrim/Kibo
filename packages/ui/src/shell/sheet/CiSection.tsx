@@ -37,7 +37,9 @@ function RunRow({ run, onOpen }: { run: CiRun; onOpen(job: CiJobSummary): void }
   );
 }
 
-export function CiSection({ projectId, ticketId }: { projectId: string; ticketId: string }) {
+type Props = { projectId: string; ticketId: string; offlineText?: string };
+
+export function CiSection({ projectId, ticketId, offlineText }: Props) {
   const [runs, setRuns] = useState<CiRun[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<{ run: CiRun; job: CiJobSummary } | null>(null);
@@ -72,7 +74,13 @@ export function CiSection({ projectId, ticketId }: { projectId: string; ticketId
         <RunRow key={run.runId} run={run} onOpen={(job) => setOpen({ run, job })} />
       ))}
       {open && (
-        <CiLogSheet projectId={projectId} run={open.run} job={open.job} onClose={() => setOpen(null)} />
+        <CiLogSheet
+          projectId={projectId}
+          run={open.run}
+          job={open.job}
+          offlineText={offlineText}
+          onClose={() => setOpen(null)}
+        />
       )}
     </section>
   );

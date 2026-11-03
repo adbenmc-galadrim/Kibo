@@ -2,6 +2,7 @@ import { isActiveT3Status, type T3Thread } from "@kibo/schema";
 import { cn } from "cn";
 import { ClockAlert, ExternalLink } from "lucide-react";
 import { frT3 as t } from "./fr-t3";
+import { useT3OpenLinks } from "./t3-context";
 
 const STYLES = {
   running: {
@@ -63,6 +64,7 @@ export function ThreadPill({ thread, now }: ThreadMarkProps) {
 }
 
 export function ThreadBadge({ thread, now, compact = false }: ThreadMarkProps & { compact?: boolean }) {
+  const openLinks = useT3OpenLinks();
   if (!isActiveT3Status(thread.status)) return null;
   const style = styleOf(thread);
   if (compact)
@@ -88,7 +90,7 @@ export function ThreadBadge({ thread, now, compact = false }: ThreadMarkProps & 
       <span className={cn("text-xs font-medium whitespace-nowrap", style.text)}>
         {stateText(thread, now)}
       </span>
-      {thread.link !== "" && <ThreadOpenLink link={thread.link} />}
+      {openLinks && thread.link !== "" && <ThreadOpenLink link={thread.link} />}
     </span>
   );
 }

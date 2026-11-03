@@ -12,15 +12,16 @@ type Props = {
   launch: boolean;
   actions: ReactNode;
   close?: ReactNode;
+  openLinks?: boolean;
 };
 
-export function TicketTopBar({ projectId, ticket, folder, launch, actions, close }: Props) {
+export function TicketTopBar({ projectId, ticket, folder, launch, actions, close, openLinks }: Props) {
   return (
     <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-(--tracking-soft) pr-4 pl-6">
       <KeyCopyButton ticket={ticket} />
       <span className="ml-auto flex items-center gap-2">
         {launch && ticket.key !== null && (
-          <ShellT3Provider>
+          <ShellT3Provider openLinks={openLinks}>
             <LaunchInT3Button
               projectId={projectId}
               ticketKey={ticket.key}

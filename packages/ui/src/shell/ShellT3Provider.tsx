@@ -13,11 +13,15 @@ const shellT3Api = (projectId: string): T3Api => ({
   threadOf: (ticketKey) => client.rpc({ method: "t3.threadOf", projectId, ticketKey }),
 });
 
-export function ShellT3Provider({ children }: { children: ReactNode }) {
+export function ShellT3Provider({ children, openLinks }: { children: ReactNode; openLinks?: boolean }) {
   const shell = useOptionalHost();
   const host = useMemo<T3Host>(
-    () => ({ api: shellT3Api, linkFolder: () => shell?.editProject?.({ field: "folder" }) }),
-    [shell],
+    () => ({
+      api: shellT3Api,
+      linkFolder: () => shell?.editProject?.({ field: "folder" }),
+      ...(openLinks === undefined ? {} : { openLinks }),
+    }),
+    [shell, openLinks],
   );
   return <T3HostProvider host={host}>{children}</T3HostProvider>;
 }
