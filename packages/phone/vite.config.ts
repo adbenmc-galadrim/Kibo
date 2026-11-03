@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 
 const SERVICE_WORKER = "sw";
 const BUILD_ID = process.env.KIBO_BUILD_ID ?? Date.now().toString(36);
-const PURE_MODULES = /\/packages\/ui\/src\/project-agent\/[^/]+\.tsx?$/;
+const PURE_MODULES = /\/packages\/ui\/src\/project-agent\/QuestionText\.tsx$/;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
