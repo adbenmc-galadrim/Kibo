@@ -12,7 +12,6 @@ import { lazyScreen } from "./lazy-screen";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
 import { TabBar } from "./TabBar";
-import { TabPlaceholder } from "./TabPlaceholder";
 import { Toasts } from "./Toasts";
 
 const AgentScreen = lazyScreen(() => import("./agent/AgentScreen").then((m) => m.AgentScreen));
@@ -21,6 +20,11 @@ const QuestionsScreen = lazyScreen(() =>
   import("./questions/QuestionsScreen").then((m) => m.QuestionsScreen),
 );
 
+const KanbanScreen = lazyScreen(() => import("./kanban/KanbanScreen").then((m) => m.KanbanScreen));
+const PlanningScreen = lazyScreen(() => import("./planning/PlanningScreen").then((m) => m.PlanningScreen));
+const DashboardScreen = lazyScreen(() =>
+  import("./dashboard/DashboardScreen").then((m) => m.DashboardScreen),
+);
 const TicketScreen = lazyScreen(() => import("./ticket/TicketScreen").then((m) => m.TicketScreen));
 
 type ProjectRoute = Extract<Route, { projectId: string }>;
@@ -122,9 +126,9 @@ function ProjectShell({
                   onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
                 />
               ) : null}
-              {tab && tab !== "graph" && tab !== "questions" ? (
-                <TabPlaceholder projectId={route.projectId} tab={tab} />
-              ) : null}
+              {tab === "kanban" ? <KanbanScreen client={client} projectId={route.projectId} /> : null}
+              {tab === "planning" ? <PlanningScreen client={client} projectId={route.projectId} /> : null}
+              {tab === "dashboard" ? <DashboardScreen client={client} projectId={route.projectId} /> : null}
             </main>
             <TabBar projectId={route.projectId} active={tab} />
           </>

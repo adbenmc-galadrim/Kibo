@@ -40,13 +40,6 @@ test("the header shows the project name, the project picker and the agent button
   expect(agent.textContent).toContain("3");
 });
 
-test("each tab shows the component name and its count until its screen lands", async () => {
-  window.location.hash = "#/p/silo/graph";
-  const { runtime } = await phoneFixture();
-  render(<App runtime={runtime} />);
-  expect(await screen.findByText("Graphe de dépendances · 2 tickets")).toBeTruthy();
-});
-
 test("a write while offline shows the mac-off toast and keeps the screen", async () => {
   const { runtime, api } = await phoneFixture({ connectivity: { macOnline: false, phoneOnline: true } });
   render(<App runtime={runtime} />);

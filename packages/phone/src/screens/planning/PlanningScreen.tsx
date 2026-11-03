@@ -1,6 +1,7 @@
 import * as planning from "@kibo/component-planning";
 import { writeBandFolded } from "@kibo/component-planning/held-band";
 import { useEffect, useRef, useState } from "react";
+import type { RemoteClient } from "../../remote-client";
 import { ComponentScreen } from "../ComponentScreen";
 
 const foldedOnceKey = (projectId: string) => `kibo.phone.held-band-folded.${projectId}`;
@@ -32,7 +33,7 @@ function useOpenOnCurrentSprint(projectId: string) {
   return frame;
 }
 
-export function PlanningScreen({ projectId }: { projectId: string }) {
+export function PlanningScreen({ client, projectId }: { client: RemoteClient; projectId: string }) {
   const [foldedFor, setFoldedFor] = useState<string | null>(null);
   const frame = useOpenOnCurrentSprint(foldedFor === projectId ? projectId : "");
   useEffect(() => {
@@ -41,7 +42,7 @@ export function PlanningScreen({ projectId }: { projectId: string }) {
   }, [projectId]);
   return (
     <div ref={frame} className="h-full">
-      {foldedFor === projectId && <ComponentScreen projectId={projectId} module={planning} />}
+      {foldedFor === projectId && <ComponentScreen client={client} projectId={projectId} module={planning} />}
     </div>
   );
 }

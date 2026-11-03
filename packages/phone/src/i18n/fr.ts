@@ -22,7 +22,6 @@ export const fr = {
     questions: "Questions",
     dashboard: "Dashboard",
   } satisfies Record<PhoneTab, string>,
-  tabCount: (title: string, tickets: number) => `${title} · ${tickets} ticket${tickets > 1 ? "s" : ""}`,
   header: {
     pickProject: (name: string) => `${name} · changer de projet`,
     agent: "Agent de projet",
