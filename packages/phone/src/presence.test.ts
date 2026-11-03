@@ -33,6 +33,8 @@ let env: PresenceEnvironment & { fire(name: string): void; online: boolean; visi
 let events: PhoneEvent[];
 let revoked: number;
 let opened: number;
+let resumed: number;
+let unopened: number;
 
 const start = () => {
   const presence = createPresence({
@@ -46,6 +48,8 @@ const start = () => {
     onEvent: (e) => events.push(e),
     onOpen: () => opened++,
     onRevoked: () => revoked++,
+    onResume: () => resumed++,
+    onUnopened: () => unopened++,
   });
   presence.start();
   return presence;
@@ -57,6 +61,8 @@ beforeEach(() => {
   events = [];
   revoked = 0;
   opened = 0;
+  resumed = 0;
+  unopened = 0;
   const handlers = new Map<string, () => void>();
   env = {
     online: true,
@@ -128,4 +134,22 @@ test("a revoked phone is reported without reconnecting", () => {
   sockets[0]?.drop(4401);
   expect(revoked).toBe(1);
   expect(timers).toEqual([]);
+});
+
+test("coming back online or to the foreground asks for a resync", () => {
+  start();
+  sockets[0]?.open();
+  env.fire("visibilitychange");
+  env.fire("online");
+  expect(resumed).toBe(2);
+});
+
+test("a socket closed before it ever opened is reported, an opened one is not", () => {
+  start();
+  sockets[0]?.drop(1006);
+  expect(unopened).toBe(1);
+  timers[0]?.run();
+  sockets[1]?.open();
+  sockets[1]?.drop(1006);
+  expect(unopened).toBe(1);
 });

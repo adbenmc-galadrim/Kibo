@@ -14,6 +14,8 @@ export type PresenceHandlers = {
   onEvent(event: PhoneEvent): void;
   onOpen(): void;
   onRevoked(): void;
+  onResume(): void;
+  onUnopened(): void;
 };
 
 export type Keyring = { current: RemoteKeys | null };
@@ -27,6 +29,7 @@ export type PhoneRuntime = {
   client: RemoteClient;
   presence: PresenceChannel;
   onRevoked(listener: () => void): () => void;
+  onSessionExpired(listener: () => void): () => void;
 };
 
 type RuntimeDeps = {
@@ -43,13 +46,22 @@ export function createPhoneRuntime(deps: RuntimeDeps): PhoneRuntime {
   const keyring: Keyring = { current: null };
   const snapshots = createSnapshotStore(deps.storage.snapshots);
   const revokedListeners = new Set<() => void>();
+  const expiredListeners = new Set<() => void>();
+  const each = (set: Set<() => void>) => {
+    for (const l of [...set]) l();
+  };
+  const checkSession = async () => {
+    if (!(await deps.api.session())) each(expiredListeners);
+  };
   let client: RemoteClient | null = null;
   const presence = deps.presence({
     onEvent: (event) => void client?.handleEvent(event).catch(report("snapshot refresh")),
     onOpen: () => void client?.sync().catch(report("sync")),
-    onRevoked: () => {
-      for (const l of [...revokedListeners]) l();
+    onRevoked: () => each(revokedListeners),
+    onResume: () => {
+      if (client?.presence().stale) void client.sync().catch(report("sync"));
     },
+    onUnopened: () => void checkSession().catch(report("session check")),
   });
   client = createRemoteClient({
     api: deps.api,
@@ -71,6 +83,10 @@ export function createPhoneRuntime(deps: RuntimeDeps): PhoneRuntime {
     onRevoked(listener) {
       revokedListeners.add(listener);
       return () => revokedListeners.delete(listener);
+    },
+    onSessionExpired(listener) {
+      expiredListeners.add(listener);
+      return () => expiredListeners.delete(listener);
     },
   };
 }

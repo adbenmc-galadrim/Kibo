@@ -3,11 +3,12 @@ import { formatClock } from "../format-time";
 import { fr } from "../i18n/fr";
 import type { Presence } from "../remote-client";
 
-function bandText({ macOnline, phoneOnline, lastSnapshotAt }: Presence): string | null {
-  if (macOnline && phoneOnline) return null;
+function bandText({ macOnline, phoneOnline, stale, lastSnapshotAt }: Presence): string | null {
+  if (macOnline && phoneOnline && !stale) return null;
   const time = lastSnapshotAt === null ? null : formatClock(lastSnapshotAt);
   if (!phoneOnline) return time ? fr.band.phoneOffline(time) : fr.band.phoneOfflineEmpty;
-  return time ? fr.band.macOff(time) : fr.band.macOffEmpty;
+  if (!macOnline) return time ? fr.band.macOff(time) : fr.band.macOffEmpty;
+  return time ? fr.band.stale(time) : fr.band.staleEmpty;
 }
 
 export function OfflineBand({ presence }: { presence: Presence }) {

@@ -1,6 +1,6 @@
 import { beforeEach, expect, test } from "bun:test";
 import { INDEX_PROJECT_ID, type ProjectsIndex, REQUEST_CLOCK_REFUSAL, type RemoteKeys } from "@kibo/remote";
-import type { ProjectEvent, ProjectSnapshot, RunLogEntry } from "@kibo/schema";
+import { KiboError, type ProjectEvent, type ProjectSnapshot, type RunLogEntry } from "@kibo/schema";
 import { type FakeServerApi, fakeServerApi, putBlob } from "./fake-server-api";
 import { createInstanceData } from "./instance-data";
 import { type Connectivity, createRemoteClient, type RemoteClient } from "./remote-client";
@@ -238,4 +238,46 @@ test("imageUrl returns a blob: URL built from the image snapshot", async () => {
   expect(url.startsWith("blob:")).toBe(true);
   expect(await (await fetch(url)).text()).toBe("png!");
   expect(client.imageUrl("silo", "q1", "missing")).toBe("");
+});
+
+test("before its first sync the client presents its state as stale", async () => {
+  const fresh = createRemoteClient({
+    api,
+    keys: () => keys,
+    snapshots: createSnapshotStore(memoryStorage().snapshots),
+    data: createInstanceData(localStorage),
+    presence: { get: () => connectivity, subscribe: () => () => {} },
+  });
+  expect(fresh.presence().stale).toBe(true);
+  await fresh.sync();
+  expect(fresh.presence().stale).toBe(false);
+});
+
+test("a rejected sync marks the state stale with the block time until a sync succeeds", async () => {
+  const seen: boolean[] = [];
+  client.onPresence((p) => seen.push(p.stale));
+  const snapshot = api.snapshot;
+  api.snapshot = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "server unreachable");
+  };
+  await expect(client.sync()).rejects.toMatchObject({ code: "REMOTE_UNAVAILABLE" });
+  expect(client.presence()).toMatchObject({
+    macOnline: true,
+    stale: true,
+    lastSnapshotAt: 1_760_619_120_000,
+  });
+  expect(seen).toContain(true);
+  api.snapshot = snapshot;
+  await client.sync();
+  expect(client.presence().stale).toBe(false);
+});
+
+test("a failed snapshot refresh marks the state stale", async () => {
+  api.snapshot = async () => {
+    throw new KiboError("INTERNAL", "server answered 500");
+  };
+  await expect(
+    client.handleEvent({ type: "snapshot.changed", projectId: "silo", kind: "project", seq: 9 }),
+  ).rejects.toMatchObject({ code: "INTERNAL" });
+  expect(client.presence().stale).toBe(true);
 });

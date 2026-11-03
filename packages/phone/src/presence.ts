@@ -18,6 +18,8 @@ type PresenceDeps = {
   onEvent(event: PhoneEvent): void;
   onOpen(): void;
   onRevoked(): void;
+  onResume(): void;
+  onUnopened(): void;
 };
 
 export type PresenceChannel = PresenceSource & { start(): void; stop(): void };
@@ -82,8 +84,10 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
     cancelRetry?.();
     cancelRetry = null;
     if (stopped || socket || !env.isOnline()) return;
+    let opened = false;
     const current: PresenceSocket = deps.openSocket(deps.url, {
       onOpen: () => {
+        opened = true;
         retryMs = FIRST_RETRY_MS;
         deps.onOpen();
       },
@@ -97,6 +101,7 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
         if (socket === current) socket = null;
         set({ macOnline: false });
         if (code === CLOSE_REVOKED) return deps.onRevoked();
+        if (!opened && env.isOnline()) deps.onUnopened();
         retry();
       },
     });
@@ -116,6 +121,7 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
   const resume = () => {
     retryMs = FIRST_RETRY_MS;
     connect();
+    deps.onResume();
   };
 
   return {

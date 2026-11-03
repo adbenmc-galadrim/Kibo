@@ -1,10 +1,13 @@
 import { beforeEach, expect, test } from "bun:test";
 import { REQUEST_CLOCK_REFUSAL } from "@kibo/remote";
+import { KiboError } from "@kibo/schema";
 import { client } from "@kibo/ui/api";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { App } from "./App";
 import { phoneFixture } from "./app-test-kit";
+import { formatClock } from "./format-time";
 import { testKeys } from "./test-kit";
+import { toast } from "./toast";
 
 beforeEach(() => {
   localStorage.clear();
@@ -99,4 +102,51 @@ test("without a session the app asks for the passkey", async () => {
   api.session = async () => false;
   render(<App runtime={runtime} />);
   expect(await screen.findByRole("button", { name: "Se connecter avec une passkey" })).toBeTruthy();
+});
+
+test("a rejected sync shows the band with the time of the block", async () => {
+  const { runtime, api, keys } = await phoneFixture();
+  runtime.keyring.current = keys;
+  await runtime.client.sync();
+  api.snapshot = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "server unreachable");
+  };
+  render(<App runtime={runtime} />);
+  await screen.findByRole("navigation", { name: "Écrans du projet" });
+  const band = await screen.findByRole("status");
+  expect(band.textContent).toBe(`Mise à jour impossible · dernier état à ${formatClock(1_760_619_120_000)}`);
+});
+
+test("a failed sync is tried again when the phone comes back", async () => {
+  const { runtime, api, keys, presence } = await phoneFixture();
+  runtime.keyring.current = keys;
+  await runtime.client.sync();
+  const snapshot = api.snapshot;
+  api.snapshot = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "server unreachable");
+  };
+  render(<App runtime={runtime} />);
+  await screen.findByText(/Mise à jour impossible/);
+  api.snapshot = snapshot;
+  act(() => presence.handlers?.onResume());
+  await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+});
+
+test("an event socket that never opens with an expired session asks for the passkey", async () => {
+  const { runtime, api, presence } = await phoneFixture();
+  render(<App runtime={runtime} />);
+  await screen.findByRole("navigation", { name: "Écrans du projet" });
+  api.session = async () => false;
+  act(() => presence.handlers?.onUnopened());
+  expect(await screen.findByRole("button", { name: "Se connecter avec une passkey" })).toBeTruthy();
+});
+
+test("a toast.error from a component shows on the phone, without sonner", async () => {
+  const { runtime } = await phoneFixture();
+  render(<App runtime={runtime} />);
+  await screen.findByRole("navigation", { name: "Écrans du projet" });
+  act(() => void toast.error("Copie impossible"));
+  expect((await screen.findByRole("alert")).textContent).toContain("Copie impossible");
+  act(() => window.dispatchEvent(new CustomEvent("kibo:toast", { detail: "Lien copié" })));
+  expect(await screen.findByText("Lien copié")).toBeTruthy();
 });

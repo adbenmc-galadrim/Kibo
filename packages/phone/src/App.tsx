@@ -59,6 +59,7 @@ export function App({ runtime }: { runtime: PhoneRuntime }) {
 
   useEffect(() => runtime.client.onNeedsPairing(() => setPhase("needsPairing")), [runtime]);
   useEffect(() => runtime.onRevoked(() => setPhase("needsPairing")), [runtime]);
+  useEffect(() => runtime.onSessionExpired(() => setPhase("login")), [runtime]);
   useEffect(() => follow(boot(runtime)), [runtime, follow]);
 
   useEffect(() => {

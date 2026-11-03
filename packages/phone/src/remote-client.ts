@@ -16,7 +16,7 @@ import type { ServerApi } from "./server-api";
 import type { SnapshotStore } from "./snapshot-store";
 
 export type { Connectivity, Refusal } from "./remote-relay";
-export type Presence = Connectivity & { lastSnapshotAt: number | null };
+export type Presence = Connectivity & { stale: boolean; lastSnapshotAt: number | null };
 export type PresenceSource = { get(): Connectivity; subscribe(listener: () => void): () => void };
 
 export type RemoteClient = KiboClient & {
@@ -77,7 +77,21 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
     return known;
   };
 
-  const presence = (): Presence => ({ ...deps.presence.get(), lastSnapshotAt: store.lastBuiltAt() });
+  let stale = true;
+  const presence = (): Presence => ({ ...deps.presence.get(), stale, lastSnapshotAt: store.lastBuiltAt() });
+  const setStale = (next: boolean) => {
+    if (stale === next) return;
+    stale = next;
+    presenceListeners.each((l) => l(presence()));
+  };
+  const markedStaleOnFailure = async (work: () => Promise<void>) => {
+    try {
+      await work();
+    } catch (e) {
+      setStale(true);
+      throw e;
+    }
+  };
 
   const announce = (projectId: string, kind: string) => {
     if (kind === "agent") topic("agents").each((l) => l());
@@ -197,25 +211,27 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
         offSource();
       };
     },
-    async sync() {
-      await fetchBlob(INDEX_PROJECT_ID, "projects");
-      if (store.get(INDEX_PROJECT_ID, "projects") === null) return;
-      await followIndex(true);
-      announce(INDEX_PROJECT_ID, "projects");
-      for (const id of reader.projectIds()) announce(id, "project");
-      topic("agents").each((l) => l());
-    },
-    async handleEvent(event) {
-      if (event.type === "mac.presence") return;
-      if (event.type === "snapshot.removed") await forget(event.projectId, event.kind);
-      else {
-        const known = store.get(event.projectId, event.kind);
-        if (known && known.header.seq >= event.seq && known.header.keyEpoch === deps.keys()?.epoch) return;
-        await fetchBlob(event.projectId, event.kind);
-        if (event.projectId === INDEX_PROJECT_ID) await followIndex(false);
-      }
-      announce(event.projectId, event.kind);
-    },
+    sync: () =>
+      markedStaleOnFailure(async () => {
+        await fetchBlob(INDEX_PROJECT_ID, "projects");
+        if (store.get(INDEX_PROJECT_ID, "projects") !== null) await followIndex(true);
+        setStale(false);
+        announce(INDEX_PROJECT_ID, "projects");
+        for (const id of reader.projectIds()) announce(id, "project");
+        topic("agents").each((l) => l());
+      }),
+    handleEvent: (event) =>
+      markedStaleOnFailure(async () => {
+        if (event.type === "mac.presence") return;
+        if (event.type === "snapshot.removed") await forget(event.projectId, event.kind);
+        else {
+          const known = store.get(event.projectId, event.kind);
+          if (known && known.header.seq >= event.seq && known.header.keyEpoch === deps.keys()?.epoch) return;
+          await fetchBlob(event.projectId, event.kind);
+          if (event.projectId === INDEX_PROJECT_ID) await followIndex(false);
+        }
+        announce(event.projectId, event.kind);
+      }),
     async index() {
       if (store.get(INDEX_PROJECT_ID, "projects") === null) return null;
       return reader.index();
