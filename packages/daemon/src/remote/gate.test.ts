@@ -19,6 +19,7 @@ function setup(answer: (req: RpcRequest) => unknown = () => ({ id: "p1" })) {
     },
     seen: createReplayGuard(),
     now: () => T0,
+    redact: (text: string) => text.replaceAll("ghp_fakeSecret", "***"),
   };
   let next = 0;
   const send = async (payload: Uint8Array, origin = { requestId: `req-${next++}`, at: T0 }) =>
@@ -118,6 +119,26 @@ test("a replayed request id is refused without a second dispatch", async () => {
 test("a request older than the replay window is refused", async () => {
   const s = setup();
   const origin = { requestId: "req-old", at: T0 - 11 * 60_000 };
+  expect(await s.send(encode({ method: "getProject", projectId: "p1" }), origin)).toMatchObject({
+    ok: false,
+    error: { code: "REMOTE_REJECTED" },
+  });
+  expect(s.calls).toEqual([]);
+});
+
+test("the error message is redacted before it reaches the phone", async () => {
+  const s = setup(() => {
+    throw new KiboError("REMOTE_REJECTED", "github 401: ghp_fakeSecret");
+  });
+  expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
+    ok: false,
+    error: { code: "REMOTE_REJECTED", message: "github 401: ***" },
+  });
+});
+
+test("a request more than ten minutes in the future is refused", async () => {
+  const s = setup();
+  const origin = { requestId: "req-future", at: T0 + 11 * 60_000 };
   expect(await s.send(encode({ method: "getProject", projectId: "p1" }), origin)).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },

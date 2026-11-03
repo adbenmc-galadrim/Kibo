@@ -1,27 +1,27 @@
 export const REPLAY_WINDOW_MS = 600_000;
 const REPLAY_MAX_IDS = 1_000;
 
-export type ReplayGuard = { seen(requestId: string, at: number): boolean; size(): number };
+export type ReplayGuard = { seen(requestId: string, at: number, now: number): boolean; size(): number };
 
 export function createReplayGuard(windowMs = REPLAY_WINDOW_MS, max = REPLAY_MAX_IDS): ReplayGuard {
-  const ids = new Map<string, number>();
-  const forgetBefore = (limit: number) => {
-    for (const [id, at] of ids) if (at < limit) ids.delete(id);
+  const expiries = new Map<string, number>();
+  const forgetExpired = (now: number) => {
+    for (const [id, expiry] of expiries) if (expiry < now) expiries.delete(id);
   };
   const keepNewest = () => {
-    for (const id of ids.keys()) {
-      if (ids.size <= max) return;
-      ids.delete(id);
+    for (const id of expiries.keys()) {
+      if (expiries.size <= max) return;
+      expiries.delete(id);
     }
   };
   return {
-    seen(requestId, at) {
-      forgetBefore(at - windowMs);
-      if (ids.has(requestId)) return true;
-      ids.set(requestId, at);
+    seen(requestId, at, now) {
+      forgetExpired(now);
+      if (expiries.has(requestId)) return true;
+      expiries.set(requestId, at + windowMs);
       keepNewest();
       return false;
     },
-    size: () => ids.size,
+    size: () => expiries.size,
   };
 }

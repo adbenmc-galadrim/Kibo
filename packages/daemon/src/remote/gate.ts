@@ -11,6 +11,7 @@ type GateDeps = {
   dispatch(req: RpcRequest, ctx: RpcContext): Promise<unknown>;
   seen: ReplayGuard;
   now(): number;
+  redact(text: string): string;
 };
 
 type Origin = Pick<RequestHeader, "requestId" | "at">;
@@ -30,17 +31,18 @@ function parseRequest(plaintext: Uint8Array): RpcRequest {
 }
 
 function assertFresh(deps: GateDeps, origin: Origin): void {
-  if (deps.now() - origin.at > REPLAY_WINDOW_MS) {
-    throw new KiboError("REMOTE_REJECTED", "request is older than the replay window");
+  const now = deps.now();
+  if (Math.abs(now - origin.at) > REPLAY_WINDOW_MS) {
+    throw new KiboError("REMOTE_REJECTED", "request time is outside the replay window");
   }
-  if (deps.seen.seen(origin.requestId, origin.at)) {
+  if (deps.seen.seen(origin.requestId, origin.at, now)) {
     throw new KiboError("REMOTE_REJECTED", "request was already received");
   }
 }
 
-function failure(e: unknown): RpcResponse {
+function failure(e: unknown, redact: GateDeps["redact"]): RpcResponse {
   if (e instanceof KiboError && !HIDDEN.has(e.code)) {
-    return { ok: false, error: { code: e.code, message: e.detail } };
+    return { ok: false, error: { code: e.code, message: redact(e.detail) } };
   }
   console.error("[kibo-daemon] remote request failed", e);
   return { ok: false, error: { code: "INTERNAL", message: "internal error" } };
@@ -53,7 +55,7 @@ async function answer(deps: GateDeps, plaintext: Uint8Array, origin: Origin): Pr
     assertRemoteAllowed(req);
     return { ok: true, result: (await deps.dispatch(req, PHONE_CONTEXT)) ?? null };
   } catch (e) {
-    return failure(e);
+    return failure(e, deps.redact);
   }
 }
 
