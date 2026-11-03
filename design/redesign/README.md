@@ -545,3 +545,31 @@ Pièges relevés :
 
 Pages d'archive « A · Tableau de bord sobre », « B · Éditorial », « C · Chronologie » et « Styles » du fichier « Kibo · Redesign » :
 elles contiennent des textes réels hérités des premières pistes. Elles restent en l'état et **ne doivent jamais être exportées**.
+
+## Phase 35 : Kibo sur téléphone (2026-11-03)
+
+Spec §52 et inventaire écran par écran du plan de la phase 35. Données : projet Silo de `design/donnees-fictives.md` au vendredi
+16 octobre, 14:52 (jeu `silo-maquettes` ; SILO-46 « Démo client » démarrable, comme dans `silo-attente`). Script :
+`scripts/70-phase-35-telephone.js`, chargé après `01-base`, `02-data` et `90-export` (il ne dépend d'aucun autre script). Le Graphe
+reprend la maquette validée par Adam le 2026-11-02 : sprints en colonnes, la suivante dépassant sur le bord, cadres en pointillés.
+
+Page « Phase 35 · Téléphone » : vingt boards `P35 · …` de 390 × 844, sombre à x = 0 (palette §51, `S.PAL35.dark`), clair à x = 490
+(redessiné avec `S.PAL35.light`, plus rapide et plus sûr qu'un clone recoloré), rangées de 1 000 px.
+
+| Board | Contenu | Export |
+|---|---|---|
+| P35 · Graphe | bande « Mac éteint · dernier état à 14:52 », Fonctionnalités, S42 (F3 livrée, F4 avec SILO-45 actif et SILO-46 démarrable, F5), S43 qui dépasse | `proposition-p35-graphe` |
+| P35 · Graphe, PRs | piles #22 → #24 → #25 et #20 sur « dev · branche de base » | `proposition-p35-graphe-prs` |
+| P35 · Kanban | filtres qui défilent, colonne « En review » à 85 %, « Bloqué » qui dépasse | `proposition-p35-kanban` |
+| P35 · Planning | sprint S42 courant (alerte, capacité, F3 à F5), S43 qui dépasse | `proposition-p35-planning` |
+| P35 · Dashboard | Vue d'ensemble empilée : indicateurs, Livrée aujourd'hui, sprint, En ce moment | `proposition-p35-dashboard` |
+| P35 · Questions | Q14 dépliée (réponse, « Marquer envoyée »), Q16, Q17 | `proposition-p35-questions` |
+| P35 · Fiche ticket | SILO-45 plein écran, « Lancer dans T3 », « T3 · attend ta réponse » | `proposition-p35-fiche` |
+| P35 · Agent de projet | conversation plein écran, lot n° 7 (Valider, Refuser, Commenter), saisie | `proposition-p35-agent` |
+| P35 · Appairage | scanner intégré, « Coller le code », « Appairer » | `proposition-p35-appairage` |
+| P35 · Mac éteint | fiche SILO-46 en lecture seule, lancement refusé sans mise en attente | `proposition-p35-mac-eteint` |
+
+Dessin : `await storage.drawP35(clé, "dark" | "light")` (clés `S.KEYS35`, trois à cinq par appel) ; export :
+`await storage.exportP35([clés])` ⇒ `exports/proposition-p35-<clé>-<dark|light>.png` à l'échelle 2 (780 × 1 688). Cotes : section
+« Phase 35 · Téléphone » de `cotes.md`. Le script envoie ses exports à `S.RECV` (par défaut `http://127.0.0.1:8787`) : si le port 8787
+est pris, lancer une copie de `receiver.py` sur un autre port et poser `storage.RECV` avant le chargement.
