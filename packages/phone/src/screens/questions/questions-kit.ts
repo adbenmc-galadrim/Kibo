@@ -1,50 +1,13 @@
-import {
-  DEFAULT_RECIPIENTS,
-  EMPTY_PROGRESS,
-  type ProjectSnapshot,
-  type Question,
-  type TicketView,
-} from "@kibo/schema";
+import { DEFAULT_RECIPIENTS, type ProjectSnapshot, type Question } from "@kibo/schema";
 import type { PhoneFixture } from "../../app-test-kit";
 import { putBlob } from "../../fake-server-api";
 import { sealJson } from "../../test-kit";
+import { siloTicket } from "../ticket/ticket-kit";
 
 export const Q14 = "Un box réaffecté garde-t-il ses photos ?";
 export const Q16 = "Quota par client : 2 Go ou 5 Go ?";
 
 const ADAM = { kind: "human", ref: "adam" } as const;
-
-const silTicket = (id: string, keyLabel: string, title: string): TicketView => ({
-  id,
-  key: keyLabel,
-  hold: null,
-  keyLabel,
-  title,
-  description: "",
-  statusId: "todo",
-  parentId: null,
-  assignee: null,
-  domainId: null,
-  blockedReason: null,
-  labels: [],
-  externalRefs: [],
-  progress: { done: 0, total: 0 },
-  waitingOn: [],
-  openQuestions: 0,
-  startable: false,
-  startReason: null,
-  onHold: null,
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
-  shortKey: null,
-  effectiveSprintId: null,
-  session: null,
-  thread: null,
-  updatedAt: null,
-  feature: null,
-});
 
 const question = (id: string, ticketId: string, title: string, over: Partial<Question> = {}): Question => ({
   kind: "question",
@@ -92,9 +55,9 @@ export const SILO_QUESTIONS: ProjectSnapshot = {
   workflow: [],
   pages: [],
   tickets: [
-    silTicket("t51", "SILO-51", "Photos des box"),
-    silTicket("t34", "SILO-34", "Quotas"),
-    silTicket("t81", "SILO-81", "Rapports"),
+    siloTicket("t51", "SILO-51", "Photos des box"),
+    siloTicket("t34", "SILO-34", "Quotas"),
+    siloTicket("t81", "SILO-81", "Rapports"),
   ],
   links: [],
   questions: [

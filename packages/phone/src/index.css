@@ -4,6 +4,8 @@
 @source "../../../components/graph/src";
 @source "../../sdk/src";
 @source "../../../components/questions/src";
+@source "../../ui/src/ticket";
+@source "../../ui/src/shell";
 
 @font-face {
   font-family: "Geist";
@@ -53,6 +55,8 @@
   --tracking-hold: #0e7490;
   --tracking-canvas: #fafafa;
   --tracking-frame: #ffffff;
+  --tracking-green-soft: #f0fdf4;
+  --tracking-red-soft: #fef2f2;
 }
 
 .dark {
@@ -82,6 +86,8 @@
   --tracking-hold: #22d3ee;
   --tracking-canvas: #242427;
   --tracking-frame: #2a2a2e;
+  --tracking-green-soft: #2f3b37;
+  --tracking-red-soft: #3e3539;
 }
 
 html,
@@ -91,4 +97,19 @@ body {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+
+.phone-ticket
+  :where(
+    [data-slot="button"],
+    [data-slot="select-trigger"],
+    [data-slot="dropdown-menu-trigger"],
+    [data-slot="tabs-trigger"],
+    [data-slot="popover-trigger"]
+  ) {
+  min-height: 2.75rem;
+}
+
+.phone-ticket :where([data-slot="button"][data-size^="icon"], [data-slot="dropdown-menu-trigger"]) {
+  min-width: 2.75rem;
 }

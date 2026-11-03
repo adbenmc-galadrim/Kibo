@@ -3,10 +3,11 @@ import { configDefaults, type ProjectSnapshot } from "@kibo/schema";
 import { createSdk, projectBackend, SdkProvider } from "@kibo/sdk";
 import { useHost } from "@kibo/ui/host";
 import { projectSnapshotSource } from "@kibo/ui/project-store";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { fr } from "../../i18n/fr";
 import type { RemoteClient } from "../../remote-client";
 import { useProjectSnapshot } from "../../use-project";
+import { useViewer } from "../../use-viewer";
 
 type Props = { client: RemoteClient; projectId: string };
 
@@ -24,21 +25,6 @@ function useSameContent<T>(value: T): T {
   const kept = useRef(value);
   if (JSON.stringify(kept.current) !== JSON.stringify(value)) kept.current = value;
   return kept.current;
-}
-
-function useViewer(client: RemoteClient): string | null {
-  const [viewer, setViewer] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    client.rpc({ method: "getSession" }).then(
-      (session) => alive && setViewer(session.user),
-      (e: unknown) => console.error("[kibo-phone] session read failed", e),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [client]);
-  return viewer;
 }
 
 export function QuestionsScreen({ client, projectId }: Props) {

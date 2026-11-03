@@ -18,6 +18,8 @@ const QuestionsScreen = lazy(() =>
   import("./questions/QuestionsScreen").then((m) => ({ default: m.QuestionsScreen })),
 );
 
+const TicketScreen = lazy(() => import("./ticket/TicketScreen").then((m) => ({ default: m.TicketScreen })));
+
 type ProjectRoute = Extract<Route, { projectId: string }>;
 
 function useProjects(client: RemoteClient): ProjectSummary[] | null {
@@ -101,6 +103,17 @@ function ProjectShell({
           {tab === "questions" ? (
             <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
               <QuestionsScreen client={client} projectId={route.projectId} />
+            </Suspense>
+          ) : null}
+          {route.name === "ticket" ? (
+            <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
+              <TicketScreen
+                client={client}
+                projectId={route.projectId}
+                ticketId={route.ticketId}
+                editable={presence.macOnline && presence.phoneOnline}
+                onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+              />
             </Suspense>
           ) : null}
           {tab && tab !== "graph" && tab !== "questions" ? (

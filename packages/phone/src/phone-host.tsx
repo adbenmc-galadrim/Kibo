@@ -1,7 +1,9 @@
 import type { TabTarget } from "@kibo/schema";
 import { type Host, HostProvider } from "@kibo/ui/host";
 import { type ReactNode, useMemo } from "react";
+import { frTicket } from "./i18n/fr-ticket";
 import type { PhoneTab } from "./route";
+import { toast } from "./toast";
 import type { Navigate } from "./use-route";
 
 const TAB_OF_COMPONENT: Record<string, PhoneTab> = {
@@ -22,7 +24,8 @@ function phoneHost(projectId: string, navigate: Navigate): Host {
     openTicket: (ticketId) => navigate({ name: "ticket", projectId, ticketId }),
     openSprint: () => openTab("planning"),
     openNewTicket: () => undefined,
-    openFile: () => undefined,
+    openFile: () => toast(frTicket.notOnPhone, { description: frTicket.notOnPhoneFile }),
+    editProject: () => toast(frTicket.notOnPhone, { description: frTicket.notOnPhoneProject }),
     openView: (componentId) => {
       const tab = TAB_OF_COMPONENT[componentId];
       if (tab) openTab(tab);
