@@ -35,6 +35,7 @@ jobs:
           - { group: reste, shard: 1, of: 3 }
           - { group: reste, shard: 2, of: 3 }
           - { group: reste, shard: 3, of: 3 }
+          - { group: phone, shard: 1, of: 1 }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -46,7 +47,9 @@ jobs:
         run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} ./packages/daemon
       - if: matrix.group == 'reste'
         shell: bash
-        run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
+        run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} $(ls -d packages/*/ | grep -v -e '^packages/daemon/$' -e '^packages/phone/$' | sed 's|^|./|') ./components ./scripts
+      - if: matrix.group == 'phone'
+        run: bun test ./packages/phone
   e2e:
     name: e2e (${{ matrix.shard }}/5)
     strategy:
