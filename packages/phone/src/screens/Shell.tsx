@@ -1,5 +1,5 @@
 import type { ProjectSummary } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
 import { PhoneHost } from "../phone-host";
 import type { Presence, RemoteClient } from "../remote-client";
@@ -10,10 +10,13 @@ import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
-import { QuestionsScreen } from "./questions/QuestionsScreen";
 import { TabBar } from "./TabBar";
 import { TabPlaceholder } from "./TabPlaceholder";
 import { Toasts } from "./Toasts";
+
+const QuestionsScreen = lazy(() =>
+  import("./questions/QuestionsScreen").then((m) => ({ default: m.QuestionsScreen })),
+);
 
 type ProjectRoute = Extract<Route, { projectId: string }>;
 
@@ -95,7 +98,11 @@ function ProjectShell({
               writable={presence.macOnline && presence.phoneOnline}
             />
           ) : null}
-          {tab === "questions" ? <QuestionsScreen client={client} projectId={route.projectId} /> : null}
+          {tab === "questions" ? (
+            <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
+              <QuestionsScreen client={client} projectId={route.projectId} />
+            </Suspense>
+          ) : null}
           {tab && tab !== "graph" && tab !== "questions" ? (
             <TabPlaceholder projectId={route.projectId} tab={tab} />
           ) : null}
