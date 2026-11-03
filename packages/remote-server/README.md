@@ -54,8 +54,8 @@ Ressource « kibo » de type Dockerfile, sur le dépôt Kibo :
 - **Branche** : `phase/35` pendant l'alpha de test, puis `main` une fois la phase fusionnée.
 - **Base directory** `/`, **Dockerfile location** `/packages/remote-server/Dockerfile`.
 - **Domaine** `https://kibo.shinseo.fr`, port exposé `8080`.
-- **Stockage persistant** monté sur `/data`.
-- **Variables** : `KIBO_REMOTE_ORIGIN=https://kibo.shinseo.fr`, `KIBO_REMOTE_DB=/data/kibo-remote.db`, `KIBO_REMOTE_SETUP_CODE` (secret), et de préférence « Include Source Commit in Build » coché pour `SOURCE_COMMIT`.
+- **Stockage persistant** monté sur `/data` : un volume nommé, pas un répertoire de l'hôte (un dossier vierge appartient à root et SQLite ne pourrait pas y écrire).
+- **Variables** : `KIBO_REMOTE_ORIGIN=https://kibo.shinseo.fr`, `KIBO_REMOTE_DB=/data/kibo-remote.db`, `KIBO_REMOTE_SETUP_CODE` (secret, *Available at Buildtime* décoché pour qu'il n'entre jamais dans le build), et de préférence « Include Source Commit in Build » coché pour `SOURCE_COMMIT`.
 - **Auto-deploy coupé** : le déploiement passe par le workflow, pour ne pas déployer deux fois.
 
 `.github/workflows/deploy-remote.yml` déclenche le déploiement à chaque release publiée, ou à la main (`workflow_dispatch`), par `POST $COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_REMOTE_UUID&force=false`. Réglages du dépôt (Settings › Secrets and variables › Actions) :
