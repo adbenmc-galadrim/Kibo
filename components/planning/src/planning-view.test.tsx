@@ -81,3 +81,29 @@ test("auto-animate watches the cards of a column", async () => {
 test("with reduced motion auto-animate leaves the cards of a column alone", async () => {
   expect(await cardListIsWatched(true)).toBe(false);
 });
+
+test("columns are 85 % wide and snap below xl, the backlog stops sticking", async () => {
+  setupPlanning();
+  const backlog = await column("À planifier");
+  const s42 = await column(/^S42 /);
+  const board = s42.parentElement;
+  expect(board?.closest(".\\@container")).not.toBeNull();
+  expect(board?.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-xl:snap-x", "@max-xl:snap-mandatory"]),
+  );
+  for (const c of [backlog, s42])
+    expect(c.className.split(" ")).toEqual(expect.arrayContaining(["@max-xl:w-[85%]", "@max-xl:snap-start"]));
+  expect(backlog.className.split(" ")).toEqual(expect.arrayContaining(["sticky", "@max-xl:static"]));
+  expect(within(s42).getByText("S42").closest("div.flex-1")?.className.split(" ")).toContain("w-[214px]");
+  const card = await cardIn(/^S42 /, "F3");
+  expect(card.className.split(" ")).toEqual(
+    expect.arrayContaining(["touch-none", "@max-xl:touch-manipulation"]),
+  );
+});
+
+test("on a phone the header actions are 44 px targets", async () => {
+  setupPlanning();
+  const add = await screen.findByRole("button", { name: "Fonctionnalité" });
+  expect(add.className.split(" ")).toContain("@max-xl:h-11");
+  expect(screen.getByRole("button", { name: "Sprint" }).className.split(" ")).toContain("@max-xl:h-11");
+});

@@ -57,7 +57,7 @@ export function KanbanCard(props: Props) {
         <Button
           size="icon"
           variant="ghost"
-          className="size-6"
+          className="size-6 @max-xl:relative @max-xl:after:absolute @max-xl:after:-inset-2.5"
           aria-label={fr.actions(t.keyLabel)}
           data-dnd-ignore="true"
           onPointerDown={stopDrag}
@@ -107,7 +107,7 @@ export function KanbanCard(props: Props) {
             data-selected={selected === true}
             className={cn(
               CARD_CLASS,
-              "group/card cursor-grab touch-none",
+              "group/card cursor-grab touch-none @max-xl:touch-manipulation @max-xl:select-none",
               launch && "hover:border-foreground/70 focus-within:border-foreground/70",
               isDragging && "opacity-40",
               insertion &&

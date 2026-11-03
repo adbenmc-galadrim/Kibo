@@ -120,6 +120,13 @@ function dataCall(deps: ReadDeps, projectId: string, instanceId: string, call: C
   }
 }
 
+async function listEntity(r: SnapshotReader, projectId: string, entity: string): Promise<Served> {
+  if (entity === "ci_run") return { value: await listCiRuns(r, projectId, null) };
+  if (entity !== "project_event") return null;
+  if (!r.has(projectId, "events")) return { value: [] };
+  return { value: authenticatedJson<ProjectEvent[]>(await r.open(projectId, "events")) };
+}
+
 async function componentRead(deps: ReadDeps, projectId: string, call: ComponentCall): Promise<Served> {
   const r = deps.reader;
   switch (call.kind) {
@@ -129,6 +136,8 @@ async function componentRead(deps: ReadDeps, projectId: string, call: ComponentC
       return { value: (await project(r, projectId)).questionRecipients };
     case "t3.status":
       return t3Status(r, projectId);
+    case "list":
+      return listEntity(r, projectId, call.entity);
     default:
       return null;
   }

@@ -3,7 +3,8 @@ import { fr } from "./fr";
 import { OpenLimitBadge } from "./OpenLimitBadge";
 import type { PlanningModel } from "./planning-model";
 
-const SEGMENT = "flex h-[23px] items-center rounded-[5px] font-medium text-[12.5px] leading-[15px]";
+const SEGMENT =
+  "flex h-[23px] @max-xl:h-10 items-center rounded-[5px] font-medium text-[12.5px] leading-[15px]";
 
 export type PlanningLayout = "columns" | "bands";
 
@@ -15,7 +16,7 @@ function LayoutToggle({ layout, onLayout }: { layout: PlanningLayout; onLayout(l
   return (
     <fieldset
       aria-label={fr.layout.label}
-      className="flex h-[27px] items-center gap-0.5 rounded-[7px] bg-(--tracking-muted) p-0.5"
+      className="flex h-[27px] @max-xl:h-11 items-center gap-0.5 rounded-[7px] bg-(--tracking-muted) p-0.5"
     >
       {LAYOUTS.map((l) => (
         <button
@@ -33,7 +34,7 @@ function LayoutToggle({ layout, onLayout }: { layout: PlanningLayout; onLayout(l
 }
 
 const ADD =
-  "flex h-[25px] items-center gap-1.5 rounded-[6px] border border-(--tracking-border) px-2.5 font-medium text-(--tracking-fg) text-[12px] leading-[15px] hover:bg-(--tracking-hover)";
+  "flex h-[25px] @max-xl:h-11 items-center gap-1.5 rounded-[6px] border border-(--tracking-border) px-2.5 font-medium text-(--tracking-fg) text-[12px] leading-[15px] hover:bg-(--tracking-hover)";
 
 export function AddButton({ label, title, onClick }: { label: string; title: string; onClick(): void }) {
   return (

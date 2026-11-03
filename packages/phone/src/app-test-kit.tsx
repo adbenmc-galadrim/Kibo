@@ -1,8 +1,10 @@
 import { INDEX_PROJECT_ID, type ProjectsIndex, type RemoteKeys } from "@kibo/remote";
+import type { ProjectCommand } from "@kibo/schema";
 import { type FakeServerApi, fakeServerApi, putBlob } from "./fake-server-api";
 import { createKeyStore } from "./key-store";
 import type { PasskeyPort } from "./pairing";
 import type { PresenceChannel } from "./presence";
+import { projectSnapshot } from "./project-fixture";
 import type { Connectivity } from "./remote-client";
 import { createPhoneRuntime, type PhoneRuntime, type PresenceHandlers } from "./runtime";
 import { memoryStorage, type PhoneStorage } from "./storage";
@@ -42,23 +44,13 @@ export const refusingPasskeys: PasskeyPort = {
   },
 };
 
-const project = (id: string, name: string, key: string, color: string) => ({
-  meta: { id, key, name, color, folder: null, description: null, client: null },
-  workflow: [],
-  pages: [],
-  tickets: [
-    { id: "t1", key: `${key}-45`, keyLabel: `${key}-45`, statusId: "todo" },
-    { id: "t2", key: `${key}-46`, keyLabel: `${key}-46`, statusId: "todo" },
-  ],
-  links: [],
-  questions: [],
-  questionRecipients: [],
-  instances: [],
-  rules: [],
-  bindings: [],
-  sprints: [],
-  nextTicketKey: `${key}-47`,
-});
+const twoTickets = (run: (cmd: ProjectCommand) => unknown) => {
+  run({ method: "createTicket", title: "Conflits de saisie" });
+  run({ method: "createTicket", title: "Route d'envoi des photos" });
+};
+
+const project = (id: string, name: string, key: string, color: string) =>
+  projectSnapshot({ id, name, key, color, seed: twoTickets });
 
 const pendingBatch = {
   id: "b7",

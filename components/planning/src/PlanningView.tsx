@@ -64,7 +64,7 @@ export function PlanningView(props: PlanningViewProps) {
   const holder = limitHolder(model);
   const limit = model.overLimit ? fr.overLimit(model.open, model.limit) : null;
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3.5 bg-(--tracking-bg) px-6 py-[18px] font-sans">
+    <div className="@container flex h-full min-h-0 flex-col gap-3.5 bg-(--tracking-bg) px-6 py-[18px] font-sans @max-xl:px-4 @max-xl:py-3">
       <PlanningHeader
         model={model}
         layout={props.layout}
@@ -85,7 +85,7 @@ export function PlanningView(props: PlanningViewProps) {
             onResume={props.onResume}
             onResumeIn={props.onResumeIn}
           />
-          <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
+          <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px @max-xl:snap-x @max-xl:snap-mandatory">
             <BacklogColumn
               dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
               empty={model.backlog.length === 0}

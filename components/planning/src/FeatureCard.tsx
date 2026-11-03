@@ -113,7 +113,7 @@ export function FeatureCard({ card, onOpen, menu }: Props) {
         CARD_CLASS,
         "group relative",
         card.late ? "border-transparent" : "border-(--tracking-border)",
-        "cursor-grab touch-none",
+        "cursor-grab touch-none @max-xl:touch-manipulation @max-xl:select-none",
         isDragging && "opacity-40",
       )}
     >

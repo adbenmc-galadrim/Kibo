@@ -5,7 +5,7 @@ import { Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 import { BACKLOG_ID } from "./drag";
 import { fr } from "./fr";
-import { CARD_LIST_CLASS, COLUMN_CLASS, DropZone } from "./SprintColumn";
+import { CARD_LIST_CLASS, COLUMN_CLASS, DropZone, PHONE_COLUMN_CLASS } from "./SprintColumn";
 
 type Props = { dropping: boolean; empty: boolean; children: ReactNode; footer?: ReactNode };
 
@@ -18,7 +18,8 @@ export function BacklogColumn({ dropping, empty, children, footer }: Props) {
       aria-label={fr.backlog}
       className={cn(
         COLUMN_CLASS,
-        "sticky left-0 z-10 border-(--tracking-border) border-dashed bg-(--tracking-bg) shadow-[12px_0_0_var(--tracking-bg)]",
+        PHONE_COLUMN_CLASS,
+        "sticky left-0 z-10 border-(--tracking-border) border-dashed bg-(--tracking-bg) shadow-[12px_0_0_var(--tracking-bg)] @max-xl:static @max-xl:shadow-none",
       )}
     >
       <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">

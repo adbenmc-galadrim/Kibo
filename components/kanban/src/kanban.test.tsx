@@ -275,6 +275,40 @@ test("on a phone-wide board, one column fills the view and snaps, the toolbar sc
   expect(toolbar?.className.split(" ")).toContain("@max-xl:overflow-x-auto");
 });
 
+const classes = (el: Element | null | undefined) => el?.className.split(" ") ?? [];
+const phoneOnly = (list: string[]) => list.filter((c) => /snap|85%|touch-manipulation/.test(c));
+
+test("at desktop width nothing changes: the phone classes only exist under @max-*", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0];
+  const found = [column, column.parentElement, card].flatMap((el) => phoneOnly(classes(el)));
+  expect(found.length).toBeGreaterThan(0);
+  for (const c of found) expect(c.startsWith("@max-")).toBe(true);
+  expect(classes(column)).toContain("min-w-[180px]");
+  expect(classes(card)).toContain("touch-none");
+});
+
+test("on a phone-wide board a finger can scroll past a card, the press waits for the touch sensor", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0];
+  expect(classes(card)).toEqual(
+    expect.arrayContaining(["@max-xl:touch-manipulation", "@max-xl:select-none"]),
+  );
+});
+
+test("on a phone-wide board the filters and the card actions are 44 px targets", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0] as HTMLElement;
+  const actions = within(card).getByRole("button", { name: /^Actions / });
+  expect(classes(actions)).toEqual(
+    expect.arrayContaining(["@max-xl:after:absolute", "@max-xl:after:-inset-2.5"]),
+  );
+  expect(classes(screen.getByRole("button", { name: "Tous" }))).toContain("@max-xl:h-11");
+});
+
 test("shared selection: the selected card stands out, the others fade, the chip clears it", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
   m.setSelection({ kind: "ticket", ids: [m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? ""] });

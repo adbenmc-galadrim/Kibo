@@ -3,14 +3,11 @@ import {
   DndContext,
   type DragEndEvent,
   type KeyboardCoordinateGetter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
 import { openLimitOf, type SprintView } from "@kibo/schema";
 import { type EntityMap, useEntities, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useDragSensors } from "@kibo/sdk/hooks/use-drag-sensors";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { bandsTimeline } from "./bands-model";
@@ -111,10 +108,7 @@ function PlanningBoard({ today, projectId, data }: { today: string; projectId: s
           slipped: fr.slipped,
         })
       : null;
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: columnSteps }),
-  );
+  const sensors = useDragSensors(columnSteps);
   const cardOf = (id: string | number) => cards.find((c) => c.id === String(id));
   const labelOf = (id: string | number): string => {
     if (id === BACKLOG_ID) return fr.backlog;

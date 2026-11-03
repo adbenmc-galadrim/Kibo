@@ -48,7 +48,7 @@ function counterText(shown: number, filters: readonly KanbanFilterKey[], mine: s
 }
 
 const SEGMENT =
-  "h-[23px] gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
+  "h-[23px] @max-xl:h-11 gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
 
 type LabelMenuProps = Pick<Props, "label" | "labels" | "onLabel">;
 
@@ -61,7 +61,7 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
           size="sm"
           title={fr.labelFilter.label}
           disabled={labels.length === 0 && label === null}
-          className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium"
+          className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium @max-xl:h-11"
         >
           <Tag absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
           <span className="@max-[48rem]/toolbar:sr-only">
@@ -137,7 +137,7 @@ export function KanbanToolbar(props: Props) {
   const { filters, label, onShowAll, shown, hidden, children } = props;
   const counter = counterText(shown, filters, props.mine);
   return (
-    <header className="@container/toolbar scrollbar-none relative flex h-12 items-center gap-2 border-b px-4 text-sm @max-xl:overflow-x-auto @max-xl:px-3">
+    <header className="@container/toolbar scrollbar-none relative flex h-12 items-center @max-xl:h-16 gap-2 border-b px-4 text-sm @max-xl:overflow-x-auto @max-xl:px-3">
       <BoardFilters {...props} />
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}

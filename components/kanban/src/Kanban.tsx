@@ -1,13 +1,4 @@
-import {
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
 import {
   blockingQuestion,
   isBlocked,
@@ -26,6 +17,7 @@ import {
   useSelection,
   withoutAgentAssignee,
 } from "@kibo/sdk";
+import { useDragSensors } from "@kibo/sdk/hooks/use-drag-sensors";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { announce } from "./announcements";
@@ -67,10 +59,7 @@ export function Kanban() {
   const labelFilter = useLabelFilter(sdk);
   const [selection, setSelection] = useSelection();
   const selected = selection ? new Set(selection.ids) : null;
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
-  );
+  const sensors = useDragSensors(cardSteps);
   const scope: KanbanFilter =
     source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);

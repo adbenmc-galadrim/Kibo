@@ -14,6 +14,8 @@ import { mergeSprintAlerts, type SprintAlerts } from "./sprint-alerts";
 export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";
 
+export const PHONE_COLUMN_CLASS = "@max-xl:w-[85%] @max-xl:snap-start";
+
 export const CARD_LIST_CLASS = "flex flex-col gap-2.5 empty:hidden";
 
 const BAR_WIDTH = 104;
@@ -165,12 +167,12 @@ export function SprintColumn({ column, dropping, onOpen, onEdit, children, limit
       ref={setNodeRef}
       aria-label={`${column.code} ${column.sprint.name}`}
       data-state={column.sprint.state}
-      className="relative flex shrink-0 flex-col"
+      className={cn("relative flex shrink-0 flex-col", PHONE_COLUMN_CLASS)}
     >
       <div
         className={cn(
           COLUMN_CLASS,
-          "min-h-0 flex-1",
+          "min-h-0 flex-1 @max-xl:w-full",
           current
             ? "border-transparent bg-(--tracking-card)"
             : "border-(--tracking-border) bg-(--tracking-panel)",

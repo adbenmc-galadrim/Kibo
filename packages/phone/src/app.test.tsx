@@ -32,7 +32,8 @@ test("the tab bar has five tabs in order Graphe, Kanban, Planning, Questions, Da
 test("the header shows the project name, the project picker and the agent button with its count", async () => {
   const { runtime } = await phoneFixture();
   render(<App runtime={runtime} />);
-  const header = await screen.findByRole("banner");
+  const [header] = await screen.findAllByRole("banner");
+  if (!header) throw new Error("no banner");
   expect(within(header).getByRole("button", { name: /Silo/ }).getAttribute("aria-haspopup")).toBe("dialog");
   expect(within(header).getByText("Kanban")).toBeTruthy();
   const agent = await within(header).findByRole("button", { name: "Agent de projet · 3 en attente" });
@@ -40,16 +41,17 @@ test("the header shows the project name, the project picker and the agent button
 });
 
 test("each tab shows the component name and its count until its screen lands", async () => {
+  window.location.hash = "#/p/silo/graph";
   const { runtime } = await phoneFixture();
   render(<App runtime={runtime} />);
-  expect(await screen.findByText("Kanban · 2 tickets")).toBeTruthy();
+  expect(await screen.findByText("Graphe de dépendances · 2 tickets")).toBeTruthy();
 });
 
 test("a write while offline shows the mac-off toast and keeps the screen", async () => {
   const { runtime, api } = await phoneFixture({ connectivity: { macOnline: false, phoneOnline: true } });
   render(<App runtime={runtime} />);
   await screen.findByRole("navigation", { name: "Écrans du projet" });
-  expect(screen.getByRole("status").textContent).toContain("Mac éteint · dernier état à");
+  expect(screen.getByText(/^Mac éteint · dernier état à/)).toBeTruthy();
   await act(async () => {
     await expect(
       client.rpc({ method: "t3.launch", projectId: "silo", ticketKey: "SILO-45" }),
@@ -113,7 +115,7 @@ test("a rejected sync shows the band with the time of the block", async () => {
   };
   render(<App runtime={runtime} />);
   await screen.findByRole("navigation", { name: "Écrans du projet" });
-  const band = await screen.findByRole("status");
+  const band = await screen.findByText(/^Mise à jour impossible/);
   expect(band.textContent).toBe(`Mise à jour impossible · dernier état à ${formatClock(1_760_619_120_000)}`);
 });
 
