@@ -36,6 +36,9 @@ test("AgentScreen renders the conversation from the agent blob (view + logs) ful
   expect(screen.queryByRole("navigation", { name: "Écrans du projet" })).toBeNull();
   expect(screen.getByRole("button", { name: "Retour" })).toBeTruthy();
   expect(main.className).toContain("flex-1");
+  expect(
+    main.closest(".phone-agent")?.querySelector('.phone-agent-compose [data-slot="textarea"]'),
+  ).toBeTruthy();
 });
 
 test("sending a message relays sendProjectAgentMessage and shows the outbox state", async () => {
@@ -148,6 +151,8 @@ test('while the mac is offline, the compose box is disabled with "Le Mac est ét
   const box = screen.getByRole("textbox", { name: "Message à l'agent de projet" });
   expect(box.hasAttribute("disabled")).toBe(true);
   expect(box.getAttribute("placeholder")).toContain("Le Mac est éteint");
+  expect(box.closest(".phone-agent-compose")?.closest(".phone-agent")).toBeTruthy();
+  expect(box.getAttribute("data-slot")).toBe("textarea");
   expect(screen.getByRole("button", { name: "Envoyer" }).hasAttribute("disabled")).toBe(true);
   const lot = screen.getByRole("region", { name: "Lot n° 7" });
   expect(within(lot).queryByRole("button", { name: /Valider/ })).toBeNull();

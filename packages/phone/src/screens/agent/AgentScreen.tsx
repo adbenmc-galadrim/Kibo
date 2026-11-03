@@ -111,7 +111,7 @@ export function AgentScreen({ projectId, projectName, presence, onBack }: Screen
   const project = useProjectSnapshot(projectId);
   const [listing, setListing] = useState(false);
   return (
-    <>
+    <div className="phone-agent contents">
       <AgentTopBar
         title={frProjectAgent.header.title(projectName)}
         listing={listing}
@@ -129,6 +129,6 @@ export function AgentScreen({ projectId, projectName, presence, onBack }: Screen
       ) : (
         <p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>
       )}
-    </>
+    </div>
   );
 }

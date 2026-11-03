@@ -29,17 +29,18 @@ export function PastSessionBar({ startedAt, onBack }: { startedAt: number | null
 
 function OfflineCompose({ presence }: { presence: Presence }) {
   return (
-    <div className="shrink-0 border-t border-(--tracking-soft) px-4 py-3">
-      <div className="flex min-h-11 items-center gap-2 rounded-[22px] border border-(--tracking-border) bg-(--tracking-muted) px-4 opacity-60">
+    <div className="shrink-0 border-t border-(--tracking-soft)">
+      <div className="flex items-center gap-2 border border-(--tracking-border) bg-(--tracking-muted) opacity-60">
         <textarea
+          data-slot="textarea"
           disabled
           rows={1}
           aria-label={frProjectAgent.compose.label}
           placeholder={presence.phoneOnline ? frAgent.macOff : frAgent.phoneOffline}
-          className="min-w-0 flex-1 resize-none bg-transparent text-[13px] placeholder:text-(--tracking-mfg)"
+          className="min-w-0 flex-1 resize-none bg-transparent placeholder:text-(--tracking-mfg)"
         />
-        <button type="button" disabled aria-label={frProjectAgent.compose.send} className="size-11 shrink-0">
-          <Send aria-hidden size={15} className="mx-auto text-(--tracking-mfg)" />
+        <button type="button" disabled aria-label={frProjectAgent.compose.send}>
+          <Send aria-hidden size={15} />
         </button>
       </div>
     </div>
@@ -56,7 +57,7 @@ export const isWritable = (presence: Presence): boolean => presence.macOnline &&
 
 export function AgentCompose({ presence, placeholder, onSend }: ComposeProps) {
   return (
-    <div className="pb-[env(safe-area-inset-bottom)]">
+    <div className="phone-agent-compose pb-[env(safe-area-inset-bottom)]">
       {isWritable(presence) ? (
         <ComposeBox placeholder={placeholder} onSend={onSend} />
       ) : (
