@@ -124,5 +124,25 @@ body {
 }
 
 :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
-  max-width: calc(100vw - 24px);
+  max-width: min(32rem, calc(100vw - 24px));
+}
+
+@layer components {
+  :is(
+      [data-slot="context-menu-item"],
+      [data-slot="context-menu-sub-trigger"],
+      [data-slot="dropdown-menu-item"],
+      [data-slot="dropdown-menu-radio-item"],
+      [data-slot="dropdown-menu-sub-trigger"]
+    ) {
+    min-height: 44px;
+  }
+
+  [data-slot="context-menu-content"] {
+    max-width: var(--radix-context-menu-content-available-width);
+  }
+
+  [data-slot="dropdown-menu-content"] {
+    max-width: var(--radix-dropdown-menu-content-available-width);
+  }
 }
