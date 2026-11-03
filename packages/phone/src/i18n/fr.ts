@@ -10,6 +10,7 @@ const REFUSED: Record<RefusalAction, string> = {
 export const fr = {
   appName: "Kibo",
   loading: "Chargement…",
+  sessionFailed: "Impossible de lire la session : rouvre l'application.",
   back: "Retour",
   tabsLabel: "Écrans du projet",
   tabs: {

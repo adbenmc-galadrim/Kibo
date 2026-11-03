@@ -30,7 +30,7 @@ function useSameContent<T>(value: T): T {
 export function QuestionsScreen({ client, projectId }: Props) {
   const host = useHost();
   const snapshot = useProjectSnapshot(projectId);
-  const viewer = useViewer(client);
+  const { viewer, failed } = useViewer(client);
   const instance = useSameContent(snapshot ? questionsInstance(snapshot) : null);
   const sdk = useMemo(() => {
     if (instance === null || viewer === null) return null;
@@ -63,6 +63,12 @@ export function QuestionsScreen({ client, projectId }: Props) {
       "builtin",
     );
   }, [client, projectId, instance, viewer, host]);
+  if (failed)
+    return (
+      <p role="alert" className="p-4 text-[15px] text-(--tracking-red)">
+        {fr.sessionFailed}
+      </p>
+    );
   if (sdk === null) return <p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>;
   return (
     <div className="h-full">

@@ -1,29 +1,33 @@
 import { FINAL_STATUSES, isInbox, type ProjectSnapshot, type TicketView } from "@kibo/schema";
+import { Button } from "@kibo/sdk/ui/button";
 import { descendantCount, TicketActionsMenu, TicketTopBar } from "@kibo/ui/ticket";
 import { Play } from "lucide-react";
 import { frTicket } from "../../i18n/fr-ticket";
+import type { Connectivity } from "../../remote-client";
 
 type Props = {
   project: ProjectSnapshot;
   ticket: TicketView;
-  editable: boolean;
+  presence: Connectivity;
   onDeleted(): void;
 };
 
-function OfflineLaunch() {
+function OfflineLaunch({ presence }: { presence: Connectivity }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
       disabled
-      className="mx-4 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-(--tracking-panel) text-[15px] text-(--tracking-mfg)"
+      className="mx-4 h-11 gap-2 rounded-lg text-[15px] disabled:opacity-70"
     >
-      <Play aria-hidden size={16} />
-      {frTicket.launchOffline}
-    </button>
+      <Play aria-hidden />
+      {presence.phoneOnline ? frTicket.launchMacOff : frTicket.launchPhoneOffline}
+    </Button>
   );
 }
 
-export function TicketActions({ project, ticket, editable, onDeleted }: Props) {
+export function TicketActions({ project, ticket, presence, onDeleted }: Props) {
+  const editable = presence.macOnline && presence.phoneOnline;
   const inbox = isInbox(project.meta.id);
   const launchable = !inbox && ticket.key !== null && !FINAL_STATUSES.includes(ticket.statusId);
   return (
@@ -46,7 +50,7 @@ export function TicketActions({ project, ticket, editable, onDeleted }: Props) {
           />
         }
       />
-      {!editable && launchable ? <OfflineLaunch /> : null}
+      {!editable && launchable ? <OfflineLaunch presence={presence} /> : null}
     </>
   );
 }

@@ -2,7 +2,7 @@ import { useHost } from "@kibo/ui/host";
 import { TicketBody } from "@kibo/ui/ticket";
 import { fr } from "../../i18n/fr";
 import { frTicket } from "../../i18n/fr-ticket";
-import type { RemoteClient } from "../../remote-client";
+import type { Connectivity, RemoteClient } from "../../remote-client";
 import { useProjectSnapshot } from "../../use-project";
 import { useViewer } from "../../use-viewer";
 import { TicketActions } from "./TicketActions";
@@ -11,22 +11,29 @@ type Props = {
   client: RemoteClient;
   projectId: string;
   ticketId: string;
-  editable: boolean;
+  presence: Connectivity;
   onDeleted(): void;
 };
 
 const MUTED = "p-4 text-[15px] text-(--tracking-mfg)";
 
-export function TicketScreen({ client, projectId, ticketId, editable, onDeleted }: Props) {
+export function TicketScreen({ client, projectId, ticketId, presence, onDeleted }: Props) {
+  const editable = presence.macOnline && presence.phoneOnline;
   const host = useHost();
   const project = useProjectSnapshot(projectId);
-  const viewer = useViewer(client);
+  const { viewer, failed } = useViewer(client);
+  if (failed)
+    return (
+      <p role="alert" className="p-4 text-[15px] text-(--tracking-red)">
+        {fr.sessionFailed}
+      </p>
+    );
   if (project === null || viewer === null) return <p className={MUTED}>{fr.loading}</p>;
   const ticket = project.tickets.find((t) => t.id === ticketId);
   if (!ticket) return <p className={MUTED}>{frTicket.missing}</p>;
   return (
     <article aria-label={ticket.keyLabel} className="phone-ticket grid gap-3 pb-6">
-      <TicketActions project={project} ticket={ticket} editable={editable} onDeleted={onDeleted} />
+      <TicketActions project={project} ticket={ticket} presence={presence} onDeleted={onDeleted} />
       <TicketBody
         project={project}
         ticket={ticket}

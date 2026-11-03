@@ -123,3 +123,20 @@ test("with the Mac off the fields are read-only and the launch says it is unavai
   expect(within(fiche).queryByRole("button", { name: "Reprendre" })).toBeNull();
   expect(within(fiche).queryByRole("button", { name: "Modifier" })).toBeNull();
 });
+
+test("without network on the phone the launch says the phone is offline", async () => {
+  const { fiche } = await mountTicket({ macOnline: true, phoneOnline: false });
+  const launch = within(fiche).getByRole("button", { name: "Lancer dans T3 · indisponible, hors connexion" });
+  expect(launch.hasAttribute("disabled")).toBe(true);
+});
+
+test("a session that cannot be read shows an error instead of loading forever", async () => {
+  const fixture = await phoneFixture();
+  await sealTicket(fixture);
+  const rpc = fixture.runtime.client.rpc;
+  fixture.runtime.client.rpc = ((req: Parameters<typeof rpc>[0]) =>
+    req.method === "getSession" ? Promise.reject(new Error("broken index")) : rpc(req)) as typeof rpc;
+  render(<App runtime={fixture.runtime} />);
+  expect(await screen.findByRole("alert", {}, { timeout: 3000 })).toBeTruthy();
+  expect(screen.getByRole("alert").textContent).toContain("Impossible de lire la session");
+});

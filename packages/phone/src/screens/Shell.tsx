@@ -111,7 +111,7 @@ function ProjectShell({
                 client={client}
                 projectId={route.projectId}
                 ticketId={route.ticketId}
-                editable={presence.macOnline && presence.phoneOnline}
+                presence={presence}
                 onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
               />
             </Suspense>
