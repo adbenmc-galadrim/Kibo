@@ -10,7 +10,7 @@ Feuille de route : `docs/superpowers/plans/2026-09-25-kibo-feuille-de-route.md`.
 - **Zéro token pour l'état** : un état change sur un événement déterministe (hook, git, fichier, API), jamais sur la parole d'un LLM.
 - **Un seul langage** : TypeScript partout (sauf la coque Tauri). Contrats typés avec Zod.
 - **Dogfooding** : les composants intégrés utilisent le SDK public, sans accès privilégié.
-- **Sécurité** : démon sur `127.0.0.1` uniquement, secrets dans le trousseau système, jamais dans le CRDT.
+- **Sécurité** : démon sur `127.0.0.1` uniquement, connexion sortante seule vers `kibo.shinseo.fr` (accès téléphone), secrets dans le trousseau système, jamais dans le CRDT.
   Jamais `--dangerously-skip-permissions` par défaut.
 - **Agents** : tout run passe par la file d'attente (créneaux et seuils CPU/RAM), sans exception.
 
@@ -24,13 +24,16 @@ packages/daemon/     serveur Bun : persistance SQLite, API HTTP/WS, appairage, s
 packages/sdk/        SDK des composants (client, SDK simulé, suite de conformité)
 packages/cli/        commande kibo : lecture et écriture du suivi (tickets, fonctionnalités, sprints, questions, plan)
 packages/ui/         application React (shadcn/ui, Tailwind) servie par le démon
+packages/remote/     accès téléphone : protocole, chiffrement de bout en bout, liste fermée — pur, sans I/O
+packages/remote-server/ serveur kibo.shinseo.fr (Bun, SQLite) : relais et blocs chiffrés, passkeys, sert l'app téléphone
+packages/phone/      application téléphone (PWA) : réutilise composants, SDK et exports déclarés de ui
 components/<id>/     composants intégrés (overview, planning, kanban, graph, questions, mockup) écrits avec le SDK public
 e2e/                 parcours Playwright
 scripts/dogfood/     import du projet Kibo dans une instance Kibo, par l'API publique du démon
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← cli` ; `core ← sdk/mock` (SDK simulé uniquement). `scripts/dogfood` ne dépend que de `schema`.
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← cli`, `schema ← remote ← {daemon, phone, remote-server}`, `schema ← sdk ← components ← phone`, `ui ← phone` par les seuls exports déclarés de `packages/ui/package.json` ; `remote-server` n'est qu'une `devDependency` de `phone` et d'`e2e` ; `core ← sdk/mock` (SDK simulé uniquement). `scripts/dogfood` ne dépend que de `schema`.
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code

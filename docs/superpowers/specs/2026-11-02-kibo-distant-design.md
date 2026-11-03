@@ -1,6 +1,6 @@
 # Kibo sur téléphone, via kibo.shinseo.fr
 
-Demande d'Adam du 2026-11-02. Remplace la « décision future » de la spec principale §49.6. Une fois validé, ce document devient la section 52 de la spec principale.
+Demande d'Adam du 2026-11-02. Intégré en §52 de la spec principale le 2026-11-03 ; la spec principale prime. Remplace la « décision future » de la spec principale §49.6. Une fois validé, ce document devient la section 52 de la spec principale.
 
 ## Intention
 
