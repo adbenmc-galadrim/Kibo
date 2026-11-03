@@ -203,6 +203,14 @@
         "fast-check": "4.3.0",
       },
     },
+    "packages/remote": {
+      "name": "@kibo/remote",
+      "version": "0.0.0",
+      "dependencies": {
+        "@kibo/schema": "workspace:*",
+        "zod": "3.25.76",
+      },
+    },
     "packages/schema": {
       "name": "@kibo/schema",
       "version": "0.0.0",
@@ -587,6 +595,8 @@
     "@kibo/forbidden-terms": ["@kibo/forbidden-terms@workspace:scripts/forbidden-terms"],
 
     "@kibo/install": ["@kibo/install@workspace:scripts/install"],
+
+    "@kibo/remote": ["@kibo/remote@workspace:packages/remote"],
 
     "@kibo/schema": ["@kibo/schema@workspace:packages/schema"],
 

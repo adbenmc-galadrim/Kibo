@@ -29,6 +29,10 @@
       "entry": ["scripts/*.ts", "src/**/*.test.{ts,tsx}", "src/**/fixtures*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}", "scripts/*.ts"]
     },
+    "packages/remote": {
+      "entry": ["src/index.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
     "packages/*": {
       "entry": [
         "src/**/*.test.{ts,tsx}",
