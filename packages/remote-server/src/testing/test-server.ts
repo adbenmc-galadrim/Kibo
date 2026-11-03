@@ -35,6 +35,12 @@ const fakeWebauthn = (): WebauthnPort => ({
   verifyAuthentication: async () => unreachable(),
 });
 
+const randomMacToken = () => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64url");
+};
+
 const wsUrl = (url: string, path: string) => `${url.replace(/^http/, "ws")}${path}`;
 
 export async function startTestServer(
@@ -53,7 +59,7 @@ export async function startTestServer(
     ...overrides,
     now,
   });
-  const registerMac = async (macToken = crypto.randomUUID()) => {
+  const registerMac = async (macToken = randomMacToken()) => {
     const res = await fetch(`${server.url}/api/mac/register`, {
       method: "POST",
       headers: { "content-type": "application/json" },

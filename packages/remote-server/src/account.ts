@@ -4,7 +4,7 @@ import { z } from "zod";
 import { sameBytes, sameSecret, sha256 } from "./hashing";
 import { AUTH_POLICY, createRateLimit } from "./rate-limit";
 
-const MAC_TOKEN_MIN_LENGTH = 16;
+const MAC_TOKEN = /^[A-Za-z0-9_-]{43,}$/;
 const SETUP_CODE_MIN_LENGTH = 20;
 
 export function assertSetupCode(setupCode: string): void {
@@ -21,7 +21,6 @@ type Account = {
 
 export function createAccount(db: Database, setupCode: string, now: () => number): Account {
   const registerLimit = createRateLimit(db, "register", AUTH_POLICY, now);
-  const macLimit = createRateLimit(db, "mac-token", AUTH_POLICY, now);
   const current = db.query<{ account_id: string; mac_token_hash: Uint8Array }, []>(
     "SELECT account_id, mac_token_hash FROM account WHERE id = 1",
   );
@@ -35,8 +34,8 @@ export function createAccount(db: Database, setupCode: string, now: () => number
         throw new KiboError("FORBIDDEN", "wrong setup code");
       }
       registerLimit.succeed();
-      if (parsed.data.macToken.length < MAC_TOKEN_MIN_LENGTH)
-        throw new KiboError("INVALID_INPUT", `macToken needs at least ${MAC_TOKEN_MIN_LENGTH} characters`);
+      if (!MAC_TOKEN.test(parsed.data.macToken))
+        throw new KiboError("INVALID_INPUT", "macToken needs at least 43 base64url characters (256 bits)");
       const accountId = current.get()?.account_id ?? crypto.randomUUID();
       const at = now();
       db.run(
@@ -47,11 +46,8 @@ export function createAccount(db: Database, setupCode: string, now: () => number
       return { accountId };
     },
     authenticateMac: (token) => {
-      if (macLimit.blocked()) throw new KiboError("RATE_LIMITED", "too many failed mac authentications");
       const row = current.get();
-      if (row && token && sameBytes(sha256(token), new Uint8Array(row.mac_token_hash)))
-        return macLimit.succeed();
-      macLimit.fail();
+      if (row && token && sameBytes(sha256(token), new Uint8Array(row.mac_token_hash))) return;
       throw new KiboError("UNAUTHORIZED", "mac token required");
     },
   };

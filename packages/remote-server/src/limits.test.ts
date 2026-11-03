@@ -18,7 +18,7 @@ afterEach(async () => {
 
 const BLOCK_MS = 5 * 60_000;
 
-const register = (s: TestServer, setupCode: string, macToken = "a-mac-token-long-enough") =>
+const register = (s: TestServer, setupCode: string, macToken = "m".repeat(43)) =>
   fetch(`${s.url}/api/mac/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -70,15 +70,13 @@ describe("register limits", () => {
   });
 });
 
-describe("mac authentication limits", () => {
-  test("five bad mac tokens block /api/mac for a while, even the right one", async () => {
+describe("mac authentication", () => {
+  test("repeated bad mac tokens never keep the real mac out", async () => {
     const s = await startTestServer();
     server = s;
     const { macToken } = await s.registerMac();
-    for (let i = 0; i < 5; i++) expect(await macAuth(s, `bad-token-${i}`)).toBe(401);
-    expect(await macAuth(s, macToken)).toBe(429);
-    await expect(connectFakeMac(s.url, macToken)).rejects.toThrow();
-    s.advance(BLOCK_MS);
+    for (let i = 0; i < 20; i++) expect(await macAuth(s, `bad-token-${i}`)).toBe(401);
+    expect(await macAuth(s, macToken)).toBe(426);
     const mac = await connectFakeMac(s.url, macToken);
     await mac.close();
   });

@@ -2,6 +2,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { sealedSnapshot } from "./testing/fixtures";
 import { connectFakeMac, connectPhoneEvents, startTestServer, type TestServer } from "./testing/test-server";
 
+const OLD_TOKEN = "o".repeat(43);
+const NEW_TOKEN = "n".repeat(43);
+
 let server: TestServer;
 afterEach(() => server.stop());
 
@@ -26,20 +29,25 @@ describe("mac registration", () => {
     expect(await macStatus("token-1")).toBe(401);
   });
 
-  test("register refuses a missing or short mac token", async () => {
+  test("register refuses a mac token shorter than 256 bits of base64url", async () => {
     server = await startTestServer();
-    expect((await register(server.setupCode, "")).status).toBe(400);
+    for (const macToken of ["", "a".repeat(42), `${"a".repeat(42)}=`, `${"a".repeat(42)}+`]) {
+      const res = await register(server.setupCode, macToken);
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ ok: false, error: { code: "INVALID_INPUT" } });
+    }
+    expect((await register(server.setupCode, "a".repeat(43))).status).toBe(200);
   });
 
   test("register twice with the right code replaces the mac token (old token gets 401 on /api/mac)", async () => {
     server = await startTestServer();
-    const first = await server.registerMac("old-token-123456");
-    const second = await server.registerMac("new-token-123456");
+    const first = await server.registerMac(OLD_TOKEN);
+    const second = await server.registerMac(NEW_TOKEN);
     expect(second.accountId).toBe(first.accountId);
-    expect(await macStatus("old-token-123456")).toBe(401);
-    expect(await macStatus("new-token-123456")).toBe(426);
-    await expect(connectFakeMac(server.url, "old-token-123456")).rejects.toThrow();
-    const mac = await connectFakeMac(server.url, "new-token-123456");
+    expect(await macStatus(OLD_TOKEN)).toBe(401);
+    expect(await macStatus(NEW_TOKEN)).toBe(426);
+    await expect(connectFakeMac(server.url, OLD_TOKEN)).rejects.toThrow();
+    const mac = await connectFakeMac(server.url, NEW_TOKEN);
     await mac.close();
   });
 
