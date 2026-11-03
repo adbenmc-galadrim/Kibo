@@ -1,6 +1,6 @@
 import type { ProjectSummary, RemotePairing, RemoteStatus, RpcRequest } from "@kibo/schema";
 
-export const DISABLED: RemoteStatus = {
+const DISABLED: RemoteStatus = {
   enabled: false,
   serverUrl: null,
   connected: false,
@@ -42,7 +42,7 @@ export const PROJECTS: ProjectSummary[] = [
   project("atlas", "Atlas", "ATL", "#84CC16"),
 ];
 
-export type FakeRemote = {
+type FakeRemote = {
   status: RemoteStatus;
   calls: RpcRequest[];
   rpc(req: RpcRequest): Promise<unknown>;
