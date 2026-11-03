@@ -1,4 +1,4 @@
-import { openRequest, type RemoteKeys, sealRequest } from "@kibo/remote";
+import { openRequest, REQUEST_CLOCK_REFUSAL, type RemoteKeys, sealRequest } from "@kibo/remote";
 import { KIBO_ERROR_CODES, KiboError, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import type { ServerApi } from "./server-api";
@@ -15,8 +15,6 @@ type RelayDeps = {
   now(): number;
   randomId(): string;
 };
-
-const CLOCK_REFUSAL = "outside the replay window";
 
 const Answer = z.discriminatedUnion("ok", [
   z.object({ ok: z.literal(true), result: z.unknown() }),
@@ -49,7 +47,7 @@ export function reasonOf(error: unknown, connectivity: Connectivity): RefusalRea
   if (!(error instanceof KiboError)) return null;
   if (error.code === "REMOTE_UNAVAILABLE") return connectivity.phoneOnline ? "macOff" : "phoneOffline";
   if (error.code === "TIMEOUT") return "timeout";
-  if (error.code === "REMOTE_REJECTED" && error.detail.includes(CLOCK_REFUSAL)) return "clock";
+  if (error.code === "REMOTE_REJECTED" && error.detail === REQUEST_CLOCK_REFUSAL) return "clock";
   return null;
 }
 

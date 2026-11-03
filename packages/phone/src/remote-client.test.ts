@@ -1,5 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
-import { INDEX_PROJECT_ID, type ProjectsIndex, type RemoteKeys } from "@kibo/remote";
+import { INDEX_PROJECT_ID, type ProjectsIndex, REQUEST_CLOCK_REFUSAL, type RemoteKeys } from "@kibo/remote";
 import type { ProjectEvent, ProjectSnapshot, RunLogEntry } from "@kibo/schema";
 import { type FakeServerApi, fakeServerApi, putBlob } from "./fake-server-api";
 import { createInstanceData } from "./instance-data";
@@ -202,7 +202,7 @@ test("a request outside the mac clock window is reported as a clock refusal", as
   client.onRefused((r) => refusals.push(r));
   api.reply = () => ({
     ok: false,
-    error: { code: "REMOTE_REJECTED", message: "request time is outside the replay window" },
+    error: { code: "REMOTE_REJECTED", message: REQUEST_CLOCK_REFUSAL },
   });
   const command = { method: "setStatus" as const, ticketId: "t1", statusId: "in_progress" as const };
   await expect(client.rpc({ method: "command", projectId: "silo", command })).rejects.toMatchObject({

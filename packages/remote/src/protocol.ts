@@ -6,6 +6,7 @@ export const SNAPSHOT_MAX_BYTES = 8 * 1_048_576;
 export const REQUEST_TIMEOUT_MS = 30_000;
 export const PAIR_TOKEN_TTL_MS = 600_000;
 export const PAIR_TOKEN_ATTEMPTS = 5;
+export const REQUEST_CLOCK_REFUSAL = "request time is outside the replay window";
 
 const BASE64URL = /^[A-Za-z0-9_-]*$/;
 const NONCE_BASE64URL_LENGTH = 16;

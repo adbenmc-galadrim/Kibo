@@ -1,4 +1,5 @@
 import { beforeEach, expect, test } from "bun:test";
+import { REQUEST_CLOCK_REFUSAL } from "@kibo/remote";
 import { client } from "@kibo/ui/api";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { App } from "./App";
@@ -65,7 +66,7 @@ test("a request refused for the clock tells to fix the phone time", async () => 
   const { runtime, api } = await phoneFixture();
   api.reply = () => ({
     ok: false,
-    error: { code: "REMOTE_REJECTED", message: "request time is outside the replay window" },
+    error: { code: "REMOTE_REJECTED", message: REQUEST_CLOCK_REFUSAL },
   });
   render(<App runtime={runtime} />);
   await screen.findByRole("navigation", { name: "Écrans du projet" });

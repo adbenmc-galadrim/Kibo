@@ -1,4 +1,4 @@
-import { assertRemoteAllowed, type RequestHeader } from "@kibo/remote";
+import { assertRemoteAllowed, REQUEST_CLOCK_REFUSAL, type RequestHeader } from "@kibo/remote";
 import { KiboError, RpcRequest, type RpcResponse } from "@kibo/schema";
 import { HIDDEN } from "../http-response";
 import type { RpcContext } from "../rpc-extensions";
@@ -33,7 +33,7 @@ function parseRequest(plaintext: Uint8Array): RpcRequest {
 function assertFresh(deps: GateDeps, origin: Origin): void {
   const now = deps.now();
   if (Math.abs(now - origin.at) > REPLAY_WINDOW_MS) {
-    throw new KiboError("REMOTE_REJECTED", "request time is outside the replay window");
+    throw new KiboError("REMOTE_REJECTED", REQUEST_CLOCK_REFUSAL);
   }
   if (deps.seen.seen(origin.requestId, origin.at, now)) {
     throw new KiboError("REMOTE_REJECTED", "request was already received");
