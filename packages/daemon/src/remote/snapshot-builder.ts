@@ -63,9 +63,14 @@ async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnap
   const logs: AgentSnapshot["logs"] = {};
   for (const runId of new Set(runIds))
     logs[runId] = (await rpc({ method: "getRunLog", runId })).map(withoutLocalPaths);
-  const pastBatches: Record<string, Batch[]> = {};
-  for (const { runId } of view.past)
-    pastBatches[runId] = (await rpc({ method: "getProjectAgent", projectId, runId })).batches;
+  const pastBatches: Record<string, Batch[]> = Object.fromEntries(
+    await Promise.all(
+      view.past.map(async ({ runId }) => [
+        runId,
+        (await rpc({ method: "getProjectAgent", projectId, runId })).batches,
+      ]),
+    ),
+  );
   const run = view.run && { ...view.run, workspace: null, cwd: null, transcriptPath: null };
   return { view: { ...view, run, memoryPath: "" }, logs, pastBatches };
 }
