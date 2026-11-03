@@ -1,5 +1,5 @@
 import type { ProjectSummary } from "@kibo/schema";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
 import { PhoneHost } from "../phone-host";
 import type { Presence, RemoteClient } from "../remote-client";
@@ -8,19 +8,20 @@ import { useAgentPendingCount } from "../use-agent-count";
 import type { Navigate } from "../use-route";
 import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
+import { lazyScreen } from "./lazy-screen";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
 import { TabBar } from "./TabBar";
 import { TabPlaceholder } from "./TabPlaceholder";
 import { Toasts } from "./Toasts";
 
-const AgentScreen = lazy(() => import("./agent/AgentScreen").then((m) => ({ default: m.AgentScreen })));
+const AgentScreen = lazyScreen(() => import("./agent/AgentScreen").then((m) => m.AgentScreen));
 
-const QuestionsScreen = lazy(() =>
-  import("./questions/QuestionsScreen").then((m) => ({ default: m.QuestionsScreen })),
+const QuestionsScreen = lazyScreen(() =>
+  import("./questions/QuestionsScreen").then((m) => m.QuestionsScreen),
 );
 
-const TicketScreen = lazy(() => import("./ticket/TicketScreen").then((m) => ({ default: m.TicketScreen })));
+const TicketScreen = lazyScreen(() => import("./ticket/TicketScreen").then((m) => m.TicketScreen));
 
 type ProjectRoute = Extract<Route, { projectId: string }>;
 
@@ -84,14 +85,12 @@ function ProjectShell({
     <PhoneHost projectId={route.projectId} navigate={navigate}>
       <div className="flex h-dvh flex-col bg-(--tracking-bg) text-(--tracking-fg)">
         {route.name === "agent" ? (
-          <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
-            <AgentScreen
-              projectId={route.projectId}
-              projectName={project?.name ?? ""}
-              presence={presence}
-              onBack={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
-            />
-          </Suspense>
+          <AgentScreen
+            projectId={route.projectId}
+            projectName={project?.name ?? ""}
+            presence={presence}
+            onBack={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+          />
         ) : (
           <>
             <Header
@@ -113,21 +112,15 @@ function ProjectShell({
                   writable={presence.macOnline && presence.phoneOnline}
                 />
               ) : null}
-              {tab === "questions" ? (
-                <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
-                  <QuestionsScreen client={client} projectId={route.projectId} />
-                </Suspense>
-              ) : null}
+              {tab === "questions" ? <QuestionsScreen client={client} projectId={route.projectId} /> : null}
               {route.name === "ticket" ? (
-                <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
-                  <TicketScreen
-                    client={client}
-                    projectId={route.projectId}
-                    ticketId={route.ticketId}
-                    presence={presence}
-                    onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
-                  />
-                </Suspense>
+                <TicketScreen
+                  client={client}
+                  projectId={route.projectId}
+                  ticketId={route.ticketId}
+                  presence={presence}
+                  onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+                />
               ) : null}
               {tab && tab !== "graph" && tab !== "questions" ? (
                 <TabPlaceholder projectId={route.projectId} tab={tab} />

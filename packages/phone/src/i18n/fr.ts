@@ -10,6 +10,8 @@ const REFUSED: Record<RefusalAction, string> = {
 export const fr = {
   appName: "Kibo",
   loading: "Chargement…",
+  screenFailed: "Impossible d'afficher cet écran : vérifie la connexion, puis réessaie.",
+  retry: "Réessayer",
   sessionFailed: "Impossible de lire la session : rouvre l'application.",
   back: "Retour",
   tabsLabel: "Écrans du projet",
