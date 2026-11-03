@@ -105,12 +105,16 @@ function BandHeader({ count, folded }: { count: number; folded: boolean }) {
   return (
     <div className="flex h-4 items-center gap-2">
       <Pause absoluteStrokeWidth size={14} aria-hidden className="text-(--tracking-hold)" />
-      <span className="font-semibold text-(--tracking-fg) text-[13px] leading-[16px]">{fr.held.label}</span>
+      <span className="font-semibold text-(--tracking-fg) @max-xl:whitespace-nowrap text-[13px] leading-[16px]">
+        {fr.held.label}
+      </span>
       <span className="flex h-[13px] items-center rounded-[4px] bg-(--tracking-muted) px-[5px] font-medium font-mono text-(--tracking-mfg) text-[10.5px] leading-[13px]">
         {count}
       </span>
-      <span className="text-(--tracking-dim) text-[12px] leading-[15px]">{fr.held.hint(count)}</span>
-      <CollapsibleTrigger className="ml-auto flex h-[15px] cursor-pointer items-center gap-1 text-(--tracking-mfg) text-[12px] leading-[15px] hover:text-(--tracking-fg)">
+      <span className="text-(--tracking-dim) text-[12px] leading-[15px] @max-xl:hidden">
+        {fr.held.hint(count)}
+      </span>
+      <CollapsibleTrigger className="ml-auto flex h-[15px] @max-xl:-my-3.5 @max-xl:h-11 cursor-pointer items-center gap-1 text-(--tracking-mfg) text-[12px] leading-[15px] hover:text-(--tracking-fg)">
         {folded ? fr.held.unfold : fr.held.fold}
         <Chevron absoluteStrokeWidth size={13} aria-hidden />
       </CollapsibleTrigger>

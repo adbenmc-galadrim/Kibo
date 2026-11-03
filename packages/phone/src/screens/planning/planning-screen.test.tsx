@@ -45,3 +45,20 @@ test("on the phone the En attente band starts folded, and stays as the user leav
   const again = await screen.findByRole("region", { name: "En attente (1)" });
   expect(within(again).getByRole("button", { name: /Replier/ })).toBeTruthy();
 });
+
+test("the planning opens on the current sprint, À planifier stays one swipe back", async () => {
+  const scrolled: Element[] = [];
+  const original = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled.push(this);
+  };
+  try {
+    const { runtime } = await siloFixture();
+    render(<App runtime={runtime} />);
+    const s42 = await screen.findByRole("region", { name: /^S42 Saisie hors ligne/ });
+    await waitFor(() => expect(scrolled).toContain(s42));
+    expect(screen.getByRole("region", { name: "À planifier" })).toBeTruthy();
+  } finally {
+    Element.prototype.scrollIntoView = original;
+  }
+});

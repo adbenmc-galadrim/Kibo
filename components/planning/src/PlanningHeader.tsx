@@ -61,11 +61,13 @@ export function PlanningHeader(props: Props) {
   return (
     <header className="flex shrink-0 flex-wrap items-end gap-2.5">
       <div className="flex min-w-0 grow basis-64 items-end gap-2.5">
-        <h1 className="shrink-0 font-semibold text-(--tracking-fg) text-[22px] leading-[27px]">{fr.title}</h1>
+        <h1 className="shrink-0 @max-xl:sr-only font-semibold text-(--tracking-fg) text-[22px] leading-[27px]">
+          {fr.title}
+        </h1>
         <span className={SUBTITLE}>{fr.summary(model.delivered, model.total, model.unplanned)}</span>
         {layout === "bands" && <span className={`${SUBTITLE} shrink-[8]`}>{fr.bands.hint}</span>}
       </div>
-      <div className="ml-auto flex min-w-0 flex-wrap items-end justify-end gap-2.5">
+      <div className="scrollbar-none ml-auto flex min-w-0 flex-wrap items-end justify-end gap-2.5 @max-xl:-mr-4 @max-xl:-ml-4 @max-xl:w-[calc(100%+2rem)] @max-xl:flex-nowrap @max-xl:items-center @max-xl:justify-start @max-xl:overflow-x-auto @max-xl:px-4 @max-xl:[&>*]:shrink-0">
         <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />
         <AddButton label={fr.addSprint} title={fr.newSprint} onClick={onNewSprint} />
         <OpenLimitBadge
