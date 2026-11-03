@@ -189,15 +189,19 @@ export function createClient(opts: ClientOptions): KiboClient {
   };
 }
 
-type ProjectBackendOptions = { snapshotSource?: () => Promise<ProjectSnapshot> };
+type ProjectBackendOptions = {
+  snapshotSource?: () => Promise<ProjectSnapshot>;
+  imageUrl?: (questionId: string, imageId: string) => string;
+};
 
 export function projectBackend(
   client: KiboClient,
   projectId: string,
   instanceId: string,
-  { snapshotSource }: ProjectBackendOptions = {},
+  { snapshotSource, imageUrl }: ProjectBackendOptions = {},
 ): ProjectBackend {
   return {
+    ...(imageUrl ? { imageUrl } : {}),
     snapshot: snapshotSource ?? (() => client.rpc({ method: "getProject", projectId })),
     run: (command: ProjectCommand) => client.rpc({ method: "command", projectId, command, instanceId }),
     call: (call: ComponentCall) => client.rpc({ method: "componentCall", projectId, instanceId, call }),

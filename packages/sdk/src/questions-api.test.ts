@@ -75,3 +75,14 @@ test("the mock serves the recipients of its project and records the read", async
   await expect(without.sdk.questions.recipients()).rejects.toThrow("PERMISSION_DENIED");
   expect(without.violations).toEqual(["read question"]);
 });
+
+test("a backend imageUrl replaces the daemon image route", () => {
+  const backend = {
+    ...backendOf([]),
+    imageUrl: (questionId: string, imageId: string) => `blob:${questionId}/${imageId}`,
+  };
+  expect(createSdk(backend, reader, ctx).questions.imageUrl("q1", "img1")).toBe("blob:q1/img1");
+  expect(createSdk(backendOf([]), reader, ctx).questions.imageUrl("q 1", "i/2")).toBe(
+    "/api/questions/q%201/images/i%2F2",
+  );
+});

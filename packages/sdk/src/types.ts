@@ -154,6 +154,7 @@ export type ProjectBackend = {
   call(call: ComponentCall): Promise<unknown>;
   subscribe(listener: () => void): () => void;
   subscribeConfig?(listener: () => void): () => void;
+  imageUrl?(questionId: string, imageId: string): string;
 };
 
 export type SdkContext = Pick<
