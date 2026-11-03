@@ -10,6 +10,7 @@ import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
+import { QuestionsScreen } from "./questions/QuestionsScreen";
 import { TabBar } from "./TabBar";
 import { TabPlaceholder } from "./TabPlaceholder";
 import { Toasts } from "./Toasts";
@@ -93,7 +94,9 @@ function ProjectShell({
               client={client}
               writable={presence.macOnline && presence.phoneOnline}
             />
-          ) : tab ? (
+          ) : null}
+          {tab === "questions" ? <QuestionsScreen client={client} projectId={route.projectId} /> : null}
+          {tab && tab !== "graph" && tab !== "questions" ? (
             <TabPlaceholder projectId={route.projectId} tab={tab} />
           ) : null}
         </main>

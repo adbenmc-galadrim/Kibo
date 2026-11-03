@@ -1,6 +1,6 @@
 import type { TabTarget } from "@kibo/schema";
 import { type Host, HostProvider } from "@kibo/ui/host";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import type { PhoneTab } from "./route";
 import type { Navigate } from "./use-route";
 
@@ -41,5 +41,6 @@ export function PhoneHost({
   navigate: Navigate;
   children: ReactNode;
 }) {
-  return <HostProvider host={phoneHost(projectId, navigate)}>{children}</HostProvider>;
+  const host = useMemo(() => phoneHost(projectId, navigate), [projectId, navigate]);
+  return <HostProvider host={host}>{children}</HostProvider>;
 }

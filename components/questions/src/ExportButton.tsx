@@ -8,9 +8,10 @@ import { type ExportEntry, exportAll, exportDate } from "./export-text";
 import { fr } from "./fr";
 
 export const PAGE_ACTION =
-  "h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px]";
+  "h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px] @max-xl:h-11 @max-xl:min-w-11 @max-xl:shrink-0 @max-xl:px-3 @max-xl:text-[15px] @max-xl:[&_svg:not([class*='size-'])]:size-5";
 
 async function copy(text: string): Promise<void> {
+  if (navigator.clipboard === undefined) return;
   try {
     await navigator.clipboard.writeText(text);
   } catch (e) {
@@ -67,7 +68,10 @@ export function ExportSurface({
   return (
     <Popover open={flow.text !== null} onOpenChange={(open) => !open && flow.close()}>
       <PopoverAnchor asChild>{children}</PopoverAnchor>
-      <PopoverContent align="end" className="grid w-105 gap-2.5 rounded-[10px] bg-card p-3.5">
+      <PopoverContent
+        align="end"
+        className="grid w-105 max-w-[calc(100vw-2rem)] gap-2.5 rounded-[10px] bg-card p-3.5"
+      >
         <header className="flex items-center gap-2">
           <h3 className="flex-1 text-sm font-semibold">{fr.exporting.preview}</h3>
           <span className="text-xs text-muted-foreground">{summary}</span>
@@ -119,7 +123,7 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
         onClick={() => void flow.start()}
       >
         <Upload aria-hidden />
-        {label}
+        <span className="@max-xl:sr-only">{label}</span>
       </Button>
     </ExportSurface>
   );

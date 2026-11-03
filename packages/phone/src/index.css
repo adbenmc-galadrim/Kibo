@@ -2,7 +2,8 @@
 @import "../../sdk/src/theme.css";
 @source "./";
 @source "../../../components/graph/src";
-@source "../../sdk/src/t3";
+@source "../../sdk/src";
+@source "../../../components/questions/src";
 
 @font-face {
   font-family: "Geist";

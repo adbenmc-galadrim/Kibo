@@ -15,6 +15,9 @@ type Props = {
   inlineAction?: ReactNode;
 };
 
+const PHONE_ACTION = "@max-xl:h-11 @max-xl:flex-1 @max-xl:text-[15px]";
+const PHONE_CHOICE = "@max-xl:h-11 @max-xl:text-[15px]";
+
 const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
 
 const formOf = (a: QuestionAnswer | undefined): AnswerForm => {
@@ -66,7 +69,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
               variant="outline"
               size="sm"
               aria-pressed={pressed(choice.confirm)}
-              className="h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent"
+              className={`h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent ${PHONE_CHOICE}`}
               disabled={busy}
               onClick={() => pick({ ...EMPTY, confirm: true })}
             >
@@ -81,7 +84,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
               variant="outline"
               size="sm"
               aria-pressed={pressed(!choice.confirm && choice.option === option)}
-              className="h-7 text-xs font-normal aria-pressed:border-foreground aria-pressed:bg-accent"
+              className={`h-7 text-xs font-normal aria-pressed:border-foreground aria-pressed:bg-accent ${PHONE_CHOICE}`}
               disabled={busy}
               onClick={() => pick({ ...EMPTY, option })}
             >
@@ -90,17 +93,23 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 @max-xl:flex-wrap">
         <Input
           aria-label={freeLabel}
           placeholder={freeLabel}
-          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background"
+          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background @max-xl:h-11 @max-xl:basis-full @max-xl:text-[16px] @max-xl:md:text-[16px]"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
         />
         {editing && (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`h-7 text-xs ${PHONE_ACTION}`}
+            onClick={onCancel}
+          >
             {fr.cancel}
           </Button>
         )}
@@ -108,7 +117,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
         <Button
           type="submit"
           size="sm"
-          className="h-6.5 px-2.5 text-xs font-medium disabled:opacity-100"
+          className={`h-6.5 px-2.5 text-xs font-medium disabled:opacity-100 ${PHONE_ACTION}`}
           disabled={busy || !ready}
         >
           {editing ? fr.save : fr.reply}

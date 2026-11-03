@@ -93,7 +93,12 @@ function RestoreButton({ questionId }: { questionId: string }) {
           {fr.restoreFailed}
         </span>
       )}
-      <Button variant="outline" size="sm" className="h-6 px-2 text-2xs" onClick={() => void restore()}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-6 px-2 text-2xs @max-xl:h-11 @max-xl:px-3.5 @max-xl:text-[15px]"
+        onClick={() => void restore()}
+      >
         <ArchiveRestore aria-hidden />
         {fr.restore}
       </Button>
@@ -140,7 +145,7 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
       type="button"
       variant="outline"
       size="sm"
-      className="h-6.5 px-2.5 text-xs font-medium"
+      className="h-6.5 px-2.5 text-xs font-medium @max-xl:h-11 @max-xl:flex-1 @max-xl:text-[15px]"
       onClick={() => setPasting(true)}
     >
       <ClipboardPaste aria-hidden />
@@ -148,8 +153,8 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
     </Button>
   );
   return (
-    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px]">
-      <div className="grid gap-1.5 text-[13px]">{context ?? <p>{q.title}</p>}</div>
+    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px] @max-xl:gap-3 @max-xl:px-3.5 @max-xl:pt-2">
+      <div className="grid gap-1.5 text-[13px] @max-xl:text-[15px]">{context ?? <p>{q.title}</p>}</div>
       <div className="flex flex-wrap items-center gap-2.5">
         <RecipientMenu
           question={q}

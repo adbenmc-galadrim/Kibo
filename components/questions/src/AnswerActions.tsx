@@ -7,7 +7,7 @@ import { useState } from "react";
 import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 
-const ACTION = "h-6 px-2 text-2xs text-muted-foreground";
+const ACTION = "h-6 px-2 text-2xs text-muted-foreground @max-xl:h-11 @max-xl:px-3 @max-xl:text-[15px]";
 
 export function AnswerActionButtons({ question: q, onEdit }: { question: Question; onEdit(): void }) {
   const sdk = useSdk();

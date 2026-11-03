@@ -88,7 +88,7 @@ export function QuestionsView() {
     );
   }
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="@container flex h-full min-h-0 flex-col">
       <QuestionsToolbar
         scope={scope}
         ticket={ticketId === null ? null : data.ticketOf(ticketId)}
@@ -108,7 +108,7 @@ export function QuestionsView() {
         summary={<Summary scope={scope} shown={shown} />}
         actions={
           <PageActions inline>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 @max-xl:gap-2">
               {toExport.length > 0 && (
                 <ExportButton
                   label={exportText.label}
@@ -119,13 +119,13 @@ export function QuestionsView() {
               )}
               <Button className={PAGE_ACTION} onClick={() => setCreating("")}>
                 <Plus aria-hidden />
-                {fr.newQuestion}
+                <span className="@max-xl:sr-only">{fr.newQuestion}</span>
               </Button>
             </div>
           </PageActions>
         }
       />
-      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5">
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5 @max-xl:gap-3 @max-xl:px-4 @max-xl:py-3">
         {!data.loading && data.questions.length === 0 ? (
           <EmptyPage onNew={() => setCreating("")} />
         ) : (

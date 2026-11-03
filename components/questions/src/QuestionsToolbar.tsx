@@ -17,7 +17,8 @@ import type { Scope } from "./questions-logic";
 
 const SCOPES: readonly Scope[] = ["open", "answered", "all", "archived"];
 
-export const FILTER_MENU = "h-6.5 gap-[7px] px-[11px] text-xs font-medium has-[>svg]:px-[11px]";
+export const FILTER_MENU =
+  "h-6.5 gap-[7px] px-[11px] text-xs font-medium has-[>svg]:px-[11px] @max-xl:h-11 @max-xl:shrink-0 @max-xl:px-3.5 @max-xl:text-[15px]";
 
 type Props = {
   scope: Scope;
@@ -72,7 +73,10 @@ function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "ticke
 }
 
 const SEGMENT =
-  "h-5.75 gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
+  "h-5.75 gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground @max-xl:h-10 @max-xl:shrink-0 @max-xl:px-2.5 @max-xl:text-[14px]";
+
+const PHONE_ROW =
+  "contents @max-xl:relative @max-xl:flex @max-xl:basis-full @max-xl:items-center @max-xl:gap-2 @max-xl:overflow-x-auto";
 
 export function QuestionsToolbar(props: Props) {
   const { scope, openCount, ticket, tickets, onScope, onTicket, filters, summary, actions } = props;
@@ -80,13 +84,13 @@ export function QuestionsToolbar(props: Props) {
     <div
       role="toolbar"
       aria-label={fr.toolbar}
-      className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5"
+      className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5 @max-xl:gap-3 @max-xl:py-3"
     >
       <ToggleGroup
         type="single"
         size="sm"
         aria-label={fr.scope.label}
-        className="gap-0.5 rounded-[7px] bg-muted p-0.5"
+        className="gap-0.5 rounded-[7px] bg-muted p-0.5 @max-xl:max-w-full @max-xl:overflow-x-auto @max-xl:rounded-[10px]"
         value={scope}
         onValueChange={(v) => {
           const next = SCOPES.find((s) => s === v);
@@ -104,11 +108,15 @@ export function QuestionsToolbar(props: Props) {
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
-      {filters}
-      <TicketMenu ticket={ticket} tickets={tickets} onTicket={onTicket} />
-      <span className="flex-1" />
-      {summary}
-      {actions}
+      <div className={PHONE_ROW}>
+        {filters}
+        <TicketMenu ticket={ticket} tickets={tickets} onTicket={onTicket} />
+        <span className="flex-1" />
+        <span className="contents @max-xl:sticky @max-xl:right-0 @max-xl:ml-auto @max-xl:flex @max-xl:shrink-0 @max-xl:bg-background @max-xl:pl-2">
+          {actions}
+        </span>
+      </div>
+      <span className="contents @max-xl:block @max-xl:basis-full @max-xl:empty:hidden">{summary}</span>
     </div>
   );
 }
