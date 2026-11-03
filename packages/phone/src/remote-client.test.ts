@@ -4,6 +4,7 @@ import { KiboError, type ProjectEvent, type ProjectSnapshot, type RunLogEntry } 
 import { type FakeServerApi, fakeServerApi, putBlob } from "./fake-server-api";
 import { createInstanceData } from "./instance-data";
 import { type Connectivity, createRemoteClient, type RemoteClient } from "./remote-client";
+import { lotSeven } from "./screens/agent/agent-test-kit";
 import { createSnapshotStore } from "./snapshot-store";
 import { memoryStorage } from "./storage";
 import { sealJson, testKeys } from "./test-kit";
@@ -124,14 +125,15 @@ test("getProjectAgent with the runId of a past session serves that session from 
   });
   const current = { ...past("pa7"), closedAt: null, title: "Fais le point du jour" };
   const view = { session: current, run: null, batches: [], past: [past("pa6")], memoryPath: "" };
-  putBlob(api, await sealJson(keys, "silo", "agent", { view, logs: {} }));
+  const lot = lotSeven({ id: "b6", runId: "pa6" });
+  putBlob(api, await sealJson(keys, "silo", "agent", { view, logs: {}, pastBatches: { pa6: [lot] } }));
   await client.sync();
   expect(await client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "pa7" })).toEqual(view);
   expect(await client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "pa6" })).toEqual({
     ...view,
     session: past("pa6"),
     run: null,
-    batches: [],
+    batches: [lot],
   });
   await expect(
     client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "gone" }),

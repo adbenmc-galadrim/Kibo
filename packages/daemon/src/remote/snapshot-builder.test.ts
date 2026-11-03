@@ -154,6 +154,45 @@ test("agent logs include the current and past session runs", async () => {
   expect(JSON.stringify(agent).includes(AGENT_DIR)).toBe(false);
 });
 
+test("the agent block carries the batches of each past session, as the Mac shows them", async () => {
+  const session = (runId: string) => ({
+    projectId: "p",
+    runId,
+    sessionId: `s-${runId}`,
+    startedAt: 1,
+    closedAt: null,
+    lastTurnAt: null,
+    title: null,
+    messages: 1,
+  });
+  const batch = (id: string, runId: string) => ({ id, runId, status: "applied" });
+  const view = (runId?: string) => ({
+    session: session(runId ?? "run-now"),
+    run: runId ? { id: runId, workspace: AGENT_DIR, cwd: AGENT_DIR, transcriptPath: AGENT_DIR } : null,
+    batches: [batch(`b-${runId ?? "run-now"}`, runId ?? "run-now")],
+    past: [session("run-old"), session("run-older")],
+    memoryPath: `${AGENT_DIR}/memory.md`,
+  });
+  const asked: (string | undefined)[] = [];
+  const { silo, builder } = await setup((rpc) =>
+    looseRpc(async (req) => {
+      if (req.method === "getProjectAgent") {
+        asked.push(req.runId);
+        return view(req.runId);
+      }
+      if (req.method === "getRunLog") return [];
+      return rpc(req);
+    }),
+  );
+  const { put } = await builder.buildAll(silo.projectId);
+  const agent = decode(put.find((b) => b.kind === "agent")) as AgentSnapshot;
+  expect(asked.sort()).toEqual(["run-old", "run-older", undefined].sort());
+  expect(agent.view.batches.map((b) => b.id)).toEqual(["b-run-now"]);
+  expect(Object.keys(agent.pastBatches ?? {}).sort()).toEqual(["run-old", "run-older"]);
+  expect(agent.pastBatches?.["run-old"]?.map((b) => b.id)).toEqual(["b-run-old"]);
+  expect(JSON.stringify(agent).includes(AGENT_DIR)).toBe(false);
+});
+
 test("the current run of the agent leaves without its local paths", async () => {
   const run = {
     id: "run-now",

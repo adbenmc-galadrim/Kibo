@@ -1,4 +1,4 @@
-import type { Page, ProjectAgentView, RunLogEntry } from "@kibo/schema";
+import type { Batch, Page, ProjectAgentView, RunLogEntry } from "@kibo/schema";
 import { z } from "zod";
 
 export const SnapshotKind = z.union([
@@ -13,5 +13,9 @@ export type ProjectsIndex = {
   viewer: string;
   projects: { id: string; name: string; key: string; icon: string | null; pages: Page[] }[];
 };
-export type AgentSnapshot = { view: ProjectAgentView; logs: Record<string, RunLogEntry[]> };
+export type AgentSnapshot = {
+  view: ProjectAgentView;
+  logs: Record<string, RunLogEntry[]>;
+  pastBatches?: Record<string, Batch[]>;
+};
 export type ImageSnapshot = { mime: string; bytes: string };

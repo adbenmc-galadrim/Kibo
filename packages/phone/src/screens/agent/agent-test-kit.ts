@@ -157,5 +157,20 @@ export function siloAgentSnapshot(batch: Batch = lotSeven()): AgentSnapshot {
       pa6: exchange("Où en est le sprint S41 ?", SPRINT_ANSWER, SPRINT_S41_AT),
       pa5: exchange("Qui relancer chez Silo SA ?", "Silo SA doit répondre à Q14.", RELANCES_AT),
     },
+    pastBatches: {
+      pa6: [
+        lotSeven({
+          id: "b6",
+          runId: "pa6",
+          sessionId: "s-pa6",
+          seq: 6,
+          createdAt: SPRINT_S41_AT + 2 * MIN,
+          status: "applied",
+          decidedBy: { kind: "human", ref: "adam" },
+          decidedAt: SPRINT_S41_AT + 3 * MIN,
+          chosen: [1, 2, 3],
+        }),
+      ],
+    },
   };
 }

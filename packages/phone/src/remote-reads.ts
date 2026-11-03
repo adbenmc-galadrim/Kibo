@@ -34,11 +34,11 @@ const project = async (r: SnapshotReader, projectId: string) =>
 const agent = async (r: SnapshotReader, projectId: string) =>
   authenticatedJson<AgentSnapshot>(await r.open(projectId, "agent"));
 
-function agentView({ view }: AgentSnapshot, runId: string | undefined): ProjectAgentView {
+function agentView({ view, pastBatches }: AgentSnapshot, runId: string | undefined): ProjectAgentView {
   if (runId === undefined || runId === view.session?.runId) return view;
   const session = view.past.find((s) => s.runId === runId);
   if (!session) throw new KiboError("NOT_FOUND", `project agent session ${runId} not found`);
-  return { ...view, session, run: null, batches: view.batches.filter((b) => b.runId === runId) };
+  return { ...view, session, run: null, batches: pastBatches?.[runId] ?? [] };
 }
 
 function countByStatus(snapshot: ProjectSnapshot): ProjectSummary["counts"] {

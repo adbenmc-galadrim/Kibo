@@ -1,5 +1,6 @@
 import { type AgentSnapshot, INDEX_PROJECT_ID, type ProjectsIndex, type SnapshotKind } from "@kibo/remote";
 import {
+  type Batch,
   isArchived,
   type ProjectSnapshot,
   type RpcRequest,
@@ -62,8 +63,11 @@ async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnap
   const logs: AgentSnapshot["logs"] = {};
   for (const runId of new Set(runIds))
     logs[runId] = (await rpc({ method: "getRunLog", runId })).map(withoutLocalPaths);
+  const pastBatches: Record<string, Batch[]> = {};
+  for (const { runId } of view.past)
+    pastBatches[runId] = (await rpc({ method: "getProjectAgent", projectId, runId })).batches;
   const run = view.run && { ...view.run, workspace: null, cwd: null, transcriptPath: null };
-  return { view: { ...view, run, memoryPath: "" }, logs };
+  return { view: { ...view, run, memoryPath: "" }, logs, pastBatches };
 }
 
 function imageContents(deps: BuilderDeps, snapshot: ProjectSnapshot): Content[] {

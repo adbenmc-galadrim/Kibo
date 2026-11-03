@@ -132,6 +132,8 @@ test("past sessions are listed and openable (runId from the blob)", async () => 
   expect(rows[0]?.textContent).toContain("en cours");
   fireEvent.click(within(list).getByRole("button", { name: /Point de sprint S41/ }));
   expect(await screen.findByText(SPRINT_ANSWER)).toBeTruthy();
+  expect(screen.getByRole("region", { name: "Lot n° 6" }).textContent).toContain("Appliqué");
+  expect(screen.queryByRole("region", { name: "Lot n° 7" })).toBeNull();
   expect(screen.queryByText(/F3 est livrée/)).toBeNull();
   expect(screen.getByText(/Ancien agent/)).toBeTruthy();
   expect(screen.queryByRole("textbox", { name: "Message à l'agent de projet" })).toBeNull();
