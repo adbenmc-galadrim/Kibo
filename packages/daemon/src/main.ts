@@ -6,7 +6,7 @@ import { KiboError } from "@kibo/schema";
 import { sandboxPortFor } from "./components/daemon-info";
 import { cliStatus, installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
-import { answerWakeGraceFromArg } from "./daemon-options";
+import { answerWakeGraceFromArg, remoteUrlFrom } from "./daemon-options";
 import { parseIntegrationFlags } from "./integrations/bootstrap";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
@@ -30,6 +30,7 @@ const { values } = parseArgs({
     "memory-secrets": { type: "boolean", default: false },
     "answer-wake-grace-ms": { type: "string" },
     "t3-bin": { type: "string" },
+    "remote-url": { type: "string" },
   },
 });
 const port = Number(values.port);
@@ -60,6 +61,7 @@ const failStart = (e: unknown): never => {
   process.stdout.write(reuseLines(e.running, token));
   process.exit(REUSED_EXIT_CODE);
 };
+const remoteOption = (remoteUrl: string | undefined) => (remoteUrl === undefined ? {} : { remoteUrl });
 const logBuffer = createLogBuffer();
 logBuffer.install(console);
 const redactor = createRedactor();
@@ -92,6 +94,7 @@ const daemon = await Promise.resolve()
       logBuffer,
       answerWakeGraceMs: answerWakeGraceFromArg(values["answer-wake-grace-ms"]),
       ...(values["t3-bin"] !== undefined && { t3Bin: values["t3-bin"] }),
+      ...remoteOption(remoteUrlFrom(values["remote-url"], process.env)),
     }),
   )
   .catch(failStart);

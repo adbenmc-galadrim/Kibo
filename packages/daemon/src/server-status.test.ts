@@ -35,3 +35,11 @@ test("phase 10 codes map to HTTP statuses", () => {
     PROJECT_FOLDER_NOT_FOUND: 404,
   });
 });
+
+test("phone access codes map to HTTP statuses", () => {
+  expect(STATUS).toMatchObject({
+    REMOTE_PAIRING_INVALID: 400,
+    REMOTE_DISABLED: 409,
+    REMOTE_TOO_LARGE: 413,
+  });
+});

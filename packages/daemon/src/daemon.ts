@@ -19,6 +19,8 @@ import { startProjectAgent } from "./project-agent/bootstrap";
 import { projectAgentSource } from "./project-agent/definition";
 import { startWakeup } from "./project-agent/wakeup/bootstrap";
 import { questionImageFiles } from "./questions/question-images-port";
+import { DEFAULT_REMOTE_URL, startRemote } from "./remote/bootstrap";
+import { dispatchRpc, type RpcExtension } from "./rpc-extensions";
 import type { Orchestrator } from "./runs/orchestrator";
 import { startServer } from "./server";
 import { createService } from "./service";
@@ -142,25 +144,41 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       return { cores: host.cores, ramGb: host.ramGb, hostSlots: host.hostSlots };
     },
   });
+  const handlers = [admin.handler];
+  const extensions: RpcExtension[] = [
+    backupsRpc(local.backups),
+    app.rpc,
+    ...tracking.rpc,
+    t3.rpc,
+    declareRefRpc(service),
+    deliveryStepRpc({
+      docs: service.docs,
+      runs: () => ready(agents, "INTERNAL", "agents are not ready").state().runs,
+      now: Date.now,
+    }),
+    projectAgent.agent.rpc,
+    projectAgent.plan.rpc,
+  ];
+  const remote = startRemote({
+    store,
+    secrets: integrations.secrets,
+    defaultUrl: opts.remoteUrl ?? DEFAULT_REMOTE_URL,
+    dispatch: (req, ctx) => dispatchRpc(service, extensions, req, ctx, handlers),
+    readImage: questionImages.read,
+    onChange: (listener) => service.onChange(listener),
+    onProjectRemoved: (listener) => service.docs.onProjectRemoved(listener),
+    now: Date.now,
+    log: (line) => console.error(line),
+    redact: redactor.redact,
+  });
+  front.push(() => remote.stop());
+  extensions.push(remote.rpc);
   const server = startServer({
     service,
     code,
     token,
     sessions: openSessionStore(store.db),
-    extensions: [
-      backupsRpc(local.backups),
-      app.rpc,
-      ...tracking.rpc,
-      t3.rpc,
-      declareRefRpc(service),
-      deliveryStepRpc({
-        docs: service.docs,
-        runs: () => ready(agents, "INTERNAL", "agents are not ready").state().runs,
-        now: Date.now,
-      }),
-      projectAgent.agent.rpc,
-      projectAgent.plan.rpc,
-    ],
+    extensions,
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
@@ -173,7 +191,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [admin.handler],
+    handlers,
   });
   front.push(() => server.stop());
   uiPort = server.port;

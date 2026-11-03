@@ -19,6 +19,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@kibo/remote-server": "workspace:*",
     "fast-check": "4.3.0"
   }
 }
