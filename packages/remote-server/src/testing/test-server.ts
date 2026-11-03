@@ -1,7 +1,6 @@
 import { MacMessage, PhoneEvent, type SealedRequest, ServerMessage } from "@kibo/remote/protocol";
 import { z } from "zod";
 import { openDb } from "../db";
-import { createPairTokens, type Redemption } from "../pair-tokens";
 import { createSession } from "../phone-sessions";
 import { type RemoteServerOptions, serveRemote } from "../server";
 import { fakeWebauthn } from "./fake-webauthn";
@@ -17,7 +16,6 @@ export type TestServer = {
   advance(ms: number): void;
   registerMac(macToken?: string): Promise<{ macToken: string; accountId: string }>;
   phoneCookie(): string;
-  redeemPairToken(pairToken: string): Redemption;
   pause(): Promise<void>;
   resume(): void;
   stop(): Promise<void>;
@@ -74,7 +72,6 @@ export async function startTestServer(
     },
     registerMac,
     phoneCookie: () => `kibo_phone=${createSession(db, now())}`,
-    redeemPairToken: (pairToken) => createPairTokens(db, now).redeem(pairToken),
     pause: async () => {
       if (running) await server.stop();
       running = false;

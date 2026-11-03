@@ -142,7 +142,15 @@ test("remote.createPairing returns a kibo1. code whose decoded rootKey equals th
   const decoded = decodePairingCode(pairing.code);
   expect(decoded.rootKey).toEqual(keychainRoot(r));
   expect(decoded.accountId).toBe(accountOf(r));
-  expect(r.server.redeemPairToken(decoded.pairToken)).toBe("ok");
+  const pairOptions = (pairToken: string) =>
+    fetch(`${r.server.url}/api/phone/pair/options`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: TEST_ORIGIN },
+      body: JSON.stringify({ accountId: decoded.accountId, pairToken }),
+    });
+  expect((await pairOptions(decoded.pairToken)).status).toBe(200);
+  const refused = await pairOptions("AAAAAAAAAAAAAAAAAAAAAA");
+  expect(await refused.json()).toMatchObject({ ok: false, error: { code: "REMOTE_PAIRING_INVALID" } });
   expect(await status(r)).toMatchObject({ phonePaired: true });
 });
 
