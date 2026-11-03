@@ -31,6 +31,18 @@ Le script choisit le paquet de ta distribution (`.deb` avec `apt`, `.rpm` avec `
 Depuis les sources, avec [Bun](https://bun.sh) : `bun install` puis `bun run start`.
 <!-- release-end -->
 
+## Sur ton téléphone
+
+Kibo se suit depuis l'iPhone par `https://kibo.shinseo.fr`. Le Mac s'y connecte (aucun port ouvert sur le Mac) et n'envoie que des données chiffrées : le serveur ne peut pas les lire, la clé ne vit que sur le Mac et le téléphone. Mac éteint, le téléphone garde le dernier état en lecture seule.
+
+1. **Active l'accès sur le Mac** : Paramètres › Téléphone, adresse du serveur `https://kibo.shinseo.fr`, puis le **code d'installation** du serveur (celui posé dans Coolify, saisi une seule fois) et « Activer l'accès ».
+2. **Choisis les projets** à envoyer : tous sont désactivés au départ.
+3. **Installe l'application sur l'écran d'accueil** : ouvre `https://kibo.shinseo.fr` dans Safari, Partager › « Sur l'écran d'accueil ». Utilise toujours cette application, pas l'onglet Safari : Safari efface au bout de 7 jours sans visite les données d'un site non installé, clé comprise.
+4. **Appaire depuis l'application installée** : sur le Mac, Paramètres › Téléphone › « Appairer un téléphone » affiche un QR code valable 10 min. Dans l'application, scanne-le ou colle le code, puis touche « Appairer ».
+5. **Crée la passkey** : Face ID (ou le code de l'iPhone) est demandé ; sans lui, l'appairage échoue. Les connexions suivantes passent par la même passkey.
+
+Pour couper l'accès : Paramètres › Téléphone › « Révoquer le téléphone », ou « Désactiver l'accès », qui déconnecte le Mac et révoque le téléphone. Un téléphone perdu ou remplacé s'appaire de nouveau depuis le Mac, qui renvoie tout.
+
 ## L'accès au trousseau sur macOS
 
 Kibo range tes jetons (GitHub, Figma, Penpot) dans le trousseau de macOS, qui n'autorise que l'application qui les a créés. Une release construite sans le certificat de signature reste signée ad hoc : macOS la voit comme une nouvelle application et redemande l'accès après chaque mise à jour.

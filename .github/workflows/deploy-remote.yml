@@ -1,0 +1,25 @@
+name: deploy-remote
+on:
+  release: { types: [published] }
+  workflow_dispatch:
+permissions: { contents: read }
+concurrency: { group: deploy-remote, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+      COOLIFY_REMOTE_UUID: ${{ vars.COOLIFY_REMOTE_UUID }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+    steps:
+      - name: Déclenche le déploiement Coolify
+        shell: bash
+        run: |
+          for name in COOLIFY_URL COOLIFY_REMOTE_UUID COOLIFY_TOKEN; do
+            if [ -z "${!name}" ]; then echo "$name is not set" >&2; exit 1; fi
+          done
+          response=$(curl --silent --show-error --fail-with-body --request POST \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_REMOTE_UUID&force=false")
+          echo "$response" | jq .
