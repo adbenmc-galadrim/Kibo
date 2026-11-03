@@ -1,8 +1,9 @@
-import { shellFiles, strategyFor } from "./sw-policy";
+import { cacheName, shellFiles, staleCaches, strategyFor } from "./sw-policy";
 
 declare let self: ServiceWorkerGlobalScope;
+declare const KIBO_BUILD_ID: string;
 
-const CACHE = "kibo-phone-shell";
+const CACHE = cacheName(KIBO_BUILD_ID);
 const MANIFEST = "/.vite/manifest.json";
 const SHELL = "/index.html";
 
@@ -28,7 +29,12 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((names) => Promise.all(staleCaches(names, CACHE).map((name) => caches.delete(name))))
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener("fetch", (event) => {

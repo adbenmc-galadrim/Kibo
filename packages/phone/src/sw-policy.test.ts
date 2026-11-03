@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { shellFiles, strategyFor } from "./sw-policy";
+import { cacheName, shellFiles, staleCaches, strategyFor } from "./sw-policy";
 
 const ORIGIN = "https://kibo.example";
 const at = (path: string) => new URL(path, ORIGIN);
@@ -35,4 +35,12 @@ test("the shell lists the entry, its css and static imports, never the service w
       "/manifest.webmanifest",
     ].sort(),
   );
+});
+
+test("each build has its own cache and activation drops every other one", () => {
+  expect(cacheName("lq3x9a")).toBe("kibo-phone-lq3x9a");
+  expect(staleCaches(["kibo-phone-old", "kibo-phone-lq3x9a", "other"], "kibo-phone-lq3x9a")).toEqual([
+    "kibo-phone-old",
+    "other",
+  ]);
 });

@@ -23,3 +23,8 @@ export function shellFiles(manifest: Record<string, ManifestChunk>): string[] {
   visit(SHELL_ENTRY);
   return [...files];
 }
+
+export const cacheName = (buildId: string): string => `kibo-phone-${buildId}`;
+
+export const staleCaches = (names: string[], current: string): string[] =>
+  names.filter((name) => name !== current);
