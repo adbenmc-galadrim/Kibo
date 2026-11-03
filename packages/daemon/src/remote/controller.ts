@@ -126,6 +126,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     createPairing: withReady(async () => {
       assertOnline();
       if (settings.read().phonePaired) await revoke();
+      await pusher.idle();
       const { pairToken, expiresAt } = await link.pairToken(PAIR_WAIT_MS);
       const { accountId } = settings.read();
       const rootKey = link.rootKey();

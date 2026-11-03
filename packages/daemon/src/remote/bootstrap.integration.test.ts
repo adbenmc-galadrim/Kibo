@@ -154,6 +154,27 @@ test("remote.createPairing returns a kibo1. code whose decoded rootKey equals th
   expect(await status(r)).toMatchObject({ phonePaired: true });
 });
 
+async function indexOpensWith(r: Rig, code: string): Promise<number> {
+  const decoded = decodePairingCode(code);
+  const res = await fetch(`${r.server.url}/api/phone/snapshot?projectId=_&kind=projects`, {
+    headers: { cookie: r.server.phoneCookie() },
+  });
+  expect(res.status).toBe(200);
+  const index = Sealed.parse(await res.json());
+  const keys = await deriveKeys(decoded.rootKey, decoded.accountId, index.header.keyEpoch);
+  await openSnapshot(keys, index);
+  return index.header.keyEpoch;
+}
+
+test("the index of the current epoch is on the server when a pairing code is returned, also after a re-pairing", async () => {
+  const r = await rig();
+  await enable(r);
+  const first = (await r.rpc({ method: "remote.createPairing" })) as { code: string };
+  expect(await indexOpensWith(r, first.code)).toBe(1);
+  const second = (await r.rpc({ method: "remote.createPairing" })) as { code: string };
+  expect(await indexOpensWith(r, second.code)).toBe(2);
+});
+
 test("enabling a project pushes its blocks and disabling it removes them from the server", async () => {
   const r = await rig();
   const silo = await seedSilo(r.launched);
