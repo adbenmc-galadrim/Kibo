@@ -1,5 +1,6 @@
-import { Bot, ChevronDown, ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { AgentHeaderButton } from "./agent/AgentHeaderButton";
 
 type HeaderProps = {
   project: { name: string; color: string } | null;
@@ -47,19 +48,7 @@ export function Header({ project, page, pending, onPick, onAgent, onBack }: Head
           /
         </span>
         <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{page}</span>
-        <button
-          type="button"
-          aria-label={pending > 0 ? fr.header.agentPending(pending) : fr.header.agent}
-          onClick={onAgent}
-          className="flex h-11 shrink-0 items-center gap-2 rounded-lg border border-(--tracking-border) px-3"
-        >
-          <Bot aria-hidden size={18} className="text-(--tracking-brand)" />
-          {pending > 0 ? (
-            <span className="rounded-[9px] bg-(--tracking-brand-btn) px-1.5 font-mono text-[11px] font-semibold leading-[18px] text-white tabular-nums">
-              {pending}
-            </span>
-          ) : null}
-        </button>
+        <AgentHeaderButton pending={pending} onOpen={onAgent} />
       </div>
     </header>
   );

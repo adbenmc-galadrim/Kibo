@@ -6,6 +6,7 @@ import type { Presence, RemoteClient } from "../remote-client";
 import type { PhoneTab, Route } from "../route";
 import { useAgentPendingCount } from "../use-agent-count";
 import type { Navigate } from "../use-route";
+import { AgentScreen } from "./agent/AgentScreen";
 import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
@@ -81,46 +82,57 @@ function ProjectShell({
   return (
     <PhoneHost projectId={route.projectId} navigate={navigate}>
       <div className="flex h-dvh flex-col bg-(--tracking-bg) text-(--tracking-fg)">
-        <Header
-          project={project}
-          page={page}
-          pending={pending}
-          onPick={() => setPicking(true)}
-          onAgent={() => navigate({ name: "agent", projectId: route.projectId })}
-          onBack={back}
-        />
-        <OfflineBand presence={presence} />
-        <main
-          className={`min-h-0 flex-1 overscroll-contain ${tab === "graph" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
-        >
-          {tab === "graph" ? (
-            <GraphScreen
-              projectId={route.projectId}
-              client={client}
-              writable={presence.macOnline && presence.phoneOnline}
+        {route.name === "agent" ? (
+          <AgentScreen
+            projectId={route.projectId}
+            projectName={project?.name ?? ""}
+            presence={presence}
+            onBack={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+          />
+        ) : (
+          <>
+            <Header
+              project={project}
+              page={page}
+              pending={pending}
+              onPick={() => setPicking(true)}
+              onAgent={() => navigate({ name: "agent", projectId: route.projectId })}
+              onBack={back}
             />
-          ) : null}
-          {tab === "questions" ? (
-            <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
-              <QuestionsScreen client={client} projectId={route.projectId} />
-            </Suspense>
-          ) : null}
-          {route.name === "ticket" ? (
-            <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
-              <TicketScreen
-                client={client}
-                projectId={route.projectId}
-                ticketId={route.ticketId}
-                presence={presence}
-                onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
-              />
-            </Suspense>
-          ) : null}
-          {tab && tab !== "graph" && tab !== "questions" ? (
-            <TabPlaceholder projectId={route.projectId} tab={tab} />
-          ) : null}
-        </main>
-        {route.name === "agent" ? null : <TabBar projectId={route.projectId} active={tab} />}
+            <OfflineBand presence={presence} />
+            <main
+              className={`min-h-0 flex-1 overscroll-contain ${tab === "graph" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
+            >
+              {tab === "graph" ? (
+                <GraphScreen
+                  projectId={route.projectId}
+                  client={client}
+                  writable={presence.macOnline && presence.phoneOnline}
+                />
+              ) : null}
+              {tab === "questions" ? (
+                <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
+                  <QuestionsScreen client={client} projectId={route.projectId} />
+                </Suspense>
+              ) : null}
+              {route.name === "ticket" ? (
+                <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
+                  <TicketScreen
+                    client={client}
+                    projectId={route.projectId}
+                    ticketId={route.ticketId}
+                    presence={presence}
+                    onDeleted={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+                  />
+                </Suspense>
+              ) : null}
+              {tab && tab !== "graph" && tab !== "questions" ? (
+                <TabPlaceholder projectId={route.projectId} tab={tab} />
+              ) : null}
+            </main>
+            <TabBar projectId={route.projectId} active={tab} />
+          </>
+        )}
         <Toasts client={client} />
         {picking ? (
           <ProjectPicker

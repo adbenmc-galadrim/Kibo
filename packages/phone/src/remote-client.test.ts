@@ -111,6 +111,33 @@ test("getProjectAgent and getRunLog come from the agent blob", async () => {
   expect(api.calls).toEqual([]);
 });
 
+test("getProjectAgent with the runId of a past session serves that session from the agent blob", async () => {
+  const past = (runId: string) => ({
+    projectId: "silo",
+    runId,
+    sessionId: `s-${runId}`,
+    startedAt: 1,
+    closedAt: 2,
+    lastTurnAt: 2,
+    title: "Point de sprint S41",
+    messages: 6,
+  });
+  const current = { ...past("pa7"), closedAt: null, title: "Fais le point du jour" };
+  const view = { session: current, run: null, batches: [], past: [past("pa6")], memoryPath: "" };
+  putBlob(api, await sealJson(keys, "silo", "agent", { view, logs: {} }));
+  await client.sync();
+  expect(await client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "pa7" })).toEqual(view);
+  expect(await client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "pa6" })).toEqual({
+    ...view,
+    session: past("pa6"),
+    run: null,
+    batches: [],
+  });
+  await expect(
+    client.rpc({ method: "getProjectAgent", projectId: "silo", runId: "gone" }),
+  ).rejects.toMatchObject({ code: "NOT_FOUND" });
+});
+
 test("componentCall data.get/set/keys are served from instance-data (localStorage)", async () => {
   const call = (c: Parameters<typeof client.rpc>[0] extends infer R ? R : never) => client.rpc(c);
   await call({

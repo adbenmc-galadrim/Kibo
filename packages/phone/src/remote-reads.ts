@@ -3,6 +3,8 @@ import {
   type CiRun,
   type ComponentCall,
   DEFAULT_COMPONENT_SETTINGS,
+  KiboError,
+  type ProjectAgentView,
   type ProjectEvent,
   type ProjectEventPage,
   type ProjectSnapshot,
@@ -31,6 +33,13 @@ const project = async (r: SnapshotReader, projectId: string) =>
   authenticatedJson<ProjectSnapshot>(await r.open(projectId, "project"));
 const agent = async (r: SnapshotReader, projectId: string) =>
   authenticatedJson<AgentSnapshot>(await r.open(projectId, "agent"));
+
+function agentView({ view }: AgentSnapshot, runId: string | undefined): ProjectAgentView {
+  if (runId === undefined || runId === view.session?.runId) return view;
+  const session = view.past.find((s) => s.runId === runId);
+  if (!session) throw new KiboError("NOT_FOUND", `project agent session ${runId} not found`);
+  return { ...view, session, run: null, batches: view.batches.filter((b) => b.runId === runId) };
+}
 
 function countByStatus(snapshot: ProjectSnapshot): ProjectSummary["counts"] {
   const counts: Record<string, number> = Object.fromEntries(snapshot.workflow.map((s) => [s.id, 0]));
@@ -142,7 +151,7 @@ export async function serveLocally(deps: ReadDeps, req: RpcRequest): Promise<Ser
     case "listCiRuns":
       return { value: await listCiRuns(r, req.projectId, req.ticketId) };
     case "getProjectAgent":
-      return { value: (await agent(r, req.projectId)).view };
+      return { value: agentView(await agent(r, req.projectId), req.runId) };
     case "getRunLog":
       return { value: await runLog(r, req.runId) };
     case "t3.status":

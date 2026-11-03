@@ -6,6 +6,7 @@
 @source "../../../components/questions/src";
 @source "../../ui/src/ticket";
 @source "../../ui/src/shell";
+@source "../../ui/src/project-agent";
 
 @font-face {
   font-family: "Geist";
