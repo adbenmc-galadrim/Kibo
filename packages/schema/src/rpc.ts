@@ -15,6 +15,7 @@ import type { ProjectMeta } from "./project";
 import { PROJECT_AGENT_RPC, type ProjectAgentRpcResult } from "./project-agent-rpc";
 import type { Question } from "./question";
 import type { QuestionRecipient } from "./question-recipient";
+import { REMOTE_RPC, type RemoteRpcResult } from "./remote-rpc";
 import { CORE_RPC, type CoreRpcResult } from "./rpc-core";
 import type { Rule } from "./rule";
 import type { RunChanged } from "./run";
@@ -83,6 +84,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...TRACKING_RPC,
   ...PLAN_RPC,
   ...T3_RPC,
+  ...REMOTE_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -93,7 +95,8 @@ export type RpcResult = CoreRpcResult &
   ProjectAgentRpcResult &
   TrackingRpcResult &
   PlanRpcResult &
-  T3RpcResult;
+  T3RpcResult &
+  RemoteRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

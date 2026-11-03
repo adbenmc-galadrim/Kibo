@@ -210,6 +210,9 @@
         "@kibo/schema": "workspace:*",
         "zod": "3.25.76",
       },
+      "devDependencies": {
+        "fast-check": "4.3.0",
+      },
     },
     "packages/schema": {
       "name": "@kibo/schema",

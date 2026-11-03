@@ -85,6 +85,7 @@ export * from "./question-history";
 export * from "./question-image";
 export * from "./question-label";
 export * from "./question-recipient";
+export * from "./remote-rpc";
 export * from "./rpc";
 export * from "./rule";
 export * from "./run";

@@ -50,6 +50,13 @@ describe("integration contracts", () => {
     }
   });
 
+  test("the remote secrets are the root key and the mac token only", () => {
+    for (const ok of ["remote", "remote:server"]) expect(SecretNameSchema.safeParse(ok).success).toBe(true);
+    for (const ko of ["remote:tls", "remote:other", "remote:server:X", "remotes"]) {
+      expect(SecretNameSchema.safeParse(ko).success).toBe(false);
+    }
+  });
+
   test("the former system secret names are refused", () => {
     for (const ko of ["sync:device", "market:publisher", "remote:tls"]) {
       expect(SecretNameSchema.safeParse(ko).success).toBe(false);
@@ -68,6 +75,20 @@ describe("integration contracts", () => {
     });
     expect(ComponentManifest.safeParse(manifest("mcp:ctx:API_KEY")).success).toBe(true);
     expect(ComponentManifest.safeParse(manifest("sync:device")).success).toBe(false);
+  });
+
+  test("a component cannot declare the remote secrets", () => {
+    const manifest = (name: string) => ({
+      id: "burndown",
+      version: "0.1.0",
+      kind: "widget",
+      title: "Burndown",
+      reads: [],
+      writes: [],
+      secrets: [{ name, hosts: ["api.example.com"] }],
+    });
+    expect(ComponentManifest.safeParse(manifest("remote")).success).toBe(false);
+    expect(ComponentManifest.safeParse(manifest("remote:server")).success).toBe(false);
   });
 
   test("github issue refs expose pending, linked and broken", () => {

@@ -76,3 +76,10 @@ describe("envelopes", () => {
     ).toBe(true);
   });
 });
+
+test("the envelope modules never import the cipher", async () => {
+  for (const file of ["protocol.ts", "snapshot-kinds.ts"]) {
+    const source = await Bun.file(new URL(file, import.meta.url)).text();
+    expect(source).not.toMatch(/from "\.\/(crypto|pairing-code|base64url)"/);
+  }
+});

@@ -9,7 +9,7 @@ import {
   GRID_COLUMNS,
   MAX_GRID_ROWS,
 } from "./format";
-import { GITHUB_SECRET_HOSTS, SecretNameSchema } from "./integrations";
+import { GITHUB_SECRET_HOSTS, isRemoteSecretName, SecretNameSchema } from "./integrations";
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
 
@@ -61,6 +61,10 @@ export const ComponentManifest = z.object({
         .refine((s) => s.name !== "github" || s.hosts.every((h) => GITHUB_SECRET_HOSTS.includes(h)), {
           message: "INVALID_MANIFEST: the github secret is reserved to api.github.com and uploads.github.com",
           path: ["hosts"],
+        })
+        .refine((s) => !isRemoteSecretName(s.name), {
+          message: "INVALID_MANIFEST: the remote secrets are reserved to the daemon",
+          path: ["name"],
         }),
     )
     .default([]),

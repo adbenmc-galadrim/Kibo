@@ -15,8 +15,10 @@ export const McpServerId = z.string().regex(/^[a-z0-9-]{1,32}$/);
 const RESERVED_MCP_IDS: readonly string[] = ["figma"];
 const EnvName = z.string().regex(/^[A-Z_][A-Z0-9_]{0,63}$/);
 
-const SECRET_NAME = /^(github|figma|penpot|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?$/;
-export type SecretName = `${"github" | "mcp" | "figma" | "penpot"}${"" | `:${string}`}`;
+const SECRET_NAME =
+  /^(?:(github|figma|penpot|mcp)(:[a-z0-9-]{1,32}(:[A-Z_][A-Z0-9_]{0,63})?)?|remote(:server)?)$/;
+export type SecretName = `${"github" | "mcp" | "figma" | "penpot" | "remote"}${"" | `:${string}`}`;
+export const isRemoteSecretName = (name: string): boolean => name === "remote" || name.startsWith("remote:");
 export const SecretNameSchema = z.custom<SecretName>(
   (v) => typeof v === "string" && SECRET_NAME.test(v),
   "invalid secret name",
