@@ -15,13 +15,13 @@ const DOT_BG: Record<Exclude<StepTone, "todo">, string> = {
 
 export const RING_CLASS = "rounded-full border-[1.5px] border-(--tracking-dim)";
 
-const GIT_ICON: Record<GitMark["kind"], LucideIcon> = {
+export const GIT_ICON: Record<GitMark["kind"], LucideIcon> = {
   merged: GitMerge,
   pr: GitPullRequest,
   branch: GitBranch,
 };
 
-const GIT_TEXT: Record<GitMark["tone"], string> = {
+export const GIT_TEXT: Record<GitMark["tone"], string> = {
   green: "text-(--tracking-green)",
   purple: "text-(--tracking-purple)",
   amber: "text-(--tracking-amber)",
@@ -29,17 +29,21 @@ const GIT_TEXT: Record<GitMark["tone"], string> = {
   dim: "text-(--tracking-dim)",
 };
 
-function StepDot({ tone }: { tone: StepTone }) {
+export function StepDot({ tone, className }: { tone: StepTone; className?: string }) {
   return (
     <span
       aria-hidden
       data-tone={tone}
-      className={cn("size-2.5 shrink-0", tone === "todo" ? RING_CLASS : cn("rounded-full", DOT_BG[tone]))}
+      className={cn(
+        "size-2.5 shrink-0",
+        tone === "todo" ? RING_CLASS : cn("rounded-full", DOT_BG[tone]),
+        className,
+      )}
     />
   );
 }
 
-function HoldMark({ hold }: { hold: OnHold }) {
+export function HoldMark({ hold }: { hold: OnHold }) {
   const label =
     hold.source === "own" ? fr.sprints.hold.own(hold.reason) : fr.sprints.hold.dependency(hold.key);
   return (
@@ -64,14 +68,14 @@ const REVEAL_CLASS =
 
 const TITLE_ROOM_CLASS = "group-hover/step:pr-[120px] group-focus-within/step:pr-[120px]";
 
-const activeThread = (step: LaneStep): T3Thread | null =>
+export const activeThread = (step: LaneStep): T3Thread | null =>
   step.thread !== null && isActiveT3Status(step.thread.status) ? step.thread : null;
 
-function StepThreadPill({ thread }: { thread: T3Thread }) {
+export function StepThreadPill({ thread }: { thread: T3Thread }) {
   return <ThreadPill thread={thread} now={useMinuteClock()} />;
 }
 
-const rowBorder = (step: LaneStep): string => {
+export const stepRowBorder = (step: LaneStep): string => {
   const thread = activeThread(step);
   if (thread !== null)
     return thread.status === "waiting" ? "border-(--tracking-amber)" : "border-(--tracking-brand-line)";
@@ -87,7 +91,7 @@ export function FrameStepRow({ step, onOpen, project = null }: Props) {
     <li
       data-session={step.session ? "true" : undefined}
       data-startable={step.startable ? "true" : undefined}
-      className={cn("group/step relative h-7 rounded-[6px] border bg-(--tracking-card)", rowBorder(step))}
+      className={cn("group/step relative h-7 rounded-[6px] border bg-(--tracking-card)", stepRowBorder(step))}
     >
       <button
         type="button"

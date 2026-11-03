@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "../../sdk/src/theme.css";
 @source "./";
+@source "../../../components/graph/src";
+@source "../../sdk/src/t3";
 
 @font-face {
   font-family: "Geist";
@@ -43,6 +45,13 @@
   --tracking-brand-text: #c2410c;
   --tracking-red: #dc2626;
   --tracking-amber: #d97706;
+  --tracking-blue: #2563eb;
+  --tracking-purple: #9333ea;
+  --tracking-green: #16a34a;
+  --tracking-amber-soft: #fffbeb;
+  --tracking-hold: #0e7490;
+  --tracking-canvas: #fafafa;
+  --tracking-frame: #ffffff;
 }
 
 .dark {
@@ -65,6 +74,13 @@
   --tracking-brand-text: #fb923c;
   --tracking-red: #fc9494;
   --tracking-amber: #fbbf24;
+  --tracking-blue: #7fb5fb;
+  --tracking-purple: #cfa1fd;
+  --tracking-green: #4ade80;
+  --tracking-amber-soft: #3d3930;
+  --tracking-hold: #22d3ee;
+  --tracking-canvas: #242427;
+  --tracking-frame: #2a2a2e;
 }
 
 html,

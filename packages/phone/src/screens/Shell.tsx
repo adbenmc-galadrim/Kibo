@@ -6,6 +6,7 @@ import type { Presence, RemoteClient } from "../remote-client";
 import type { PhoneTab, Route } from "../route";
 import { useAgentPendingCount } from "../use-agent-count";
 import type { Navigate } from "../use-route";
+import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
@@ -84,7 +85,15 @@ function ProjectShell({
         />
         <OfflineBand presence={presence} />
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {tab ? <TabPlaceholder projectId={route.projectId} tab={tab} /> : null}
+          {tab === "graph" ? (
+            <GraphScreen
+              projectId={route.projectId}
+              client={client}
+              writable={presence.macOnline && presence.phoneOnline}
+            />
+          ) : tab ? (
+            <TabPlaceholder projectId={route.projectId} tab={tab} />
+          ) : null}
         </main>
         {route.name === "agent" ? null : <TabBar projectId={route.projectId} active={tab} />}
         <Toasts client={client} />
