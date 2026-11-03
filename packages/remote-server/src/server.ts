@@ -11,6 +11,7 @@ import { createPasskeys } from "./passkeys";
 import { createPhoneHub } from "./phone-hub";
 import { phoneRoute } from "./phone-routes";
 import { revokePhone } from "./phone-sessions";
+import { createRateLimit, LOGIN_OPTIONS_POLICY } from "./rate-limit";
 import { createRelay } from "./relay";
 import { createSnapshotStore } from "./snapshots";
 import { createStatic } from "./static";
@@ -57,6 +58,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
     now,
     account,
     pairTokens,
+    loginLimit: createRateLimit(db, "login-options", LOGIN_OPTIONS_POLICY, now),
     passkeys: createPasskeys(db, now),
     challenges: createChallenges(db, now),
     webauthn: opts.webauthn ?? createWebauthn({ rpId: opts.rpId, origin: opts.origin }),

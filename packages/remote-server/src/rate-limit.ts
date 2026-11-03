@@ -2,13 +2,14 @@ import type { Database } from "bun:sqlite";
 
 type RateLimitPolicy = { maxFailures: number; windowMs: number; blockMs: number };
 
-type RateLimit = {
+export type RateLimit = {
   blocked(): boolean;
   fail(): boolean;
   succeed(): void;
 };
 
 export const AUTH_POLICY: RateLimitPolicy = { maxFailures: 5, windowMs: 10 * 60_000, blockMs: 5 * 60_000 };
+export const LOGIN_OPTIONS_POLICY: RateLimitPolicy = { maxFailures: 20, windowMs: 60_000, blockMs: 60_000 };
 
 type Row = { failures: number; window_start: number; blocked_until: number };
 

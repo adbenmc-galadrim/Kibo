@@ -15,6 +15,7 @@ export const sessionCookie = (token: string) =>
 export const clearedCookie = () => `${PHONE_COOKIE}=; ${COOKIE_ATTRIBUTES}; Max-Age=0`;
 
 export function createSession(db: Database, now: number): string {
+  db.run("DELETE FROM phone_sessions WHERE expires_at <= ?", [now]);
   const token = randomToken(SESSION_TOKEN_BYTES);
   db.run("INSERT INTO phone_sessions (token_hash, created_at, renewed_at, expires_at) VALUES (?, ?, ?, ?)", [
     sha256(token),

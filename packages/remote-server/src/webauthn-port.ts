@@ -19,9 +19,7 @@ export type WebauthnPort = {
     response: RegistrationResponseJSON;
     expectedChallenge: string;
   }): Promise<StoredPasskey>;
-  authenticationOptions(input: {
-    allowCredentialIds: string[];
-  }): Promise<PublicKeyCredentialRequestOptionsJSON>;
+  authenticationOptions(): Promise<PublicKeyCredentialRequestOptionsJSON>;
   verifyAuthentication(input: {
     response: AuthenticationResponseJSON;
     expectedChallenge: string;

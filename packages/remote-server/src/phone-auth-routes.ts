@@ -7,6 +7,7 @@ import { readJson } from "./http";
 import type { PairTokens } from "./pair-tokens";
 import type { Passkeys } from "./passkeys";
 import { clearedCookie, createSession, endSession, sessionCookie } from "./phone-sessions";
+import type { RateLimit } from "./rate-limit";
 import {
   AuthenticationResponse,
   challengeOf,
@@ -23,6 +24,7 @@ const LoginVerify = z.object({ response: AuthenticationResponse });
 
 export type PhoneAuthDeps = {
   db: Database;
+  loginLimit: RateLimit;
   now(): number;
   account: Account;
   pairTokens: PairTokens;
@@ -76,7 +78,9 @@ async function pairVerify(req: Request, deps: PhoneAuthDeps): Promise<Response> 
 }
 
 async function loginOptions(deps: PhoneAuthDeps): Promise<Response> {
-  const options = await deps.webauthn.authenticationOptions({ allowCredentialIds: deps.passkeys.ids() });
+  if (deps.loginLimit.blocked()) throw new KiboError("RATE_LIMITED", "too many sign-in attempts");
+  deps.loginLimit.fail();
+  const options = await deps.webauthn.authenticationOptions();
   deps.challenges.issue(options.challenge, "login");
   return Response.json(options);
 }
@@ -94,6 +98,7 @@ async function loginVerify(req: Request, deps: PhoneAuthDeps): Promise<Response>
   });
   const token = deps.db.transaction(() => {
     deps.passkeys.use(credentialId, counter);
+    deps.loginLimit.succeed();
     return createSession(deps.db, deps.now());
   })();
   return signedIn(token);

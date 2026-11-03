@@ -8,21 +8,23 @@ import {
 import type { WebauthnPort } from "./webauthn-port";
 
 const RP_NAME = "Kibo";
-const USER_VERIFICATION = "preferred";
+const USER_VERIFICATION = "required";
+const FAILED = "passkey verification failed";
 
 type RelyingParty = { rpId: string; origin: string };
+
+const refused = (reason: unknown): never => {
+  console.error(`[kibo-remote] ${FAILED}`, reason);
+  throw new KiboError("UNAUTHORIZED", FAILED);
+};
 
 async function verified<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (e) {
-    throw new KiboError("UNAUTHORIZED", `passkey verification failed: ${e instanceof Error ? e.message : e}`);
+    return refused(e);
   }
 }
-
-const refused = (): never => {
-  throw new KiboError("UNAUTHORIZED", "passkey verification failed");
-};
 
 export function createWebauthn({ rpId, origin }: RelyingParty): WebauthnPort {
   return {
@@ -43,17 +45,17 @@ export function createWebauthn({ rpId, origin }: RelyingParty): WebauthnPort {
           expectedChallenge,
           expectedOrigin: origin,
           expectedRPID: rpId,
-          requireUserVerification: false,
+          requireUserVerification: true,
         }),
       );
-      if (!result.verified) return refused();
+      if (!result.verified) return refused("registration not verified");
       const { id, publicKey, counter } = result.registrationInfo.credential;
       return { credentialId: id, publicKey, counter };
     },
-    authenticationOptions: ({ allowCredentialIds }) =>
+    authenticationOptions: () =>
       generateAuthenticationOptions({
         rpID: rpId,
-        allowCredentials: allowCredentialIds.map((id) => ({ id })),
+        allowCredentials: [],
         userVerification: USER_VERIFICATION,
       }),
     verifyAuthentication: async ({ response, expectedChallenge, passkey }) => {
@@ -68,10 +70,10 @@ export function createWebauthn({ rpId, origin }: RelyingParty): WebauthnPort {
             publicKey: new Uint8Array(passkey.publicKey),
             counter: passkey.counter,
           },
-          requireUserVerification: false,
+          requireUserVerification: true,
         }),
       );
-      if (!result.verified) return refused();
+      if (!result.verified) return refused("assertion not verified");
       return {
         credentialId: result.authenticationInfo.credentialID,
         counter: result.authenticationInfo.newCounter,

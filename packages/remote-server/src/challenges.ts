@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 
 const CHALLENGE_TTL_MS = 5 * 60_000;
-const MAX_LIVE_CHALLENGES = 64;
+const MAX_LIVE_PER_PURPOSE = 64;
 
 export type ChallengePurpose = "pair" | "login";
 
@@ -21,9 +21,9 @@ export function createChallenges(db: Database, now: () => number): Challenges {
         now() + CHALLENGE_TTL_MS,
       ]);
       db.run(
-        `DELETE FROM webauthn_challenges WHERE rowid NOT IN
-           (SELECT rowid FROM webauthn_challenges ORDER BY expires_at DESC, rowid DESC LIMIT ?)`,
-        [MAX_LIVE_CHALLENGES],
+        `DELETE FROM webauthn_challenges WHERE purpose = ? AND rowid NOT IN
+           (SELECT rowid FROM webauthn_challenges WHERE purpose = ? ORDER BY expires_at DESC, rowid DESC LIMIT ?)`,
+        [purpose, purpose, MAX_LIVE_PER_PURPOSE],
       );
     },
     consume: (challenge, purpose) => {

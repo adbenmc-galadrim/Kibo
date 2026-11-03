@@ -30,15 +30,20 @@ export function createPasskeys(db: Database, now: () => number): Passkeys {
         .map((row) => row.credential_id),
     find,
     add: ({ credentialId, publicKey, counter }) => {
-      db.run(
-        "INSERT OR REPLACE INTO passkeys (credential_id, public_key, counter, created_at) VALUES (?, ?, ?, ?)",
-        [credentialId, publicKey, counter, now()],
-      );
+      db.run("INSERT INTO passkeys (credential_id, public_key, counter, created_at) VALUES (?, ?, ?, ?)", [
+        credentialId,
+        publicKey,
+        counter,
+        now(),
+      ]);
     },
     use: (credentialId, counter) => {
       const stored = find(credentialId);
-      if (!stored || isReplay(stored.counter, counter))
-        throw new KiboError("UNAUTHORIZED", "passkey counter did not increase");
+      if (!stored) throw new KiboError("UNAUTHORIZED", "passkey verification failed");
+      if (isReplay(stored.counter, counter)) {
+        console.error(`[kibo-remote] passkey counter went from ${stored.counter} to ${counter}`);
+        throw new KiboError("UNAUTHORIZED", "passkey verification failed");
+      }
       db.run("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE credential_id = ?", [
         counter,
         now(),
