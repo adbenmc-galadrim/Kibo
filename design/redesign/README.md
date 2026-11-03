@@ -553,8 +553,8 @@ Spec §52 et inventaire écran par écran du plan de la phase 35. Données : pro
 `scripts/70-phase-35-telephone.js`, chargé après `01-base`, `02-data` et `90-export` (il ne dépend d'aucun autre script). Le Graphe
 reprend la maquette validée par Adam le 2026-11-02 : sprints en colonnes, la suivante dépassant sur le bord, cadres en pointillés.
 
-Page « Phase 35 · Téléphone » : vingt boards `P35 · …` de 390 × 844, sombre à x = 0 (palette §51, `S.PAL35.dark`), clair à x = 490
-(redessiné avec `S.PAL35.light`, plus rapide et plus sûr qu'un clone recoloré), rangées de 1 000 px.
+Page « Phase 35 · Téléphone » : vingt-huit boards `P35 · …` de 390 × 844, sombre à x = 0 (palette §51, `S.PAL35.dark`), clair à x = 490
+(redessiné avec `S.PAL35.light`, plus rapide et plus sûr qu'un clone recoloré), rangées de 1 000 px. Toute action fait au moins 44 pt de haut (voir `cotes.md`).
 
 | Board | Contenu | Export |
 |---|---|---|
@@ -568,6 +568,10 @@ Page « Phase 35 · Téléphone » : vingt boards `P35 · …` de 390 × 844, so
 | P35 · Agent de projet | conversation plein écran, lot n° 7 (Valider, Refuser, Commenter), saisie | `proposition-p35-agent` |
 | P35 · Appairage | scanner intégré, « Coller le code », « Appairer » | `proposition-p35-appairage` |
 | P35 · Mac éteint | fiche SILO-46 en lecture seule, lancement refusé sans mise en attente | `proposition-p35-mac-eteint` |
+| P35 · Kanban, appui long | feuille du bas de SILO-45 : Déplacer vers…, Lancer dans T3, Bloquer…, Mettre en attente…, Retirer | `proposition-p35-kanban-menu` |
+| P35 · Graphe, légende et sprints | feuille du bas : filtre par sprint, statuts, bordures et segments | `proposition-p35-graphe-legende` |
+| P35 · Fiche ticket, suite et menu | fiche défilée (étiquettes, liens, questions, sous-tickets, mise en attente) et menu « ⋯ » avec Supprimer | `proposition-p35-fiche-suite` |
+| P35 · Dashboard, suite | Prochaine à finir, Échéances, Activité | `proposition-p35-dashboard-suite` |
 
 Dessin : `await storage.drawP35(clé, "dark" | "light")` (clés `S.KEYS35`, trois à cinq par appel) ; export :
 `await storage.exportP35([clés])` ⇒ `exports/proposition-p35-<clé>-<dark|light>.png` à l'échelle 2 (780 × 1 688). Cotes : section

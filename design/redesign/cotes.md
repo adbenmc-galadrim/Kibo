@@ -26465,13 +26465,15 @@ Tokens sombres (spec §51, `--tracking-*` de `packages/ui/src/index.css`) : `bg`
 | Bloc | Position | Taille | Détail |
 |---|---|---|---|
 | Barre d'état (zone sûre haute) | y 0 | 390 × 47 | « 14:52 » 15/600, marges 0 28 0 36 |
-| En-tête | y 47 | 390 × 52 | marges 0 12 0 16, espacement 8 ; pastille du projet 8 px `#14B8A6`, « Silo » 15/600 + chevron 14 (sélecteur de projet), « / » `faint`, page 15/600 ; bouton de l'agent 36 px de haut, bordure `border`, rayon 8, icône `bot` 18 `brand`, compteur « 3 » 11/600 mono blanc sur `brandBtn`, rayon 9 ; trait de 1 px `border` dessous |
+| En-tête | y 47 | 390 × 52 | marges 0 12 0 16, espacement 8 ; pastille du projet 8 px `#14B8A6`, « Silo » 15/600 + chevron 14 (sélecteur de projet), « / » `faint`, page 15/600 ; bouton de l'agent 44 px de haut, bordure `border`, rayon 8, icône `bot` 18 `brand`, compteur « 3 » 11/600 mono blanc sur `brandBtn`, rayon 9 ; trait de 1 px `border` dessous |
 | Bande « Mac éteint » | y 100 | 390 × 32 | fond `muted`, marges 0 16, icône `wifiOff` 13 `dim`, « Mac éteint · dernier état à 14:52 » 12,5/500 `mfg` ; trait de 1 px dessous |
-| Barre d'outils du Graphe | sous l'en-tête (ou la bande) | 390 × 56 | sélecteur segmenté (fond `muted`, marge 3, rayon 9 ; segment de 32 px, marges 0 12, rayon 7, actif `bg` + bordure `border`, 13/500, icônes `box` et `pr` 14) ; boutons carrés de 36 px « Tout voir » et « Légende » (rayon 8, bordure `border`, icône 16) |
+| Barre d'outils du Graphe | sous l'en-tête (ou la bande) | 390 × 56 | sélecteur segmenté de 44 px (fond `muted`, marge 3, rayon 9 ; segment de 38 px, marges 0 12, rayon 7, actif `bg` + bordure `border`, 13/500, icônes `box` et `pr` 14) ; boutons carrés de 44 px « Tout voir » et « Légende » (rayon 8, bordure `border`, icône 16) |
 | Barre d'onglets | y 754 | 390 × 90 | trait de 1 px `border` + onglets de **56 px** (55 + trait), cinq cellules de 78 px : icône 22 (trait 2 actif, 1,75 sinon) et libellé 11 sur une ligne (600 `fg` actif, 500 `dim` sinon), espacement 4 ; **zone sûre de 34 px** avec barre d'accueil 134 × 5, rayon 3, `fg`, à 8 px du bas |
 | Ordre des onglets | | | Graphe (`graph`), Kanban (`kanban`), Planning (`sprint`), Questions (`question`), Dashboard (`dashboard`) |
 
 Pas de **8 px** : marges, espacements et hauteurs des blocs sont des multiples de 8 (4 pour les espacements internes des puces).
+
+**Cibles tactiles de 44 pt minimum** : tout bouton, sélecteur, segment, filtre, ligne d'étape, ligne de menu (48), champ et bouton d'icône mesure au moins 44 px de haut (`S.TAP35`, `S.btn35`). Les petites icônes d'action posées dans un bloc (« ⋯ » et « + » des cartes et colonnes du Kanban, copie de la clé, croix d'un lien, envoi rond de 32 px dans la saisie, « Modifier ») gardent leur dessin mais ont une **zone de toucher de 44 × 44 pt** centrée sur l'icône ; une carte, une ligne d'étape ou une question se touche en entier.
 
 ### Graphe (colonnes de sprint)
 
@@ -26479,18 +26481,27 @@ Pas de **8 px** : marges, espacements et hauteurs des blocs sont des multiples d
 - Colonne de sprint : **334 px (86 % de 390)**, espacement 16 entre colonnes ; la colonne suivante commence à x 366 et **dépasse de 24 px** sur le bord droit.
 - En-tête de colonne : code « S42 » Geist Mono 12,5/600 + nom 15/600 (espacement 6), sous-titre 12,5 `mfg` (« se termine aujourd'hui », « prévu · 19 → 23 oct. ») ; 12 px avant le premier cadre, 12 px entre cadres.
 - Cadre de fonctionnalité : **bordure pointillée de 1 px** `border` (intérieure), fond `frame`, rayon 10, marges 12, espacement 8. Ligne méta : clé « F4 » mono 12 `dim`, compteur « 3/5 » mono 12 `mfg`, `circleCheck` 14 `green` si livrée ; titre 15/600 sur toute la largeur ; segments de 5 px, rayon 1, espacement 3, largeur partagée (fait `fg`, review `purple`, en cours `blue`, bloqué `red`, à faire `track`).
-- Étape : 40 px de haut (cible tactile), marges 0 12, espacement 10, rayon 8, fond `card`, bordure 1 `border` ; pastille de statut 8 (anneau pour À faire) ; titre 13/500 (`dim` si terminée) ; icône 15 à droite (`merge` `green`, `pr` `purple`, `branch` `blue`). **Étape active** (session T3) : bordure `brand` et point `brand` de 6 px ; **démarrable** : bordure `green`.
+- Étape : 44 px de haut (cible tactile), marges 0 12, espacement 10, rayon 8, fond `card`, bordure 1 `border` ; pastille de statut 8 (anneau pour À faire) ; titre 13/500 (`dim` si terminée) ; icône 15 à droite (`merge` `green`, `pr` `purple`, `branch` `blue`). **Étape active** (session T3) : bordure `brand` et point `brand` de 6 px ; **démarrable** : bordure `green`.
 
 ### Autres écrans
 
 | Écran | Repères |
 |---|---|
 | Graphe, PRs | compteur 12,5 `mfg` ; piles en cadres pointillés (rayon 10, marges 12) ; PR en carte de 2 lignes (rayon 8, marges 10 12), bordure `red` si changements demandés, `brand` si session ; « sur feat/… » 11,5 mono `dim` entre deux PR ; rail « dev · branche de base » 28 px sur `muted` |
-| Kanban | barre de filtres de 56 px qui défile en largeur (segmenté + « Étiquette : toutes ») ; colonne de **332 px (85 %)**, marges 8, rayon 12, fond `panel`, espacement 16 ; carte : marges 12 14, rayon 10, titre 14/500, puce « T3 » `brandSoft` si session, un seul signal (changements > CI), « Étape n/12 » en pilule mono |
+| Kanban | barre de filtres de 64 px (segments et boutons de 44) qui défile en largeur (segmenté + « Étiquette : toutes ») ; colonne de **332 px (85 %)**, marges 8, rayon 12, fond `panel`, espacement 16 ; carte : marges 12 14, rayon 10, titre 14/500, puce « T3 » `brandSoft` si session, un seul signal (changements > CI), « Étape n/12 » en pilule mono |
 | Planning | barre d'outils en deux lignes (résumé 12,5 `mfg` ; « Fonctionnalité », « Sprint », « En cours : 2 / 2 ») ; colonne de sprint de 334 px, courante bordée `mfg`, alerte ambre ; carte de fonctionnalité avec poignée `grip`, segments, « n/m étapes » et étape suivante en `brandText` |
 | Dashboard | pile de 358 px, marges 16 : identité (22/600), tuile Fonctionnalités en pleine largeur, puis tuiles de 171 px en grille de deux (espacement 16), « Livrée aujourd'hui », carte du sprint, « En ce moment » |
 | Questions | « + » (Nouvelle question) dans l'en-tête ; segmenté Ouvertes / Répondues / Toutes / Archivées ; filtres « Pour », « Ticket » et bouton Exporter (copie) ; carte de question rayon 10, dépliée bordée `mfg` avec champ de 84 px (bordure `input`), « Répondre », « Marquer envoyée », « ⋯ » |
-| Fiche ticket | plein écran : en-tête 52 px (retour « Kanban », clé mono + copie, « ⋯ ») ; titre 22/600 ; sélecteurs de 36 px ; bandeau PR de 44 px ; bouton « Lancer dans T3 » pleine largeur ; onglets Détails / Activité ; lignes de suivi de 36 px |
+| Fiche ticket | plein écran : en-tête 52 px (retour « Kanban », clé mono + copie, « ⋯ ») ; titre 22/600 ; sélecteurs de 44 px ; bandeau PR de 44 px ; bouton « Lancer dans T3 » pleine largeur de 44 px ; onglets Détails / Activité ; lignes de suivi de 36 px (lecture seule) |
 | Agent de projet | plein écran sans onglets : en-tête 52 px (retour, `agentMark` 28, « Agent de projet · Silo », sessions passées) ; bulle d'Adam 240 px ; lot n° 7 sur `brandSoft` bordé `brandLine`, cases cochées `brandBtn`, « Valider (3) », « Refuser », « Commenter » ; saisie de 44 px, rayon 22, envoi rond 32 px `brandBtn` ; zone sûre 34 |
 | Appairage | sans en-tête de projet ni onglets ; scanner 342 × 300, rayon 16, fond `#0E0E10`, repères d'angle blancs de 34 × 4, ligne de visée `#F97316` ; champ « Coller le code » de 44 px ; « Appairer » pleine largeur |
 | Mac éteint | fiche SILO-46 avec la bande ; sélecteurs à 50 % d'opacité sur `muted` ; « Lancer dans T3 · indisponible, Mac éteint » (variante `soft`, 60 %) ; « Modifier » `faint` ; toast de 64 px à 16 px au-dessus des onglets : « Mac éteint : lancement refusé », « Rien n'est mis en attente. Réessaie Mac allumé. » |
+
+### Correctif 1 : boards ajoutés
+
+| Board | Repères |
+|---|---|
+| Kanban, appui long | Kanban voilé (`#000000` à 60 % en sombre, 40 % en clair) ; feuille du bas, rayon 16 en haut, fond `bg`, poignée 36 × 5 ; titre « SILO-45 Conflits de saisie » de 44 px ; lignes de menu de 48 px (icône 18, libellé 15/500) : Déplacer vers… (« En review », chevron), Lancer dans T3 (icône `brand`), Ouvrir la fiche, Copier la clé, Bloquer… (« avec un motif »), Mettre en attente…, Retirer (`red`) ; zone sûre 34 |
+| Graphe, légende et sprints | Graphe voilé ; feuille « Légende et sprints » + « OK » ; filtre par sprint en puces de 44 px (rayon 22 ; active `fg` sur fond inversé) : Tous, S41, S42, S43, S44, À planifier ; statuts (À faire, En cours, En review, Bloqué, Terminé, En attente `hold`) ; bordures : session T3 (`brand` + point), démarrable (`green`), en retard (`red`), cadre pointillé ; segments fait · review · en cours · à faire |
+| Fiche ticket, suite et menu | fiche SILO-45 défilée : Description, Étiquettes (« Ajouter une étiquette »), Liens et dépendances (« requise par SILO-46 Démo client », ligne de 44 px), Questions 0 (« Poser une question »), Sous-tickets 0, Mise en attente (« Mettre en attente… ») ; menu « ⋯ » ouvert (264 px, rayon 12, fond `card`, ombre) : Lancer dans T3, Copier /full-delivery SILO-45, Copier le lien, Mettre en attente…, Supprimer le ticket (`red`) |
+| Dashboard, suite | Prochaine à finir (F4 3/5, SILO-45 « changements demandés », SILO-46, « Lancer SILO-45 dans T3 » de 44 px) ; Échéances en liste de 44 px par fonctionnalité (sprint mono 600 et note : « finit ce soir », « glisse en S43 » `amber`, « bloquée · Q14 » `red`) ; Activité en lignes de 44 px (14:51, 14:40, 14:36, 13:47) |
