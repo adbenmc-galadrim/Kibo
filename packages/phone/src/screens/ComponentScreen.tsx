@@ -8,6 +8,7 @@ import { instanceFor } from "../instance-of";
 import type { RemoteClient } from "../remote-client";
 import { useProjectSnapshot } from "../use-project";
 import { useViewer } from "../use-viewer";
+import { presenceWrites } from "../write-block";
 
 function useSameContent<T>(value: T): T {
   const kept = useRef(value);
@@ -53,6 +54,7 @@ function Mounted({
               origin: ref.origin ?? null,
             }),
           openView: (componentId) => host.openView(componentId),
+          writes: presenceWrites(client),
         },
         "builtin",
       ),

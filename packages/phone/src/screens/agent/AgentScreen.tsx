@@ -11,8 +11,9 @@ import { fr } from "../../i18n/fr";
 import { frAgent } from "../../i18n/fr-agent";
 import type { Presence } from "../../remote-client";
 import { useProjectSnapshot } from "../../use-project";
+import { canWrite } from "../../write-block";
 import { OfflineBand } from "../OfflineBand";
-import { AgentCompose, isWritable, PastSessionBar } from "./AgentCompose";
+import { AgentCompose, PastSessionBar } from "./AgentCompose";
 import { AgentSessions } from "./AgentSessions";
 
 type ScreenProps = { projectId: string; projectName: string; presence: Presence; onBack(): void };
@@ -88,7 +89,7 @@ function AgentConversationPane({
           <ConversationView
             items={chat.items}
             status={chat.status}
-            readOnly={chat.readOnly || !isWritable(presence)}
+            readOnly={chat.readOnly || !canWrite(presence)}
             labels={chat.labels}
             onTicket={chat.openTicket}
             onRetry={chat.retry}

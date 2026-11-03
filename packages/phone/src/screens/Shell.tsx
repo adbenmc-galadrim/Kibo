@@ -6,6 +6,7 @@ import type { Presence, RemoteClient } from "../remote-client";
 import type { PhoneTab, Route } from "../route";
 import { useAgentPendingCount } from "../use-agent-count";
 import type { Navigate } from "../use-route";
+import { canWrite } from "../write-block";
 import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { lazyScreen } from "./lazy-screen";
@@ -110,11 +111,7 @@ function ProjectShell({
               className={`min-h-0 flex-1 overscroll-contain ${tab === "graph" ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`}
             >
               {tab === "graph" ? (
-                <GraphScreen
-                  projectId={route.projectId}
-                  client={client}
-                  writable={presence.macOnline && presence.phoneOnline}
-                />
+                <GraphScreen projectId={route.projectId} client={client} writable={canWrite(presence)} />
               ) : null}
               {tab === "questions" ? <QuestionsScreen client={client} projectId={route.projectId} /> : null}
               {route.name === "ticket" ? (

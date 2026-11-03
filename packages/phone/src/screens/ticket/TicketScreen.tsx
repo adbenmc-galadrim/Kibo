@@ -5,6 +5,7 @@ import { frTicket } from "../../i18n/fr-ticket";
 import type { Connectivity, RemoteClient } from "../../remote-client";
 import { useProjectSnapshot } from "../../use-project";
 import { useViewer } from "../../use-viewer";
+import { canWrite } from "../../write-block";
 import { TicketActions } from "./TicketActions";
 
 type Props = {
@@ -18,7 +19,7 @@ type Props = {
 const MUTED = "p-4 text-[15px] text-(--tracking-mfg)";
 
 export function TicketScreen({ client, projectId, ticketId, presence, onDeleted }: Props) {
-  const editable = presence.macOnline && presence.phoneOnline;
+  const editable = canWrite(presence);
   const host = useHost();
   const project = useProjectSnapshot(projectId);
   const { viewer, failed } = useViewer(client);

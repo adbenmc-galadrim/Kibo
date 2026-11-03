@@ -113,3 +113,17 @@ test("the export copies the text without a clipboard API and marks the questions
     if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
   }
 });
+
+test("Mac off, the answer form is greyed with the reason", async () => {
+  const fixture = await phoneFixture({ connectivity: { macOnline: false, phoneOnline: true } });
+  await sealQuestions(fixture);
+  render(<App runtime={fixture.runtime} />);
+  const row = await screen.findByRole("article", { name: Q14 });
+  const toggle = row.querySelector("button[aria-expanded]");
+  if (toggle instanceof HTMLElement && toggle.getAttribute("aria-expanded") === "false")
+    await userEvent.setup().click(toggle);
+  const reply = await within(row).findByRole("button", { name: "Répondre" });
+  expect(reply.hasAttribute("disabled")).toBe(true);
+  expect(reply.title).toBe("Mac éteint");
+  expect(screen.getByRole("button", { name: "Nouvelle question" }).hasAttribute("disabled")).toBe(true);
+});

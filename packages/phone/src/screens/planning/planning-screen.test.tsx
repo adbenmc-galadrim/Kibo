@@ -62,3 +62,12 @@ test("the planning opens on the current sprint, À planifier stays one swipe bac
     Element.prototype.scrollIntoView = original;
   }
 });
+
+test("Mac off, the planning greys its writes with the reason", async () => {
+  const { runtime } = await siloFixture(undefined, { connectivity: { macOnline: false, phoneOnline: true } });
+  render(<App runtime={runtime} />);
+  await screen.findByRole("region", { name: /^S42 Saisie hors ligne/ });
+  const feature = screen.getByRole("button", { name: "Fonctionnalité" });
+  expect(feature.hasAttribute("disabled")).toBe(true);
+  expect(feature.title).toBe("Mac éteint");
+});

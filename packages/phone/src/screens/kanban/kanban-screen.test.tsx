@@ -193,3 +193,20 @@ test("with T3 not running Lancer dans T3 is greyed and says why", async () => {
   await waitFor(() => expect(launch.hasAttribute("disabled")).toBe(true));
   expect(launch.textContent).toContain("T3 Code n'est pas lancé");
 });
+
+test("Mac off, the board is read-only with the band reason and comes back writable live", async () => {
+  const fixture = await siloFixture(siloSnapshot(), {
+    connectivity: { macOnline: false, phoneOnline: true },
+  });
+  render(<App runtime={fixture.runtime} />);
+  const user = userEvent.setup();
+  const card = await screen.findByRole("article", { name: /Passage à Expo SDK 54/ });
+  expect(card.getAttribute("aria-disabled")).toBe("true");
+  const key = card.getAttribute("data-key") ?? "";
+  await user.click(within(card).getByRole("button", { name: `Actions ${key}` }));
+  const remove = await screen.findByRole("menuitem", { name: /Supprimer….*Mac éteint/ });
+  expect(remove.getAttribute("aria-disabled")).toBe("true");
+  await user.keyboard("{Escape}");
+  act(() => fixture.presence.set({ macOnline: true, phoneOnline: true }));
+  await waitFor(() => expect(card.getAttribute("aria-disabled")).toBe("false"));
+});

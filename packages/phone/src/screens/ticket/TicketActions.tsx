@@ -4,6 +4,7 @@ import { descendantCount, TicketActionsMenu, TicketTopBar } from "@kibo/ui/ticke
 import { Play } from "lucide-react";
 import { frTicket } from "../../i18n/fr-ticket";
 import type { Connectivity } from "../../remote-client";
+import { canWrite } from "../../write-block";
 
 type Props = {
   project: ProjectSnapshot;
@@ -27,7 +28,7 @@ function OfflineLaunch({ presence }: { presence: Connectivity }) {
 }
 
 export function TicketActions({ project, ticket, presence, onDeleted }: Props) {
-  const editable = presence.macOnline && presence.phoneOnline;
+  const editable = canWrite(presence);
   const inbox = isInbox(project.meta.id);
   const launchable = !inbox && ticket.key !== null && !FINAL_STATUSES.includes(ticket.statusId);
   return (

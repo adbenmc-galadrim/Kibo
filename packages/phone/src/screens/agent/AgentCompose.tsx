@@ -3,6 +3,7 @@ import { ArrowLeft, Send } from "lucide-react";
 import { formatClock } from "../../format-time";
 import { frAgent } from "../../i18n/fr-agent";
 import type { Presence } from "../../remote-client";
+import { canWrite } from "../../write-block";
 
 const DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
@@ -53,12 +54,10 @@ type ComposeProps = {
   onSend(text: string): Promise<void>;
 };
 
-export const isWritable = (presence: Presence): boolean => presence.macOnline && presence.phoneOnline;
-
 export function AgentCompose({ presence, placeholder, onSend }: ComposeProps) {
   return (
     <div className="phone-agent-compose pb-[env(safe-area-inset-bottom)]">
-      {isWritable(presence) ? (
+      {canWrite(presence) ? (
         <ComposeBox placeholder={placeholder} onSend={onSend} />
       ) : (
         <OfflineCompose presence={presence} />
