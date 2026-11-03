@@ -2,7 +2,9 @@ import { afterEach, beforeEach, expect, type Mock, spyOn, test } from "bun:test"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "../../App";
+import { putBlob } from "../../fake-server-api";
 import { kanbanInstance, relayedCommands, siloFixture, siloSnapshot } from "../../screen-fixture";
+import { sealJson } from "../../test-kit";
 
 beforeEach(() => {
   localStorage.clear();
@@ -166,3 +168,28 @@ test("Lancer dans T3 from the sheet confirms then relays t3.launch", async () =>
     ),
   );
 }, 15_000);
+
+test("without a linked folder Lancer dans T3 stays in the sheet, greyed with its reason", async () => {
+  touchDevice();
+  const snapshot = siloSnapshot();
+  const { runtime } = await siloFixture({ ...snapshot, meta: { ...snapshot.meta, folder: null } });
+  render(<App runtime={runtime} />);
+  const { sheet } = await openSheet(/Passage à Expo SDK 54/);
+  const launch = within(sheet).getByRole("button", { name: /Lancer dans T3/ });
+  expect(launch.hasAttribute("disabled")).toBe(true);
+  expect(launch.textContent).toContain("Relie le dossier du projet");
+});
+
+test("with T3 not running Lancer dans T3 is greyed and says why", async () => {
+  touchDevice();
+  const fixture = await siloFixture();
+  putBlob(
+    fixture.api,
+    await sealJson(fixture.keys, "silo", "t3", { available: false, reason: "server-down", bin: "t3" }),
+  );
+  render(<App runtime={fixture.runtime} />);
+  const { sheet } = await openSheet(/Passage à Expo SDK 54/);
+  const launch = await within(sheet).findByRole("button", { name: /Lancer dans T3/ });
+  await waitFor(() => expect(launch.hasAttribute("disabled")).toBe(true));
+  expect(launch.textContent).toContain("T3 Code n'est pas lancé");
+});

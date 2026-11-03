@@ -6,7 +6,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { useTouchDevice } from "@kibo/sdk/hooks/use-touch-device";
-import { LaunchDialog } from "@kibo/sdk/t3";
+import { LaunchDialog, useLaunchBlock } from "@kibo/sdk/t3";
 import { type ReactNode, useState } from "react";
 import { CardSheet } from "./CardSheet";
 
@@ -22,7 +22,6 @@ const launchable = (t: TicketView, project: Actions["project"]): boolean =>
   t.startable &&
   t.key !== null &&
   project !== null &&
-  project.hasFolder &&
   !(t.thread !== null && isActiveT3Status(t.thread.status));
 
 export function useCardSheet(actions: Actions): {
@@ -33,13 +32,14 @@ export function useCardSheet(actions: Actions): {
   const [shown, setShown] = useState<TicketView | null>(null);
   const [launching, setLaunching] = useState<string | null>(null);
   const { project } = actions;
+  const blocked = useLaunchBlock(project?.id ?? "", project !== null && !project.hasFolder);
   const element = (
     <>
       {shown && (
         <CardSheet
           ticket={shown}
           statuses={actions.statuses}
-          launchable={launchable(shown, project)}
+          launch={launchable(shown, project) ? { blocked } : null}
           onClose={() => setShown(null)}
           onOpen={() => actions.open(shown)}
           onMove={(id) => actions.move(shown, id)}

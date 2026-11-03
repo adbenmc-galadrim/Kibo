@@ -18,11 +18,23 @@ import { fr } from "./fr";
 const ROW =
   "flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-[15px] hover:bg-muted active:bg-muted";
 
-type RowProps = { icon?: LucideIcon; label: string; hint?: string; tone?: string; onClick(): void };
+type RowProps = {
+  icon?: LucideIcon;
+  label: string;
+  hint?: string | undefined;
+  tone?: string;
+  disabled?: boolean;
+  onClick(): void;
+};
 
-function Row({ icon: Icon, label, hint, tone, onClick }: RowProps) {
+function Row({ icon: Icon, label, hint, tone, disabled = false, onClick }: RowProps) {
   return (
-    <button type="button" className={cn(ROW, tone)} onClick={onClick}>
+    <button
+      type="button"
+      disabled={disabled}
+      className={cn(ROW, tone, "disabled:cursor-not-allowed disabled:opacity-50")}
+      onClick={onClick}
+    >
       {Icon && <Icon absoluteStrokeWidth size={18} aria-hidden className="shrink-0" />}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {hint && <span className="shrink-0 text-[13px] text-muted-foreground">{hint}</span>}
@@ -33,7 +45,7 @@ function Row({ icon: Icon, label, hint, tone, onClick }: RowProps) {
 type Props = {
   ticket: TicketView;
   statuses: Status[];
-  launchable: boolean;
+  launch: { blocked: string | null } | null;
   onClose(): void;
   onOpen(): void;
   onMove(statusId: StatusId): void;
@@ -93,10 +105,12 @@ export function CardSheet(props: Props) {
         </SheetTitle>
         <SheetDescription className="sr-only">{fr.sheet.help}</SheetDescription>
         <MoveRows ticket={ticket} statuses={props.statuses} onMove={(id) => act(() => props.onMove(id))()} />
-        {props.launchable && (
+        {props.launch && (
           <Row
             icon={Terminal}
             label={fr.sheet.launch}
+            hint={props.launch.blocked ?? undefined}
+            disabled={props.launch.blocked !== null}
             tone="[&_svg]:text-(--tracking-brand)"
             onClick={act(props.onLaunch)}
           />
