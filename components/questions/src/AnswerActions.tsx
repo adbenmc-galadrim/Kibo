@@ -1,5 +1,5 @@
 import { isAnswered, type Question, type QuestionAnswer } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
+import { useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Pencil, Undo2 } from "lucide-react";
@@ -11,15 +11,17 @@ const ACTION = "h-6 px-2 text-2xs text-muted-foreground @max-xl:h-11 @max-xl:px-
 
 export function AnswerActionButtons({ question: q, onEdit }: { question: Question; onEdit(): void }) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [reopening, setReopening] = useState(false);
   if (!isAnswered(q) || q.answer === null) return null;
+  const lock = { disabled: blocked !== null, title: blocked ?? undefined };
   return (
     <>
-      <Button variant="ghost" size="sm" className={ACTION} onClick={onEdit}>
+      <Button variant="ghost" size="sm" className={ACTION} {...lock} onClick={onEdit}>
         <Pencil aria-hidden />
         {fr.answerEdit}
       </Button>
-      <Button variant="ghost" size="sm" className={ACTION} onClick={() => setReopening(true)}>
+      <Button variant="ghost" size="sm" className={ACTION} {...lock} onClick={() => setReopening(true)}>
         <Undo2 aria-hidden />
         {fr.answerRemove}
       </Button>

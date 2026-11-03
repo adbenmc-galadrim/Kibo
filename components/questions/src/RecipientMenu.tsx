@@ -1,5 +1,5 @@
 import type { Question, QuestionRecipient } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
+import { useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ type Props = {
 
 export function RecipientMenu({ question, recipients, client, readOnly }: Props) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [failed, setFailed] = useState(false);
   const name = recipientName(recipients, question.recipient, client);
   if (readOnly)
@@ -54,6 +55,8 @@ export function RecipientMenu({ question, recipients, client, readOnly }: Props)
             variant="outline"
             size="sm"
             aria-label={fr.recipients.menu(name)}
+            disabled={blocked !== null}
+            title={blocked ?? undefined}
             className="h-5.5 gap-1 rounded-md px-2 text-xs font-medium @max-xl:h-11 @max-xl:px-3 @max-xl:text-[15px]"
           >
             <UserRound aria-hidden className="size-3" />

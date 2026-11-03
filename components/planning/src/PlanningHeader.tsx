@@ -1,3 +1,4 @@
+import { useWriteBlock } from "@kibo/sdk";
 import { Plus } from "lucide-react";
 import { fr } from "./fr";
 import { OpenLimitBadge } from "./OpenLimitBadge";
@@ -37,8 +38,15 @@ const ADD =
   "flex h-[25px] @max-xl:h-11 items-center gap-1.5 rounded-[6px] border border-(--tracking-border) px-2.5 font-medium text-(--tracking-fg) text-[12px] leading-[15px] hover:bg-(--tracking-hover)";
 
 export function AddButton({ label, title, onClick }: { label: string; title: string; onClick(): void }) {
+  const blocked = useWriteBlock();
   return (
-    <button type="button" title={title} className={ADD} onClick={onClick}>
+    <button
+      type="button"
+      title={blocked ?? title}
+      disabled={blocked !== null}
+      className={`${ADD} disabled:cursor-not-allowed disabled:opacity-50`}
+      onClick={onClick}
+    >
       <Plus absoluteStrokeWidth size={13} aria-hidden />
       {label}
     </button>

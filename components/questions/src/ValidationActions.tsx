@@ -1,4 +1,5 @@
 import { correctionAnswer, type Question, VALIDATION_OPTIONS } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Check, Pencil, Send } from "lucide-react";
@@ -15,8 +16,10 @@ export function ValidationActions({ question }: { question: Question }) {
   const fieldId = useId();
   const [correcting, setCorrecting] = useState(false);
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [sending, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const blocked = useWriteBlock();
+  const busy = sending || blocked !== null;
   const send = async (input: Parameters<typeof answer>[1]) => {
     setBusy(true);
     setFailed(false);

@@ -1,5 +1,5 @@
 import type { Question } from "@kibo/schema";
-import { PageActions, useSdk } from "@kibo/sdk";
+import { PageActions, useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -51,6 +51,7 @@ function exportEntries(data: QuestionsData, ticketId: string | null, recipient: 
 
 export function QuestionsView() {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const data = useQuestions();
   const [scope, setScope] = useState<Scope>(() => configScope(sdk.config.scope));
   const [ticketId, setTicketId] = useState<string | null>(null);
@@ -117,7 +118,12 @@ export function QuestionsView() {
                   entries={toExport}
                 />
               )}
-              <Button className={PAGE_ACTION} onClick={() => setCreating("")}>
+              <Button
+                className={PAGE_ACTION}
+                disabled={blocked !== null}
+                title={blocked ?? undefined}
+                onClick={() => setCreating("")}
+              >
                 <Plus aria-hidden />
                 <span className="@max-xl:sr-only">{fr.newQuestion}</span>
               </Button>

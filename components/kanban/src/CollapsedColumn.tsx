@@ -1,5 +1,5 @@
 import type { Status } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import { StatusDot, useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -9,6 +9,7 @@ import { fr } from "./fr";
 type Props = { status: Status; forbidden: boolean; onAdd?: () => void; ref: Ref<HTMLElement> };
 
 export function CollapsedColumn({ status, forbidden, onAdd, ref }: Props) {
+  const blocked = useWriteBlock();
   return (
     <section
       ref={ref}
@@ -31,6 +32,8 @@ export function CollapsedColumn({ status, forbidden, onAdd, ref }: Props) {
           variant="ghost"
           className="size-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
           aria-label={fr.newTicketIn(status.label)}
+          disabled={blocked !== null}
+          title={blocked ?? undefined}
           onClick={onAdd}
         >
           <Plus absoluteStrokeWidth size={14} className="size-3.5" />

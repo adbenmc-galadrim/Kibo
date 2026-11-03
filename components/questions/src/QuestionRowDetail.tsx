@@ -1,5 +1,5 @@
 import { isAnswered, isArchived, isOpen, type Question, type TicketView } from "@kibo/schema";
-import { AgentBadge, useSdk } from "@kibo/sdk";
+import { AgentBadge, useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Archive, ArchiveRestore, ClipboardPaste, History, Send } from "lucide-react";
@@ -76,6 +76,7 @@ function ArchivedLine({ question: q, now }: { question: Question; now: number })
 
 function RestoreButton({ questionId }: { questionId: string }) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [failed, setFailed] = useState(false);
   const restore = async () => {
     setFailed(false);
@@ -97,6 +98,8 @@ function RestoreButton({ questionId }: { questionId: string }) {
         variant="outline"
         size="sm"
         className="h-6 px-2 text-2xs @max-xl:h-11 @max-xl:px-3.5 @max-xl:text-[15px]"
+        disabled={blocked !== null}
+        title={blocked ?? undefined}
         onClick={() => void restore()}
       >
         <ArchiveRestore aria-hidden />
@@ -129,6 +132,7 @@ function HistoryEntry(props: { question: Question; open: boolean; onToggle(): vo
 
 export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [dialog, setDialog] = useState<"archive" | "remove" | "edit" | null>(null);
   const [editingAnswer, setEditingAnswer] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -146,6 +150,8 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
       variant="outline"
       size="sm"
       className="h-6.5 px-2.5 text-xs font-medium @max-xl:h-11 @max-xl:flex-1 @max-xl:text-[15px]"
+      disabled={blocked !== null}
+      title={blocked ?? undefined}
       onClick={() => setPasting(true)}
     >
       <ClipboardPaste aria-hidden />

@@ -1,5 +1,5 @@
 import { KiboError, type QuestionRecipient } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
+import { useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -68,6 +68,7 @@ function AddRecipient({ onClose }: { onClose(): void }) {
 
 export function RecipientFilters({ recipients, client, counts, value, onChange }: Props) {
   const [adding, setAdding] = useState(false);
+  const blocked = useWriteBlock();
   const count = (id: string) => counts.byRecipient.get(id) ?? 0;
   const shown = recipients
     .filter((r) => r.id === value || count(r.id) > 0)
@@ -100,7 +101,12 @@ export function RecipientFilters({ recipients, client, counts, value, onChange }
             ))}
           </DropdownMenuRadioGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-xs" onSelect={() => setAdding(true)}>
+          <DropdownMenuItem
+            className="text-xs"
+            disabled={blocked !== null}
+            title={blocked ?? undefined}
+            onSelect={() => setAdding(true)}
+          >
             <Plus aria-hidden />
             {fr.recipients.addLabel}
           </DropdownMenuItem>

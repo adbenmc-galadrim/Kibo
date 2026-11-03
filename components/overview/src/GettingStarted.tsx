@@ -1,3 +1,4 @@
+import { useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Check, Copy, Flag, FolderOpen, type LucideIcon, Plus } from "lucide-react";
@@ -18,9 +19,19 @@ const BUTTON =
   "h-[25px] @max-2xl:ml-[30px] @max-2xl:h-11 shrink-0 gap-[6px] rounded-[6px] px-[10px] py-[5px] font-medium text-[12px] shadow-none has-[>svg]:px-[10px]";
 const t = fr.start;
 
-function Action({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick(): void }) {
+type ActionProps = { icon: LucideIcon; label: string; writes?: boolean; onClick(): void };
+
+function Action({ icon: Icon, label, writes = false, onClick }: ActionProps) {
+  const block = useWriteBlock();
+  const blocked = writes ? block : null;
   return (
-    <Button variant="outline" className={BUTTON} onClick={onClick}>
+    <Button
+      variant="outline"
+      className={BUTTON}
+      disabled={blocked !== null}
+      title={blocked ?? undefined}
+      onClick={onClick}
+    >
       <Icon absoluteStrokeWidth size={13} />
       {label}
     </Button>
@@ -93,14 +104,14 @@ export function GettingStarted({ model, projectKey, onNewFeature, onChooseFolder
           done={model.done.folder}
           title={t.folder.title}
           text={t.folder.text}
-          aside={<Action icon={FolderOpen} label={t.folder.choose} onClick={onChooseFolder} />}
+          aside={<Action icon={FolderOpen} label={t.folder.choose} writes onClick={onChooseFolder} />}
         />
         <Step
           step="feature"
           done={model.done.feature}
           title={t.feature.title}
           text={t.feature.text(projectKey)}
-          aside={<Action icon={Plus} label={t.feature.open} onClick={onNewFeature} />}
+          aside={<Action icon={Plus} label={t.feature.open} writes onClick={onNewFeature} />}
         />
         {target !== null && (
           <Step

@@ -1,4 +1,5 @@
 import type { AnswerInput, Question, QuestionAnswer } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Check } from "lucide-react";
@@ -31,8 +32,10 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
   const answer = useAnswer();
   const editing = initial !== undefined;
   const [choice, setChoice] = useState<AnswerForm>(() => formOf(initial));
-  const [busy, setBusy] = useState(false);
+  const [sending, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const blocked = useWriteBlock();
+  const busy = sending || blocked !== null;
   const send = async (form: AnswerForm) => {
     const input = answerFrom(form);
     if (input === null) return;
@@ -119,6 +122,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
           size="sm"
           className={`h-6.5 px-2.5 text-xs font-medium disabled:opacity-100 ${PHONE_ACTION}`}
           disabled={busy || !ready}
+          title={blocked ?? undefined}
         >
           {editing ? fr.save : fr.reply}
         </Button>

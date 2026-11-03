@@ -1,4 +1,5 @@
 import type { SprintView } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
@@ -55,10 +56,11 @@ const limitHolder = (model: PlanningModel): string | null =>
 
 export function PlanningView(props: PlanningViewProps) {
   const { model, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
+  const blocked = useWriteBlock();
   const dropsIn = (columnId: string, own: string | null) =>
     dragged !== null && target === columnId && (own ?? BACKLOG_ID) !== columnId;
   const sprints = model.sprints.map((c) => c.sprint);
-  const menuOf = (c: Card) => cardEntries(c, sprints, props.onPlan);
+  const menuOf = (c: Card) => cardEntries(c, sprints, props.onPlan, blocked);
   const cards = (list: readonly Card[]) =>
     list.map((c) => <FeatureCard key={c.id} card={c} menu={menuOf(c)} onOpen={() => onOpen(c.id)} />);
   const holder = limitHolder(model);

@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { isActiveT3Status, type ProjectInfo, type Status, type StatusId } from "@kibo/schema";
-import { stepTitle, useSdk } from "@kibo/sdk";
+import { stepTitle, useSdk, useWriteBlock } from "@kibo/sdk";
 import { useTouchHold } from "@kibo/sdk/hooks/use-touch-hold";
 import { cn } from "@kibo/sdk/lib/utils";
 import { LaunchInT3Button } from "@kibo/sdk/t3";
@@ -34,7 +34,8 @@ export function KanbanCard(props: Props) {
   const { ticket: t, selected, statuses, onOpen, onMove, onRemove, project = null } = props;
   const sdk = useSdk();
   const hold = useTouchHold(() => props.onHold?.());
-  const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
+  const blocked = useWriteBlock();
+  const sortable = useSortable({ id: t.id, attributes: { role: "article" }, disabled: blocked !== null });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
     sortable.setNodeRef(node);
@@ -53,6 +54,7 @@ export function KanbanCard(props: Props) {
     texts: fr,
     sdk,
     actions: { open: onOpen, move: onMove, remove: onRemove },
+    blocked,
   });
   const menu = (
     <DropdownMenu onOpenChange={setMenuOpen}>

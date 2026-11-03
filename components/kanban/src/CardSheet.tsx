@@ -1,5 +1,5 @@
 import type { Status, StatusId, TicketView } from "@kibo/schema";
-import { deliveryMenuActions, StatusDot, useSdk } from "@kibo/sdk";
+import { deliveryMenuActions, StatusDot, useSdk, useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@kibo/sdk/ui/sheet";
 import {
@@ -18,6 +18,8 @@ import { fr } from "./fr";
 const ROW =
   "flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-[15px] hover:bg-muted active:bg-muted";
 
+const DISABLED = "disabled:cursor-not-allowed disabled:opacity-50";
+
 type RowProps = {
   icon?: LucideIcon;
   label: string;
@@ -29,12 +31,7 @@ type RowProps = {
 
 function Row({ icon: Icon, label, hint, tone, disabled = false, onClick }: RowProps) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={cn(ROW, tone, "disabled:cursor-not-allowed disabled:opacity-50")}
-      onClick={onClick}
-    >
+    <button type="button" disabled={disabled} className={cn(ROW, tone, DISABLED)} onClick={onClick}>
       {Icon && <Icon absoluteStrokeWidth size={18} aria-hidden className="shrink-0" />}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {hint && <span className="shrink-0 text-[13px] text-muted-foreground">{hint}</span>}
@@ -53,16 +50,24 @@ type Props = {
   onRemove(): void;
 };
 
-function MoveRows({ ticket, statuses, onMove }: Pick<Props, "ticket" | "statuses" | "onMove">) {
+type MoveProps = Pick<Props, "ticket" | "statuses" | "onMove"> & { blocked: string | null };
+
+function MoveRows({ ticket, statuses, onMove, blocked }: MoveProps) {
   const [open, setOpen] = useState(false);
   const current = statuses.find((s) => s.id === ticket.statusId)?.label ?? "";
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <>
-      <button type="button" aria-expanded={open} className={ROW} onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        aria-expanded={open}
+        disabled={blocked !== null}
+        className={cn(ROW, DISABLED)}
+        onClick={() => setOpen(!open)}
+      >
         <ArrowRight absoluteStrokeWidth size={18} aria-hidden className="shrink-0" />
         <span className="flex-1">{fr.sheet.moveTo}</span>
-        <span className="text-[13px] text-muted-foreground">{current}</span>
+        <span className="text-[13px] text-muted-foreground">{blocked ?? current}</span>
         <Chevron absoluteStrokeWidth size={16} aria-hidden className="text-muted-foreground" />
       </button>
       {open && (
@@ -86,6 +91,7 @@ function MoveRows({ ticket, statuses, onMove }: Pick<Props, "ticket" | "statuses
 export function CardSheet(props: Props) {
   const { ticket, onClose } = props;
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const act = (run: () => void) => () => {
     onClose();
     run();
@@ -104,7 +110,12 @@ export function CardSheet(props: Props) {
           <span className="min-w-0 truncate">{ticket.title}</span>
         </SheetTitle>
         <SheetDescription className="sr-only">{fr.sheet.help}</SheetDescription>
-        <MoveRows ticket={ticket} statuses={props.statuses} onMove={(id) => act(() => props.onMove(id))()} />
+        <MoveRows
+          ticket={ticket}
+          statuses={props.statuses}
+          blocked={blocked}
+          onMove={(id) => act(() => props.onMove(id))()}
+        />
         {props.launch && (
           <Row
             icon={Terminal}
@@ -124,11 +135,19 @@ export function CardSheet(props: Props) {
           <Row
             icon={Lock}
             label={fr.sheet.block}
-            hint={fr.sheet.blockHint}
+            hint={blocked ?? fr.sheet.blockHint}
+            disabled={blocked !== null}
             onClick={act(() => props.onMove("blocked"))}
           />
         )}
-        <Row icon={X} label={fr.sheet.remove} tone="text-destructive" onClick={act(props.onRemove)} />
+        <Row
+          icon={X}
+          label={fr.sheet.remove}
+          hint={blocked ?? undefined}
+          disabled={blocked !== null}
+          tone="text-destructive"
+          onClick={act(props.onRemove)}
+        />
       </SheetContent>
     </Sheet>
   );

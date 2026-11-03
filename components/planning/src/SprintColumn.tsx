@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import type { SprintPhase } from "@kibo/schema";
 import { STEPS_PER_WEEK } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
@@ -75,6 +76,7 @@ type HeaderProps = { column: Column; onOpen(): void; onEdit?: (() => void) | und
 
 function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
   const { sprint } = column;
+  const blocked = useWriteBlock();
   const started = column.phase !== "upcoming";
   return (
     <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">
@@ -92,8 +94,9 @@ function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
           <button
             type="button"
             aria-label={fr.editSprint}
-            title={fr.editSprint}
-            className="grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] text-(--tracking-dim) hover:text-(--tracking-fg)"
+            title={blocked ?? fr.editSprint}
+            disabled={blocked !== null}
+            className="grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] text-(--tracking-dim) hover:text-(--tracking-fg) disabled:cursor-not-allowed disabled:opacity-50"
             onClick={onEdit}
           >
             <Pencil absoluteStrokeWidth size={14} aria-hidden className="size-[14px]" />

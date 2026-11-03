@@ -1,4 +1,4 @@
-import { useSdk } from "@kibo/sdk";
+import { useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "@kibo/sdk/ui/popover";
 import { Copy, Upload } from "lucide-react";
@@ -113,13 +113,15 @@ type Props = { label: string; recipient: string; summary: string; entries: reado
 
 export function ExportButton({ label, recipient, summary, entries }: Props) {
   const flow = useExportFlow(recipient, entries);
+  const blocked = useWriteBlock();
   return (
     <ExportSurface flow={flow} summary={summary}>
       <Button
         type="button"
         variant="outline"
         className={PAGE_ACTION}
-        disabled={entries.length === 0}
+        disabled={entries.length === 0 || blocked !== null}
+        title={blocked ?? undefined}
         onClick={() => void flow.start()}
       >
         <Upload aria-hidden />
