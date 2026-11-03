@@ -32,7 +32,8 @@ type Props = {
 
 const ALL = "all";
 
-const COUNT = "font-mono text-[11px] font-normal text-muted-foreground @max-[36rem]/toolbar:hidden";
+const COUNT =
+  "font-mono text-[11px] font-normal text-muted-foreground @max-[36rem]/toolbar:hidden @max-xl:inline!";
 
 const isFilter = (value: string): value is KanbanFilterKey => KANBAN_FILTERS.some((f) => f === value);
 
@@ -137,7 +138,7 @@ export function KanbanToolbar(props: Props) {
   const { filters, label, onShowAll, shown, hidden, children } = props;
   const counter = counterText(shown, filters, props.mine);
   return (
-    <header className="@container/toolbar scrollbar-none relative flex h-12 items-center @max-xl:h-16 gap-2 border-b px-4 text-sm @max-xl:overflow-x-auto @max-xl:px-3">
+    <header className="@container/toolbar flex h-12 items-center @max-xl:h-16 gap-2 border-b px-4 text-sm @max-xl:relative @max-xl:overflow-x-auto @max-xl:px-3 @max-xl:scrollbar-none">
       <BoardFilters {...props} />
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}

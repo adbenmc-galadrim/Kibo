@@ -40,6 +40,7 @@ import { RemoveDialog } from "./RemoveDialog";
 import { ToolbarAlerts } from "./ToolbarAlerts";
 import { useBoardView } from "./use-board-view";
 import { useCardMoves } from "./use-card-moves";
+import { useCardSheet } from "./use-card-sheet";
 import { useColumnOrder } from "./use-column-order";
 import { useHeldToast } from "./use-held-toast";
 import { useLabelFilter } from "./use-label-filter";
@@ -125,6 +126,13 @@ export function Kanban() {
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
     else void setStatus(t, statusId);
   };
+  const sheet = useCardSheet({
+    statuses: ordered,
+    project,
+    open: (t) => sdk.openTicket(t.id),
+    move,
+    remove: setRemoving,
+  });
   const onDragStart = (e: DragStartEvent) => setDragged(String(e.active.id));
   const endDrag = () => {
     setDragged(null);
@@ -209,6 +217,7 @@ export function Kanban() {
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}
+                  onHold={sheet.onHold && (() => sheet.onHold?.(t))}
                 />
               ))}
             </KanbanColumn>
@@ -238,6 +247,7 @@ export function Kanban() {
         />
       )}
       {held.toast}
+      {sheet.element}
       {removing && (
         <RemoveDialog
           ticket={removing}

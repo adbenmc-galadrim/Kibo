@@ -23,7 +23,12 @@ const rekeyed = (t: TicketView, key: string): TicketView => ({
 });
 
 export function projectSnapshot(p: ProjectFixture): ProjectSnapshot {
-  const snapshot = createMockSdk(kanban, { seed: p.seed, viewer: "adam", today: SILO_TODAY }).snapshot();
+  const snapshot = createMockSdk(kanban, {
+    seed: p.seed,
+    viewer: "adam",
+    today: SILO_TODAY,
+    folder: `/Users/adam/${p.id}`,
+  }).snapshot();
   return {
     ...snapshot,
     meta: { ...snapshot.meta, id: p.id, key: p.key, name: p.name, color: p.color },

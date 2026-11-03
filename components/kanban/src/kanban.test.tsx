@@ -427,3 +427,13 @@ test("with agent execution hidden, the card menu copies the full-delivery comman
   expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
   await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-1"));
 });
+
+test("on a phone-wide board the filter counts stay visible, the toolbar scroll styles are phone only", async () => {
+  setup();
+  const all = await screen.findByRole("button", { name: "Tous" });
+  const count = all.querySelector("span.font-mono");
+  expect(classes(count)).toContain("@max-xl:inline!");
+  const toolbar = all.closest("header");
+  expect(classes(toolbar)).toEqual(expect.arrayContaining(["@max-xl:relative", "@max-xl:scrollbar-none"]));
+  expect(classes(toolbar)).not.toContain("relative");
+});

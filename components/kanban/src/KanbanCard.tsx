@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { isActiveT3Status, type ProjectInfo, type Status, type StatusId } from "@kibo/schema";
 import { stepTitle, useSdk } from "@kibo/sdk";
+import { useTouchHold } from "@kibo/sdk/hooks/use-touch-hold";
 import { cn } from "@kibo/sdk/lib/utils";
 import { LaunchInT3Button } from "@kibo/sdk/t3";
 import { Button } from "@kibo/sdk/ui/button";
@@ -26,11 +27,13 @@ type Props = CardFacts & {
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
+  onHold?: (() => void) | undefined;
 };
 
 export function KanbanCard(props: Props) {
   const { ticket: t, selected, statuses, onOpen, onMove, onRemove, project = null } = props;
   const sdk = useSdk();
+  const hold = useTouchHold(() => props.onHold?.());
   const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
@@ -95,12 +98,13 @@ export function KanbanCard(props: Props) {
   return (
     <ContextMenu>
       <CardTooltip ticket={t} suppressed={sortable.active !== null || menuOpen}>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger asChild disabled={props.onHold !== undefined}>
           <article
             ref={ref}
             style={style}
             {...attributes}
             {...listeners}
+            {...(props.onHold ? hold : {})}
             tabIndex={attributes.tabIndex}
             aria-label={`${t.keyLabel} ${t.title}`}
             data-key={t.keyLabel}
