@@ -128,8 +128,19 @@ test("a failed sync is tried again when the phone comes back", async () => {
   render(<App runtime={runtime} />);
   await screen.findByText(/Mise à jour impossible/);
   api.snapshot = snapshot;
-  act(() => presence.handlers?.onResume());
-  await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+  const resumed: Promise<void>[] = [];
+  const sync = runtime.client.sync;
+  runtime.client.sync = () => {
+    const done = sync();
+    resumed.push(done);
+    return done;
+  };
+  await act(async () => {
+    presence.handlers?.onResume();
+    await Promise.all(resumed);
+  });
+  expect(resumed).toHaveLength(1);
+  expect(screen.queryByText(/Mise à jour impossible/)).toBeNull();
 });
 
 test("an event socket that never opens with an expired session asks for the passkey", async () => {
