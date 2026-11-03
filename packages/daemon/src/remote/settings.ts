@@ -9,6 +9,7 @@ export type RemoteSettings = {
   keyEpoch: number;
   projects: string[];
   phonePaired: boolean;
+  pendingRevoke: boolean;
 };
 
 export type RemoteSettingsStore = {
@@ -25,6 +26,7 @@ const KEYS = {
   keyEpoch: "remote.keyEpoch",
   projects: "remote.projects",
   phonePaired: "remote.phonePaired",
+  pendingRevoke: "remote.pendingRevoke",
 } as const;
 
 const ProjectList = z.array(z.string().min(1));
@@ -58,6 +60,7 @@ export function openRemoteSettings(store: Pick<Store, "db" | "getLocal" | "setLo
     keyEpoch: parseEpoch(store.getLocal(KEYS.keyEpoch)),
     projects: parseProjects(store.getLocal(KEYS.projects)),
     phonePaired: store.getLocal(KEYS.phonePaired) === "1",
+    pendingRevoke: store.getLocal(KEYS.pendingRevoke) === "1",
   });
   const writeOne = (key: string, value: string | null) => {
     if (value === null) store.db.run("DELETE FROM local_state WHERE key = ?", [key]);
@@ -71,6 +74,7 @@ export function openRemoteSettings(store: Pick<Store, "db" | "getLocal" | "setLo
       if (patch.accountId !== undefined) writeOne(KEYS.accountId, patch.accountId);
       if (patch.keyEpoch !== undefined) writeOne(KEYS.keyEpoch, String(patch.keyEpoch));
       if (patch.phonePaired !== undefined) writeOne(KEYS.phonePaired, flag(patch.phonePaired));
+      if (patch.pendingRevoke !== undefined) writeOne(KEYS.pendingRevoke, flag(patch.pendingRevoke));
       return read();
     },
     setProjects: (projectIds) => {

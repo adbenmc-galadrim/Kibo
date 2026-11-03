@@ -21,6 +21,7 @@ export const RemoteStatus = z.object({
   lastPushAt: z.number().int().nullable(),
   projects: z.array(z.string()),
   phonePaired: z.boolean(),
+  revokePending: z.boolean(),
   keyEpoch: z.number().int().nonnegative(),
 });
 export type RemoteStatus = z.infer<typeof RemoteStatus>;

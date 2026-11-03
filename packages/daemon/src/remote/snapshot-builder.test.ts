@@ -154,6 +154,46 @@ test("agent logs include the current and past session runs", async () => {
   expect(JSON.stringify(agent).includes(AGENT_DIR)).toBe(false);
 });
 
+test("the current run of the agent leaves without its local paths", async () => {
+  const run = {
+    id: "run-now",
+    label: "Agent de projet",
+    workspace: AGENT_DIR,
+    cwd: `${AGENT_DIR}/silo`,
+    transcriptPath: `${AGENT_DIR}/transcript.jsonl`,
+    tokens: 12,
+  };
+  const { silo, builder } = await setup((rpc) =>
+    looseRpc(async (req) => {
+      if (req.method === "getProjectAgent")
+        return { session: null, run, batches: [], past: [], memoryPath: `${AGENT_DIR}/memory.md` };
+      return rpc(req);
+    }),
+  );
+  const { put } = await builder.buildAll(silo.projectId);
+  const agent = decode(put.find((b) => b.kind === "agent")) as AgentSnapshot;
+  expect(agent.view.run).toMatchObject({
+    id: "run-now",
+    tokens: 12,
+    workspace: null,
+    cwd: null,
+    transcriptPath: null,
+  });
+  expect(JSON.stringify(agent).includes(AGENT_DIR)).toBe(false);
+});
+
+test("the t3 block keeps only available and reason, never the binary path", async () => {
+  const { silo, builder } = await setup((rpc) =>
+    looseRpc(async (req) => {
+      if (req.method === "t3.status")
+        return { available: false, reason: "server-down", bin: "/Users/adam/.local/bin/t3" };
+      return rpc(req);
+    }),
+  );
+  const { put } = await builder.buildAll(silo.projectId);
+  expect(decode(put.find((b) => b.kind === "t3"))).toEqual({ available: false, reason: "server-down" });
+});
+
 test("no snapshot contains the pairing token, a keychain value or a folder path outside the project (the builder sends only what the screens show)", async () => {
   const { launched, silo, builder } = await setup();
   const view = await launched.rpc({ method: "getProjectAgent", projectId: silo.projectId });

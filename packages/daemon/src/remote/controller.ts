@@ -3,6 +3,7 @@ import { KiboError, type RemoteStatus } from "@kibo/schema";
 import type { RemoteLink } from "./link";
 import type { Pusher } from "./pusher";
 import { registerMac } from "./register";
+import type { Revoker } from "./revoker";
 import type { RemoteController } from "./rpc";
 import { newMacToken, type RemoteSecrets } from "./secrets";
 import type { RemoteSettingsStore } from "./settings";
@@ -15,6 +16,7 @@ type ControllerDeps = {
   secrets: RemoteSecrets;
   link: RemoteLink;
   pusher: Pusher;
+  revoker: Revoker;
   defaultUrl: string;
   fetch: Parameters<typeof registerMac>[0];
   log(line: string): void;
@@ -33,6 +35,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
       lastPushAt: pusher.lastPushAt(),
       projects: s.projects,
       phonePaired: s.phonePaired,
+      revokePending: s.pendingRevoke,
       keyEpoch: s.keyEpoch,
     };
   };
@@ -53,6 +56,20 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     await pusher.pushAll();
   };
 
+  const revokeLater = async () => {
+    const { serverUrl, accountId } = settings.read();
+    const macToken = await secrets.macToken();
+    settings.clear();
+    if (serverUrl === null || macToken === null) {
+      deps.log("[kibo-daemon] remote disabled offline without a mac token, the phone cannot be revoked");
+      return secrets.clear();
+    }
+    await secrets.forgetRootKey();
+    settings.write({ serverUrl, accountId, pendingRevoke: true });
+    deps.log("[kibo-daemon] remote disabled offline, the phone revocation waits for the server");
+    deps.revoker.start({ serverUrl, macToken });
+  };
+
   const withReady =
     <A extends unknown[], R>(work: (...args: A) => Promise<R>) =>
     async (...args: A): Promise<R> => {
@@ -65,23 +82,32 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     enable: withReady(async ({ serverUrl, setupCode }) => {
       const macToken = newMacToken();
       const { accountId } = await registerMac(deps.fetch, { serverUrl, setupCode, macToken });
+      deps.revoker.stop();
       link.stop();
       pusher.stop();
       const rootKey = generateRootKey();
       const keyEpoch = settings.read().keyEpoch + 1;
       await secrets.save({ rootKey, macToken });
-      settings.write({ enabled: true, serverUrl, accountId, keyEpoch, phonePaired: false });
+      settings.write({
+        enabled: true,
+        serverUrl,
+        accountId,
+        keyEpoch,
+        phonePaired: false,
+        pendingRevoke: false,
+      });
       await link.start({ serverUrl, macToken, accountId, rootKey, epoch: keyEpoch });
       await link.opened(OPEN_WAIT_MS);
       return status();
     }),
     disable: withReady(async () => {
-      if (!link.send({ type: "phone.revoke" }))
-        deps.log("[kibo-daemon] remote disabled while offline, the phone is revoked at the next enable");
+      const revoked = link.send({ type: "phone.revoke" });
       link.stop();
       pusher.stop();
-      await secrets.clear();
-      settings.clear();
+      if (revoked) {
+        await secrets.clear();
+        settings.clear();
+      } else await revokeLater();
       return status();
     }),
     setProjects: withReady(async (projectIds) => {

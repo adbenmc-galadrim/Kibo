@@ -18,6 +18,8 @@ export type TestServer = {
   registerMac(macToken?: string): Promise<{ macToken: string; accountId: string }>;
   phoneCookie(): string;
   redeemPairToken(pairToken: string): Redemption;
+  pause(): Promise<void>;
+  resume(): void;
   stop(): Promise<void>;
 };
 
@@ -40,16 +42,19 @@ export async function startTestServer(
   let clock = 1_700_000_000_000;
   const now = overrides.now ?? (() => clock);
   const db = openDb(":memory:");
-  const server = serveRemote(db, {
-    port: 0,
-    origin: TEST_ORIGIN,
-    rpId: "127.0.0.1",
-    setupCode: SETUP_CODE,
-    staticDir: null,
-    webauthn: fakeWebauthn(),
-    ...overrides,
-    now,
-  });
+  const serve = (port: number) =>
+    serveRemote(db, {
+      port,
+      origin: TEST_ORIGIN,
+      rpId: "127.0.0.1",
+      setupCode: SETUP_CODE,
+      staticDir: null,
+      webauthn: fakeWebauthn(),
+      ...overrides,
+      now,
+    });
+  let server = serve(0);
+  let running = true;
   const registerMac = async (macToken = randomMacToken()) => {
     const res = await fetch(`${server.url}/api/mac/register`, {
       method: "POST",
@@ -70,8 +75,17 @@ export async function startTestServer(
     registerMac,
     phoneCookie: () => `kibo_phone=${createSession(db, now())}`,
     redeemPairToken: (pairToken) => createPairTokens(db, now).redeem(pairToken),
+    pause: async () => {
+      if (running) await server.stop();
+      running = false;
+    },
+    resume: () => {
+      if (!running) server = serve(server.port);
+      running = true;
+    },
     stop: async () => {
-      await server.stop();
+      if (running) await server.stop();
+      running = false;
       db.close();
     },
   };

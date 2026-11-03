@@ -13,6 +13,7 @@ export const frPhone = {
     loading: "Lecture de l'accès…",
     unreadable: (detail: string) => `État illisible : ${detail}`,
     disabled: "Désactivé",
+    revokePending: "Révocation du téléphone en attente · elle sera faite dès que le serveur répondra",
     connected: (sinceLastPush: number | null) =>
       sinceLastPush === null ? "Connecté" : `Connecté · dernier envoi il y a ${elapsed(sinceLastPush)}`,
     offline: "Hors ligne · reconnexion…",

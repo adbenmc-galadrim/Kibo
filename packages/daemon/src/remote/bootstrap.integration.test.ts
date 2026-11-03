@@ -42,6 +42,7 @@ type Rig = {
   store: Store;
   keychain: MemorySecretStore;
   remote: RemoteModule;
+  deps: Parameters<typeof startRemote>[0];
   logs: string[];
   emit(message: ChangeMessage): void;
   rpc(req: RpcRequest): Promise<unknown>;
@@ -56,7 +57,7 @@ async function rig(): Promise<Rig> {
   const keychain = createMemorySecretStore(createRedactor());
   const listeners = new Set<(message: ChangeMessage) => void>();
   const logs: string[] = [];
-  const remote = startRemote({
+  const deps: Parameters<typeof startRemote>[0] = {
     store,
     secrets: keychain,
     defaultUrl: server.url,
@@ -75,7 +76,8 @@ async function rig(): Promise<Rig> {
     now: Date.now,
     log: (line) => logs.push(line),
     redact: (text) => text,
-  });
+  };
+  const remote = startRemote(deps);
   cleanups.push(() => remote.stop());
   return {
     server,
@@ -83,6 +85,7 @@ async function rig(): Promise<Rig> {
     store,
     keychain,
     remote,
+    deps,
     logs,
     emit: (message) => {
       for (const listener of listeners) listener(message);
@@ -255,6 +258,48 @@ test("remote.disable closes the socket, revokes the phone, clears secrets and se
   );
   expect([...r.keychain.dump().keys()]).toEqual([]);
   expect(r.store.db.query("SELECT key FROM local_state WHERE key LIKE 'remote.%'").all()).toEqual([]);
+});
+
+test("remote.disable while the server is unreachable leaves a pending revocation that completes when it comes back", async () => {
+  const r = await rig();
+  const silo = await seedSilo(r.launched);
+  await enable(r);
+  await r.rpc({ method: "remote.setProjects", projectIds: [silo.projectId] });
+  const phone = r.server.phoneCookie();
+  await r.server.pause();
+  await until(async () => !(await status(r)).connected);
+  expect(await r.rpc({ method: "remote.disable" })).toMatchObject({
+    enabled: false,
+    connected: false,
+    projects: [],
+    revokePending: true,
+  });
+  expect([...r.keychain.dump().keys()]).toEqual(["remote:server"]);
+  expect(r.store.getLocal("remote.pendingRevoke")).toBe("1");
+  r.server.resume();
+  await until(async () => !(await status(r)).revokePending, 8_000);
+  expect(await snapshots(r, silo.projectId, phone)).toBe(401);
+  expect(await snapshots(r, silo.projectId)).toEqual([]);
+  expect([...r.keychain.dump().keys()]).toEqual([]);
+  expect(r.store.db.query("SELECT key FROM local_state WHERE key LIKE 'remote.%'").all()).toEqual([]);
+});
+
+test("a pending revocation is retried when the daemon starts again", async () => {
+  const r = await rig();
+  const silo = await seedSilo(r.launched);
+  await enable(r);
+  await r.rpc({ method: "remote.setProjects", projectIds: [silo.projectId] });
+  const phone = r.server.phoneCookie();
+  await r.server.pause();
+  await until(async () => !(await status(r)).connected);
+  await r.rpc({ method: "remote.disable" });
+  await r.remote.stop();
+  r.server.resume();
+  const again = startRemote({ ...r.deps, log: () => {} });
+  cleanups.push(() => again.stop());
+  await until(async () => !(await again.status()).revokePending, 8_000);
+  expect(await snapshots(r, silo.projectId, phone)).toBe(401);
+  expect([...r.keychain.dump().keys()]).toEqual([]);
 });
 
 test("the remote module of the daemon answers remote.* and the daemon still serves only 127.0.0.1", async () => {

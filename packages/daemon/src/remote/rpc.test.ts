@@ -9,6 +9,7 @@ const STATUS: RemoteStatus = {
   lastPushAt: null,
   projects: [],
   phonePaired: false,
+  revokePending: false,
   keyEpoch: 0,
 };
 

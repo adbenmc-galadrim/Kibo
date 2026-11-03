@@ -7,6 +7,8 @@ export type RemoteSecrets = {
   load(): Promise<RemoteCredentials | null>;
   save(credentials: RemoteCredentials): Promise<void>;
   saveRootKey(rootKey: Uint8Array): Promise<void>;
+  macToken(): Promise<string | null>;
+  forgetRootKey(): Promise<void>;
   clear(): Promise<void>;
 };
 
@@ -38,6 +40,8 @@ export function openRemoteSecrets(keychain: SecretStore): RemoteSecrets {
       await keychain.set(MAC_TOKEN, macToken);
     },
     saveRootKey: (rootKey) => keychain.set(ROOT_KEY, toBase64Url(rootKey)),
+    macToken: () => keychain.get(MAC_TOKEN),
+    forgetRootKey: () => keychain.delete(ROOT_KEY),
     clear: async () => {
       await keychain.delete(ROOT_KEY);
       await keychain.delete(MAC_TOKEN);

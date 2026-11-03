@@ -105,3 +105,12 @@ test("disabling asks confirmation then calls remote.disable", async () => {
   await waitFor(() => expect(methods()).toContain("remote.disable"));
   expect(await screen.findByText("Désactivé")).toBeTruthy();
 });
+
+test("a pending revocation is said on the disabled access", async () => {
+  remote.status = { ...remote.status, revokePending: true };
+  render(<PhonePage />);
+  expect(await screen.findByText("Désactivé")).toBeTruthy();
+  expect(
+    screen.getByText("Révocation du téléphone en attente · elle sera faite dès que le serveur répondra"),
+  ).toBeTruthy();
+});

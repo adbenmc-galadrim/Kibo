@@ -8,6 +8,7 @@ import { createLink } from "./link";
 import { createPusher } from "./pusher";
 import { createReplayGuard } from "./replay-guard";
 import { createRequestHandler } from "./request-handler";
+import { createRevoker } from "./revoker";
 import { remoteRpc } from "./rpc";
 import { openRemoteSecrets } from "./secrets";
 import { openRemoteSettings } from "./settings";
@@ -71,8 +72,28 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
     timers,
   });
 
+  const revoker = createRevoker({
+    timers,
+    now: deps.now,
+    log: deps.log,
+    onRevoked: async () => {
+      if (!settings.read().pendingRevoke) return;
+      await secrets.clear();
+      settings.clear();
+      deps.log("[kibo-daemon] remote phone revoked, access fully disabled");
+    },
+  });
+
+  const resumeRevocation = async (serverUrl: string | null) => {
+    const macToken = await secrets.macToken();
+    if (serverUrl === null || macToken === null)
+      return deps.log("[kibo-daemon] remote revocation cannot resume");
+    revoker.start({ serverUrl, macToken });
+  };
+
   const resume = async () => {
     const s = settings.read();
+    if (s.pendingRevoke) return resumeRevocation(s.serverUrl);
     if (!s.enabled || s.serverUrl === null || s.accountId === null) return;
     const credentials = await secrets.load();
     if (!credentials) return deps.log("[kibo-daemon] remote access enabled but its keys are missing");
@@ -98,6 +119,7 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
     secrets,
     link,
     pusher,
+    revoker,
     defaultUrl: deps.defaultUrl,
     fetch: deps.fetch ?? fetch,
     log: deps.log,
@@ -113,6 +135,7 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
       await ready;
       pusher.stop();
       link.stop();
+      revoker.stop();
       await pusher.idle();
     },
   };

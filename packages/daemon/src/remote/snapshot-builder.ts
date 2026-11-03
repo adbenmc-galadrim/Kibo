@@ -5,6 +5,7 @@ import {
   type RpcRequest,
   type RpcResult,
   type RunLogEntry,
+  type T3Status,
 } from "@kibo/schema";
 import type { QuestionImageFile } from "../questions/question-images";
 
@@ -50,6 +51,9 @@ function withoutLocalPaths(entry: RunLogEntry): RunLogEntry {
   return { ...entry, event: { ...event, workspace: "" } };
 }
 
+const t3Content = ({ available, reason }: T3Status): Pick<T3Status, "available" | "reason"> =>
+  reason === undefined ? { available } : { available, reason };
+
 async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnapshot> {
   const view = await rpc({ method: "getProjectAgent", projectId });
   const runIds = [view.session?.runId, ...view.past.map((s) => s.runId)].filter(
@@ -58,7 +62,8 @@ async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnap
   const logs: AgentSnapshot["logs"] = {};
   for (const runId of new Set(runIds))
     logs[runId] = (await rpc({ method: "getRunLog", runId })).map(withoutLocalPaths);
-  return { view: { ...view, memoryPath: "" }, logs };
+  const run = view.run && { ...view.run, workspace: null, cwd: null, transcriptPath: null };
+  return { view: { ...view, run, memoryPath: "" }, logs };
 }
 
 function imageContents(deps: BuilderDeps, snapshot: ProjectSnapshot): Content[] {
@@ -84,7 +89,7 @@ async function projectContents(deps: BuilderDeps, projectId: string): Promise<Co
     { kind: "events", value: events.items },
     { kind: "agent", value: await agentContent(rpc, projectId) },
     { kind: "ci", value: await rpc({ method: "listCiRuns", projectId, ticketId: null }) },
-    { kind: "t3", value: await rpc({ method: "t3.status" }) },
+    { kind: "t3", value: t3Content(await rpc({ method: "t3.status" })) },
     ...imageContents(deps, snapshot),
   ];
 }
