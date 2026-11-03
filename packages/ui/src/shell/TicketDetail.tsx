@@ -126,7 +126,11 @@ export function TicketDetail({
       )}
       <div className={LINE} />
       <FoldSection title={tt.domain} hint={domain}>
-        {domains && editable && <DomainSelect project={project} ticket={t} domains={domains} />}
+        {editable ? (
+          domains && <DomainSelect project={project} ticket={t} domains={domains} />
+        ) : (
+          <p className="text-xs">{domain}</p>
+        )}
       </FoldSection>
       {surface.design && (
         <FoldSection title={tt.mockups} hint={String(mockups)}>

@@ -205,6 +205,26 @@ test("a surface without design leaves out the mockups and keeps the fields read-
   expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
 });
 
+test("a read-only surface shows the domain name as text", async () => {
+  const user = userEvent.setup();
+  const t = ticket({ domainId: "d1" });
+  render(
+    <HostProvider host={host}>
+      <TicketDetail
+        project={project(t)}
+        ticket={t}
+        domains={[{ id: "d1", name: "Saisie terrain", owner: { scope: "workspace" }, color: "#0EA5E9" }]}
+        onOpenTicket={() => {}}
+        surface={{ design: false, editable: false }}
+      />
+    </HostProvider>,
+  );
+  await act(async () => {});
+  await user.click(screen.getByRole("button", { name: /Domaine/ }));
+  expect(screen.getAllByText("Saisie terrain").length).toBe(2);
+  expect(screen.queryByRole("combobox")).toBeNull();
+});
+
 test("the desktop surface keeps the mockups", async () => {
   await show(ticket());
   expect(screen.getByText("Maquettes")).toBeTruthy();
