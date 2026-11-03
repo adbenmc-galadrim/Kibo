@@ -6,7 +6,6 @@ import type { Presence, RemoteClient } from "../remote-client";
 import type { PhoneTab, Route } from "../route";
 import { useAgentPendingCount } from "../use-agent-count";
 import type { Navigate } from "../use-route";
-import { AgentScreen } from "./agent/AgentScreen";
 import { GraphScreen } from "./graph/GraphScreen";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
@@ -14,6 +13,8 @@ import { ProjectPicker } from "./ProjectPicker";
 import { TabBar } from "./TabBar";
 import { TabPlaceholder } from "./TabPlaceholder";
 import { Toasts } from "./Toasts";
+
+const AgentScreen = lazy(() => import("./agent/AgentScreen").then((m) => ({ default: m.AgentScreen })));
 
 const QuestionsScreen = lazy(() =>
   import("./questions/QuestionsScreen").then((m) => ({ default: m.QuestionsScreen })),
@@ -83,12 +84,14 @@ function ProjectShell({
     <PhoneHost projectId={route.projectId} navigate={navigate}>
       <div className="flex h-dvh flex-col bg-(--tracking-bg) text-(--tracking-fg)">
         {route.name === "agent" ? (
-          <AgentScreen
-            projectId={route.projectId}
-            projectName={project?.name ?? ""}
-            presence={presence}
-            onBack={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
-          />
+          <Suspense fallback={<p className="p-4 text-[15px] text-(--tracking-mfg)">{fr.loading}</p>}>
+            <AgentScreen
+              projectId={route.projectId}
+              projectName={project?.name ?? ""}
+              presence={presence}
+              onBack={() => navigate({ name: "tab", projectId: route.projectId, tab: "graph" })}
+            />
+          </Suspense>
         ) : (
           <>
             <Header
