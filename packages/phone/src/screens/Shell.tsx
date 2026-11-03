@@ -9,9 +9,9 @@ import type { Navigate } from "../use-route";
 import { Header } from "./Header";
 import { OfflineBand } from "./OfflineBand";
 import { ProjectPicker } from "./ProjectPicker";
-import { RefusalToast } from "./RefusalToast";
 import { TabBar } from "./TabBar";
 import { TabPlaceholder } from "./TabPlaceholder";
+import { Toasts } from "./Toasts";
 
 type ProjectRoute = Extract<Route, { projectId: string }>;
 
@@ -87,7 +87,7 @@ function ProjectShell({
           {tab ? <TabPlaceholder projectId={route.projectId} tab={tab} /> : null}
         </main>
         {route.name === "agent" ? null : <TabBar projectId={route.projectId} active={tab} />}
-        <RefusalToast client={client} />
+        <Toasts client={client} />
         {picking ? (
           <ProjectPicker
             projects={projects}

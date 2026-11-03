@@ -23,4 +23,5 @@ export * from "./spotlight";
 export * from "./status";
 export * from "./step-title";
 export * from "./ticket-key";
+export { onToast } from "./toast-bus";
 export * from "./types";
