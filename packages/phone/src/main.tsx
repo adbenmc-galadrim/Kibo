@@ -3,6 +3,7 @@ import { followSystemTheme } from "@kibo/ui/theme";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { applyCspNonce } from "./csp-nonce";
 import { indexedDbStorage } from "./idb-storage";
 import { browserPasskeys } from "./pairing";
 import { browserEnvironment, browserSocket, createPresence } from "./presence";
@@ -10,6 +11,7 @@ import { registerServiceWorker } from "./register-sw";
 import { createPhoneRuntime } from "./runtime";
 import { createServerApi } from "./server-api";
 
+applyCspNonce(document);
 followSystemTheme();
 registerServiceWorker();
 
