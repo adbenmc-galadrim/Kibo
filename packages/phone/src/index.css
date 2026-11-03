@@ -122,3 +122,7 @@ body {
 .phone-ticket :where([data-slot="button"][data-size^="icon"], [data-slot="dropdown-menu-trigger"]) {
   min-width: 2.75rem;
 }
+
+:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+  max-width: calc(100vw - 24px);
+}
