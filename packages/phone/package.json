@@ -1,0 +1,37 @@
+{
+  "name": "@kibo/phone",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build"
+  },
+  "dependencies": {
+    "@kibo/component-graph": "workspace:*",
+    "@kibo/component-kanban": "workspace:*",
+    "@kibo/component-overview": "workspace:*",
+    "@kibo/component-planning": "workspace:*",
+    "@kibo/component-questions": "workspace:*",
+    "@kibo/remote": "workspace:*",
+    "@kibo/schema": "workspace:*",
+    "@kibo/sdk": "workspace:*",
+    "@kibo/ui": "workspace:*",
+    "@simplewebauthn/browser": "13.3.0",
+    "lucide-react": "1.48.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@kibo/remote-server": "workspace:*",
+    "@tailwindcss/vite": "4.1.13",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.0",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.3",
+    "tailwindcss": "4.1.13",
+    "vite": "7.3.5"
+  }
+}

@@ -20,6 +20,8 @@ jobs:
       - run: bun run knip
       - run: bun run --cwd packages/ui build
       - run: bun run budget
+      - run: bun run build:phone
+      - run: bun run budget:phone
   unit:
     name: unit (${{ matrix.group }} ${{ matrix.shard }}/${{ matrix.of }})
     strategy:

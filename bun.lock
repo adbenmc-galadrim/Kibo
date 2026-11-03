@@ -205,6 +205,37 @@
         "fast-check": "4.3.0",
       },
     },
+    "packages/phone": {
+      "name": "@kibo/phone",
+      "version": "0.0.0",
+      "dependencies": {
+        "@kibo/component-graph": "workspace:*",
+        "@kibo/component-kanban": "workspace:*",
+        "@kibo/component-overview": "workspace:*",
+        "@kibo/component-planning": "workspace:*",
+        "@kibo/component-questions": "workspace:*",
+        "@kibo/remote": "workspace:*",
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "@kibo/ui": "workspace:*",
+        "@simplewebauthn/browser": "13.3.0",
+        "lucide-react": "1.48.0",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+        "zod": "3.25.76",
+      },
+      "devDependencies": {
+        "@kibo/remote-server": "workspace:*",
+        "@tailwindcss/vite": "4.1.13",
+        "@testing-library/dom": "10.4.2",
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "@types/react-dom": "19.1.9",
+        "@vitejs/plugin-react": "5.0.3",
+        "tailwindcss": "4.1.13",
+        "vite": "7.3.5",
+      },
+    },
     "packages/remote": {
       "name": "@kibo/remote",
       "version": "0.0.0",
@@ -615,6 +646,8 @@
 
     "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 
+    "@kibo/phone": ["@kibo/phone@workspace:packages/phone"],
+
     "@kibo/remote": ["@kibo/remote@workspace:packages/remote"],
 
     "@kibo/remote-server": ["@kibo/remote-server@workspace:packages/remote-server"],
@@ -930,6 +963,8 @@
     "@shikijs/types": ["@shikijs/types@4.4.3", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.5" } }, "sha512-UEJxmRR++MAGR6hugn0vgVS2W/6lWAts84FFSrnlH9sP0LNol7E5+NQ792pH8liWUhyMyjhTgSUH3k7iD7tc5g=="],
 
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
+
+    "@simplewebauthn/browser": ["@simplewebauthn/browser@13.3.0", "", {}, "sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ=="],
 
     "@simplewebauthn/server": ["@simplewebauthn/server@13.3.3", "", { "dependencies": { "@hexagon/base64": "^1.1.27", "@levischuck/tiny-cbor": "^0.2.2", "@peculiar/asn1-android": "^2.6.0", "@peculiar/asn1-ecc": "^2.6.1", "@peculiar/asn1-rsa": "^2.6.1", "@peculiar/asn1-schema": "^2.6.0", "@peculiar/asn1-x509": "^2.6.1", "@peculiar/x509": "^1.14.3" } }, "sha512-LelX/lcy5cjc15A86i/aNxHhB5eU7dd20QsbP0VLAf9e38+SLlsnqCCyecx3xqfGofhmX05h1J9fKRYWxw+luA=="],
 

@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist-types",
+    "rootDir": ".",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@kibo/sdk/ui/*": ["../sdk/src/ui/*"],
+      "@kibo/sdk/lib/*": ["../sdk/src/lib/*"]
+    }
+  },
+  "include": ["src", "scripts", "vite.config.ts"],
+  "exclude": ["src/sw.ts"],
+  "references": [
+    { "path": "./tsconfig.sw.json" },
+    { "path": "../schema" },
+    { "path": "../remote" },
+    { "path": "../remote-server" },
+    { "path": "../sdk" },
+    { "path": "../ui" },
+    { "path": "../../components/graph" },
+    { "path": "../../components/kanban" },
+    { "path": "../../components/overview" },
+    { "path": "../../components/planning" },
+    { "path": "../../components/questions" }
+  ]
+}

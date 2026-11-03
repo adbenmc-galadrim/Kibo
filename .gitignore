@@ -14,4 +14,4 @@ apps/desktop/src-tauri/gen/
 *.bun-build
 
 # captures d'écran de fin d'implémentation, jamais commitées
-screens/
+/screens/

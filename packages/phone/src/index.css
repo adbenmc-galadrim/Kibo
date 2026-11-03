@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@import "../../sdk/src/theme.css";
+@source "./";
+
+@font-face {
+  font-family: "Geist";
+  src: url("../../ui/public/fonts/Geist[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../../ui/public/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --tracking-bg: #ffffff;
+  --tracking-panel: #fafafa;
+  --tracking-card: #ffffff;
+  --tracking-muted: #f4f4f5;
+  --tracking-hover: #f4f4f5;
+  --tracking-border: #e4e4e7;
+  --tracking-soft: #eeeef0;
+  --tracking-fg: #09090b;
+  --tracking-mfg: #52525b;
+  --tracking-dim: #71717a;
+  --tracking-faint: #a1a1aa;
+  --tracking-brand: #ea580c;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #fff7ed;
+  --tracking-brand-line: #fdba74;
+  --tracking-brand-text: #c2410c;
+  --tracking-red: #dc2626;
+  --tracking-amber: #d97706;
+}
+
+.dark {
+  color-scheme: dark;
+  --tracking-bg: #212124;
+  --tracking-panel: #26262a;
+  --tracking-card: #2d2d31;
+  --tracking-muted: #343439;
+  --tracking-hover: #3a3a3f;
+  --tracking-border: #47474d;
+  --tracking-soft: #38383d;
+  --tracking-fg: #fafafa;
+  --tracking-mfg: #cfcfd6;
+  --tracking-dim: #ababb4;
+  --tracking-faint: #7a7a83;
+  --tracking-brand: #f97316;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #4e382d;
+  --tracking-brand-line: #935024;
+  --tracking-brand-text: #fb923c;
+  --tracking-red: #fc9494;
+  --tracking-amber: #fbbf24;
+}
+
+html,
+body {
+  background: var(--tracking-bg);
+  color: var(--tracking-fg);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}

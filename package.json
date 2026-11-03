@@ -13,9 +13,11 @@
     "check": "biome check .",
     "format": "biome check --write .",
     "start": "bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist",
-    "typecheck": "tsc -b packages/schema packages/core packages/remote packages/remote-server packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/kanban components/graph components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
+    "typecheck": "tsc -b packages/schema packages/core packages/remote packages/remote-server packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts packages/phone components/kanban components/graph components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
     "test": "bun test packages components ./scripts",
+    "build:phone": "bun run --cwd packages/phone build",
     "budget": "bun packages/ui/scripts/bundle-budget.ts",
+    "budget:phone": "bun packages/phone/scripts/bundle-budget.ts",
     "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved,exports,types",
     "knip:exports": "knip --include exports,types"
   },

@@ -1,0 +1,86 @@
+import type { RefusalAction } from "../remote-relay";
+import type { PhoneTab } from "../route";
+
+const REFUSED: Record<RefusalAction, string> = {
+  launch: "lancement refusé",
+  message: "message refusé",
+  write: "modification refusée",
+};
+
+export const fr = {
+  appName: "Kibo",
+  loading: "Chargement…",
+  back: "Retour",
+  tabsLabel: "Écrans du projet",
+  tabs: {
+    graph: "Graphe",
+    kanban: "Kanban",
+    planning: "Planning",
+    questions: "Questions",
+    dashboard: "Dashboard",
+  } satisfies Record<PhoneTab, string>,
+  tabCount: (title: string, tickets: number) => `${title} · ${tickets} ticket${tickets > 1 ? "s" : ""}`,
+  header: {
+    pickProject: (name: string) => `${name} · changer de projet`,
+    agent: "Agent de projet",
+    agentPending: (count: number) => `Agent de projet · ${count} en attente`,
+  },
+  picker: { title: "Projets", close: "Fermer" },
+  band: {
+    macOff: (time: string) => `Mac éteint · dernier état à ${time}`,
+    phoneOffline: (time: string) => `Hors connexion · dernier état à ${time}`,
+    macOffEmpty: "Mac éteint · aucun état reçu",
+    phoneOfflineEmpty: "Hors connexion · aucun état reçu",
+  },
+  refusal: {
+    macOff: (action: RefusalAction) => `Mac éteint : ${REFUSED[action]}`,
+    phoneOffline: (action: RefusalAction) => `Hors connexion : ${REFUSED[action]}`,
+    timeout: (action: RefusalAction) => `Le Mac n'a pas répondu : ${REFUSED[action]}`,
+    nothingQueued: "Rien n'est mis en attente. Réessaie Mac allumé.",
+    nothingQueuedOffline: "Rien n'est mis en attente. Réessaie une fois connecté.",
+    clock: "Heure du téléphone décalée",
+    clockBody: "Elle diffère de plus de 10 min de celle du Mac : active l'heure automatique, puis réessaie.",
+  },
+  pair: {
+    title: "Appairer ce téléphone",
+    where: "Sur le Mac : Paramètres › Téléphone › Appairer.",
+    scan: "Scanne le QR code qui s'affiche.",
+    aim: "Vise le QR code affiché sur le Mac",
+    or: "ou",
+    paste: "Coller le code",
+    placeholder: "kibo1.…",
+    submit: "Appairer",
+    pairing: "Appairage…",
+    keyNote: "La clé reste sur ce téléphone et sur le Mac : le serveur ne la voit jamais.",
+    invalid: "Code invalide ou expiré",
+    cancelled: "Passkey annulée : touche Appairer pour réessayer.",
+    noSnapshot: "Le Mac n'a encore rien envoyé : vérifie qu'il est allumé, puis demande un nouveau code.",
+    rateLimited: "Trop d'essais : demande un nouveau code sur le Mac.",
+    offline: "Pas de réseau : réessaie une fois connecté.",
+    failed: "L'appairage a échoué : réessaie.",
+    camera: "Caméra indisponible : colle le code.",
+  },
+  login: {
+    title: "Se connecter",
+    body: "Utilise la passkey créée lors de l'appairage de ce téléphone.",
+    submit: "Se connecter avec une passkey",
+    pending: "Connexion…",
+    refused: "Passkey non reconnue.",
+    cancelled: "Passkey annulée : réessaie.",
+    rateLimited: "Trop d'essais : réessaie dans une minute.",
+    offline: "Pas de réseau : réessaie une fois connecté.",
+    failed: "La connexion a échoué : réessaie.",
+    repair: "Appairer à nouveau",
+  },
+  needsPairing: {
+    title: "Appairage à refaire",
+    body: "La clé de ce téléphone ne correspond plus à celle du Mac : il a été appairé de nouveau, ou l'accès a été révoqué.",
+    action: "Appairer à nouveau",
+  },
+  empty: {
+    title: "Aucun projet envoyé",
+    body: "Sur le Mac : Paramètres › Téléphone, active les projets à suivre.",
+  },
+  ticket: { title: "Fiche du ticket" },
+  agent: { title: "Agent de projet" },
+};
