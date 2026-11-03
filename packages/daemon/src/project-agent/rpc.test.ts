@@ -43,13 +43,37 @@ test("the extension serves the four project agent methods", async () => {
   expect(calls).toEqual(["view:p1:r0", "reset:p1", "decide:b1:apply:2", "send:p1:Bonjour"]);
 });
 
-test("a remote session, the inbox and another method are refused before the service", async () => {
+const REMOTE = { sessionHash: "phone", remote: true };
+
+test("decideBatch is accepted with { remote: true }", async () => {
   const calls: string[] = [];
   const rpc = projectAgentRpc(recordingCore(calls));
-  const req: RpcRequest = { method: "getProjectAgent", projectId: "p1" };
-  await expect(rpc.handle(req, { sessionHash: "h", remote: true })).rejects.toMatchObject({
+  const req: RpcRequest = { method: "decideBatch", projectId: "p1", batchId: "b1", decision: "reject" };
+  await expect(rpc.handle(req, REMOTE)).rejects.toThrow("not needed");
+  expect(calls).toEqual(["decide:b1:reject:-"]);
+});
+
+test("sendProjectAgentMessage too", async () => {
+  const calls: string[] = [];
+  const rpc = projectAgentRpc(recordingCore(calls));
+  const req: RpcRequest = { method: "sendProjectAgentMessage", projectId: "p1", text: "Bonjour" };
+  await expect(rpc.handle(req, REMOTE)).rejects.toThrow("not needed");
+  await rpc.handle({ method: "getProjectAgent", projectId: "p1" }, REMOTE);
+  expect(calls).toEqual(["send:p1:Bonjour", "view:p1:-"]);
+});
+
+test("resetProjectAgent is refused with FORBIDDEN when remote", async () => {
+  const calls: string[] = [];
+  const rpc = projectAgentRpc(recordingCore(calls));
+  await expect(rpc.handle({ method: "resetProjectAgent", projectId: "p1" }, REMOTE)).rejects.toMatchObject({
     code: "FORBIDDEN",
   });
+  expect(calls).toEqual([]);
+});
+
+test("the inbox and another method are refused before the service", async () => {
+  const calls: string[] = [];
+  const rpc = projectAgentRpc(recordingCore(calls));
   await expect(
     rpc.handle({ method: "resetProjectAgent", projectId: INBOX_ID }, LOCAL_CONTEXT),
   ).rejects.toMatchObject({

@@ -308,9 +308,11 @@ test("refresh reads the list on demand and returns the checked threads", async (
   s.t3.stop();
 });
 
-test("a remote session cannot use t3", async () => {
+test("t3.launch is accepted with { remote: true }", async () => {
   const s = setup();
-  const remote = { sessionHash: "x", remote: true };
-  expect(await refusal(s.rpc({ method: "t3.status" }, remote))).toBe("FORBIDDEN");
-  expect(fake.calls()).toEqual([]);
+  const remote = { sessionHash: "phone", remote: true };
+  expect(await s.rpc({ method: "t3.launch", ...s.onTicket }, remote)).toMatchObject({
+    thread: { threadId: "thr_1", status: "running" },
+  });
+  s.t3.stop();
 });

@@ -55,7 +55,7 @@ export const STATUS: Partial<Record<KiboErrorCode, number>> = {
   T3_THREAD_ACTIVE: 409,
   T3_FAILED: 502,
 };
-const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
+export const HIDDEN = new Set<KiboErrorCode>(["INTERNAL", "STORE_CORRUPT"]);
 
 const json = (body: RpcResponse, status = 200) => Response.json(body, { status });
 export const fail = (code: KiboErrorCode, message: string, status: number) =>

@@ -11,9 +11,9 @@ export function projectAgentRpc(
   return {
     methods: METHODS,
     async handle(req, ctx) {
-      requireLocal(ctx);
       if (!isProjectAgentRequest(req))
         throw new KiboError("INTERNAL", `${req.method} is not a project agent method`);
+      if (req.method === "resetProjectAgent") requireLocal(ctx);
       assertNotInboxForAgents(req.projectId);
       switch (req.method) {
         case "getProjectAgent":
