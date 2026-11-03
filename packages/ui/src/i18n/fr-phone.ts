@@ -14,6 +14,7 @@ export const frPhone = {
     unreadable: (detail: string) => `État illisible : ${detail}`,
     disabled: "Désactivé",
     revokePending: "Révocation du téléphone en attente · elle sera faite dès que le serveur répondra",
+    revokeAbandoned: "Téléphone non révoqué : jeton du Mac perdu · réactive l'accès pour le révoquer",
     connected: (sinceLastPush: number | null) =>
       sinceLastPush === null ? "Connecté" : `Connecté · dernier envoi il y a ${elapsed(sinceLastPush)}`,
     offline: "Hors ligne · reconnexion…",

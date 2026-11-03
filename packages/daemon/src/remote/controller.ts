@@ -21,6 +21,7 @@ type ControllerDeps = {
   fetch: Parameters<typeof registerMac>[0];
   log(line: string): void;
   ready: Promise<void>;
+  exclusive<R>(work: () => Promise<R>): Promise<R>;
 };
 
 export function createRemoteController(deps: ControllerDeps): RemoteController {
@@ -36,6 +37,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
       projects: s.projects,
       phonePaired: s.phonePaired,
       revokePending: s.pendingRevoke,
+      revokeAbandoned: s.revokeAbandoned,
       keyEpoch: s.keyEpoch,
     };
   };
@@ -62,6 +64,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     settings.clear();
     if (serverUrl === null || macToken === null) {
       deps.log("[kibo-daemon] remote disabled offline without a mac token, the phone cannot be revoked");
+      settings.write({ revokeAbandoned: true });
       return secrets.clear();
     }
     await secrets.forgetRootKey();
@@ -74,7 +77,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     <A extends unknown[], R>(work: (...args: A) => Promise<R>) =>
     async (...args: A): Promise<R> => {
       await deps.ready;
-      return work(...args);
+      return deps.exclusive(() => work(...args));
     };
 
   return {
@@ -95,6 +98,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
         keyEpoch,
         phonePaired: false,
         pendingRevoke: false,
+        revokeAbandoned: false,
       });
       await link.start({ serverUrl, macToken, accountId, rootKey, epoch: keyEpoch });
       await link.opened(OPEN_WAIT_MS);

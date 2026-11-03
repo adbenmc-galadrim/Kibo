@@ -114,3 +114,12 @@ test("a pending revocation is said on the disabled access", async () => {
     screen.getByText("Révocation du téléphone en attente · elle sera faite dès que le serveur répondra"),
   ).toBeTruthy();
 });
+
+test("an abandoned revocation is said on the disabled access", async () => {
+  remote.status = { ...remote.status, revokeAbandoned: true };
+  render(<PhonePage />);
+  expect(await screen.findByText("Désactivé")).toBeTruthy();
+  expect(
+    screen.getByText("Téléphone non révoqué : jeton du Mac perdu · réactive l'accès pour le révoquer"),
+  ).toBeTruthy();
+});

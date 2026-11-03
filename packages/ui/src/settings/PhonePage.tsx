@@ -183,6 +183,9 @@ function AccessCard() {
           {status?.revokePending && !status.enabled && (
             <output className="mb-3 block text-sm text-muted-foreground">{t.access.revokePending}</output>
           )}
+          {status?.revokeAbandoned && !status.enabled && (
+            <output className="mb-3 block text-sm text-destructive">{t.access.revokeAbandoned}</output>
+          )}
           {status && !status.enabled && <EnableForm serverUrl={status.serverUrl} onEnabled={apply} />}
           {status?.enabled && <EnabledAccess status={status} apply={apply} />}
         </CardContent>

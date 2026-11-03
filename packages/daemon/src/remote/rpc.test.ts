@@ -10,6 +10,7 @@ const STATUS: RemoteStatus = {
   projects: [],
   phonePaired: false,
   revokePending: false,
+  revokeAbandoned: false,
   keyEpoch: 0,
 };
 

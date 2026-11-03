@@ -25,6 +25,7 @@ test("defaults are disabled, no projects, epoch 0", () => {
     projects: [],
     phonePaired: false,
     pendingRevoke: false,
+    revokeAbandoned: false,
   });
 });
 

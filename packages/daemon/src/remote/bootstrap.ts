@@ -4,6 +4,7 @@ import type { QuestionImageFile } from "../questions/question-images";
 import { LOCAL_CONTEXT, type RpcContext, type RpcExtension } from "../rpc-extensions";
 import type { Store } from "../store";
 import { createRemoteController } from "./controller";
+import { createExclusive } from "./exclusive";
 import { createLink } from "./link";
 import { createPusher } from "./pusher";
 import { createReplayGuard } from "./replay-guard";
@@ -72,16 +73,18 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
     timers,
   });
 
+  const exclusive = createExclusive();
   const revoker = createRevoker({
     timers,
     now: deps.now,
     log: deps.log,
-    onRevoked: async () => {
-      if (!settings.read().pendingRevoke) return;
-      await secrets.clear();
-      settings.clear();
-      deps.log("[kibo-daemon] remote phone revoked, access fully disabled");
-    },
+    onRevoked: () =>
+      exclusive(async () => {
+        if (!settings.read().pendingRevoke) return;
+        settings.clear();
+        await secrets.clear();
+        deps.log("[kibo-daemon] remote phone revoked, access fully disabled");
+      }),
   });
 
   const resumeRevocation = async (serverUrl: string | null) => {
@@ -120,6 +123,7 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
     link,
     pusher,
     revoker,
+    exclusive,
     defaultUrl: deps.defaultUrl,
     fetch: deps.fetch ?? fetch,
     log: deps.log,

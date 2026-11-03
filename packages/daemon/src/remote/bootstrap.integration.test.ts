@@ -284,6 +284,37 @@ test("remote.disable while the server is unreachable leaves a pending revocation
   expect(r.store.db.query("SELECT key FROM local_state WHERE key LIKE 'remote.%'").all()).toEqual([]);
 });
 
+test("enable after an offline disable refuses the old phone session", async () => {
+  const r = await rig();
+  const silo = await seedSilo(r.launched);
+  await enable(r);
+  await r.rpc({ method: "remote.setProjects", projectIds: [silo.projectId] });
+  const oldPhone = r.server.phoneCookie();
+  await r.server.pause();
+  await until(async () => !(await status(r)).connected);
+  await r.rpc({ method: "remote.disable" });
+  r.server.resume();
+  expect(await enable(r)).toMatchObject({ enabled: true, connected: true, revokePending: false });
+  expect(await snapshots(r, silo.projectId, oldPhone)).toBe(401);
+  expect(r.store.getLocal("remote.pendingRevoke")).not.toBe("1");
+});
+
+test("an offline disable without a mac token says the phone could not be revoked until the next enable", async () => {
+  const r = await rig();
+  await enable(r);
+  await r.server.pause();
+  await until(async () => !(await status(r)).connected);
+  await r.keychain.delete("remote:server");
+  expect(await r.rpc({ method: "remote.disable" })).toMatchObject({
+    enabled: false,
+    revokePending: false,
+    revokeAbandoned: true,
+  });
+  expect([...r.keychain.dump().keys()]).toEqual([]);
+  r.server.resume();
+  expect(await enable(r)).toMatchObject({ enabled: true, revokeAbandoned: false });
+});
+
 test("a pending revocation is retried when the daemon starts again", async () => {
   const r = await rig();
   const silo = await seedSilo(r.launched);
