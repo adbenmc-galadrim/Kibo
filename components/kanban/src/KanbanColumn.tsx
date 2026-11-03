@@ -32,7 +32,7 @@ export function KanbanColumn(props: Props) {
       aria-label={status.label}
       data-forbidden={forbidden || undefined}
       className={cn(
-        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2 transition-opacity",
+        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2 transition-opacity @max-xl:min-w-[85%] @max-xl:snap-start",
         targeted && "ring-2 ring-ring",
         forbidden && "cursor-not-allowed opacity-50",
         forbidden && targeted && "ring-destructive/60",

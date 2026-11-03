@@ -158,3 +158,19 @@ test("the questions header counts the blocking ones in red", () => {
   const header = within(screen.getByRole("region", { name: "Questions" })).getByText("1 bloquante");
   expect(header.className).toContain("text-(--tracking-red)");
 });
+
+test("on a phone-wide container the overview stacks its columns and wraps its indicators", () => {
+  const { model } = build();
+  view(model);
+  const indicators = screen.getByRole("region", { name: "Indicateurs du projet" });
+  const root = indicators.closest(".\\@container");
+  expect(root).not.toBeNull();
+  expect(indicators.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-2xl:grid", "@max-2xl:h-auto"]),
+  );
+  const now = screen.getByRole("region", { name: "En ce moment" });
+  expect(now.className.split(" ")).toContain("@max-2xl:flex-col");
+  const columns = Array.from(root?.querySelectorAll("[data-slot='overview-columns']") ?? []);
+  expect(columns.length).toBeGreaterThan(0);
+  for (const c of columns) expect(c.className.split(" ")).toContain("@max-2xl:flex-col");
+});

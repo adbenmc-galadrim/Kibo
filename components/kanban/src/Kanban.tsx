@@ -157,7 +157,7 @@ export function Kanban() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="@container flex h-full flex-col">
       <KanbanToolbar
         mine={scope === "all" ? null : fr.filter.mine}
         filters={board.filters}
@@ -199,7 +199,7 @@ export function Kanban() {
           announcements: announce(keyOf, refusalOf),
         }}
       >
-        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3 @max-xl:snap-x @max-xl:snap-mandatory @max-xl:scroll-px-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

@@ -64,7 +64,12 @@ function BoxLabel({ icon: Icon, label, hint }: Pick<BoxProps, "icon" | "label" |
 
 function Box({ icon, label, hint, text, wrapUnit = false, children }: BoxProps) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-[5px] border-(--tracking-soft) border-l px-[18px] py-[12px] first:border-l-0">
+    <div
+      className={cn(
+        "flex min-w-0 flex-1 flex-col gap-[5px] border-(--tracking-soft) border-l px-[18px] py-[12px] first:border-l-0",
+        "@max-2xl:border-t @max-2xl:border-l-0 @max-2xl:px-[14px] @max-2xl:first:col-span-2 @max-2xl:first:border-t-0 @max-2xl:odd:not-first:border-l",
+      )}
+    >
       <BoxLabel icon={icon} label={label} hint={hint} />
       <span className="flex h-[28px] min-w-0 items-end gap-[6px]">
         <span className="shrink-0 font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
@@ -169,7 +174,7 @@ export function Indicators({ indicators, onOpenHeld }: Props) {
   return (
     <section
       aria-label={fr.indicators.label}
-      className="flex h-[92px] w-full shrink-0 rounded-[10px] border border-(--tracking-border) bg-(--tracking-card)"
+      className="flex h-[92px] w-full shrink-0 rounded-[10px] border border-(--tracking-border) bg-(--tracking-card) @max-2xl:grid @max-2xl:h-auto @max-2xl:grid-cols-2"
     >
       <Box icon={Package} label={fr.indicators.features} text={t.features}>
         <FeatureSub text={t.features} onOpenHeld={onOpenHeld} />

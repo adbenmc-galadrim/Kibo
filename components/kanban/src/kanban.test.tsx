@@ -261,6 +261,20 @@ test("a column scrolls its cards inside its own background", async () => {
   expect(board.className).toContain("overflow-y-hidden");
 });
 
+test("on a phone-wide board, one column fills the view and snaps, the toolbar scrolls", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  expect(column.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-xl:min-w-[85%]", "@max-xl:snap-start"]),
+  );
+  const board = column.parentElement;
+  expect(board?.className.split(" ")).toContain("@max-xl:snap-x");
+  const root = board?.parentElement;
+  expect(root?.className.split(" ")).toContain("@container");
+  const toolbar = root?.querySelector("header");
+  expect(toolbar?.className.split(" ")).toContain("@max-xl:overflow-x-auto");
+});
+
 test("shared selection: the selected card stands out, the others fade, the chip clears it", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
   m.setSelection({ kind: "ticket", ids: [m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? ""] });

@@ -137,11 +137,11 @@ export function KanbanToolbar(props: Props) {
   const { filters, label, onShowAll, shown, hidden, children } = props;
   const counter = counterText(shown, filters, props.mine);
   return (
-    <header className="@container/toolbar flex h-12 items-center gap-2 border-b px-4 text-sm">
+    <header className="@container/toolbar scrollbar-none relative flex h-12 items-center gap-2 border-b px-4 text-sm @max-xl:overflow-x-auto @max-xl:px-3">
       <BoardFilters {...props} />
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}
-      <span title={counter} className="ml-auto min-w-0 truncate text-xs text-muted-foreground">
+      <span title={counter} className="ml-auto min-w-0 truncate text-xs text-muted-foreground @max-xl:hidden">
         {counter}
       </span>
       {(filters.length > 0 || label !== null) && hidden > 0 && (
