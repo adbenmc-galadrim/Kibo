@@ -40,6 +40,12 @@ const SCHEMA = [
     updated_at INTEGER NOT NULL,
     PRIMARY KEY (project_id, kind)
   )`,
+  `CREATE TABLE IF NOT EXISTS rate_limits (
+    scope TEXT PRIMARY KEY,
+    failures INTEGER NOT NULL,
+    window_start INTEGER NOT NULL,
+    blocked_until INTEGER NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS mac_presence (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     online INTEGER NOT NULL,

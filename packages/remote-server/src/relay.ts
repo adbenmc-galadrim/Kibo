@@ -9,6 +9,8 @@ export type Relay = {
   failAll(): void;
 };
 
+const MAX_PENDING = 64;
+
 const macGone = () => new KiboError("REMOTE_UNAVAILABLE", "the mac is not connected");
 
 export function createRelay(deps: { deliver(message: ServerMessage): boolean; timeoutMs: number }): Relay {
@@ -25,6 +27,10 @@ export function createRelay(deps: { deliver(message: ServerMessage): boolean; ti
       const { requestId } = sealed.header;
       if (pending.has(requestId))
         return Promise.reject(new KiboError("INVALID_INPUT", "request already pending"));
+      if (pending.size >= MAX_PENDING)
+        return Promise.reject(
+          new KiboError("RATE_LIMITED", `${MAX_PENDING} requests already wait for the mac`),
+        );
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           settle(requestId)?.reject(

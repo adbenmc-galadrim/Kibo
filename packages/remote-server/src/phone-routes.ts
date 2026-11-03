@@ -8,15 +8,20 @@ import { sessionOf } from "./phone-sessions";
 import type { Relay } from "./relay";
 import type { SnapshotStore } from "./snapshots";
 
+const REQUEST_MAX_BYTES = 16 * 1_048_576;
+
 const RequestBody = z.object({ sealed: SealedRequest });
 const ProjectQuery = z.object({ projectId: z.string().min(1) });
 const SnapshotQuery = ProjectQuery.extend({ kind: SnapshotKind });
+
+const WRITES_OR_SOCKETS = new Set(["GET /api/phone/events", "POST /api/phone/request"]);
 
 type PhoneRouteDeps = {
   db: Database;
   snapshots: SnapshotStore;
   relay: Relay;
   now(): number;
+  origin: string;
   upgradeEvents(req: Request): boolean;
 };
 
@@ -27,7 +32,7 @@ function query<S extends z.ZodTypeAny>(schema: S, url: URL): z.infer<S> {
 }
 
 async function relayRequest(req: Request, relay: Relay): Promise<Response> {
-  const parsed = RequestBody.safeParse(await readJson(req));
+  const parsed = RequestBody.safeParse(await readJson(req, REQUEST_MAX_BYTES));
   if (!parsed.success) throw new KiboError("INVALID_INPUT", "request needs a sealed envelope");
   return Response.json({ sealed: await relay.send(parsed.data.sealed) });
 }
@@ -39,6 +44,8 @@ export async function phoneRoute(
 ): Promise<Response | undefined> {
   if (!sessionOf(deps.db, req, deps.now())) return fail("UNAUTHORIZED", "no phone session");
   const route = `${req.method} ${url.pathname}`;
+  if (WRITES_OR_SOCKETS.has(route) && req.headers.get("origin") !== deps.origin)
+    return fail("FORBIDDEN", "origin not allowed");
   switch (route) {
     case "GET /api/phone/events":
       return deps.upgradeEvents(req) ? undefined : fail("INVALID_INPUT", "websocket expected");

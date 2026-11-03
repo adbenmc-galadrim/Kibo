@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { REQUEST_TIMEOUT_MS, SNAPSHOT_MAX_BYTES } from "@kibo/remote/protocol";
 import type { Server, ServerWebSocket } from "bun";
-import { bearerOf, createAccount } from "./account";
+import { assertSetupCode, bearerOf, createAccount } from "./account";
 import { openDb } from "./db";
 import { fail, handled, readJson } from "./http";
 import { CLOSE_UNAUTHORIZED, createMacChannel } from "./mac-socket";
@@ -11,7 +11,7 @@ import { phoneRoute } from "./phone-routes";
 import { revokePhone } from "./phone-sessions";
 import { createRelay } from "./relay";
 import { createSnapshotStore } from "./snapshots";
-import { serveStatic } from "./static";
+import { createStatic } from "./static";
 import type { WebauthnPort } from "./webauthn-port";
 
 export type RemoteServerOptions = {
@@ -33,9 +33,18 @@ type RemoteServer = { url: string; port: number; stop(): Promise<void> };
 type WsData = { role: "mac" } | { role: "phone" };
 
 const MAX_PAYLOAD_BYTES = 2 * SNAPSHOT_MAX_BYTES;
+const REGISTER_MAX_BYTES = 4_096;
+const MAX_IDLE_SECONDS = 255;
+const IDLE_MARGIN_SECONDS = 5;
+const CLOSE_POLICY = 1008;
+
+export const idleSeconds = (timeoutMs: number) =>
+  Math.min(MAX_IDLE_SECONDS, Math.ceil(timeoutMs / 1_000) + IDLE_MARGIN_SECONDS);
 
 export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">): RemoteServer {
   const now = opts.now ?? Date.now;
+  const timeoutMs = opts.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const serveStatic = createStatic(opts.staticDir);
   const snapshots = createSnapshotStore(db, { now, maxTotalBytes: opts.maxTotalBytes });
   const pairTokens = createPairTokens(db, now);
   const account = createAccount(db, opts.setupCode, now);
@@ -46,7 +55,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
   };
   const relay = createRelay({
     deliver: (message) => mac.deliver(message),
-    timeoutMs: opts.requestTimeoutMs ?? REQUEST_TIMEOUT_MS,
+    timeoutMs,
   });
   const mac = createMacChannel<WsData>({
     db,
@@ -58,15 +67,14 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
     now,
   });
   const register = async (req: Request) => {
-    const result = account.register(await readJson(req));
+    const result = account.register(await readJson(req, REGISTER_MAX_BYTES));
     mac.disconnect(CLOSE_UNAUTHORIZED, "mac token replaced");
     revoke();
     return Response.json(result);
   };
 
   const macUpgrade = (req: Request, server: Server<WsData>) => {
-    const token = bearerOf(req);
-    if (!token || !account.isMacToken(token)) return fail("UNAUTHORIZED", "mac token required");
+    account.authenticateMac(bearerOf(req));
     if (req.headers.get("upgrade")?.toLowerCase() !== "websocket")
       return new Response("upgrade required", { status: 426 });
     return server.upgrade(req, { data: { role: "mac" } })
@@ -86,6 +94,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
         snapshots,
         relay,
         now,
+        origin: opts.origin,
         upgradeEvents: (upgrade) => server.upgrade(upgrade, { data: { role: "phone" } }),
       });
     return fail("NOT_FOUND", "unknown route");
@@ -100,7 +109,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
     }
     if (req.method !== "GET" && req.method !== "HEAD")
       return new Response("method not allowed", { status: 405 });
-    return serveStatic(opts.staticDir, url.pathname);
+    return serveStatic(url.pathname);
   };
 
   const websocket = {
@@ -111,7 +120,8 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
       ws.send(JSON.stringify(mac.presence()));
     },
     message(ws: ServerWebSocket<WsData>, raw: string | Buffer) {
-      if (ws.data.role === "mac") mac.message(ws, raw);
+      if (ws.data.role === "mac") return mac.message(ws, raw);
+      ws.close(CLOSE_POLICY, "phones only listen");
     },
     close(ws: ServerWebSocket<WsData>) {
       if (ws.data.role === "mac") return mac.close(ws);
@@ -123,6 +133,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
     hostname: opts.hostname ?? "0.0.0.0",
     port: opts.port,
     maxRequestBodySize: MAX_PAYLOAD_BYTES,
+    idleTimeout: idleSeconds(timeoutMs),
     fetch,
     websocket,
   });
@@ -138,6 +149,7 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
 }
 
 export async function startRemoteServer(opts: RemoteServerOptions): Promise<RemoteServer> {
+  assertSetupCode(opts.setupCode);
   const db = openDb(opts.db);
   const server = serveRemote(db, opts);
   return {

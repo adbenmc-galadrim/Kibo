@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startRemoteServer } from "./server";
+import { idleSeconds, startRemoteServer } from "./server";
 import { connectFakeMac, startTestServer, type TestServer } from "./testing/test-server";
 
 let staticDir = "";
@@ -17,13 +17,20 @@ let stop: () => Promise<void> = async () => {};
 afterEach(() => stop());
 
 describe("remote server", () => {
+  test("the idle timeout outlasts the relay timeout, within the 255 s Bun allows", () => {
+    expect(idleSeconds(30_000)).toBe(35);
+    expect(idleSeconds(12_000)).toBe(17);
+    expect(idleSeconds(50)).toBe(6);
+    expect(idleSeconds(600_000)).toBe(255);
+  });
+
   test("startRemoteServer listens and reports health", async () => {
     const server = await startRemoteServer({
       port: 0,
       db: ":memory:",
       origin: "http://127.0.0.1",
       rpId: "127.0.0.1",
-      setupCode: "x",
+      setupCode: "a-setup-code-long-enough",
       staticDir: null,
     });
     stop = server.stop;

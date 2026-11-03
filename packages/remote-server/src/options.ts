@@ -1,4 +1,5 @@
 import { KiboError } from "@kibo/schema";
+import { assertSetupCode } from "./account";
 import type { RemoteServerOptions } from "./server";
 
 type CliOptions = Pick<RemoteServerOptions, "port" | "db" | "origin" | "rpId" | "setupCode" | "staticDir">;
@@ -52,6 +53,7 @@ export function parseOptions(argv: string[], env: Record<string, string | undefi
   const origin = parseOrigin(value("--origin"));
   const setupCode = value("--setup-code");
   if (!setupCode) throw new KiboError("INVALID_INPUT", "--setup-code or KIBO_REMOTE_SETUP_CODE is required");
+  assertSetupCode(setupCode);
   return {
     port: parsePort(value("--port")),
     db: value("--db") || DEFAULT_DB,

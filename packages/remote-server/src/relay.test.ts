@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { sealedRequest } from "./testing/fixtures";
-import { connectFakeMac, startTestServer, type TestServer } from "./testing/test-server";
+import { connectFakeMac, startTestServer, TEST_ORIGIN, type TestServer } from "./testing/test-server";
 
 let server: TestServer;
 afterEach(() => server.stop());
@@ -8,7 +8,7 @@ afterEach(() => server.stop());
 const post = (cookie: string, body: unknown) =>
   fetch(`${server.url}/api/phone/request`, {
     method: "POST",
-    headers: { "content-type": "application/json", cookie },
+    headers: { "content-type": "application/json", cookie, origin: TEST_ORIGIN },
     body: JSON.stringify(body),
   });
 
@@ -85,4 +85,21 @@ describe("relay", () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ ok: false, error: { code: "INVALID_INPUT" } });
   });
+});
+
+describe("relay limits", () => {
+  test("a reply after the default idle time of Bun still reaches the phone", async () => {
+    server = await startTestServer({ requestTimeoutMs: 12_000 });
+    const { macToken } = await server.registerMac();
+    const request = sealedRequest();
+    const reply = sealedRequest(request.header.requestId);
+    const mac = await connectFakeMac(server.url, macToken, async () => {
+      await Bun.sleep(11_000);
+      return reply;
+    });
+    const res = await post(server.phoneCookie(), { sealed: request });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ sealed: reply });
+    await mac.close();
+  }, 20_000);
 });

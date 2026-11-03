@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { openDb } from "./db";
 
 describe("openDb", () => {
-  test("the schema has the seven tables", () => {
+  test("the schema has the seven tables of the plan and the rate limits", () => {
     const db = openDb(":memory:");
     const rows = db
       .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
@@ -13,6 +13,7 @@ describe("openDb", () => {
       "pair_tokens",
       "passkeys",
       "phone_sessions",
+      "rate_limits",
       "snapshots",
       "webauthn_challenges",
     ]);

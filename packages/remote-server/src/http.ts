@@ -8,6 +8,7 @@ const STATUS: Partial<Record<KiboErrorCode, number>> = {
   NOT_FOUND: 404,
   REMOTE_NOT_FOUND: 404,
   REMOTE_TOO_LARGE: 413,
+  TOO_LARGE: 413,
   RATE_LIMITED: 429,
   REMOTE_UNAVAILABLE: 503,
   TIMEOUT: 504,
@@ -29,9 +30,25 @@ export async function handled(work: () => Promise<Response | undefined>): Promis
   }
 }
 
-export async function readJson(req: Request): Promise<unknown> {
+const tooLarge = (maxBytes: number) => new KiboError("TOO_LARGE", `body is over ${maxBytes} bytes`);
+
+async function readBounded(req: Request, maxBytes: number): Promise<string> {
+  if (Number(req.headers.get("content-length") ?? 0) > maxBytes) throw tooLarge(maxBytes);
+  if (!req.body) return "";
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of req.body) {
+    size += chunk.length;
+    if (size > maxBytes) throw tooLarge(maxBytes);
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+export async function readJson(req: Request, maxBytes: number): Promise<unknown> {
+  const text = await readBounded(req, maxBytes);
   try {
-    return await req.json();
+    return JSON.parse(text);
   } catch {
     throw new KiboError("INVALID_INPUT", "body is not JSON");
   }

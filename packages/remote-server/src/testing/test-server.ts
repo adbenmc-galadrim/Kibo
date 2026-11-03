@@ -45,7 +45,7 @@ export async function startTestServer(
   const db = openDb(":memory:");
   const server = serveRemote(db, {
     port: 0,
-    origin: "http://127.0.0.1",
+    origin: TEST_ORIGIN,
     rpId: "127.0.0.1",
     setupCode: SETUP_CODE,
     staticDir: null,
@@ -103,6 +103,12 @@ export async function connectFakeMac(
   return { ...queue, put: (message) => queue.send(MacMessage.parse(message)) };
 }
 
-export function connectPhoneEvents(url: string, cookie: string): Promise<SocketQueue<PhoneEvent>> {
-  return openSocket(wsUrl(url, "/api/phone/events"), { cookie }, (data) => PhoneEvent.parse(data));
+export const TEST_ORIGIN = "http://127.0.0.1";
+
+export function connectPhoneEvents(
+  url: string,
+  cookie: string,
+  origin: string = TEST_ORIGIN,
+): Promise<SocketQueue<PhoneEvent>> {
+  return openSocket(wsUrl(url, "/api/phone/events"), { cookie, origin }, (data) => PhoneEvent.parse(data));
 }
