@@ -33,7 +33,7 @@ scripts/dogfood/     import du projet Kibo dans une instance Kibo, par l'API pub
 design/  docs/       maquettes, spec, plans
 ```
 
-Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← cli`, `schema ← remote ← {daemon, phone, remote-server}`, `schema ← sdk ← components ← phone`, `ui ← phone` par les seuls exports déclarés de `packages/ui/package.json` ; `remote-server` n'est qu'une `devDependency` de `phone` et d'`e2e` ; `core ← sdk/mock` (SDK simulé uniquement). `scripts/dogfood` ne dépend que de `schema`.
+Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema ← sdk ← components ← ui`, `schema ← cli`, `schema ← remote ← {daemon, phone, remote-server}`, `schema ← sdk ← components ← phone`, `ui ← phone` par les seuls exports déclarés de `packages/ui/package.json` ; `remote-server` n'est qu'une `devDependency` de `daemon`, de `phone` et d'`e2e` ; `core ← sdk/mock` (SDK simulé uniquement). `scripts/dogfood` ne dépend que de `schema`.
 `core` ne fait aucune I/O ; `ui` ne parle qu'au démon (jamais au disque).
 
 ## Code
