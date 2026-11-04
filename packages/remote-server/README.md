@@ -51,7 +51,7 @@ Tout l'état est dans `/data/kibo-remote.db` (compte, passkeys, sessions, blocs 
 
 L'image se construit dans GitHub Actions, jamais sur le serveur : le build du monorepo dépasse 2 Go de mémoire et a saturé le VPS (4 Go, sans swap) le 2026-11-04.
 
-`.github/workflows/deploy-remote.yml`, à chaque release publiée ou à la main (`gh workflow run deploy-remote.yml --ref <branche>`) :
+`.github/workflows/deploy-remote.yml`, au push d'un tag `v*` (une release créée par la CI ne déclencherait aucun workflow) ou à la main (`gh workflow run deploy-remote.yml`, une fois le fichier sur `main`) :
 
 1. construit `packages/remote-server/Dockerfile` depuis la racine et pousse `ghcr.io/adbenmc-galadrim/kibo-remote:<sha court>` (paquet GHCR **public**, pour que Coolify le tire sans identifiants) ;
 2. si `COOLIFY_REMOTE_UUID` est posée, règle le tag de l'image sur la ressource (`PATCH /api/v1/applications/<uuid>`) puis la redéploie (`POST /api/v1/deploy`).
