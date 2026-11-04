@@ -10,29 +10,61 @@ const CORNERS = [
   "bottom-14 right-6 border-b-4 border-r-4",
 ];
 
-export const canScan = (): boolean => typeof BarcodeDetector === "function" && !!navigator.mediaDevices;
+const MAX_FRAME_WIDTH = 640;
+
+type Detect = (video: HTMLVideoElement) => Promise<string[]>;
+
+export const canScan = (): boolean => typeof navigator.mediaDevices?.getUserMedia === "function";
+
+async function canvasDetector(): Promise<Detect> {
+  const { readQrFrame } = await import("../qr-frame");
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("canvas 2d context unavailable");
+  return async (video) => {
+    if (video.videoWidth === 0) return [];
+    const scale = Math.min(1, MAX_FRAME_WIDTH / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const text = readQrFrame(context.getImageData(0, 0, canvas.width, canvas.height));
+    return text ? [text] : [];
+  };
+}
+
+async function createDetector(): Promise<Detect> {
+  if (typeof BarcodeDetector !== "function") return canvasDetector();
+  const detector = new BarcodeDetector({ formats: ["qr_code"] });
+  return async (video) => (await detector.detect(video)).map((code) => code.rawValue);
+}
 
 function startScan(video: HTMLVideoElement, onCode: (code: string) => void, onFail: () => void): () => void {
   let stream: MediaStream | null = null;
   let timer: ReturnType<typeof setInterval> | null = null;
   let stopped = false;
+  let reading = false;
   const stop = () => {
     stopped = true;
     if (timer) clearInterval(timer);
     for (const track of stream?.getTracks() ?? []) track.stop();
   };
   const run = async () => {
-    if (!BarcodeDetector) return onFail();
-    const detector = new BarcodeDetector({ formats: ["qr_code"] });
+    const detect = await createDetector();
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     if (stopped) return stop();
     video.srcObject = stream;
     await video.play();
     timer = setInterval(async () => {
-      const found = (await detector.detect(video)).find((code) => code.rawValue.startsWith("kibo1."));
+      if (reading || stopped) return;
+      reading = true;
+      const found = await detect(video)
+        .then((texts) => texts.find((text) => text.startsWith("kibo1.")))
+        .finally(() => {
+          reading = false;
+        });
       if (found && !stopped) {
         stop();
-        onCode(found.rawValue);
+        onCode(found);
       }
     }, SCAN_EVERY_MS);
   };
