@@ -11,6 +11,7 @@ import type { RemoteSettingsStore } from "./settings";
 const OPEN_WAIT_MS = 5_000;
 const PAIR_WAIT_MS = 10_000;
 const REVOKE_WAIT_MS = 5_000;
+const UNCONFIRMED = "Révocation non confirmée · accès téléphone coupé, elle reprendra au retour du serveur";
 
 type ControllerDeps = {
   settings: RemoteSettingsStore;
@@ -49,14 +50,18 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
       throw new KiboError("REMOTE_UNAVAILABLE", "Serveur injoignable · réessaie dans un instant");
   };
 
-  const revoke = async () => {
-    link.send({ type: "phone.revoke" });
+  const revoke = async (): Promise<boolean> => {
+    if (!(await link.sendConfirmed({ type: "phone.revoke" }, REVOKE_WAIT_MS))) {
+      await disableUnconfirmed();
+      return false;
+    }
     const rootKey = generateRootKey();
     const keyEpoch = settings.read().keyEpoch + 1;
     await secrets.saveRootKey(rootKey);
     settings.write({ keyEpoch, phonePaired: false });
     await link.rotate(rootKey, keyEpoch);
     await pusher.pushAll();
+    return true;
   };
 
   const revokeLater = async () => {
@@ -73,6 +78,12 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     deps.log("[kibo-daemon] remote disabled offline, the phone revocation waits for the server");
     deps.revoker.start({ serverUrl, macToken });
   };
+
+  async function disableUnconfirmed() {
+    link.stop();
+    pusher.stop();
+    await revokeLater();
+  }
 
   const withReady =
     <A extends unknown[], R>(work: (...args: A) => Promise<R>) =>
@@ -107,12 +118,13 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     }),
     disable: withReady(async () => {
       const revoked = await link.sendConfirmed({ type: "phone.revoke" }, REVOKE_WAIT_MS);
-      link.stop();
-      pusher.stop();
-      if (revoked) {
+      if (!revoked) await disableUnconfirmed();
+      else {
+        link.stop();
+        pusher.stop();
         await secrets.clear();
         settings.clear();
-      } else await revokeLater();
+      }
       return status();
     }),
     setProjects: withReady(async (projectIds) => {
@@ -126,7 +138,8 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
     }),
     createPairing: withReady(async () => {
       assertOnline();
-      if (settings.read().phonePaired) await revoke();
+      if (settings.read().phonePaired && !(await revoke()))
+        throw new KiboError("REMOTE_UNAVAILABLE", UNCONFIRMED);
       await pusher.idle();
       const { pairToken, expiresAt } = await link.pairToken(PAIR_WAIT_MS);
       const { accountId } = settings.read();

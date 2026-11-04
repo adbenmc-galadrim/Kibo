@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { MacMessage } from "@kibo/remote";
+import { KiboError } from "@kibo/schema";
 import { createMemorySecretStore } from "../integrations/memory-secret-store";
 import { createRedactor } from "../integrations/redact";
 import { openStore } from "../store";
@@ -75,7 +76,7 @@ async function enabledController(confirms: boolean) {
     ready: Promise.resolve(),
     exclusive: createExclusive(),
   });
-  return { controller, keychain, sent, revocations };
+  return { controller, keychain, settings, sent, revocations };
 }
 
 test("disable clears the keys only once the server confirmed the revocation", async () => {
@@ -91,4 +92,30 @@ test("disable whose revocation is sent but never confirmed keeps the mac token a
   expect(await c.controller.disable()).toMatchObject({ enabled: false, revokePending: true });
   expect([...c.keychain.dump().keys()]).toEqual(["remote:server"]);
   expect(c.revocations).toEqual([{ serverUrl: "https://kibo.test", macToken: "mac-token" }]);
+});
+
+test("revokePhone whose revocation is confirmed rotates the key and keeps the access", async () => {
+  const c = await enabledController(true);
+  expect(await c.controller.revokePhone()).toMatchObject({
+    enabled: true,
+    keyEpoch: 2,
+    revokePending: false,
+  });
+  expect(c.revocations).toEqual([]);
+});
+
+test("revokePhone whose revocation is lost cuts the access and retries the revocation later", async () => {
+  const c = await enabledController(false);
+  expect(await c.controller.revokePhone()).toMatchObject({ enabled: false, revokePending: true });
+  expect([...c.keychain.dump().keys()]).toEqual(["remote:server"]);
+  expect(c.revocations).toEqual([{ serverUrl: "https://kibo.test", macToken: "mac-token" }]);
+});
+
+test("a new pairing whose revocation of the old phone is lost gives no code and retries it later", async () => {
+  const c = await enabledController(false);
+  c.settings.write({ phonePaired: true });
+  const refused = await c.controller.createPairing().catch((e: unknown) => e);
+  expect(refused instanceof KiboError && refused.code).toBe("REMOTE_UNAVAILABLE");
+  expect(c.settings.read()).toMatchObject({ enabled: false, pendingRevoke: true });
+  expect(c.revocations).toHaveLength(1);
 });
