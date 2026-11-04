@@ -35,6 +35,7 @@ export const fr = {
     phoneOfflineEmpty: "Hors connexion · aucun état reçu",
     stale: (time: string) => `Mise à jour impossible · dernier état à ${time}`,
     staleEmpty: "Mise à jour impossible · aucun état reçu",
+    syncing: "Synchronisation…",
   },
   refusal: {
     macOff: (action: RefusalAction) => `Mac éteint : ${REFUSED[action]}`,

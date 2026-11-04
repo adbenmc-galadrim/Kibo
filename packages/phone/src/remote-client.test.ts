@@ -338,13 +338,22 @@ test("a successful event clears the stale band left by a failed one", async () =
   expect(client.presence().stale).toBe(false);
 });
 
-test("coming back to the foreground presents the state as stale until the next sync", async () => {
+test("coming back to the foreground presents the state as syncing until the next sync", async () => {
   client.markStale();
-  expect(client.presence().stale).toBe(true);
+  expect(client.presence()).toMatchObject({ stale: true, syncing: true });
   await client.handleEvent({ type: "mac.presence", online: true, lastSeenAt: 5 });
-  expect(client.presence().stale).toBe(true);
+  expect(client.presence()).toMatchObject({ stale: true, syncing: true });
   await client.sync();
-  expect(client.presence().stale).toBe(false);
+  expect(client.presence()).toMatchObject({ stale: false, syncing: false });
+});
+
+test("a sync that fails after coming back is no longer syncing but stale", async () => {
+  client.markStale();
+  api.snapshot = async () => {
+    throw new KiboError("REMOTE_UNAVAILABLE", "server unreachable");
+  };
+  await expect(client.sync()).rejects.toMatchObject({ code: "REMOTE_UNAVAILABLE" });
+  expect(client.presence()).toMatchObject({ stale: true, syncing: false });
 });
 
 test("a write while only the event socket reconnects is sent, and a 503 is refused as mac off", async () => {

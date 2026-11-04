@@ -17,7 +17,7 @@ import type { ServerApi } from "./server-api";
 import type { SnapshotStore } from "./snapshot-store";
 
 export type { Connectivity, Refusal } from "./remote-relay";
-export type Presence = Connectivity & { stale: boolean; lastSnapshotAt: number | null };
+export type Presence = Connectivity & { stale: boolean; syncing?: boolean; lastSnapshotAt: number | null };
 export type PresenceSource = { get(): Connectivity; subscribe(listener: () => void): () => void };
 
 export type RemoteClient = KiboClient & {
@@ -80,17 +80,25 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
   };
 
   let stale = true;
-  const presence = (): Presence => ({ ...deps.presence.get(), stale, lastSnapshotAt: store.lastBuiltAt() });
-  const setStale = (next: boolean) => {
-    if (stale === next) return;
-    stale = next;
+  let syncing = true;
+  const presence = (): Presence => ({
+    ...deps.presence.get(),
+    stale,
+    syncing,
+    lastSnapshotAt: store.lastBuiltAt(),
+  });
+  const setFreshness = (next: { stale: boolean; syncing: boolean }) => {
+    if (stale === next.stale && syncing === next.syncing) return;
+    stale = next.stale;
+    syncing = next.syncing;
     presenceListeners.each((l) => l(presence()));
   };
+  const fresh = () => setFreshness({ stale: false, syncing: false });
   const markedStaleOnFailure = async (work: () => Promise<void>) => {
     try {
       await work();
     } catch (e) {
-      setStale(true);
+      setFreshness({ stale: true, syncing: false });
       throw e;
     }
   };
@@ -222,12 +230,12 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
       markedStaleOnFailure(async () => {
         await fetchBlob(INDEX_PROJECT_ID, "projects");
         if (store.get(INDEX_PROJECT_ID, "projects") !== null) await followIndex(true);
-        setStale(false);
+        fresh();
         announce(INDEX_PROJECT_ID, "projects");
         for (const id of reader.projectIds()) announce(id, "project");
         topic("agents").each((l) => l());
       }),
-    markStale: () => setStale(true),
+    markStale: () => setFreshness({ stale: true, syncing: true }),
     handleEvent: (event) =>
       markedStaleOnFailure(async () => {
         if (event.type === "mac.presence") return;
@@ -238,7 +246,7 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
           await fetchBlob(event.projectId, event.kind);
           if (event.projectId === INDEX_PROJECT_ID) await followIndex(false);
         }
-        setStale(false);
+        fresh();
         announce(event.projectId, event.kind);
       }),
     async index() {
