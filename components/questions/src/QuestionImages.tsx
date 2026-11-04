@@ -13,7 +13,7 @@ export function QuestionImages({ question }: { question: Question }) {
     <>
       <ul
         aria-label={fr.images(question.images.length)}
-        className="grid grid-cols-2 gap-2 lg:grid-cols-3 @max-xl:grid-cols-2"
+        className="grid grid-cols-2 gap-2 lg:grid-cols-3 @max-lg:grid-cols-2"
       >
         {question.images.map((image, index) => (
           <li key={image.id} className="grid gap-1">

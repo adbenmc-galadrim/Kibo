@@ -8,7 +8,7 @@ import { type ExportEntry, exportAll, exportDate } from "./export-text";
 import { fr } from "./fr";
 
 export const PAGE_ACTION =
-  "h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px] @max-xl:h-11 @max-xl:min-w-11 @max-xl:shrink-0 @max-xl:px-3 @max-xl:text-[15px] @max-xl:[&_svg:not([class*='size-'])]:size-5";
+  "h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px] @max-lg:h-11 @max-lg:min-w-11 @max-lg:shrink-0 @max-lg:px-3 @max-lg:text-[15px] @max-lg:[&_svg:not([class*='size-'])]:size-5";
 
 async function copy(text: string): Promise<void> {
   if (navigator.clipboard === undefined) return;
@@ -125,7 +125,7 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
         onClick={() => void flow.start()}
       >
         <Upload aria-hidden />
-        <span className="@max-xl:sr-only">{label}</span>
+        <span className="@max-lg:sr-only">{label}</span>
       </Button>
     </ExportSurface>
   );

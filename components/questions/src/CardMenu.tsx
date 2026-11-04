@@ -47,7 +47,7 @@ export function CardMenu(props: Props) {
         <Button
           variant="ghost"
           size="icon"
-          className="size-5 text-muted-foreground @max-xl:size-11 @max-xl:rounded-lg @max-xl:border"
+          className="size-5 text-muted-foreground @max-lg:size-11 @max-lg:rounded-lg @max-lg:border"
           aria-label={fr.menu(questionLabel(props.question))}
         >
           <Ellipsis aria-hidden />

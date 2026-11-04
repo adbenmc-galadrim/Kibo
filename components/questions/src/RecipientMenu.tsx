@@ -57,7 +57,7 @@ export function RecipientMenu({ question, recipients, client, readOnly }: Props)
             aria-label={fr.recipients.menu(name)}
             disabled={blocked !== null}
             title={blocked ?? undefined}
-            className="h-5.5 gap-1 rounded-md px-2 text-xs font-medium @max-xl:h-11 @max-xl:px-3 @max-xl:text-[15px]"
+            className="h-5.5 gap-1 rounded-md px-2 text-xs font-medium @max-lg:h-11 @max-lg:px-3 @max-lg:text-[15px]"
           >
             <UserRound aria-hidden className="size-3" />
             {fr.recipients.shown(name)}

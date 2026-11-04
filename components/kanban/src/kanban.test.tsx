@@ -265,14 +265,14 @@ test("on a phone-wide board, one column fills the view and snaps, the toolbar sc
   setup();
   const column = await screen.findByRole("region", { name: "À faire" });
   expect(column.className.split(" ")).toEqual(
-    expect.arrayContaining(["@max-xl:min-w-[85%]", "@max-xl:snap-start"]),
+    expect.arrayContaining(["@max-lg:min-w-[85%]", "@max-lg:snap-start"]),
   );
   const board = column.parentElement;
-  expect(board?.className.split(" ")).toContain("@max-xl:snap-x");
+  expect(board?.className.split(" ")).toContain("@max-lg:snap-x");
   const root = board?.parentElement;
   expect(root?.className.split(" ")).toContain("@container");
   const toolbar = root?.querySelector("header");
-  expect(toolbar?.className.split(" ")).toContain("@max-xl:overflow-x-auto");
+  expect(toolbar?.className.split(" ")).toContain("@max-lg:overflow-x-auto");
 });
 
 const classes = (el: Element | null | undefined) => el?.className.split(" ") ?? [];
@@ -294,7 +294,7 @@ test("on a phone-wide board a finger can scroll past a card, the press waits for
   const column = await screen.findByRole("region", { name: "À faire" });
   const card = within(column).getAllByRole("article")[0];
   expect(classes(card)).toEqual(
-    expect.arrayContaining(["@max-xl:touch-manipulation", "@max-xl:select-none"]),
+    expect.arrayContaining(["@max-lg:touch-manipulation", "@max-lg:select-none"]),
   );
 });
 
@@ -304,9 +304,9 @@ test("on a phone-wide board the filters and the card actions are 44 px targets",
   const card = within(column).getAllByRole("article")[0] as HTMLElement;
   const actions = within(card).getByRole("button", { name: /^Actions / });
   expect(classes(actions)).toEqual(
-    expect.arrayContaining(["@max-xl:after:absolute", "@max-xl:after:-inset-2.5"]),
+    expect.arrayContaining(["@max-lg:after:absolute", "@max-lg:after:-inset-2.5"]),
   );
-  expect(classes(screen.getByRole("button", { name: "Tous" }))).toContain("@max-xl:h-11");
+  expect(classes(screen.getByRole("button", { name: "Tous" }))).toContain("@max-lg:h-11");
 });
 
 test("shared selection: the selected card stands out, the others fade, the chip clears it", async () => {
@@ -432,8 +432,8 @@ test("on a phone-wide board the filter counts stay visible, the toolbar scroll s
   setup();
   const all = await screen.findByRole("button", { name: "Tous" });
   const count = all.querySelector("span.font-mono");
-  expect(classes(count)).toContain("@max-xl:inline!");
+  expect(classes(count)).toContain("@max-lg:inline!");
   const toolbar = all.closest("header");
-  expect(classes(toolbar)).toEqual(expect.arrayContaining(["@max-xl:relative", "@max-xl:scrollbar-none"]));
+  expect(classes(toolbar)).toEqual(expect.arrayContaining(["@max-lg:relative", "@max-lg:scrollbar-none"]));
   expect(classes(toolbar)).not.toContain("relative");
 });

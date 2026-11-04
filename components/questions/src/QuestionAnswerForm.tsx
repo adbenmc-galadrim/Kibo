@@ -16,8 +16,8 @@ type Props = {
   inlineAction?: ReactNode;
 };
 
-const PHONE_ACTION = "@max-xl:h-11 @max-xl:flex-1 @max-xl:text-[15px]";
-const PHONE_CHOICE = "@max-xl:h-11 @max-xl:text-[15px]";
+const PHONE_ACTION = "@max-lg:h-11 @max-lg:flex-1 @max-lg:text-[15px]";
+const PHONE_CHOICE = "@max-lg:h-11 @max-lg:text-[15px]";
 
 const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
 
@@ -96,11 +96,11 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 @max-xl:flex-wrap">
+      <div className="flex items-center gap-2 @max-lg:flex-wrap">
         <Input
           aria-label={freeLabel}
           placeholder={freeLabel}
-          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background @max-xl:h-11 @max-xl:basis-full @max-xl:text-[16px] @max-xl:md:text-[16px]"
+          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background @max-lg:h-11 @max-lg:basis-full @max-lg:text-[16px] @max-lg:md:text-[16px]"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}

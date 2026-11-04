@@ -109,7 +109,7 @@ export function QuestionsView() {
         summary={<Summary scope={scope} shown={shown} />}
         actions={
           <PageActions inline>
-            <div className="flex items-center gap-3 @max-xl:gap-2">
+            <div className="flex items-center gap-3 @max-lg:gap-2">
               {toExport.length > 0 && (
                 <ExportButton
                   label={exportText.label}
@@ -125,13 +125,13 @@ export function QuestionsView() {
                 onClick={() => setCreating("")}
               >
                 <Plus aria-hidden />
-                <span className="@max-xl:sr-only">{fr.newQuestion}</span>
+                <span className="@max-lg:sr-only">{fr.newQuestion}</span>
               </Button>
             </div>
           </PageActions>
         }
       />
-      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5 @max-xl:gap-3 @max-xl:px-4 @max-xl:py-3">
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5 @max-lg:gap-3 @max-lg:px-4 @max-lg:py-3">
         {!data.loading && data.questions.length === 0 ? (
           <EmptyPage onNew={() => setCreating("")} />
         ) : (

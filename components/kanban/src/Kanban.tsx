@@ -196,7 +196,7 @@ export function Kanban() {
           announcements: announce(keyOf, refusalOf),
         }}
       >
-        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3 @max-xl:snap-x @max-xl:snap-mandatory @max-xl:scroll-px-3">
+        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3 @max-lg:snap-x @max-lg:snap-mandatory @max-lg:scroll-px-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

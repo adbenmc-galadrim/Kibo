@@ -97,7 +97,7 @@ function RestoreButton({ questionId }: { questionId: string }) {
       <Button
         variant="outline"
         size="sm"
-        className="h-6 px-2 text-2xs @max-xl:h-11 @max-xl:px-3.5 @max-xl:text-[15px]"
+        className="h-6 px-2 text-2xs @max-lg:h-11 @max-lg:px-3.5 @max-lg:text-[15px]"
         disabled={blocked !== null}
         title={blocked ?? undefined}
         onClick={() => void restore()}
@@ -149,7 +149,7 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
       type="button"
       variant="outline"
       size="sm"
-      className="h-6.5 px-2.5 text-xs font-medium @max-xl:h-11 @max-xl:flex-1 @max-xl:text-[15px]"
+      className="h-6.5 px-2.5 text-xs font-medium @max-lg:h-11 @max-lg:flex-1 @max-lg:text-[15px]"
       disabled={blocked !== null}
       title={blocked ?? undefined}
       onClick={() => setPasting(true)}
@@ -159,8 +159,8 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
     </Button>
   );
   return (
-    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px] @max-xl:gap-3 @max-xl:px-3.5 @max-xl:pt-2">
-      <div className="grid gap-1.5 text-[13px] @max-xl:text-[15px]">{context ?? <p>{q.title}</p>}</div>
+    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px] @max-lg:gap-3 @max-lg:px-3.5 @max-lg:pt-2">
+      <div className="grid gap-1.5 text-[13px] @max-lg:text-[15px]">{context ?? <p>{q.title}</p>}</div>
       <div className="flex flex-wrap items-center gap-2.5">
         <RecipientMenu
           question={q}

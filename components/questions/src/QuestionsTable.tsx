@@ -16,8 +16,8 @@ export function QuestionsTable({ questions, data, now }: Props) {
   const c = fr.columns;
   return (
     <TooltipProvider delayDuration={TITLE_TOOLTIP_DELAY_MS}>
-      <div className="overflow-hidden rounded-[10px] border bg-card @max-xl:overflow-visible @max-xl:border-0 @max-xl:bg-transparent">
-        <div className={`${ROW_GRID} h-8 text-[11.5px] text-muted-foreground @max-xl:hidden`}>
+      <div className="overflow-hidden rounded-[10px] border bg-card @max-lg:overflow-visible @max-lg:border-0 @max-lg:bg-transparent">
+        <div className={`${ROW_GRID} h-8 text-[11.5px] text-muted-foreground @max-lg:hidden`}>
           <span>{c.number}</span>
           <span>{c.question}</span>
           <span>{c.recipient}</span>
@@ -26,7 +26,7 @@ export function QuestionsTable({ questions, data, now }: Props) {
           <span>{c.age}</span>
           <span />
         </div>
-        <div ref={body} className="@max-xl:grid @max-xl:gap-2.5">
+        <div ref={body} className="@max-lg:grid @max-lg:gap-2.5">
           {questions.flatMap((q) => {
             const ticket = data.ticketOf(q.ticketId);
             if (ticket === null) return [];

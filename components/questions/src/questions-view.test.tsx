@@ -76,11 +76,11 @@ test("on a narrow container the toolbar scrolls, rows become cards and actions r
   const toolbar = screen.getByRole("toolbar", { name: fr.toolbar });
   expect(toolbar.closest(".\\@container")).toBeTruthy();
   const filters = within(toolbar).getByRole("button", { name: "Ticket : tous" }).parentElement;
-  expect(filters?.className).toContain("@max-xl:overflow-x-auto");
+  expect(filters?.className).toContain("@max-lg:overflow-x-auto");
   expect(filters?.className).toContain("contents");
-  expect(row.className).toContain("@max-xl:rounded-[10px]");
+  expect(row.className).toContain("@max-lg:rounded-[10px]");
   await user.click(within(row).getByRole("button", { name: Q14 }));
   const form = within(row).getByRole("form", { name: fr.answerTo(Q14) });
-  expect(within(form).getByRole("button", { name: fr.reply }).className).toContain("@max-xl:h-11");
-  expect(within(row).getByRole("button", { name: "Actions de Q3" }).className).toContain("@max-xl:size-11");
+  expect(within(form).getByRole("button", { name: fr.reply }).className).toContain("@max-lg:h-11");
+  expect(within(row).getByRole("button", { name: "Actions de Q3" }).className).toContain("@max-lg:size-11");
 });
