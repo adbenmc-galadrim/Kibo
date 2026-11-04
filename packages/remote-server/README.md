@@ -57,6 +57,7 @@ Ressource « kibo » de type Dockerfile, sur le dépôt Kibo :
 - **Stockage persistant** monté sur `/data` : un volume nommé, pas un répertoire de l'hôte (un dossier vierge appartient à root et SQLite ne pourrait pas y écrire).
 - **Variables** : `KIBO_REMOTE_ORIGIN=https://kibo.shinseo.fr`, `KIBO_REMOTE_DB=/data/kibo-remote.db`, `KIBO_REMOTE_SETUP_CODE` (secret, *Available at Buildtime* décoché pour qu'il n'entre jamais dans le build), et de préférence « Include Source Commit in Build » coché pour `SOURCE_COMMIT`.
 - **Auto-deploy coupé** : le déploiement passe par le workflow, pour ne pas déployer deux fois.
+- **Healthcheck de Coolify coupé** : il appelle `curl` ou `wget`, absents de l'image, et ferait échouer chaque déploiement. Le `HEALTHCHECK` du `Dockerfile` (Bun) suffit.
 
 `.github/workflows/deploy-remote.yml` déclenche le déploiement à chaque release publiée, ou à la main (`workflow_dispatch`), par `POST $COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_REMOTE_UUID&force=false`. Réglages du dépôt (Settings › Secrets and variables › Actions) :
 
