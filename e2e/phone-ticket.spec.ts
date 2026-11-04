@@ -1,5 +1,6 @@
+import { basename } from "node:path";
 import { expect, test } from "@playwright/test";
-import { macProject, macTicket, pairPhone } from "./phone-kit";
+import { macProject, macRpc, macTicket, pairPhone } from "./phone-kit";
 
 const KEY = "SILO-46";
 const REASON = "Compte Sentry du client à créer";
@@ -37,7 +38,41 @@ test("the phone ticket changes its status, goes on hold and shows its activity, 
   await expect(sheet.getByRole("tabpanel", { name: "Activité" })).toContainText(REASON);
 });
 
-test.fixme(
-  "the phone ticket launches in T3 through the fake t3 (blocked: the Mac sends meta.folder null)",
-  () => {},
-);
+async function startableWithoutThread(): Promise<{ key: string; id: string }> {
+  const tickets = field((await macProject()).snapshot, "tickets");
+  const found = Array.isArray(tickets)
+    ? tickets.find((t) => field(t, "startable") === true && field(t, "thread") === null && field(t, "key"))
+    : undefined;
+  const key = field(found, "key");
+  const id = field(found, "id");
+  if (typeof key !== "string" || typeof id !== "string") throw new Error("no startable ticket on the Mac");
+  return { key, id };
+}
+
+test("the phone ticket launches in T3, the thread starts on the Mac and no local path reaches the phone", async ({
+  page,
+}) => {
+  const { projectId, snapshot } = await macProject();
+  const folder = field(field(snapshot, "meta"), "folder");
+  if (typeof folder !== "string") throw new Error("Silo has no folder on the Mac");
+  const target = await startableWithoutThread();
+  await pairPhone(page);
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/t/${encodeURIComponent(target.id)}`);
+  const sheet = page.getByRole("article", { name: target.key });
+  const launch = sheet.getByRole("button", { name: "Lancer dans T3" });
+  await expect(launch).toBeEnabled();
+  await launch.click();
+
+  const dialog = page.getByRole("dialog", { name: `Lancer ${target.key} dans T3` });
+  await expect(dialog).toContainText(`t3 thread start ${basename(folder)}`);
+  await expect(dialog).not.toContainText(folder);
+  await expect(dialog).not.toContainText("~/");
+  await dialog.getByRole("button", { name: "Lancer" }).click();
+  await expect(dialog).toBeHidden();
+
+  await expect
+    .poll(async () =>
+      field(await macRpc({ method: "t3.threadOf", projectId, ticketKey: target.key }), "status"),
+    )
+    .toBe("running");
+});
