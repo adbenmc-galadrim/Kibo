@@ -15,7 +15,7 @@ async function setup() {
     redact: (text: string) => text,
   };
   const header = { v: 1 as const, requestId: crypto.randomUUID(), projectId: "silo", at: T0, keyEpoch: 2 };
-  const sealed = await sealRequest(keys, header, utf8.encode(JSON.stringify({ method: "listProjects" })));
+  const sealed = await sealRequest(keys, header, utf8.encode(JSON.stringify({ method: "getSession" })));
   return { keys, gate, header, message: { type: "request" as const, requestId: header.requestId, sealed } };
 }
 

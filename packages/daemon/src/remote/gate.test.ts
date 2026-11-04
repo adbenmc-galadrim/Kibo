@@ -49,15 +49,13 @@ test("command addPage is refused", async () => {
 
 test("an allowed request is dispatched with remote: true and sessionHash phone", async () => {
   const s = setup();
-  await s.send(encode({ method: "getProject", projectId: "p1" }));
-  expect(s.calls).toEqual([
-    { req: { method: "getProject", projectId: "p1" }, ctx: { sessionHash: "phone", remote: true } },
-  ]);
+  await s.send(encode({ method: "getSession" }));
+  expect(s.calls).toEqual([{ req: { method: "getSession" }, ctx: { sessionHash: "phone", remote: true } }]);
 });
 
 test("the response is { ok: true, result }", async () => {
   const s = setup();
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
+  expect(await s.send(encode({ method: "getSession" }))).toEqual({
     ok: true,
     result: { id: "p1" },
   });
@@ -65,14 +63,17 @@ test("the response is { ok: true, result }", async () => {
 
 test("an undefined result is answered as null", async () => {
   const s = setup(() => undefined);
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({ ok: true, result: null });
+  expect(await s.send(encode({ method: "getSession" }))).toEqual({
+    ok: true,
+    result: null,
+  });
 });
 
 test("a KiboError is answered { ok: false, error: { code, message } }", async () => {
   const s = setup(() => {
     throw new KiboError("NOT_FOUND", "project p1 not found");
   });
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
+  expect(await s.send(encode({ method: "getSession" }))).toEqual({
     ok: false,
     error: { code: "NOT_FOUND", message: "project p1 not found" },
   });
@@ -85,7 +86,7 @@ test("an unexpected error is answered as an internal error without its detail", 
   const original = console.error;
   console.error = () => {};
   try {
-    expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
+    expect(await s.send(encode({ method: "getSession" }))).toEqual({
       ok: false,
       error: { code: "INTERNAL", message: "internal error" },
     });
@@ -110,7 +111,7 @@ test("an unparsable payload yields INVALID_INPUT", async () => {
 test("a replayed request id is refused without a second dispatch", async () => {
   const s = setup();
   const origin = { requestId: "req-same", at: T0 };
-  const payload = encode({ method: "getProject", projectId: "p1" });
+  const payload = encode({ method: "getSession" });
   expect(await s.send(payload, origin)).toMatchObject({ ok: true });
   expect(await s.send(payload, origin)).toMatchObject({ ok: false, error: { code: "REMOTE_REJECTED" } });
   expect(s.calls).toHaveLength(1);
@@ -119,7 +120,7 @@ test("a replayed request id is refused without a second dispatch", async () => {
 test("a request older than the replay window is refused", async () => {
   const s = setup();
   const origin = { requestId: "req-old", at: T0 - 11 * 60_000 };
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }), origin)).toMatchObject({
+  expect(await s.send(encode({ method: "getSession" }), origin)).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },
   });
@@ -130,7 +131,7 @@ test("the error message is redacted before it reaches the phone", async () => {
   const s = setup(() => {
     throw new KiboError("REMOTE_REJECTED", "github 401: ghp_fakeSecret");
   });
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
+  expect(await s.send(encode({ method: "getSession" }))).toEqual({
     ok: false,
     error: { code: "REMOTE_REJECTED", message: "github 401: ***" },
   });
@@ -139,7 +140,7 @@ test("the error message is redacted before it reaches the phone", async () => {
 test("a request more than ten minutes in the future is refused", async () => {
   const s = setup();
   const origin = { requestId: "req-future", at: T0 + 11 * 60_000 };
-  expect(await s.send(encode({ method: "getProject", projectId: "p1" }), origin)).toMatchObject({
+  expect(await s.send(encode({ method: "getSession" }), origin)).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },
   });
@@ -207,7 +208,10 @@ test("getProject reaches the phone with the folder name only", async () => {
   const s = setup(() => ({ meta: { id: "p1", folder: "/Users/adam/Documents/silo" }, tickets: [] }));
   expect(await s.send(encode({ method: "getProject", projectId: "p1" }))).toEqual({
     ok: true,
-    result: { meta: { id: "p1", folder: "silo" }, tickets: [] },
+    result: {
+      meta: { id: "p1", folder: "silo", worktree: null, storybook: null, delivery: null },
+      tickets: [],
+    },
   });
 });
 

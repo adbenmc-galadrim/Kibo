@@ -1,7 +1,7 @@
 import { type AgentSnapshot, INDEX_PROJECT_ID, type ProjectsIndex, type SnapshotKind } from "@kibo/remote";
 import { type Batch, isArchived, type ProjectSnapshot, type RpcRequest, type RpcResult } from "@kibo/schema";
 import type { QuestionImageFile } from "../questions/question-images";
-import { folderName, phoneAgentView, phoneLogEntry, phoneT3Status } from "./phone-view";
+import { phoneAgentView, phoneLogEntry, phoneMeta, phoneT3Status } from "./phone-view";
 
 const EVENTS_LIMIT = 200;
 const INDEX_KIND = "projects";
@@ -34,9 +34,9 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return Buffer.from(digest).toString("hex");
 }
 
-const withFolderName = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
+const phoneProject = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
   ...snapshot,
-  meta: { ...snapshot.meta, folder: folderName(snapshot.meta.folder) },
+  meta: phoneMeta(snapshot.meta),
 });
 
 async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnapshot> {
@@ -77,7 +77,7 @@ async function projectContents(deps: BuilderDeps, projectId: string): Promise<Co
   const snapshot = await rpc({ method: "getProject", projectId });
   const events = await rpc({ method: "listProjectEvents", projectId, limit: EVENTS_LIMIT });
   return [
-    { kind: "project", value: withFolderName(snapshot) },
+    { kind: "project", value: phoneProject(snapshot) },
     { kind: "events", value: events.items },
     { kind: "agent", value: await agentContent(rpc, projectId) },
     { kind: "ci", value: await rpc({ method: "listCiRuns", projectId, ticketId: null }) },

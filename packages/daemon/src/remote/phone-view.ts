@@ -1,6 +1,7 @@
 import { basename } from "node:path";
 import {
   type ProjectAgentView,
+  type ProjectMeta,
   type RpcRequest,
   type RpcResult,
   type RunLogEntry,
@@ -22,8 +23,15 @@ export const typedRpc =
   async (req) =>
     (await ask(req)) as RpcResult[typeof req.method];
 
-export const folderName = (folder: string | null): string | null =>
-  folder === null ? null : basename(folder);
+const folderName = (folder: string | null): string | null => (folder === null ? null : basename(folder));
+
+export const phoneMeta = <M extends ProjectMeta>(meta: M): M => ({
+  ...meta,
+  folder: folderName(meta.folder),
+  worktree: null,
+  storybook: null,
+  delivery: null,
+});
 
 const phoneRun = (run: RunView | null): RunView | null =>
   run && { ...run, workspace: null, cwd: null, transcriptPath: null };
@@ -66,14 +74,6 @@ function phonePreview(preview: T3Preview, ticketKey: string): T3Preview {
   return { argv: [], command: threadStartIn(name, ticketKey), folder: name, warning: preview.warning };
 }
 
-function withFolderName(result: unknown): unknown {
-  if (typeof result !== "object" || result === null || !("meta" in result)) return result;
-  const { meta } = result;
-  if (typeof meta !== "object" || meta === null || !("folder" in meta) || typeof meta.folder !== "string")
-    return result;
-  return { ...result, meta: { ...meta, folder: basename(meta.folder) } };
-}
-
 async function answerT3(req: RpcRequest & { projectId: string }, target: T3Target, ask: Ask) {
   if (target.kind === "t3.preview") return phonePreview(T3Preview.parse(await ask(req)), target.ticketKey);
   const preview = T3Preview.parse(await ask(previewRequest(req, target.ticketKey)));
@@ -84,8 +84,12 @@ async function answerT3(req: RpcRequest & { projectId: string }, target: T3Targe
 async function answerRead(req: RpcRequest, ask: Ask): Promise<unknown> {
   const rpc = typedRpc(ask);
   switch (req.method) {
-    case "getProject":
-      return withFolderName(await ask(req));
+    case "listProjects":
+      return (await rpc(req)).map(phoneMeta);
+    case "getProject": {
+      const snapshot = await rpc(req);
+      return { ...snapshot, meta: phoneMeta(snapshot.meta) };
+    }
     case "getProjectAgent":
       return phoneAgentView(await rpc(req));
     case "sendProjectAgentMessage":

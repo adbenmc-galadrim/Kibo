@@ -139,15 +139,15 @@ test("a close by the server is followed by a reconnection that triggers a full p
 
 test("a request message is decrypted, handled through the gate and answered with request.reply", async () => {
   const r = await rig();
-  const answer = await phoneRequest(r, r.keys, { method: "getProject", projectId: "silo" });
+  const answer = await phoneRequest(r, r.keys, { method: "getSession" });
   expect(answer).toEqual({ ok: true, result: { id: "silo" } });
-  expect(r.calls).toEqual([{ method: "getProject", projectId: "silo" }]);
+  expect(r.calls).toEqual([{ method: "getSession" }]);
 });
 
 test("a replayed request is executed once", async () => {
   const r = await rig();
   const requestId = crypto.randomUUID();
-  const body: RpcRequest = { method: "getProject", projectId: "silo" };
+  const body: RpcRequest = { method: "getSession" };
   expect(await phoneRequest(r, r.keys, body, requestId)).toMatchObject({ ok: true });
   expect(await phoneRequest(r, r.keys, body, requestId)).toMatchObject({
     ok: false,
@@ -159,7 +159,7 @@ test("a replayed request is executed once", async () => {
 test("a request sealed with another key is answered { ok: false, error: REMOTE_REJECTED }", async () => {
   const r = await rig();
   const stranger = await deriveKeys(generateRootKey(), r.accountId, 1);
-  expect(await phoneRequest(r, stranger, { method: "getProject", projectId: "silo" })).toMatchObject({
+  expect(await phoneRequest(r, stranger, { method: "getSession" })).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },
   });
