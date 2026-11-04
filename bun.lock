@@ -157,6 +157,7 @@
       "name": "@kibo/e2e",
       "version": "0.0.0",
       "devDependencies": {
+        "@kibo/remote-server": "workspace:*",
         "@kibo/sdk": "workspace:*",
         "@playwright/test": "1.55.0",
         "fast-check": "4.3.0",

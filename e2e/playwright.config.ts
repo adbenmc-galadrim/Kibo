@@ -1,5 +1,6 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { ALL_DAEMONS, agentConversationProjects, serveCommand } from "./daemons";
+import { phoneProjects, phoneWebServers } from "./phone-projects";
 import {
   pixelKitProject,
   pixelProjectOptions,
@@ -25,6 +26,7 @@ const only = onlyTheme();
 const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
 
 const daemons = ALL_DAEMONS.filter((d) => inTheme(d.scheme));
+const schemes = THEMES.filter(inTheme);
 const servers = [...daemons, ...SCENARIO_DAEMONS.filter((d) => inTheme(d.scheme))];
 
 type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown[]>;
@@ -46,15 +48,19 @@ export default defineConfig({
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
     ...agentConversationProjects(daemons.map((d) => d.name)),
-    ...THEMES.filter(inTheme).flatMap(scenarioProjectsOf),
+    ...schemes.flatMap(scenarioProjectsOf),
+    ...phoneProjects(schemes),
   ],
-  webServer: servers.map(
-    (d): WebServer => ({
-      command: serveCommand(d),
-      url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
-      reuseExistingServer: false,
-      timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
-    }),
-  ),
+  webServer: [
+    ...servers.map(
+      (d): WebServer => ({
+        command: serveCommand(d),
+        url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
+        reuseExistingServer: false,
+        timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
+        gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
+      }),
+    ),
+    ...phoneWebServers(schemes),
+  ],
 });
