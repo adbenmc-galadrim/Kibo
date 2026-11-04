@@ -36,7 +36,8 @@ export function KanbanCard(props: Props) {
   const hold = useTouchHold(() => props.onHold?.());
   const blocked = useWriteBlock();
   const sortable = useSortable({ id: t.id, attributes: { role: "article" }, disabled: blocked !== null });
-  const { attributes, listeners, transform, transition, isDragging } = sortable;
+  const { listeners, transform, transition, isDragging } = sortable;
+  const { "aria-disabled": _dragDisabled, ...attributes } = sortable.attributes;
   const ref = (node: HTMLElement | null) => {
     sortable.setNodeRef(node);
     sortable.setActivatorNodeRef(node);

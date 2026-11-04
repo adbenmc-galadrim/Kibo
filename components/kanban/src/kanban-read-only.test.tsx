@@ -24,11 +24,16 @@ const readOnlyBoard = () => {
 const disabled = (el: HTMLElement) =>
   el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
 
+const inDisabled = (el: HTMLElement) => el.closest('[aria-disabled="true"], [disabled]') !== null;
+
 test("read-only, the cards cannot be dragged and the add buttons are greyed with the reason", async () => {
   readOnlyBoard();
   const todo = await screen.findByRole("region", { name: "À faire" });
-  for (const card of within(todo).getAllByRole("article"))
-    expect(card.getAttribute("aria-disabled")).toBe("true");
+  const card = within(todo).getAllByRole("article")[0];
+  if (!card) throw new Error("no card");
+  card.focus();
+  await userEvent.setup().keyboard("[Space]");
+  expect(document.querySelector('[data-slot="kanban-drag-preview"]')).toBeNull();
   const add = within(todo).getByRole("button", { name: "Nouveau ticket dans À faire" });
   expect(disabled(add)).toBe(true);
   expect(add.title).toBe(MAC_OFF);
@@ -44,6 +49,17 @@ test("read-only, the card menu greys moves and removal but still opens the ticke
   const target = await screen.findByRole("menuitem", { name: new RegExp(`En cours.*${MAC_OFF}`) });
   expect(target.getAttribute("aria-disabled")).toBe("true");
   await user.click(screen.getByRole("menuitem", { name: "Ouvrir" }));
+  expect(m.opened.length).toBe(1);
+});
+
+test("read-only, a card stays readable: neither it nor its title is disabled and the title opens the ticket", async () => {
+  const m = readOnlyBoard();
+  const todo = await screen.findByRole("region", { name: "À faire" });
+  for (const card of within(todo).getAllByRole("article")) expect(inDisabled(card)).toBe(false);
+  const card = within(todo).getByRole("article", { name: /Arbre des pages/ });
+  const title = within(card).getByRole("button", { name: "Arbre des pages" });
+  expect(inDisabled(title)).toBe(false);
+  await userEvent.setup().click(title);
   expect(m.opened.length).toBe(1);
 });
 

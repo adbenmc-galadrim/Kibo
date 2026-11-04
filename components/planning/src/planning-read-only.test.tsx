@@ -32,7 +32,14 @@ test("read-only, a card cannot be dragged nor planned, but still opens and the l
   const { m } = setupPlanning(TODAY, { writeBlock: MAC_OFF });
   const user = userEvent.setup();
   const f9 = await cardIn("À planifier", "F9");
-  expect(f9.closest("article")?.getAttribute("aria-disabled")).toBe("true");
+  const article = f9.closest("article");
+  if (!article) throw new Error("no F9 card");
+  expect(article.closest('[aria-disabled="true"]')).toBeNull();
+  const open = screen.getByRole("button", { name: "Exporter le dossier client" });
+  expect(open.closest('[aria-disabled="true"], [disabled]')).toBeNull();
+  article.focus();
+  await user.keyboard("[Space]");
+  expect(document.querySelector('[data-slot="planning-drag-preview"]')).toBeNull();
   await user.click(screen.getByRole("button", { name: "Actions de F9" }));
   await user.click(await screen.findByRole("menuitem", { name: "Planifier dans" }));
   for (const item of await screen.findAllByRole("menuitem", { name: new RegExp(MAC_OFF) }))

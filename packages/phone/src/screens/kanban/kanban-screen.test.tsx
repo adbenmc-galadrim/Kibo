@@ -210,12 +210,26 @@ test("Mac off, the board is read-only with the band reason and comes back writab
   render(<App runtime={fixture.runtime} />);
   const user = userEvent.setup();
   const card = await screen.findByRole("article", { name: /Passage à Expo SDK 54/ });
-  expect(card.getAttribute("aria-disabled")).toBe("true");
   const key = card.getAttribute("data-key") ?? "";
-  await user.click(within(card).getByRole("button", { name: `Actions ${key}` }));
+  const actions = within(card).getByRole("button", { name: `Actions ${key}` });
+  await user.click(actions);
   const remove = await screen.findByRole("menuitem", { name: /Supprimer….*Mac éteint/ });
   expect(remove.getAttribute("aria-disabled")).toBe("true");
   await user.keyboard("{Escape}");
   act(() => fixture.presence.set({ macOnline: true, phoneOnline: true }));
-  await waitFor(() => expect(card.getAttribute("aria-disabled")).toBe("false"));
+  await user.click(actions);
+  const live = await screen.findByRole("menuitem", { name: /^Supprimer…/ });
+  expect(live.getAttribute("aria-disabled")).not.toBe("true");
+});
+
+test("Mac off, a card still opens its ticket: reading is never greyed", async () => {
+  const snapshot = siloSnapshot();
+  const { runtime } = await siloFixture(snapshot, { connectivity: { macOnline: false, phoneOnline: true } });
+  render(<App runtime={runtime} />);
+  const card = await screen.findByRole("article", { name: /Passage à Expo SDK 54/ });
+  const title = within(card).getByRole("button", { name: "Passage à Expo SDK 54" });
+  expect(title.closest('[aria-disabled="true"], [disabled]')).toBeNull();
+  await userEvent.setup().click(title);
+  const ticketId = snapshot.tickets.find((t) => t.title === "Passage à Expo SDK 54")?.id;
+  await waitFor(() => expect(window.location.hash).toBe(`#/p/silo/t/${encodeURIComponent(ticketId ?? "")}`));
 });

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { macTicket, offlineBand, openTab, pairPhone, stallMac, switchMacOff, switchMacOn } from "./phone-kit";
 
-test("Mac off: the band gives the time, writes are greyed, the Graphe stays, the band leaves on return", async ({
+test("Mac off: the band gives the time, writes are greyed, a card still opens, the Graphe stays, the band leaves on return", async ({
   page,
 }) => {
   test.setTimeout(120_000);
@@ -14,8 +14,15 @@ test("Mac off: the band gives the time, writes are greyed, the Graphe stays, the
 
     await openTab(page, "Kanban");
     await expect(offlineBand(page)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Actions SILO-46" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Nouveau ticket dans À faire" })).toBeDisabled();
+    await page.getByRole("button", { name: "Actions SILO-46" }).click();
+    await expect(page.getByRole("menuitem", { name: /^Supprimer…/ })).toBeDisabled();
+    await expect(page.getByRole("menuitem", { name: "Ouvrir" })).toBeEnabled();
+    await page.keyboard.press("Escape");
+    const card = page.getByRole("article", { name: /^SILO-46 / });
+    await card.getByRole("button", { name: "Démo · F4", exact: true }).click();
+    await expect(page.getByRole("article", { name: "SILO-46" })).toBeVisible();
+    await page.goBack();
     await openTab(page, "Graphe");
     await expect(page.getByRole("region", { name: "Fonctionnalités par sprint" })).toBeVisible();
   } finally {

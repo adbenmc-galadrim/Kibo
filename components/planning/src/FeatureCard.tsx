@@ -103,10 +103,9 @@ type Props = { card: Card; onOpen: () => void; menu: readonly MenuEntry[] };
 
 export function FeatureCard({ card, onOpen, menu }: Props) {
   const blocked = useWriteBlock();
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: card.id,
-    disabled: blocked !== null,
-  });
+  const draggable = useDraggable({ id: card.id, disabled: blocked !== null });
+  const { listeners, setNodeRef, isDragging } = draggable;
+  const { "aria-disabled": _dragDisabled, ...attributes } = draggable.attributes;
   const article = (
     <article
       ref={setNodeRef}
