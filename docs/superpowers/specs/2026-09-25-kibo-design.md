@@ -3376,4 +3376,15 @@ Sur téléphone, avec un projet réel :
 
 ### 52.12 Écarts constatés à l'exécution
 
-Remplis au jalon depuis la section « Écarts » du plan.
+- **Clés par époque** : l'info HKDF porte l'époque (`kibo-remote/<sens>/v1:<époque>`) ; la réponse a sa propre info (`kibo-remote/reply/v1:`), pour qu'un serveur ne puisse pas renvoyer une demande comme réponse. Un démon à jour face à une ancienne application téléphone refuse les écritures : le serveur se déploie avant ou avec le démon.
+- **Numéro des blocs** : le `seq` vient de l'horloge du Mac et ne décroît jamais, même après un redémarrage du démon.
+- **Lecture seule dans le SDK** : les composants lisent `useWriteBlock` (SDK) et grisent leurs écritures Mac éteint ; ce n'est plus seulement une affaire de requêtes de conteneur. Rendu de bureau inchangé (signal toujours vrai). La bascule de vue du Planning n'est pas enregistrée en lecture seule ; « Exporter » est grisé.
+- **CSP** : nonce par réponse `index.html` (en-tête et `<meta property="csp-nonce">`), passé à `get-nonce` et au `Viewport` des Select. La coque est servie par le réseau d'abord ; le nonce mis en cache n'est rejoué qu'hors ligne ou sur une erreur 5xx, et ne protège que la mise en forme.
+- **Dossier du projet** : le téléphone reçoit le nom du dossier seul, jamais son chemin ; aucune réponse relayée (`phone-view.ts`) ne porte de chemin local (`worktree`, `storybook`, `delivery` à `null`, `cwd`, `memoryPath`, `bin` retirés).
+- **Bande d'état** : « Synchronisation… » (après environ 1 s) pendant une reconnexion ou un retour au premier plan, au lieu de « Mac éteint » ; au-delà de 30 s de reconnexion, l'état hors ligne revient. Une écriture faite pendant la reconnexion est tentée ; le serveur répond 503 si le Mac manque.
+- **Révocation** : couper l'accès, retirer le téléphone ou en appairer un nouveau attend la confirmation du serveur ; sans elle, la révocation reste en attente et l'accès téléphone est coupé jusqu'à ce qu'elle passe.
+- **Anti-rejeu** : une demande datée d'avant le démarrage du démon est refusée, sans marge d'horloge.
+- **Blocs** : le téléphone lit d'abord les en-têtes (`/api/phone/snapshot-headers`) et ne télécharge que les blocs plus récents ; la route qui renvoyait tous les blocs est retirée.
+- **Passkeys** : vérification de l'utilisateur exigée (Face ID ou code).
+- **Seuil des widgets** : voir §52.11 (32rem au lieu de 36rem).
+- **Non vérifié sur un vrai iPhone** : clé dans IndexedDB de l'application installée, passkeys en mode autonome, `BarcodeDetector`, glisser et appui long, WebSocket après la veille, défilement du Graphe sur deux axes, fenêtre « Lancer dans T3 » (pensée pour 520 px).
