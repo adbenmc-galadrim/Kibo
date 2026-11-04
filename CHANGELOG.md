@@ -2,6 +2,10 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.35.0-alpha.2 — 2026-11-04
+
+- Sur iPhone, l'écran d'appairage du téléphone affiche de nouveau la caméra pour scanner le QR code du Mac.
+
 ## 0.35.0-alpha.1 — 2026-11-04
 
 Kibo s'ouvre sur ton téléphone, à kibo.shinseo.fr, sans exposer le Mac : le Mac se connecte au serveur, chiffre tout de bout en bout, et le serveur ne voit jamais rien en clair.
