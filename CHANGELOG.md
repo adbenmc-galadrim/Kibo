@@ -13,6 +13,14 @@ Kibo s'ouvre sur ton téléphone, à kibo.shinseo.fr, sans exposer le Mac : le M
 - L'application téléphone s'installe sur l'écran d'accueil et garde ses données chiffrées sur l'appareil.
 - Révoquer le téléphone ou couper l'accès distant efface la session sur le serveur, même si le Mac était hors ligne au moment du clic.
 
+## 0.34.0-alpha.4 — 2026-11-02
+
+Le thème se choisit et se personnalise directement dans Kibo, dans Paramètres → Apparence.
+
+- Mode Simple : une galerie de thèmes pour le sombre (Graphite, Noir, Gris moyen, Ardoise, Lagon, Prune) et pour le clair (Clair, Sable, Brume).
+- Mode Personnalisé : pars d'un thème, puis règle chacune des 17 couleurs ; l'aperçu interactif montre le résultat et un clic sur un élément sélectionne sa couleur.
+- Tes thèmes : enregistre tes couleurs sous un nom, modifie-les ensuite ou supprime-les. Kibo signale ce qui devient illisible et propose de le corriger.
+
 ## 0.34.0-alpha.3 — 2026-11-02
 
 - Mises à jour : une nouvelle recherche, quand une version est déjà disponible, n'affiche plus à tort « Impossible de joindre GitHub ».

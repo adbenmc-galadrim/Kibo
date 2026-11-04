@@ -3388,3 +3388,15 @@ Sur téléphone, avec un projet réel :
 - **Passkeys** : vérification de l'utilisateur exigée (Face ID ou code).
 - **Seuil des widgets** : voir §52.11 (32rem au lieu de 36rem).
 - **Non vérifié sur un vrai iPhone** : clé dans IndexedDB de l'application installée, passkeys en mode autonome, `BarcodeDetector`, glisser et appui long, WebSocket après la veille, défilement du Graphe sur deux axes, fenêtre « Lancer dans T3 » (pensée pour 520 px).
+
+## 53. Thème personnalisable (demande d'Adam du 2026-11-02)
+
+Dans Paramètres → Apparence, deux modes :
+
+- **Simple** : une galerie de thèmes, un clic applique le thème.
+- **Personnalisé** : on part d'un thème, puis chacune des 17 couleurs se règle (surfaces, texte, statuts, marque), avec un aperçu interactif : cliquer un élément de l'aperçu sélectionne sa couleur.
+- **Mes thèmes** : « Nouveau thème » enregistre les couleurs en cours sous un nom ; un thème créé se modifie directement et se supprime. Un thème fourni n'est jamais écrasé : ses retouches se gardent à part et « Revenir au thème » les retire.
+- **Sombre et clair** ont chacun leur thème actif. Les couleurs s'appliquent à toute l'application en direct.
+- **Lisibilité** : Kibo signale chaque couleur sous 4,5:1 (3:1 pour l'accent) sans l'interdire ; « Corriger » l'ajuste. Dégradés, bordures de champ et texte orange se calculent depuis ces 17 couleurs.
+
+Décisions du chef d'équipe : Graphite et Clair restent les thèmes par défaut ; le réglage reste sur la machine (`kibo.palette`), hors CRDT. Les couleurs Tailwind brutes hors tokens ne suivent pas le thème. La règle « orange réservé aux agents » devient « la couleur Agents est réservée aux agents », sa teinte étant réglable. Maquettes : page « Thème personnalisable · Propositions » de « Kibo · Redesign ».
