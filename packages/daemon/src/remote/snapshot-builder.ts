@@ -1,15 +1,7 @@
 import { type AgentSnapshot, INDEX_PROJECT_ID, type ProjectsIndex, type SnapshotKind } from "@kibo/remote";
-import {
-  type Batch,
-  isArchived,
-  type ProjectSnapshot,
-  type RpcRequest,
-  type RpcResult,
-  type RunLogEntry,
-  type T3Status,
-} from "@kibo/schema";
+import { type Batch, isArchived, type ProjectSnapshot, type RpcRequest, type RpcResult } from "@kibo/schema";
 import type { QuestionImageFile } from "../questions/question-images";
-import { folderName } from "./phone-view";
+import { folderName, phoneAgentView, phoneLogEntry, phoneT3Status } from "./phone-view";
 
 const EVENTS_LIMIT = 200;
 const INDEX_KIND = "projects";
@@ -47,15 +39,6 @@ const withFolderName = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
   meta: { ...snapshot.meta, folder: folderName(snapshot.meta.folder) },
 });
 
-function withoutLocalPaths(entry: RunLogEntry): RunLogEntry {
-  if (entry.event.type !== "spawned") return entry;
-  const { cwd: _cwd, addDirs: _addDirs, ...event } = entry.event;
-  return { ...entry, event: { ...event, workspace: "" } };
-}
-
-const t3Content = ({ available, reason }: T3Status): Pick<T3Status, "available" | "reason"> =>
-  reason === undefined ? { available } : { available, reason };
-
 async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnapshot> {
   const view = await rpc({ method: "getProjectAgent", projectId });
   const runIds = [view.session?.runId, ...view.past.map((s) => s.runId)].filter(
@@ -63,7 +46,7 @@ async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnap
   );
   const logs: AgentSnapshot["logs"] = {};
   for (const runId of new Set(runIds))
-    logs[runId] = (await rpc({ method: "getRunLog", runId })).map(withoutLocalPaths);
+    logs[runId] = (await rpc({ method: "getRunLog", runId })).map(phoneLogEntry);
   const pastBatches: Record<string, Batch[]> = Object.fromEntries(
     await Promise.all(
       view.past.map(async ({ runId }) => [
@@ -72,8 +55,7 @@ async function agentContent(rpc: LocalRpc, projectId: string): Promise<AgentSnap
       ]),
     ),
   );
-  const run = view.run && { ...view.run, workspace: null, cwd: null, transcriptPath: null };
-  return { view: { ...view, run, memoryPath: "" }, logs, pastBatches };
+  return { view: phoneAgentView(view), logs, pastBatches };
 }
 
 function imageContents(deps: BuilderDeps, snapshot: ProjectSnapshot): Content[] {
@@ -99,7 +81,7 @@ async function projectContents(deps: BuilderDeps, projectId: string): Promise<Co
     { kind: "events", value: events.items },
     { kind: "agent", value: await agentContent(rpc, projectId) },
     { kind: "ci", value: await rpc({ method: "listCiRuns", projectId, ticketId: null }) },
-    { kind: "t3", value: t3Content(await rpc({ method: "t3.status" })) },
+    { kind: "t3", value: phoneT3Status(await rpc({ method: "t3.status" })) },
     ...imageContents(deps, snapshot),
   ];
 }

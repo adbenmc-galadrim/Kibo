@@ -1,4 +1,4 @@
-import type { ChangeMessage, RemoteStatus, RpcRequest, RpcResult } from "@kibo/schema";
+import type { ChangeMessage, RemoteStatus, RpcRequest } from "@kibo/schema";
 import type { SecretStore } from "../integrations/types";
 import type { QuestionImageFile } from "../questions/question-images";
 import { LOCAL_CONTEXT, type RpcContext, type RpcExtension } from "../rpc-extensions";
@@ -6,6 +6,7 @@ import type { Store } from "../store";
 import { createRemoteController } from "./controller";
 import { createExclusive } from "./exclusive";
 import { createLink } from "./link";
+import { typedRpc } from "./phone-view";
 import { createPusher } from "./pusher";
 import { createReplayGuard } from "./replay-guard";
 import { createRequestHandler } from "./request-handler";
@@ -13,7 +14,7 @@ import { createRevoker } from "./revoker";
 import { remoteRpc } from "./rpc";
 import { openRemoteSecrets } from "./secrets";
 import { openRemoteSettings } from "./settings";
-import { createSnapshotBuilder, type LocalRpc } from "./snapshot-builder";
+import { createSnapshotBuilder } from "./snapshot-builder";
 import { type RemoteTimers, realTimers } from "./timers";
 
 export const DEFAULT_REMOTE_URL = "https://kibo.shinseo.fr";
@@ -37,11 +38,6 @@ type RemoteDeps = {
 
 export type RemoteModule = { rpc: RpcExtension; status(): Promise<RemoteStatus>; stop(): Promise<void> };
 
-const localRpc =
-  (dispatch: RemoteDeps["dispatch"]): LocalRpc =>
-  async (req) =>
-    (await dispatch(req, LOCAL_CONTEXT)) as RpcResult[typeof req.method];
-
 const changedProject = (message: ChangeMessage): string | null | undefined => {
   if ("type" in message && QUIET_CHANGES.has(message.type)) return undefined;
   return "projectId" in message ? message.projectId : null;
@@ -51,7 +47,10 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
   const timers = deps.timers ?? realTimers;
   const settings = openRemoteSettings(deps.store);
   const secrets = openRemoteSecrets(deps.secrets);
-  const builder = createSnapshotBuilder({ rpc: localRpc(deps.dispatch), readImage: deps.readImage });
+  const builder = createSnapshotBuilder({
+    rpc: typedRpc((req) => deps.dispatch(req, LOCAL_CONTEXT)),
+    readImage: deps.readImage,
+  });
   const handleRequest = createRequestHandler({
     keys: () => link.keys(),
     gate: { dispatch: deps.dispatch, seen: createReplayGuard(), now: deps.now, redact: deps.redact },
