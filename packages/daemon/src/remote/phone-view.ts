@@ -18,7 +18,7 @@ type T3Kind = "t3.preview" | "t3.launch";
 type T3Target = { kind: T3Kind; ticketKey: string };
 type PhoneT3Status = Pick<T3Status, "available" | "reason">;
 
-export const typedRpc =
+export const trustDaemonDispatch =
   (ask: Ask): LocalRpc =>
   async (req) =>
     (await ask(req)) as RpcResult[typeof req.method];
@@ -82,7 +82,7 @@ async function answerT3(req: RpcRequest & { projectId: string }, target: T3Targe
 }
 
 async function answerRead(req: RpcRequest, ask: Ask): Promise<unknown> {
-  const rpc = typedRpc(ask);
+  const rpc = trustDaemonDispatch(ask);
   switch (req.method) {
     case "listProjects":
       return (await rpc(req)).map(phoneMeta);

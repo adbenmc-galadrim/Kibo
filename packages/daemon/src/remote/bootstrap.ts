@@ -6,7 +6,7 @@ import type { Store } from "../store";
 import { createRemoteController } from "./controller";
 import { createExclusive } from "./exclusive";
 import { createLink } from "./link";
-import { typedRpc } from "./phone-view";
+import { trustDaemonDispatch } from "./phone-view";
 import { createPusher } from "./pusher";
 import { createReplayGuard } from "./replay-guard";
 import { createRequestHandler } from "./request-handler";
@@ -48,7 +48,7 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
   const settings = openRemoteSettings(deps.store);
   const secrets = openRemoteSecrets(deps.secrets);
   const builder = createSnapshotBuilder({
-    rpc: typedRpc((req) => deps.dispatch(req, LOCAL_CONTEXT)),
+    rpc: trustDaemonDispatch((req) => deps.dispatch(req, LOCAL_CONTEXT)),
     readImage: deps.readImage,
   });
   const handleRequest = createRequestHandler({
