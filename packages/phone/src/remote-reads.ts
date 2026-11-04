@@ -143,6 +143,17 @@ async function componentRead(deps: ReadDeps, projectId: string, call: ComponentC
   }
 }
 
+export const READ_LOCALLY = [
+  "getSession",
+  "listProjects",
+  "getProject",
+  "listProjectEvents",
+  "listCiRuns",
+  "getProjectAgent",
+  "getRunLog",
+  "t3.status",
+] as const satisfies readonly RpcRequest["method"][];
+
 export const isLocalCall = (call: ComponentCall): boolean =>
   call.kind.startsWith("data.") || call.kind === "settings.get";
 
