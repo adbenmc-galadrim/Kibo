@@ -49,22 +49,25 @@ Tout l'état est dans `/data/kibo-remote.db` (compte, passkeys, sessions, blocs 
 
 ## Déploiement sur Coolify
 
-Ressource « kibo » de type Dockerfile, sur le dépôt Kibo :
+L'image se construit dans GitHub Actions, jamais sur le serveur : le build du monorepo dépasse 2 Go de mémoire et a saturé le VPS (4 Go, sans swap) le 2026-11-04.
 
-- **Branche** : `phase/35` pendant l'alpha de test, puis `main` une fois la phase fusionnée.
-- **Base directory** `/`, **Dockerfile location** `/packages/remote-server/Dockerfile`.
+`.github/workflows/deploy-remote.yml`, à chaque release publiée ou à la main (`gh workflow run deploy-remote.yml --ref <branche>`) :
+
+1. construit `packages/remote-server/Dockerfile` depuis la racine et pousse `ghcr.io/adbenmc-galadrim/kibo-remote:<sha court>` (paquet GHCR **public**, pour que Coolify le tire sans identifiants) ;
+2. si `COOLIFY_REMOTE_UUID` est posée, règle le tag de l'image sur la ressource (`PATCH /api/v1/applications/<uuid>`) puis la redéploie (`POST /api/v1/deploy`).
+
+Ressource « kibo » de type **Docker Image** :
+
+- **Image** `ghcr.io/adbenmc-galadrim/kibo-remote`, tag réglé par le workflow.
 - **Domaine** `https://kibo.shinseo.fr`, port exposé `8080`.
 - **Stockage persistant** monté sur `/data` : un volume nommé, pas un répertoire de l'hôte (un dossier vierge appartient à root et SQLite ne pourrait pas y écrire).
-- **Variables** : `KIBO_REMOTE_ORIGIN=https://kibo.shinseo.fr`, `KIBO_REMOTE_DB=/data/kibo-remote.db`, `KIBO_REMOTE_SETUP_CODE` (secret, *Available at Buildtime* décoché pour qu'il n'entre jamais dans le build), et de préférence « Include Source Commit in Build » coché pour `SOURCE_COMMIT`.
-- **Auto-deploy coupé** : le déploiement passe par le workflow, pour ne pas déployer deux fois.
-- **Healthcheck de Coolify coupé** : il appelle `curl` ou `wget`, absents de l'image, et ferait échouer chaque déploiement. Le `HEALTHCHECK` du `Dockerfile` (Bun) suffit.
+- **Variables** : `KIBO_REMOTE_ORIGIN=https://kibo.shinseo.fr`, `KIBO_REMOTE_DB=/data/kibo-remote.db`, `KIBO_REMOTE_SETUP_CODE` (secret, *Available at Buildtime* décoché).
+- **Healthcheck de Coolify coupé** : il appelle `curl` ou `wget`, absents de l'image. Le `HEALTHCHECK` du `Dockerfile` (Bun) suffit.
 
-`.github/workflows/deploy-remote.yml` déclenche le déploiement à chaque release publiée, ou à la main (`workflow_dispatch`), par `POST $COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_REMOTE_UUID&force=false`. Réglages du dépôt (Settings › Secrets and variables › Actions) :
+Réglages du dépôt (Settings › Secrets and variables › Actions) :
 
 | Nom | Type | Valeur |
 | --- | --- | --- |
-| `COOLIFY_TOKEN` | secret | Jeton API Coolify (droit « deploy » suffisant) |
+| `COOLIFY_TOKEN` | secret | Jeton API Coolify (droits « write » et « deploy ») |
 | `COOLIFY_URL` | variable | Adresse de l'instance Coolify |
 | `COOLIFY_REMOTE_UUID` | variable | UUID de la ressource « kibo » |
-
-Reconstruire à la main : `gh workflow run deploy-remote.yml`, ou « Redeploy » dans Coolify.
