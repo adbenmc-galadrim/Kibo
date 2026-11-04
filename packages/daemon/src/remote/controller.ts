@@ -10,6 +10,7 @@ import type { RemoteSettingsStore } from "./settings";
 
 const OPEN_WAIT_MS = 5_000;
 const PAIR_WAIT_MS = 10_000;
+const REVOKE_WAIT_MS = 5_000;
 
 type ControllerDeps = {
   settings: RemoteSettingsStore;
@@ -105,7 +106,7 @@ export function createRemoteController(deps: ControllerDeps): RemoteController {
       return status();
     }),
     disable: withReady(async () => {
-      const revoked = link.send({ type: "phone.revoke" });
+      const revoked = await link.sendConfirmed({ type: "phone.revoke" }, REVOKE_WAIT_MS);
       link.stop();
       pusher.stop();
       if (revoked) {

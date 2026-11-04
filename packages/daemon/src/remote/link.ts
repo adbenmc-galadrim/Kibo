@@ -28,6 +28,7 @@ export type RemoteLink = {
   keys(): RemoteKeys | null;
   rootKey(): Uint8Array | null;
   send(message: MacMessage): boolean;
+  sendConfirmed(message: MacMessage, timeoutMs: number): Promise<boolean>;
   connected(): boolean;
   opened(timeoutMs: number): Promise<boolean>;
   pairToken(timeoutMs: number): Promise<PairCreated>;
@@ -84,6 +85,8 @@ export function createLink(deps: LinkDeps): RemoteLink {
     keys: () => live?.keys ?? null,
     rootKey: () => live?.rootKey ?? null,
     send: (message) => live?.connection.send(message) ?? false,
+    sendConfirmed: async (message, timeoutMs) =>
+      live ? live.connection.sendConfirmed(message, timeoutMs) : false,
     connected: () => live?.connection.connected() ?? false,
     opened: async (timeoutMs) => (live ? live.connection.opened(timeoutMs) : false),
     pairToken: (timeoutMs) =>
