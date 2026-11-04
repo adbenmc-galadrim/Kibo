@@ -1,4 +1,5 @@
-import { afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { Database } from "bun:sqlite";
+import { afterEach, beforeAll, describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,6 +23,27 @@ describe("remote server", () => {
     expect(idleSeconds(12_000)).toBe(17);
     expect(idleSeconds(50)).toBe(6);
     expect(idleSeconds(600_000)).toBe(255);
+  });
+
+  test("startRemoteServer closes its database when the server cannot listen", async () => {
+    const taken = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("taken") });
+    const close = spyOn(Database.prototype, "close");
+    try {
+      const refused = await startRemoteServer({
+        port: taken.port ?? 0,
+        hostname: "127.0.0.1",
+        db: ":memory:",
+        origin: "http://127.0.0.1",
+        rpId: "127.0.0.1",
+        setupCode: "a-setup-code-long-enough",
+        staticDir: null,
+      }).catch((e: unknown) => e);
+      expect(refused).toBeInstanceOf(Error);
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      close.mockRestore();
+      await taken.stop(true);
+    }
   });
 
   test("startRemoteServer listens and reports health", async () => {

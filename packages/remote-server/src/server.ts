@@ -162,10 +162,19 @@ export function serveRemote(db: Database, opts: Omit<RemoteServerOptions, "db">)
   };
 }
 
+function serveOrClose(db: Database, opts: RemoteServerOptions): RemoteServer {
+  try {
+    return serveRemote(db, opts);
+  } catch (e) {
+    db.close();
+    throw e;
+  }
+}
+
 export async function startRemoteServer(opts: RemoteServerOptions): Promise<RemoteServer> {
   assertSetupCode(opts.setupCode);
   const db = openDb(opts.db);
-  const server = serveRemote(db, opts);
+  const server = serveOrClose(db, opts);
   return {
     ...server,
     stop: async () => {
