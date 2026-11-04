@@ -110,11 +110,18 @@ test("offline without a cached shell, the network failure surfaces", async () =>
   ).rejects.toThrow("Failed to fetch");
 });
 
-test("a failed answer from the server is passed on and never replaces the cached shell", async () => {
+test("a failed answer during a redeploy serves the cached shell and never replaces it", async () => {
   const cache = shellCache();
   const shell = new Request(`${ORIGIN}/index.html`);
   await cache.put(shell, page("b2xkLW5vbmNl"));
   const answer = await networkFirst(shell, cache, async () => new Response("down", { status: 502 }));
-  expect(answer.status).toBe(502);
+  expect(answer.status).toBe(200);
+  expect(await answer.text()).toContain("b2xkLW5vbmNl");
   expect(await cache.stored.get(shell.url)?.clone().text()).toContain("b2xkLW5vbmNl");
+});
+
+test("a failed answer without a cached shell is passed on", async () => {
+  const shell = new Request(`${ORIGIN}/index.html`);
+  const answer = await networkFirst(shell, shellCache(), async () => new Response("down", { status: 503 }));
+  expect(answer.status).toBe(503);
 });

@@ -48,8 +48,11 @@ export async function networkFirst(
 ): Promise<Response> {
   try {
     const response = await load(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      return response;
+    }
+    return (await cache.match(request)) ?? response;
   } catch (e) {
     const cached = await cache.match(request);
     if (cached) return cached;
