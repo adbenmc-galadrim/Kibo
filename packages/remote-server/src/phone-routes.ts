@@ -57,6 +57,8 @@ async function sessionRoute(
       return Response.json({ ok: true, expiresAt: session.expiresAt });
     case "GET /api/phone/snapshots":
       return Response.json(deps.snapshots.list(query(ProjectQuery, url).projectId));
+    case "GET /api/phone/snapshot-headers":
+      return Response.json(deps.snapshots.headers(query(ProjectQuery, url).projectId));
     case "GET /api/phone/snapshot": {
       const { projectId, kind } = query(SnapshotQuery, url);
       const sealed = deps.snapshots.get(projectId, kind);

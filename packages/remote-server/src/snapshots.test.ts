@@ -94,6 +94,17 @@ describe("snapshot store", () => {
     expect(store.list("p1")).toEqual([events, project]);
   });
 
+  test("headers by project returns the latest header per kind, without the block", () => {
+    const { store } = setup();
+    store.put(sealed("p1", "project", 1));
+    const project = sealed("p1", "project", 2);
+    const events = sealed("p1", "events", 1);
+    store.put(project);
+    store.put(events);
+    store.put(sealed("p2", "project", 9));
+    expect(store.headers("p1")).toEqual([events.header, project.header]);
+  });
+
   test("remove deletes one kind, removeProject deletes all kinds", () => {
     const { store } = setup();
     store.put(sealed("p1", "project", 1));

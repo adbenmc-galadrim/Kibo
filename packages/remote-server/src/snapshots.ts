@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { Sealed, SNAPSHOT_MAX_BYTES } from "@kibo/remote/protocol";
+import { Sealed, SNAPSHOT_MAX_BYTES, SnapshotHeader } from "@kibo/remote/protocol";
 import { KiboError } from "@kibo/schema";
 
 const SNAPSHOT_TOTAL_MAX_BYTES = 1_073_741_824;
@@ -8,6 +8,7 @@ export type SnapshotStore = {
   put(sealed: Sealed): boolean;
   get(projectId: string, kind: string): Sealed | null;
   list(projectId: string): Sealed[];
+  headers(projectId: string): SnapshotHeader[];
   remove(projectId: string, kind: string): boolean;
   removeProject(projectId: string): string[];
   clear(): void;
@@ -54,6 +55,9 @@ export function createSnapshotStore(db: Database, limits: SnapshotLimits): Snaps
   const all = db.query<Row, [string]>(
     "SELECT header, nonce, ciphertext FROM snapshots WHERE project_id = ? ORDER BY kind",
   );
+  const headers = db.query<{ header: string }, [string]>(
+    "SELECT header FROM snapshots WHERE project_id = ? ORDER BY kind",
+  );
   const kinds = db.query<{ kind: string }, [string]>(
     "SELECT kind FROM snapshots WHERE project_id = ? ORDER BY kind",
   );
@@ -81,6 +85,7 @@ export function createSnapshotStore(db: Database, limits: SnapshotLimits): Snaps
       return row ? toSealed(row) : null;
     },
     list: (projectId) => all.all(projectId).map(toSealed),
+    headers: (projectId) => headers.all(projectId).map((row) => SnapshotHeader.parse(JSON.parse(row.header))),
     remove: (projectId, kind) =>
       db.run("DELETE FROM snapshots WHERE project_id = ? AND kind = ?", [projectId, kind]).changes > 0,
     removeProject: (projectId) => {

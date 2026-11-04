@@ -52,6 +52,24 @@ describe("phone routes", () => {
     await Promise.all([phone.close(), mac.close()]);
   });
 
+  test("GET /api/phone/snapshot-headers?projectId=p1 returns each kind and seq without the blocks", async () => {
+    server = await startTestServer();
+    const { macToken } = await server.registerMac();
+    const cookie = server.phoneCookie();
+    const phone = await connectPhoneEvents(server.url, cookie);
+    const mac = await connectFakeMac(server.url, macToken);
+    const latest = [sealedSnapshot("p1", "events", 1), sealedSnapshot("p1", "project", 2)];
+    for (const sealed of [sealedSnapshot("p1", "project", 1), ...latest, sealedSnapshot("p2", "project", 1)])
+      mac.put({ type: "snapshot.put", sealed });
+    for (let i = 0; i < 4; i++) await phone.next("snapshot.changed");
+    const res = await get("/api/phone/snapshot-headers?projectId=p1", cookie);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(latest.map((s) => s.header));
+    expect((await get("/api/phone/snapshot-headers", cookie)).status).toBe(400);
+    expect((await get("/api/phone/snapshot-headers?projectId=p1")).status).toBe(401);
+    await Promise.all([phone.close(), mac.close()]);
+  });
+
   test("GET /api/phone/snapshot of a missing kind is 404 REMOTE_NOT_FOUND", async () => {
     server = await startTestServer();
     const res = await get("/api/phone/snapshot?projectId=p1&kind=project", server.phoneCookie());
