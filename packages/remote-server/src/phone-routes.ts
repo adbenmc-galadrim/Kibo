@@ -55,8 +55,6 @@ async function sessionRoute(
       return deps.upgradeEvents(req, cookie) ? undefined : fail("INVALID_INPUT", "websocket expected");
     case "GET /api/phone/session":
       return Response.json({ ok: true, expiresAt: session.expiresAt });
-    case "GET /api/phone/snapshots":
-      return Response.json(deps.snapshots.list(query(ProjectQuery, url).projectId));
     case "GET /api/phone/snapshot-headers":
       return Response.json(deps.snapshots.headers(query(ProjectQuery, url).projectId));
     case "GET /api/phone/snapshot": {

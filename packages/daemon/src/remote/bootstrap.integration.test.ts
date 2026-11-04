@@ -6,6 +6,7 @@ import {
   openSnapshot,
   Sealed,
   SealedRequest,
+  SnapshotHeader,
   sealRequest,
 } from "@kibo/remote";
 import { startTestServer, TEST_ORIGIN, type TestServer } from "@kibo/remote-server/testing";
@@ -25,7 +26,7 @@ afterEach(async () => {
   await cleanLaunched();
 });
 
-const SealedList = z.array(Sealed);
+const HeaderList = z.array(SnapshotHeader);
 const PROJECT_KINDS = ["agent", "ci", "events", "project", "t3"];
 const Relayed = z.object({ sealed: SealedRequest });
 
@@ -100,10 +101,15 @@ const enable = (r: Rig, setupCode = r.server.setupCode) =>
   r.rpc({ method: "remote.enable", serverUrl: r.server.url, setupCode }) as Promise<RemoteStatus>;
 
 async function snapshots(r: Rig, projectId: string, cookie = r.server.phoneCookie()) {
-  const res = await fetch(`${r.server.url}/api/phone/snapshots?projectId=${projectId}`, {
-    headers: { cookie },
-  });
-  return res.status === 200 ? SealedList.parse(await res.json()) : res.status;
+  const phoneGet = (path: string) => fetch(`${r.server.url}/api/phone/${path}`, { headers: { cookie } });
+  const res = await phoneGet(`snapshot-headers?projectId=${projectId}`);
+  if (res.status !== 200) return res.status;
+  const blocks: Sealed[] = [];
+  for (const { kind } of HeaderList.parse(await res.json())) {
+    const block = await phoneGet(`snapshot?projectId=${projectId}&kind=${encodeURIComponent(kind)}`);
+    if (block.status === 200) blocks.push(Sealed.parse(await block.json()));
+  }
+  return blocks;
 }
 
 const keychainRoot = (r: Rig) =>

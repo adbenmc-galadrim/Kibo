@@ -83,17 +83,6 @@ describe("snapshot store", () => {
     expect(store.get("p1", "project")).toEqual(latest);
   });
 
-  test("list by project returns the latest per kind", () => {
-    const { store } = setup();
-    store.put(sealed("p1", "project", 1));
-    const project = sealed("p1", "project", 2);
-    const events = sealed("p1", "events", 1);
-    store.put(project);
-    store.put(events);
-    store.put(sealed("p2", "project", 9));
-    expect(store.list("p1")).toEqual([events, project]);
-  });
-
   test("headers by project returns the latest header per kind, without the block", () => {
     const { store } = setup();
     store.put(sealed("p1", "project", 1));
@@ -111,10 +100,10 @@ describe("snapshot store", () => {
     store.put(sealed("p1", "events", 1));
     store.put(sealed("p2", "project", 1));
     expect(store.remove("p1", "events")).toBe(true);
-    expect(store.list("p1").map((s) => s.header.kind)).toEqual(["project"]);
+    expect(store.headers("p1").map((h) => h.kind)).toEqual(["project"]);
     expect(store.removeProject("p1")).toEqual(["project"]);
-    expect(store.list("p1")).toEqual([]);
-    expect(store.list("p2")).toHaveLength(1);
+    expect(store.headers("p1")).toEqual([]);
+    expect(store.headers("p2")).toHaveLength(1);
     expect(store.get("p1", "project")).toBeNull();
   });
 
@@ -124,7 +113,7 @@ describe("snapshot store", () => {
       () => store.put(sealed("p1", "project", 1, bytes(SNAPSHOT_MAX_BYTES + 1))),
       "REMOTE_TOO_LARGE",
     );
-    expect(store.list("p1")).toEqual([]);
+    expect(store.headers("p1")).toEqual([]);
   });
 
   test("total over 1 GiB throws REMOTE_TOO_LARGE", () => {

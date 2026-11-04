@@ -131,7 +131,7 @@ describe("revocation", () => {
     await expectError(await session(cookie), 401, "UNAUTHORIZED");
     await expectError(await login(9), 401, "UNAUTHORIZED");
     const fresh = server.phoneCookie();
-    const snapshots = await fetch(`${server.url}/api/phone/snapshots?projectId=p1`, {
+    const snapshots = await fetch(`${server.url}/api/phone/snapshot-headers?projectId=p1`, {
       headers: { cookie: fresh },
     });
     expect(await snapshots.json()).toEqual([]);

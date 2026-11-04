@@ -7,7 +7,6 @@ const SNAPSHOT_TOTAL_MAX_BYTES = 1_073_741_824;
 export type SnapshotStore = {
   put(sealed: Sealed): boolean;
   get(projectId: string, kind: string): Sealed | null;
-  list(projectId: string): Sealed[];
   headers(projectId: string): SnapshotHeader[];
   remove(projectId: string, kind: string): boolean;
   removeProject(projectId: string): string[];
@@ -52,9 +51,6 @@ export function createSnapshotStore(db: Database, limits: SnapshotLimits): Snaps
   const one = db.query<Row, [string, string]>(
     "SELECT header, nonce, ciphertext FROM snapshots WHERE project_id = ? AND kind = ?",
   );
-  const all = db.query<Row, [string]>(
-    "SELECT header, nonce, ciphertext FROM snapshots WHERE project_id = ? ORDER BY kind",
-  );
   const headers = db.query<{ header: string }, [string]>(
     "SELECT header FROM snapshots WHERE project_id = ? ORDER BY kind",
   );
@@ -84,7 +80,6 @@ export function createSnapshotStore(db: Database, limits: SnapshotLimits): Snaps
       const row = one.get(projectId, kind);
       return row ? toSealed(row) : null;
     },
-    list: (projectId) => all.all(projectId).map(toSealed),
     headers: (projectId) => headers.all(projectId).map((row) => SnapshotHeader.parse(JSON.parse(row.header))),
     remove: (projectId, kind) =>
       db.run("DELETE FROM snapshots WHERE project_id = ? AND kind = ?", [projectId, kind]).changes > 0,

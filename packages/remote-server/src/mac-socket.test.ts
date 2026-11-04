@@ -58,7 +58,7 @@ describe("mac registration", () => {
     const cookie = server.phoneCookie();
     await server.registerMac();
     expect(await mac.closed).toBe(4401);
-    const res = await fetch(`${server.url}/api/phone/snapshots?projectId=p1`, { headers: { cookie } });
+    const res = await fetch(`${server.url}/api/phone/snapshot-headers?projectId=p1`, { headers: { cookie } });
     expect(res.status).toBe(401);
   });
 
@@ -119,7 +119,7 @@ describe("mac socket", () => {
     mac.put({ type: "project.remove", projectId: "p1" });
     const removed = [await phone.next("snapshot.removed"), await phone.next("snapshot.removed")];
     expect(removed.map((e) => e.kind).sort()).toEqual(["events", "project"]);
-    const res = await fetch(`${server.url}/api/phone/snapshots?projectId=p1`, { headers: { cookie } });
+    const res = await fetch(`${server.url}/api/phone/snapshot-headers?projectId=p1`, { headers: { cookie } });
     expect(await res.json()).toEqual([]);
     await Promise.all([phone.close(), mac.close()]);
   });
