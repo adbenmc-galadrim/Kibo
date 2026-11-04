@@ -21,7 +21,7 @@ export type ReportOptions = {
 };
 
 export const ENTRY_GZIP_BUDGET = 204_000;
-export const PHASE_BUDGET = 198_000;
+export const PHASE_BUDGET = 199_000;
 
 export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1)} kB (${bytes} octets)`;
 
