@@ -38,7 +38,7 @@ export const INVENTORY: readonly InventoryEntry[] = [
   {
     screen: "graph",
     feature:
-      "vue Fonctionnalités (cadres, segments, étapes, attente en couleur, démarrable en vert), vue PRs (piles, CI), filtre par sprint, « Tout voir » et cadre replié, légende, « Lancer dans T3 » sur une étape, ouverture d'une fiche",
+      "vue Fonctionnalités (cadres, segments, étapes, attente en couleur, démarrable en vert), vue PRs (piles, CI), filtre par sprint, « Tout voir » et cadre replié, légende, « Lancer dans T3 » sur une étape, ouverture d'une fiche, ouverture d'une fonctionnalité",
     phone: "adapted",
     how: "colonnes de sprint, appui long pour le menu, légende et filtre en feuille",
   },
@@ -52,14 +52,14 @@ export const INVENTORY: readonly InventoryEntry[] = [
   {
     screen: "kanban",
     feature:
-      "colonnes par statut, colonnes vides repliées, déplacement d'une carte (glisser et « Déplacer vers »), filtres, « Lancer dans T3 », bloquer avec motif, retirer, pastille T3",
+      "colonnes par statut, colonnes vides repliées, déplacement d'une carte (glisser et « Déplacer vers »), filtres (mes tickets, démarrable, sprint courant, label, « À reprendre »), « Lancer dans T3 », bloquer avec motif, retirer, pastille T3",
     phone: "same",
     how: "requêtes de conteneur ; appui long ⇒ feuille d'actions au lieu de l'infobulle et du menu contextuel",
   },
   {
     screen: "planning",
     feature:
-      "colonnes de sprint et backlog, glisser une fonctionnalité, créer une fonctionnalité, créer, modifier et supprimer un sprint, bande « En attente », alertes de sprint, fiche de sprint",
+      "colonnes de sprint et backlog, glisser une fonctionnalité, créer une fonctionnalité, créer, modifier et supprimer un sprint, bande « En attente », alertes de sprint, limite d'ouverture, fiche de sprint",
     phone: "same",
     how: "requêtes de conteneur, ouverture sur le sprint courant, bande « En attente » repliée à la première visite",
   },
@@ -72,9 +72,10 @@ export const INVENTORY: readonly InventoryEntry[] = [
   },
   {
     screen: "dashboard",
-    feature: "« Modifier le projet »",
+    feature: "« Modifier le projet », page « Aujourd'hui » (tous les projets)",
     phone: "excluded",
-    reason: "renvoie aux réglages du projet (Paramètres), hors périmètre du téléphone",
+    reason:
+      "« Modifier le projet » renvoie aux réglages du projet (Paramètres) ; « Aujourd'hui » rassemble tous les projets du Mac, le téléphone en ouvre un à la fois",
     names: [],
   },
   {
@@ -128,7 +129,7 @@ export const INVENTORY: readonly InventoryEntry[] = [
   {
     screen: "all",
     feature:
-      "Paramètres, Agents et skills, Aujourd'hui, Fichiers, Maquettes, intégrations, pages et disposition, création de projet",
+      "Paramètres, Agents et skills, Fichiers, Maquettes, intégrations, pages et disposition, création de projet",
     phone: "excluded",
     reason: "hors périmètre du téléphone (spec §52)",
     names: [...PAGES_AND_LAYOUT, "importExternalTicket"],
