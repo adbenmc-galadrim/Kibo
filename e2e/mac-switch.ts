@@ -1,13 +1,13 @@
 import type { Socket } from "bun";
 
-type Sink = { socket: Socket<Pipe> | null; queue: Uint8Array[] };
+type Sink = { socket: Socket<Pipe> | null; queue: Uint8Array[]; held: boolean };
 type Pipe = { to: Sink; from: Sink };
 
-export type MacSwitch = { url: string; off(): void; on(): void; stop(): void };
+export type MacSwitch = { url: string; off(): void; on(): void; stall(): void; stop(): void };
 
 function flush(sink: Sink): void {
   const socket = sink.socket;
-  if (socket === null) return;
+  if (socket === null || sink.held) return;
   while (sink.queue.length > 0) {
     const chunk = sink.queue[0] ?? new Uint8Array();
     const written = socket.write(chunk);
@@ -45,8 +45,8 @@ export function startMacSwitch(opts: { port: number; target: string }): MacSwitc
       client.end();
       return;
     }
-    const toClient: Sink = { socket: client, queue: [] };
-    const toServer: Sink = { socket: null, queue: [] };
+    const toClient: Sink = { socket: client, queue: [], held: false };
+    const toServer: Sink = { socket: null, queue: [], held: false };
     client.data = { to: toServer, from: toClient };
     clients.add(client);
     Bun.connect<Pipe>({
@@ -89,6 +89,9 @@ export function startMacSwitch(opts: { port: number; target: string }): MacSwitc
     },
     on: () => {
       powered = true;
+    },
+    stall: () => {
+      for (const client of clients) client.data.from.held = true;
     },
     stop: () => listener.stop(true),
   };

@@ -22,6 +22,7 @@ async function pairingCode(): Promise<string> {
 }
 
 export const switchMacOff = (): Promise<unknown> => control("/mac/off");
+export const stallMac = (): Promise<unknown> => control("/mac/stall");
 export const switchMacOn = (): Promise<unknown> => control("/mac/on");
 
 export const tabBar = (page: Page): Locator => page.getByRole("navigation", { name: "Écrans du projet" });
@@ -42,6 +43,7 @@ export async function addPasskeyAuthenticator(page: Page): Promise<CDPSession> {
 }
 
 export async function pairPhone(page: Page): Promise<CDPSession> {
+  await switchMacOn();
   const cdp = await addPasskeyAuthenticator(page);
   await page.goto("/");
   await page.getByLabel("Coller le code").fill(await pairingCode());

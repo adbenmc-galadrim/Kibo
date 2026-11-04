@@ -86,6 +86,10 @@ const routes: Record<string, (req: Request) => Promise<Response>> = {
     await waitForMac(false);
     return Response.json({ online: false });
   },
+  "POST /mac/stall": async () => {
+    mac.stall();
+    return Response.json({ stalled: true });
+  },
   "POST /mac/on": async () => {
     mac.on();
     await waitForMac(true);
