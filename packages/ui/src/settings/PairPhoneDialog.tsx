@@ -24,16 +24,11 @@ const countdown = (ms: number): string => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 };
 
-function usePairing(open: boolean) {
+function usePairing() {
   const [pairing, setPairing] = useState<RemotePairing | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [round, setRound] = useState(0);
   useEffect(() => {
-    if (!open) return;
     let live = true;
-    void round;
-    setPairing(null);
-    setError(null);
     client.rpc({ method: "remote.createPairing" }).then(
       (next) => live && setPairing(next),
       (e: unknown) => live && setError(t.failed(describeError(e))),
@@ -41,8 +36,8 @@ function usePairing(open: boolean) {
     return () => {
       live = false;
     };
-  }, [open, round]);
-  return { pairing, error, renew: () => setRound((n) => n + 1) };
+  }, []);
+  return { pairing, error };
 }
 
 function useNow(pairing: RemotePairing | null): number {
@@ -124,9 +119,21 @@ function PairingBody({ pairing, now, onRenew }: { pairing: RemotePairing; now: n
   );
 }
 
-export function PairPhoneDialog({ open, onOpenChange }: Props) {
-  const { pairing, error, renew } = usePairing(open);
+function PairingPanel({ onRenew }: { onRenew(): void }) {
+  const { pairing, error } = usePairing();
   const now = useNow(pairing);
+  if (error)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {error}
+      </p>
+    );
+  if (!pairing) return <p className="text-sm text-muted-foreground">{t.loading}</p>;
+  return <PairingBody pairing={pairing} now={now} onRenew={onRenew} />;
+}
+
+export function PairPhoneDialog({ open, onOpenChange }: Props) {
+  const [round, setRound] = useState(0);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -134,13 +141,7 @@ export function PairPhoneDialog({ open, onOpenChange }: Props) {
           <DialogTitle>{t.title}</DialogTitle>
           <DialogDescription>{t.description}</DialogDescription>
         </DialogHeader>
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        {!error && !pairing && <p className="text-sm text-muted-foreground">{t.loading}</p>}
-        {pairing && <PairingBody pairing={pairing} now={now} onRenew={renew} />}
+        <PairingPanel key={round} onRenew={() => setRound((n) => n + 1)} />
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t.close}

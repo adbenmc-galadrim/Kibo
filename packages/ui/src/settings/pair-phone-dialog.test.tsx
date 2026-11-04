@@ -42,3 +42,24 @@ test('"Appairer un téléphone" opens the dialog with a QR (canvas) and the same
   expect(drawn[0]).toEqual({ canvas, text: PAIRING_CODE });
   expect(remote.calls.filter((c) => c.method === "remote.createPairing")).toHaveLength(1);
 });
+
+test("an expired code offers a new one, which is asked for again and counts down", async () => {
+  const rpc = remote.rpc;
+  let expired = true;
+  remote.rpc = async (req: RpcRequest) => {
+    if (req.method === "remote.createPairing" && expired) {
+      expired = false;
+      remote.calls.push(req);
+      return { code: PAIRING_CODE, expiresAt: Date.now() - 1 };
+    }
+    return rpc(req);
+  };
+  const before = remote.calls.filter((c) => c.method === "remote.createPairing").length;
+  render(<PhonePage />);
+  await userEvent.click(await screen.findByRole("button", { name: "Appairer un téléphone" }));
+  const dialog = within(await screen.findByRole("dialog", { name: "Appairer un téléphone" }));
+  await userEvent.click(await dialog.findByRole("button", { name: "Nouveau code" }));
+  expect(await dialog.findByText("10:00")).toBeTruthy();
+  expect(remote.calls.filter((c) => c.method === "remote.createPairing")).toHaveLength(before + 2);
+  remote.rpc = rpc;
+});
