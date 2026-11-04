@@ -4,8 +4,10 @@ import {
   canonicalHeader,
   deriveKeys,
   generateRootKey,
+  openReply,
   openRequest,
   openSnapshot,
+  sealReply,
   sealRequest,
   sealSnapshot,
 } from "./crypto";
@@ -60,6 +62,15 @@ describe("crypto", () => {
     expect(await rejection(openSnapshot(swapped, sealed))).toBe("REMOTE_REJECTED");
     const request = await sealRequest(keys, requestHeader, text("{}"));
     expect(await rejection(openRequest(swapped, request))).toBe("REMOTE_REJECTED");
+  });
+
+  test("a request sent back by the server as its reply throws REMOTE_REJECTED, and the other way", async () => {
+    const keys = await deriveKeys(generateRootKey(), "acc-1", 1);
+    const request = await sealRequest(keys, requestHeader, text('{"method":"getSession"}'));
+    expect(await rejection(openReply(keys, request))).toBe("REMOTE_REJECTED");
+    const reply = await sealReply(keys, requestHeader, text('{"ok":true}'));
+    expect(await openReply(keys, reply)).toEqual(text('{"ok":true}'));
+    expect(await rejection(openRequest(keys, reply))).toBe("REMOTE_REJECTED");
   });
 
   test("a modified header (seq + 1) throws REMOTE_REJECTED", async () => {

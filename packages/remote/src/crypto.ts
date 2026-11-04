@@ -8,6 +8,7 @@ const ROOT_KEY_BYTES = 32;
 const NONCE_BYTES = 12;
 const SNAPSHOT_INFO = "kibo-remote/snapshot/v1";
 const REQUEST_INFO = "kibo-remote/request/v1";
+const REPLY_AAD_PREFIX = "kibo-remote/reply/v1:";
 const utf8 = new TextEncoder();
 
 const rejected = (detail: string) => new KiboError("REMOTE_REJECTED", detail);
@@ -40,8 +41,14 @@ export async function deriveKeys(root: Uint8Array, accountId: string, epoch: num
   return { snapshot, request, epoch };
 }
 
+const canonicalJson = (header: SnapshotHeader | RequestHeader): string =>
+  JSON.stringify(header, Object.keys(header).sort());
+
 export const canonicalHeader = (header: SnapshotHeader | RequestHeader): Uint8Array<ArrayBuffer> =>
-  utf8.encode(JSON.stringify(header, Object.keys(header).sort()));
+  utf8.encode(canonicalJson(header));
+
+const replyAad = (header: RequestHeader): Uint8Array<ArrayBuffer> =>
+  utf8.encode(`${REPLY_AAD_PREFIX}${canonicalJson(header)}`);
 
 type Envelope = { nonce: string; ciphertext: string };
 
@@ -50,12 +57,13 @@ async function seal(
   header: SnapshotHeader | RequestHeader,
   epoch: number,
   plaintext: Uint8Array,
+  aad = canonicalHeader(header),
 ): Promise<Envelope> {
   if (header.keyEpoch !== epoch)
     throw rejected(`header epoch ${header.keyEpoch} differs from key epoch ${epoch}`);
   const nonce = crypto.getRandomValues(new Uint8Array(NONCE_BYTES));
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: nonce, additionalData: canonicalHeader(header) },
+    { name: "AES-GCM", iv: nonce, additionalData: aad },
     key,
     new Uint8Array(plaintext),
   );
@@ -67,6 +75,7 @@ async function open(
   header: SnapshotHeader | RequestHeader,
   epoch: number,
   envelope: Envelope,
+  aad = canonicalHeader(header),
 ): Promise<Uint8Array> {
   if (header.keyEpoch !== epoch)
     throw rejected(`block epoch ${header.keyEpoch} differs from key epoch ${epoch}`);
@@ -75,7 +84,7 @@ async function open(
   if (nonce?.byteLength !== NONCE_BYTES || ciphertext === null) throw rejected("malformed sealed block");
   try {
     const plaintext = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: nonce, additionalData: canonicalHeader(header) },
+      { name: "AES-GCM", iv: nonce, additionalData: aad },
       key,
       ciphertext,
     );
@@ -107,4 +116,16 @@ export async function sealRequest(
 
 export async function openRequest(keys: RemoteKeys, sealed: SealedRequest): Promise<Uint8Array> {
   return open(keys.request, sealed.header, keys.epoch, sealed);
+}
+
+export async function sealReply(
+  keys: RemoteKeys,
+  header: RequestHeader,
+  plaintext: Uint8Array,
+): Promise<SealedRequest> {
+  return { header, ...(await seal(keys.request, header, keys.epoch, plaintext, replyAad(header))) };
+}
+
+export async function openReply(keys: RemoteKeys, sealed: SealedRequest): Promise<Uint8Array> {
+  return open(keys.request, sealed.header, keys.epoch, sealed, replyAad(sealed.header));
 }

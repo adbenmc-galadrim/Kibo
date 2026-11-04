@@ -1,5 +1,11 @@
 import { beforeEach, expect, test } from "bun:test";
-import { INDEX_PROJECT_ID, type ProjectsIndex, REQUEST_CLOCK_REFUSAL, type RemoteKeys } from "@kibo/remote";
+import {
+  INDEX_PROJECT_ID,
+  type ProjectsIndex,
+  REQUEST_CLOCK_REFUSAL,
+  type RemoteKeys,
+  sealReply,
+} from "@kibo/remote";
 import { KiboError, type ProjectEvent, type ProjectSnapshot, type RunLogEntry } from "@kibo/schema";
 import { type FakeServerApi, fakeServerApi, putBlob } from "./fake-server-api";
 import { createInstanceData } from "./instance-data";
@@ -194,6 +200,24 @@ test("a refused request keeps the daemon error code", async () => {
   await expect(client.rpc({ method: "command", projectId: "silo", command })).rejects.toMatchObject({
     code: "NOT_FOUND",
   });
+});
+
+test("a request sent back by the server as its own reply is refused as REMOTE_REJECTED", async () => {
+  api.request = async (sealed) => sealed;
+  const command = { method: "setStatus" as const, ticketId: "t1", statusId: "in_progress" as const };
+  const refused = await client
+    .rpc({ method: "command", projectId: "silo", command })
+    .catch((e: unknown) => e);
+  expect(refused instanceof KiboError && refused.code).toBe("REMOTE_REJECTED");
+});
+
+test("a reply that is not an rpc answer is refused as REMOTE_REJECTED", async () => {
+  api.request = async (sealed) => sealReply(keys, sealed.header, new TextEncoder().encode('{"nope":1}'));
+  const command = { method: "setStatus" as const, ticketId: "t1", statusId: "in_progress" as const };
+  const refused = await client
+    .rpc({ method: "command", projectId: "silo", command })
+    .catch((e: unknown) => e);
+  expect(refused instanceof KiboError && refused.code).toBe("REMOTE_REJECTED");
 });
 
 test("a method outside REMOTE_METHODS throws FORBIDDEN without a network call", async () => {

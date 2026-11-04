@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import {
   deriveKeys,
   generateRootKey,
-  openRequest,
+  openReply,
   type RemoteKeys,
   SealedRequest,
   type ServerMessage,
@@ -96,7 +96,7 @@ async function phoneRequest(r: Rig, keys: RemoteKeys, body: RpcRequest, requestI
   });
   expect(res.status).toBe(200);
   const reply = Relayed.parse(await res.json()).sealed;
-  return JSON.parse(new TextDecoder().decode(await openRequest(r.keys, reply)));
+  return JSON.parse(new TextDecoder().decode(await openReply(r.keys, reply)));
 }
 
 test("connects with the mac token and sends ping every 30 s", async () => {

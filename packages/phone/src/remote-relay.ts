@@ -1,6 +1,7 @@
-import { openRequest, REQUEST_CLOCK_REFUSAL, type RemoteKeys, sealRequest } from "@kibo/remote";
+import { REQUEST_CLOCK_REFUSAL, type RemoteKeys, sealRequest } from "@kibo/remote";
 import { KIBO_ERROR_CODES, KiboError, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
+import { openAnswer } from "./reply-answer";
 import type { ServerApi } from "./server-api";
 
 export type Connectivity = { macOnline: boolean; phoneOnline: boolean; reconnecting?: boolean };
@@ -55,7 +56,6 @@ const projectOf = (req: RpcRequest): string | null =>
   "projectId" in req && typeof req.projectId === "string" ? req.projectId : null;
 
 const encoder = new TextEncoder();
-const decoder = new TextDecoder();
 
 export function createRelay(deps: RelayDeps): (req: RpcRequest) => Promise<unknown> {
   return async (req) => {
@@ -76,7 +76,7 @@ export function createRelay(deps: RelayDeps): (req: RpcRequest) => Promise<unkno
     );
     if (reply.header.requestId !== header.requestId)
       throw new KiboError("REMOTE_REJECTED", "reply does not match the request");
-    const answer = Answer.parse(JSON.parse(decoder.decode(await openRequest(keys, reply))));
+    const answer = await openAnswer(keys, reply, Answer);
     if (!answer.ok) throw new KiboError(answer.error.code, answer.error.message);
     return answer.result;
   };

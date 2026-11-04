@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { deriveKeys, generateRootKey, openRequest, sealRequest } from "@kibo/remote";
+import { deriveKeys, generateRootKey, openReply, sealRequest } from "@kibo/remote";
 import { createReplayGuard } from "./replay-guard";
 import { createRequestHandler } from "./request-handler";
 
@@ -26,7 +26,7 @@ test("the reply is sealed with the request header and answers through the gate",
   expect(reply?.requestId).toBe(s.header.requestId);
   expect(reply?.sealed.header).toEqual(s.header);
   if (!reply) throw new Error("no reply");
-  expect(JSON.parse(new TextDecoder().decode(await openRequest(s.keys, reply.sealed)))).toEqual({
+  expect(JSON.parse(new TextDecoder().decode(await openReply(s.keys, reply.sealed)))).toEqual({
     ok: true,
     result: { id: "silo" },
   });
@@ -38,7 +38,7 @@ test("a request from an older key epoch is answered REMOTE_REJECTED under the cu
   const reply = await createRequestHandler({ keys: () => current, gate: s.gate })(s.message);
   if (!reply) throw new Error("no reply");
   expect(reply.sealed.header.keyEpoch).toBe(3);
-  expect(JSON.parse(new TextDecoder().decode(await openRequest(current, reply.sealed)))).toMatchObject({
+  expect(JSON.parse(new TextDecoder().decode(await openReply(current, reply.sealed)))).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },
   });

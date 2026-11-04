@@ -1,4 +1,4 @@
-import { openRequest, type RemoteKeys, type Sealed, type SealedRequest, sealRequest } from "@kibo/remote";
+import { openRequest, type RemoteKeys, type Sealed, type SealedRequest, sealReply } from "@kibo/remote";
 import { KiboError, type RpcResponse } from "@kibo/schema";
 import type { ServerApi } from "./server-api";
 
@@ -46,7 +46,7 @@ export function fakeServerApi(keys: RemoteKeys): FakeServerApi {
       const req: unknown = JSON.parse(decoder.decode(await openRequest(keys, sealed)));
       api.requests.push(req);
       const answer = encoder.encode(JSON.stringify(await api.reply(req)));
-      return sealRequest(keys, sealed.header, answer);
+      return sealReply(keys, sealed.header, answer);
     },
     eventsUrl: () => "ws://127.0.0.1/api/phone/events",
   };

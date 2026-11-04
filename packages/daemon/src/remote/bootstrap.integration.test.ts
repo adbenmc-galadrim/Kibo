@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import {
   decodePairingCode,
   deriveKeys,
+  openReply,
   openSnapshot,
   Sealed,
   SealedRequest,
@@ -237,8 +238,7 @@ test("a phone request goes through the server and the gate to the daemon", async
     body: JSON.stringify({ sealed: await sealRequest(keys, header, body) }),
   });
   const { sealed } = Relayed.parse(await res.json());
-  const { openRequest } = await import("@kibo/remote");
-  const answer = JSON.parse(new TextDecoder().decode(await openRequest(keys, sealed)));
+  const answer = JSON.parse(new TextDecoder().decode(await openReply(keys, sealed)));
   expect(answer).toMatchObject({ ok: true, result: { meta: { name: "Silo" } } });
 });
 

@@ -4,7 +4,7 @@ import {
   type RemoteKeys,
   type RequestHeader,
   type ServerMessage,
-  sealRequest,
+  sealReply,
 } from "@kibo/remote";
 import { KiboError, type RpcResponse } from "@kibo/schema";
 import { handleRemoteRequest } from "./gate";
@@ -49,7 +49,7 @@ export function createRequestHandler(
     return {
       type: "request.reply",
       requestId: message.requestId,
-      sealed: await sealRequest(keys, replyHeader, bytes),
+      sealed: await sealReply(keys, replyHeader, bytes),
     };
   };
 }
