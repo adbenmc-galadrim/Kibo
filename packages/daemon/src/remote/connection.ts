@@ -2,6 +2,7 @@ import { type MacMessage, ServerMessage } from "@kibo/remote";
 import type { RemoteTimers } from "./timers";
 
 const PING_MS = 30_000;
+const SILENT_MS = 2 * PING_MS;
 const BACKOFF_FIRST_MS = 1_000;
 const BACKOFF_MAX_MS = 60_000;
 
@@ -17,6 +18,7 @@ type ConnectionDeps = {
 
 export type RemoteConnection = {
   send(message: MacMessage): boolean;
+  sendConfirmed(message: MacMessage, timeoutMs: number): Promise<boolean>;
   connected(): boolean;
   opened(timeoutMs: number): Promise<boolean>;
   close(): void;
@@ -43,11 +45,30 @@ export function openConnection(deps: ConnectionDeps): RemoteConnection {
   let attempt = 0;
   let stopPing: (() => void) | null = null;
   let cancelRetry: (() => void) | null = null;
+  let lastPongAt = 0;
+  let pings = 0;
+  let pongs = 0;
   const waiters = new Set<(open: boolean) => void>();
+  const pongWaiters = new Set<{ until: number; resolve(confirmed: boolean): void }>();
 
   const settleWaiters = (value: boolean) => {
     for (const resolve of waiters) resolve(value);
     waiters.clear();
+  };
+
+  const failPongWaiters = () => {
+    for (const waiter of pongWaiters) waiter.resolve(false);
+    pongWaiters.clear();
+  };
+
+  const onPong = () => {
+    lastPongAt = deps.now();
+    pongs++;
+    for (const waiter of pongWaiters) {
+      if (pongs < waiter.until) continue;
+      pongWaiters.delete(waiter);
+      waiter.resolve(true);
+    }
   };
 
   const scheduleRetry = () => {
@@ -64,7 +85,30 @@ export function openConnection(deps: ConnectionDeps): RemoteConnection {
     if (!message) return deps.log("[kibo-daemon] remote server sent an unreadable message");
     if (message.type === "error")
       deps.log(`[kibo-daemon] remote server refused ${message.code}: ${message.message}`);
+    if (message.type === "pong") onPong();
     deps.onMessage(message);
+  };
+
+  const ping = (): number | null => (send({ type: "ping", at: deps.now() }) ? ++pings : null);
+
+  const drop = (ws: WebSocket, reason: string) => {
+    if (socket !== ws) return;
+    socket = null;
+    open = false;
+    stopPing?.();
+    stopPing = null;
+    failPongWaiters();
+    if (!closed) deps.log(`[kibo-daemon] remote connection ${reason}, retrying`);
+    scheduleRetry();
+  };
+
+  const watch = (ws: WebSocket) => {
+    if (deps.now() - lastPongAt < SILENT_MS) {
+      ping();
+      return;
+    }
+    drop(ws, "silent for two pings");
+    ws.close();
   };
 
   function connect() {
@@ -77,22 +121,17 @@ export function openConnection(deps: ConnectionDeps): RemoteConnection {
       if (socket !== ws) return;
       open = true;
       attempt = 0;
-      stopPing = deps.timers.every(PING_MS, () => send({ type: "ping", at: deps.now() }));
+      lastPongAt = deps.now();
+      pings = 0;
+      pongs = 0;
+      stopPing = deps.timers.every(PING_MS, () => watch(ws));
       settleWaiters(true);
       deps.onOpen();
     });
     ws.addEventListener("message", (event) => {
       if (socket === ws) onMessage(event.data);
     });
-    ws.addEventListener("close", (event) => {
-      if (socket !== ws) return;
-      socket = null;
-      open = false;
-      stopPing?.();
-      stopPing = null;
-      if (!closed) deps.log(`[kibo-daemon] remote connection closed (${event.code}), retrying`);
-      scheduleRetry();
-    });
+    ws.addEventListener("close", (event) => drop(ws, `closed (${event.code})`));
   }
 
   function send(message: MacMessage): boolean {
@@ -101,9 +140,30 @@ export function openConnection(deps: ConnectionDeps): RemoteConnection {
     return true;
   }
 
+  const sendConfirmed = (message: MacMessage, timeoutMs: number): Promise<boolean> => {
+    if (!send(message)) return Promise.resolve(false);
+    const until = ping();
+    if (until === null) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      const waiter = {
+        until,
+        resolve: (confirmed: boolean) => {
+          clearTimeout(timer);
+          resolve(confirmed);
+        },
+      };
+      const timer = setTimeout(() => {
+        pongWaiters.delete(waiter);
+        resolve(false);
+      }, timeoutMs);
+      pongWaiters.add(waiter);
+    });
+  };
+
   connect();
   return {
     send,
+    sendConfirmed,
     connected: () => open,
     opened: (timeoutMs) => {
       if (open) return Promise.resolve(true);
@@ -127,6 +187,7 @@ export function openConnection(deps: ConnectionDeps): RemoteConnection {
       socket = null;
       open = false;
       settleWaiters(false);
+      failPongWaiters();
       ws?.close();
     },
   };

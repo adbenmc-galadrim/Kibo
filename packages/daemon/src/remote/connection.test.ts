@@ -165,3 +165,77 @@ test("a request sealed with another key is answered { ok: false, error: REMOTE_R
   });
   expect(r.calls).toEqual([]);
 });
+
+function silentServer() {
+  let opens = 0;
+  const received: string[] = [];
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("no", { status: 400 })),
+    websocket: {
+      open: () => {
+        opens++;
+      },
+      message: (_ws, data) => {
+        received.push(String(data));
+      },
+    },
+  });
+  cleanups.push(() => server.stop(true));
+  return { url: `http://127.0.0.1:${server.port}`, opens: () => opens, received };
+}
+
+function silentConnection(url: string) {
+  const timers = createFakeTimers();
+  let opens = 0;
+  const connection = openConnection({
+    serverUrl: url,
+    macToken: "token",
+    timers,
+    now: timers.now,
+    log: () => {},
+    onOpen: () => {
+      opens++;
+    },
+    onMessage: () => {},
+  });
+  cleanups.push(() => connection.close());
+  return { timers, connection, opens: () => opens };
+}
+
+test("a link without pong for 2 pings is closed and reopened, which pushes everything again", async () => {
+  const server = silentServer();
+  const c = silentConnection(server.url);
+  expect(await c.connection.opened(3_000)).toBe(true);
+  await c.timers.advance(30_000);
+  await until(() => server.received.length === 1);
+  expect(c.connection.connected()).toBe(true);
+  await c.timers.advance(30_000);
+  expect(c.connection.connected()).toBe(false);
+  expect(c.timers.delays()).toEqual([1_000]);
+  await c.timers.advance(1_000);
+  await until(() => c.opens() === 2 && server.opens() === 2);
+  expect(c.connection.connected()).toBe(true);
+});
+
+test("sendConfirmed resolves true once the server answered the ping sent after the message", async () => {
+  const r = await rig();
+  expect(await r.connection.sendConfirmed({ type: "pair.create" }, 3_000)).toBe(true);
+  expect(r.received.map((m) => m.type)).toEqual(["pair.created", "pong"]);
+});
+
+test("sendConfirmed resolves false when no pong comes back in time", async () => {
+  const server = silentServer();
+  const c = silentConnection(server.url);
+  expect(await c.connection.opened(3_000)).toBe(true);
+  expect(await c.connection.sendConfirmed({ type: "phone.revoke" }, 200)).toBe(false);
+  expect(server.received.map((raw) => JSON.parse(raw).type)).toEqual(["phone.revoke", "ping"]);
+});
+
+test("sendConfirmed resolves false at once when the link is closed", async () => {
+  const server = silentServer();
+  const c = silentConnection(server.url);
+  c.connection.close();
+  expect(await c.connection.sendConfirmed({ type: "phone.revoke" }, 3_000)).toBe(false);
+});
