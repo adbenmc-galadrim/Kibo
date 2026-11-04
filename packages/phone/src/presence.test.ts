@@ -83,11 +83,11 @@ beforeEach(() => {
 
 test("mac.presence events set macOnline and every event is forwarded", () => {
   const presence = start();
-  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true });
+  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true, reconnecting: true });
   sockets[0]?.open();
   expect(opened).toBe(1);
   sockets[0]?.receive({ type: "mac.presence", online: true, lastSeenAt: 5 });
-  expect(presence.get()).toEqual({ macOnline: true, phoneOnline: true });
+  expect(presence.get()).toEqual({ macOnline: true, phoneOnline: true, reconnecting: false });
   sockets[0]?.receive({ type: "snapshot.changed", projectId: "silo", kind: "project", seq: 3 });
   expect(events.map((e) => e.type)).toEqual(["mac.presence", "snapshot.changed"]);
 });
@@ -111,7 +111,7 @@ test("the phone going offline is reported, and coming back reconnects", () => {
   env.online = false;
   env.fire("offline");
   sockets[0]?.drop(1006);
-  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: false });
+  expect(presence.get()).toMatchObject({ macOnline: false, phoneOnline: false });
   expect(timers).toEqual([]);
   env.online = true;
   env.fire("online");
@@ -152,4 +152,32 @@ test("a socket closed before it ever opened is reported, an opened one is not", 
   sockets[1]?.open();
   sockets[1]?.drop(1006);
   expect(unopened).toBe(1);
+});
+
+test("coming back to the foreground replaces a zombie socket and keeps its late events out", () => {
+  const presence = start();
+  sockets[0]?.open();
+  sockets[0]?.receive({ type: "mac.presence", online: true, lastSeenAt: 5 });
+  env.fire("visibilitychange");
+  expect(sockets[0]?.closed).toBe(true);
+  expect(sockets).toHaveLength(2);
+  expect(resumed).toBe(1);
+  sockets[0]?.receive({ type: "snapshot.changed", projectId: "silo", kind: "project", seq: 3 });
+  sockets[0]?.drop(1006);
+  expect(events.map((e) => e.type)).toEqual(["mac.presence"]);
+  expect(timers).toEqual([]);
+  sockets[1]?.open();
+  expect(opened).toBe(2);
+  expect(presence.get().macOnline).toBe(true);
+});
+
+test("a dropped socket is reconnecting until the server says the mac is offline", () => {
+  const presence = start();
+  sockets[0]?.open();
+  sockets[0]?.receive({ type: "mac.presence", online: true, lastSeenAt: 5 });
+  sockets[0]?.drop(1006);
+  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true, reconnecting: true });
+  timers[0]?.run();
+  sockets[1]?.receive({ type: "mac.presence", online: false, lastSeenAt: 5 });
+  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true, reconnecting: false });
 });

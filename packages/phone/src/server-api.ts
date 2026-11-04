@@ -1,4 +1,4 @@
-import { Sealed, SealedRequest } from "@kibo/remote";
+import { Sealed, SealedRequest, SnapshotHeader } from "@kibo/remote";
 import { KIBO_ERROR_CODES, KiboError } from "@kibo/schema";
 import type {
   AuthenticationResponseJSON,
@@ -18,7 +18,7 @@ export type ServerApi = {
   loginOptions(): Promise<PublicKeyCredentialRequestOptionsJSON>;
   loginVerify(response: AuthenticationResponseJSON): Promise<void>;
   logout(): Promise<void>;
-  snapshots(projectId: string): Promise<Sealed[]>;
+  snapshotHeaders(projectId: string): Promise<SnapshotHeader[]>;
   snapshot(projectId: string, kind: string): Promise<Sealed | null>;
   request(sealed: SealedRequest): Promise<SealedRequest>;
   eventsUrl(): string;
@@ -74,7 +74,8 @@ export function createServerApi({ baseUrl, fetch: f = fetch }: ServerApiOptions)
     logout: async () => {
       await post("logout", {});
     },
-    snapshots: async (projectId) => z.array(Sealed).parse(await json(`snapshots?${query({ projectId })}`)),
+    snapshotHeaders: async (projectId) =>
+      z.array(SnapshotHeader).parse(await json(`snapshot-headers?${query({ projectId })}`)),
     async snapshot(projectId, kind) {
       const res = await send(`snapshot?${query({ projectId, kind })}`);
       if (res.status === 404) return null;

@@ -66,7 +66,7 @@ export function browserSocket(url: string, handlers: SocketHandlers): PresenceSo
 export function createPresence(deps: PresenceDeps): PresenceChannel {
   const { env } = deps;
   const listeners = new Set<() => void>();
-  let state: Connectivity = { macOnline: false, phoneOnline: env.isOnline() };
+  let state: Connectivity = { macOnline: false, phoneOnline: env.isOnline(), reconnecting: true };
   let socket: PresenceSocket | null = null;
   let retryMs = FIRST_RETRY_MS;
   let cancelRetry: (() => void) | null = null;
@@ -75,7 +75,12 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
 
   const set = (next: Partial<Connectivity>) => {
     const merged = { ...state, ...next };
-    if (merged.macOnline === state.macOnline && merged.phoneOnline === state.phoneOnline) return;
+    if (
+      merged.macOnline === state.macOnline &&
+      merged.phoneOnline === state.phoneOnline &&
+      merged.reconnecting === state.reconnecting
+    )
+      return;
     state = merged;
     for (const l of [...listeners]) l();
   };
@@ -87,19 +92,21 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
     let opened = false;
     const current: PresenceSocket = deps.openSocket(deps.url, {
       onOpen: () => {
+        if (socket !== current) return;
         opened = true;
         retryMs = FIRST_RETRY_MS;
         deps.onOpen();
       },
       onMessage: (data) => {
-        const event = parseEvent(data);
+        const event = socket === current ? parseEvent(data) : null;
         if (!event) return;
-        if (event.type === "mac.presence") set({ macOnline: event.online });
+        if (event.type === "mac.presence") set({ macOnline: event.online, reconnecting: false });
         deps.onEvent(event);
       },
       onClose: (code) => {
-        if (socket === current) socket = null;
-        set({ macOnline: false });
+        if (socket !== current) return;
+        socket = null;
+        set({ macOnline: false, reconnecting: code !== CLOSE_REVOKED });
         if (code === CLOSE_REVOKED) return deps.onRevoked();
         if (!opened && env.isOnline()) deps.onUnopened();
         retry();
@@ -120,8 +127,11 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
 
   const resume = () => {
     retryMs = FIRST_RETRY_MS;
-    connect();
     deps.onResume();
+    const previous = socket;
+    socket = null;
+    previous?.close();
+    connect();
   };
 
   return {

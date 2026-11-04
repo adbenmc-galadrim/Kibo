@@ -4,6 +4,7 @@ import {
   type PhoneEvent,
   type ProjectsIndex,
   type RemoteKeys,
+  type SnapshotHeader,
 } from "@kibo/remote";
 import { KiboError, type RpcRequest, type RpcResult, type Topic } from "@kibo/schema";
 import type { KiboClient } from "@kibo/sdk";
@@ -23,6 +24,7 @@ export type RemoteClient = KiboClient & {
   presence(): Presence;
   onPresence(listener: (presence: Presence) => void): () => void;
   sync(): Promise<void>;
+  markStale(): void;
   handleEvent(event: PhoneEvent): Promise<void>;
   index(): Promise<ProjectsIndex | null>;
   onChange(listener: () => void): () => void;
@@ -158,11 +160,16 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
     return relayWithRefusal(req);
   };
 
+  const isCached = (header: SnapshotHeader) => {
+    const known = store.get(header.projectId, header.kind);
+    return known !== null && known.header.keyEpoch === header.keyEpoch && known.header.seq >= header.seq;
+  };
+
   const syncProject = async (projectId: string) => {
-    const blobs = await api.snapshots(projectId);
-    const kinds = new Set(blobs.map((b) => b.header.kind));
+    const headers = await api.snapshotHeaders(projectId);
+    const kinds = new Set(headers.map((h) => h.kind));
     for (const kind of store.kinds(projectId)) if (!kinds.has(kind)) await forget(projectId, kind);
-    for (const blob of blobs) await store.put(blob);
+    for (const header of headers) if (!isCached(header)) await fetchBlob(projectId, header.kind);
   };
 
   const forget = async (projectId: string, kind: string) => {
@@ -220,6 +227,7 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
         for (const id of reader.projectIds()) announce(id, "project");
         topic("agents").each((l) => l());
       }),
+    markStale: () => setStale(true),
     handleEvent: (event) =>
       markedStaleOnFailure(async () => {
         if (event.type === "mac.presence") return;
@@ -230,6 +238,7 @@ export function createRemoteClient(deps: RemoteClientDeps): RemoteClient {
           await fetchBlob(event.projectId, event.kind);
           if (event.projectId === INDEX_PROJECT_ID) await followIndex(false);
         }
+        setStale(false);
         announce(event.projectId, event.kind);
       }),
     async index() {

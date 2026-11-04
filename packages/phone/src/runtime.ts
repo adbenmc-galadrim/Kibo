@@ -58,9 +58,7 @@ export function createPhoneRuntime(deps: RuntimeDeps): PhoneRuntime {
     onEvent: (event) => void client?.handleEvent(event).catch(report("snapshot refresh")),
     onOpen: () => void client?.sync().catch(report("sync")),
     onRevoked: () => each(revokedListeners),
-    onResume: () => {
-      if (client?.presence().stale) void client.sync().catch(report("sync"));
-    },
+    onResume: () => client?.markStale(),
     onUnopened: () => void checkSession().catch(report("session check")),
   });
   client = createRemoteClient({

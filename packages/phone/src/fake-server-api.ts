@@ -32,9 +32,9 @@ export function fakeServerApi(keys: RemoteKeys): FakeServerApi {
     },
     loginVerify: async () => undefined,
     logout: async () => undefined,
-    snapshots: async (projectId) => {
-      api.calls.push(`snapshots ${projectId}`);
-      return [...api.blobs.values()].filter((s) => s.header.projectId === projectId);
+    snapshotHeaders: async (projectId) => {
+      api.calls.push(`headers ${projectId}`);
+      return [...api.blobs.values()].filter((s) => s.header.projectId === projectId).map((s) => s.header);
     },
     snapshot: async (projectId, kind) => {
       api.calls.push(`snapshot ${projectId} ${kind}`);

@@ -112,7 +112,7 @@ test("a rejected sync shows the band with the time of the block", async () => {
   expect(band.textContent).toBe(`Mise à jour impossible · dernier état à ${formatClock(1_760_619_120_000)}`);
 });
 
-test("a failed sync is tried again when the phone comes back", async () => {
+test("a failed sync is tried again, once, when the phone comes back and its socket reopens", async () => {
   const { runtime, api, keys, presence } = await phoneFixture();
   runtime.keyring.current = keys;
   await runtime.client.sync();
@@ -132,10 +132,27 @@ test("a failed sync is tried again when the phone comes back", async () => {
   };
   await act(async () => {
     presence.handlers?.onResume();
+    presence.handlers?.onOpen();
     await Promise.all(resumed);
   });
   expect(resumed).toHaveLength(1);
   expect(screen.queryByText(/Mise à jour impossible/)).toBeNull();
+});
+
+test("coming back to the foreground shows the state as stale until the socket reopens", async () => {
+  const { runtime, keys, presence } = await phoneFixture();
+  runtime.keyring.current = keys;
+  await runtime.client.sync();
+  render(<App runtime={runtime} />);
+  await screen.findByRole("navigation", { name: "Écrans du projet" });
+  expect(screen.queryByText(/dernier état/)).toBeNull();
+  act(() => presence.handlers?.onResume());
+  expect(await screen.findByText(/dernier état/)).toBeTruthy();
+  await act(async () => {
+    presence.handlers?.onOpen();
+    await runtime.client.sync();
+  });
+  expect(screen.queryByText(/dernier état/)).toBeNull();
 });
 
 test("an event socket that never opens with an expired session asks for the passkey", async () => {

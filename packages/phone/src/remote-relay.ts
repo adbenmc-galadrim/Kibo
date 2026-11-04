@@ -3,7 +3,7 @@ import { KIBO_ERROR_CODES, KiboError, type RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 import type { ServerApi } from "./server-api";
 
-export type Connectivity = { macOnline: boolean; phoneOnline: boolean };
+export type Connectivity = { macOnline: boolean; phoneOnline: boolean; reconnecting?: boolean };
 export type RefusalReason = "macOff" | "phoneOffline" | "clock" | "timeout";
 export type RefusalAction = "launch" | "message" | "write";
 export type Refusal = { reason: RefusalReason; action: RefusalAction };
@@ -61,9 +61,9 @@ export function createRelay(deps: RelayDeps): (req: RpcRequest) => Promise<unkno
   return async (req) => {
     const keys = deps.keys();
     if (!keys) throw new KiboError("UNAUTHORIZED", "phone is not paired");
-    const { macOnline, phoneOnline } = deps.connectivity();
+    const { macOnline, phoneOnline, reconnecting } = deps.connectivity();
     if (!phoneOnline) throw new KiboError("REMOTE_UNAVAILABLE", "phone is offline");
-    if (!macOnline) throw new KiboError("REMOTE_UNAVAILABLE", "mac is offline");
+    if (!macOnline && !reconnecting) throw new KiboError("REMOTE_UNAVAILABLE", "mac is offline");
     const header = {
       v: 1 as const,
       requestId: deps.randomId(),

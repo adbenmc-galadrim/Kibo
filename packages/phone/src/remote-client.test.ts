@@ -310,3 +310,53 @@ test("a failed snapshot refresh marks the state stale", async () => {
   ).rejects.toMatchObject({ code: "INTERNAL" });
   expect(client.presence().stale).toBe(true);
 });
+
+test("a sync downloads only the blocks whose seq is newer than the cached one", async () => {
+  putBlob(api, await sealJson(keys, "silo", "image:q1:img1", { mime: "image/png", bytes: btoa("png!") }));
+  await client.sync();
+  api.calls.length = 0;
+  await client.sync();
+  expect(api.calls).toEqual(["snapshot _ projects", "headers silo"]);
+  putBlob(api, await sealJson(keys, "silo", "project", PROJECT, { seq: 2 }));
+  api.calls.length = 0;
+  await client.sync();
+  expect(api.calls).toEqual(["snapshot _ projects", "headers silo", "snapshot silo project"]);
+});
+
+test("a successful event clears the stale band left by a failed one", async () => {
+  const snapshot = api.snapshot;
+  api.snapshot = async () => {
+    throw new KiboError("INTERNAL", "server answered 500");
+  };
+  await expect(
+    client.handleEvent({ type: "snapshot.changed", projectId: "silo", kind: "project", seq: 9 }),
+  ).rejects.toMatchObject({ code: "INTERNAL" });
+  expect(client.presence().stale).toBe(true);
+  api.snapshot = snapshot;
+  putBlob(api, await sealJson(keys, "silo", "project", PROJECT, { seq: 9 }));
+  await client.handleEvent({ type: "snapshot.changed", projectId: "silo", kind: "project", seq: 9 });
+  expect(client.presence().stale).toBe(false);
+});
+
+test("coming back to the foreground presents the state as stale until the next sync", async () => {
+  client.markStale();
+  expect(client.presence().stale).toBe(true);
+  await client.handleEvent({ type: "mac.presence", online: true, lastSeenAt: 5 });
+  expect(client.presence().stale).toBe(true);
+  await client.sync();
+  expect(client.presence().stale).toBe(false);
+});
+
+test("a write while only the event socket reconnects is sent, and a 503 is refused as mac off", async () => {
+  const refusals: unknown[] = [];
+  client.onRefused((r) => refusals.push(r));
+  setConnectivity({ macOnline: false, phoneOnline: true, reconnecting: true });
+  const command = { method: "setStatus" as const, ticketId: "t1", statusId: "in_progress" as const };
+  await client.rpc({ method: "command", projectId: "silo", command });
+  expect(api.calls).toEqual(["request"]);
+  api.status = 503;
+  await expect(client.rpc({ method: "command", projectId: "silo", command })).rejects.toMatchObject({
+    code: "REMOTE_UNAVAILABLE",
+  });
+  expect(refusals).toEqual([{ reason: "macOff", action: "write" }]);
+});

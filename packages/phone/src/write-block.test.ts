@@ -37,3 +37,8 @@ test("presenceWrites follows the presence of the client", () => {
   off();
   expect(listeners.size).toBe(0);
 });
+
+test("writes stay open while only the event socket reconnects", () => {
+  expect(writeBlockOf({ macOnline: false, phoneOnline: true, reconnecting: true })).toBeNull();
+  expect(writeBlockOf({ macOnline: false, phoneOnline: false, reconnecting: true })).not.toBeNull();
+});

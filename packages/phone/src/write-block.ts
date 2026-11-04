@@ -2,9 +2,9 @@ import type { WritesApi } from "@kibo/sdk";
 import { frWrites } from "./i18n/fr-writes";
 import type { Connectivity, RemoteClient } from "./remote-client";
 
-export function writeBlockOf({ macOnline, phoneOnline }: Connectivity): string | null {
+export function writeBlockOf({ macOnline, phoneOnline, reconnecting }: Connectivity): string | null {
   if (!phoneOnline) return frWrites.phoneOffline;
-  return macOnline ? null : frWrites.macOff;
+  return macOnline || reconnecting ? null : frWrites.macOff;
 }
 
 export const canWrite = (connectivity: Connectivity): boolean => writeBlockOf(connectivity) === null;
