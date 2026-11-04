@@ -41,7 +41,7 @@ export function phoneServerOf(projectName: string): PhoneServer {
   return server;
 }
 
-const PHONE_REFERENCES = "{testDir}/references/{arg}{ext}";
+const PHONE_REFERENCES = "{testDir}/references/{arg}-{platform}{ext}";
 const PHONE_SPECS = /\/phone-[a-z]+\.spec\.ts$/;
 const PHONE_PIXEL_SPEC = /pixel-phone-graphe\.spec\.ts$/;
 const PHONE_SCREEN = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } as const;
