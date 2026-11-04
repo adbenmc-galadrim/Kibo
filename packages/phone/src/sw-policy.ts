@@ -35,3 +35,24 @@ export const cacheName = (buildId: string): string => `kibo-phone-${buildId}`;
 
 export const staleCaches = (names: string[], current: string): string[] =>
   names.filter((name) => name !== current);
+
+type ShellCache = {
+  match(request: Request): Promise<Response | undefined>;
+  put(request: Request, response: Response): Promise<void>;
+};
+
+export async function networkFirst(
+  request: Request,
+  cache: ShellCache,
+  load: (request: Request) => Promise<Response>,
+): Promise<Response> {
+  try {
+    const response = await load(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch (e) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    throw e;
+  }
+}

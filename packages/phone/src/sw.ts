@@ -1,4 +1,4 @@
-import { cacheName, shellFiles, staleCaches, strategyFor } from "./sw-policy";
+import { cacheName, networkFirst, shellFiles, staleCaches, strategyFor } from "./sw-policy";
 
 declare let self: ServiceWorkerGlobalScope;
 declare const KIBO_BUILD_ID: string;
@@ -41,5 +41,9 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const strategy = strategyFor(new URL(request.url), self.location.origin, request.mode, request.method);
   if (strategy === "network") return;
-  event.respondWith(staleWhileRevalidate(strategy === "shell" ? new Request(SHELL) : request, event));
+  if (strategy === "shell")
+    event.respondWith(
+      caches.open(CACHE).then((cache) => networkFirst(new Request(SHELL), cache, (shell) => fetch(shell))),
+    );
+  else event.respondWith(staleWhileRevalidate(request, event));
 });

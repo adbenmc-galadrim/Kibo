@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cacheName, shellFiles, staleCaches, strategyFor } from "./sw-policy";
+import { cacheName, networkFirst, shellFiles, staleCaches, strategyFor } from "./sw-policy";
 
 const ORIGIN = "https://kibo.example";
 const at = (path: string) => new URL(path, ORIGIN);
@@ -75,4 +75,46 @@ test("each build has its own cache and activation drops every other one", () => 
     "kibo-phone-old",
     "other",
   ]);
+});
+
+const shellCache = () => {
+  const stored = new Map<string, Response>();
+  return {
+    stored,
+    match: async (request: Request) => stored.get(request.url)?.clone(),
+    put: async (request: Request, response: Response) => {
+      stored.set(request.url, response);
+    },
+  };
+};
+const page = (nonce: string) => new Response(`<meta property="csp-nonce" content="${nonce}">`);
+
+test("the shell comes from the network with its fresh nonce, the cache only stands in offline", async () => {
+  const cache = shellCache();
+  const shell = new Request(`${ORIGIN}/index.html`);
+  await cache.put(shell, page("b2xkLW5vbmNl"));
+  const online = await networkFirst(shell, cache, async () => page("ZnJlc2gtbm9uY2U="));
+  expect(await online.text()).toContain("ZnJlc2gtbm9uY2U=");
+  const offline = await networkFirst(shell, cache, async () => {
+    throw new TypeError("Failed to fetch");
+  });
+  expect(await offline.text()).toContain("ZnJlc2gtbm9uY2U=");
+});
+
+test("offline without a cached shell, the network failure surfaces", async () => {
+  const shell = new Request(`${ORIGIN}/index.html`);
+  await expect(
+    networkFirst(shell, shellCache(), async () => {
+      throw new TypeError("Failed to fetch");
+    }),
+  ).rejects.toThrow("Failed to fetch");
+});
+
+test("a failed answer from the server is passed on and never replaces the cached shell", async () => {
+  const cache = shellCache();
+  const shell = new Request(`${ORIGIN}/index.html`);
+  await cache.put(shell, page("b2xkLW5vbmNl"));
+  const answer = await networkFirst(shell, cache, async () => new Response("down", { status: 502 }));
+  expect(answer.status).toBe(502);
+  expect(await cache.stored.get(shell.url)?.clone().text()).toContain("b2xkLW5vbmNl");
 });
