@@ -72,8 +72,8 @@ test("a second build without change yields no kind (content hash unchanged)", as
   const { launched, silo, builder } = await setup();
   await builder.buildAll(silo.projectId);
   await builder.buildIndex([silo.projectId]);
-  expect(await builder.buildAll(silo.projectId)).toEqual({ put: [], removed: [] });
-  expect(await builder.buildIndex([silo.projectId])).toEqual({ put: [], removed: [] });
+  expect(await builder.buildAll(silo.projectId)).toMatchObject({ put: [], removed: [] });
+  expect(await builder.buildIndex([silo.projectId])).toEqual({ put: [], removed: [], kinds: ["projects"] });
   await launched.rpc({
     method: "command",
     projectId: silo.projectId,

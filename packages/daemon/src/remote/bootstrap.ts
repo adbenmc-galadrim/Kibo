@@ -7,6 +7,7 @@ import { createRemoteController } from "./controller";
 import { createExclusive } from "./exclusive";
 import { createLink } from "./link";
 import { trustDaemonDispatch } from "./phone-view";
+import { openPushedKinds } from "./pushed-kinds";
 import { createPusher } from "./pusher";
 import { createReplayGuard } from "./replay-guard";
 import { createRequestHandler } from "./request-handler";
@@ -73,6 +74,7 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
     keys: () => link.keys(),
     send: (message) => link.send(message),
     projects: () => settings.read().projects,
+    pushed: openPushedKinds(deps.store),
     now: deps.now,
     log: deps.log,
     timers,

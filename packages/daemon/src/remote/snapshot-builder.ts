@@ -7,7 +7,7 @@ const EVENTS_LIMIT = 200;
 const INDEX_KIND = "projects";
 
 export type SnapshotBlock = { projectId: string; kind: SnapshotKind; plaintext: Uint8Array };
-export type BuildResult = { put: SnapshotBlock[]; removed: SnapshotKind[] };
+export type BuildResult = { put: SnapshotBlock[]; removed: SnapshotKind[]; kinds: SnapshotKind[] };
 
 export type LocalRpc = <M extends RpcRequest["method"]>(
   req: Extract<RpcRequest, { method: M }>,
@@ -118,7 +118,7 @@ export function createSnapshotBuilder(deps: BuilderDeps): SnapshotBuilder {
     }
     const removed = scoped ? [...previous.keys()].filter((kind) => !next.has(kind)) : [];
     hashes.set(projectId, next);
-    return { put, removed };
+    return { put, removed, kinds: [...next.keys()] };
   };
   return {
     buildAll: async (projectId) => diff(projectId, await projectContents(deps, projectId), true),

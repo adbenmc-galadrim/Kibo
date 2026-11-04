@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { deriveKeys, generateRootKey, type MacMessage, openSnapshot, type Sealed } from "@kibo/remote";
 import { createFakeTimers } from "./fake-timers.test-helper";
+import { openPushedKinds } from "./pushed-kinds";
 import { createPusher } from "./pusher";
 import type { BuildResult, SnapshotBlock, SnapshotBuilder } from "./snapshot-builder";
 
@@ -22,7 +23,7 @@ function fakeBuilder(contents: Map<string, Map<string, string>>) {
       sent.set(key, text);
       put.push({ projectId, kind, plaintext: utf8.encode(text) });
     }
-    return { put, removed: [] };
+    return { put, removed: [], kinds: [...(contents.get(projectId)?.keys() ?? [])] };
   };
   const builder: SnapshotBuilder = {
     buildAll: async (projectId) => diff(projectId),
@@ -63,20 +64,27 @@ async function setup(contents: Map<string, Map<string, string>> = silo(), projec
   const messages: MacMessage[] = [];
   const logs: string[] = [];
   const fake = fakeBuilder(contents);
+  const local = new Map<string, string>();
+  const link = { online: true, projects };
   const make = () =>
     createPusher({
       builder: fake.builder,
       keys: () => keys,
       send: (message) => {
+        if (!link.online) return false;
         messages.push(message);
         return true;
       },
-      projects: () => projects,
+      projects: () => link.projects,
+      pushed: openPushedKinds({
+        getLocal: (key) => local.get(key) ?? null,
+        setLocal: (k, v) => local.set(k, v),
+      }),
       now: timers.now,
       log: (line) => logs.push(line),
       timers,
     });
-  return { timers, keys, messages, logs, contents, fake, make, pusher: make() };
+  return { timers, keys, messages, logs, contents, fake, link, make, pusher: make() };
 }
 
 const puts = (messages: MacMessage[]) =>
@@ -232,4 +240,51 @@ test("a change during the 30 s retry wait is still pushed within 2 s", async () 
   await s.timers.advance(2_000);
   await s.pusher.idle();
   expect(keysOf(puts(s.messages))).toContain("silo/project");
+});
+
+const withImage = () => {
+  const contents = silo();
+  contents.get("silo")?.set("image:q1:i1", '{"mime":"image/png"}');
+  return contents;
+};
+const removals = (messages: MacMessage[]) =>
+  messages.flatMap((m) => (m.type === "snapshot.remove" ? [`${m.projectId}/${m.kind}`] : []));
+
+test("a block gone while the link is down is removed from the server at the reconnection", async () => {
+  const s = await setup(withImage());
+  await s.pusher.pushAll();
+  s.link.online = false;
+  s.contents.get("silo")?.delete("image:q1:i1");
+  await s.pusher.pushProject("silo");
+  s.link.online = true;
+  s.messages.length = 0;
+  await s.pusher.pushAll();
+  expect(removals(s.messages)).toEqual(["silo/image:q1:i1"]);
+  s.messages.length = 0;
+  await s.pusher.pushAll();
+  expect(removals(s.messages)).toEqual([]);
+});
+
+test("a block gone while the daemon was stopped is removed by the next daemon", async () => {
+  const s = await setup(withImage());
+  await s.pusher.pushAll();
+  s.pusher.stop();
+  s.contents.get("silo")?.delete("image:q1:i1");
+  s.messages.length = 0;
+  await s.make().pushAll();
+  expect(removals(s.messages)).toEqual(["silo/image:q1:i1"]);
+});
+
+test("a project disabled while the link is down is removed from the server at the reconnection", async () => {
+  const s = await setup();
+  await s.pusher.pushAll();
+  s.link.online = false;
+  s.link.projects = [];
+  await s.pusher.removeProject("silo");
+  s.link.online = true;
+  s.messages.length = 0;
+  await s.pusher.pushAll();
+  expect(s.messages.filter((m) => m.type === "project.remove")).toEqual([
+    { type: "project.remove", projectId: "silo" },
+  ]);
 });

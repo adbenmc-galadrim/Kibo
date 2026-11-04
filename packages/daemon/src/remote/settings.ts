@@ -1,6 +1,7 @@
 import { KiboError } from "@kibo/schema";
 import { z } from "zod";
 import type { Store } from "../store";
+import { PUSHED_KINDS_KEY } from "./pushed-kinds";
 
 export type RemoteSettings = {
   enabled: boolean;
@@ -87,7 +88,7 @@ export function openRemoteSettings(store: Pick<Store, "db" | "getLocal" | "setLo
       return projects;
     },
     clear: () => {
-      for (const key of Object.values(KEYS)) writeOne(key, null);
+      for (const key of [...Object.values(KEYS), PUSHED_KINDS_KEY]) writeOne(key, null);
     },
   };
 }

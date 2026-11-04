@@ -1,10 +1,12 @@
 import {
+  INDEX_PROJECT_ID,
   type MacMessage,
   type RemoteKeys,
   SNAPSHOT_MAX_BYTES,
   type SnapshotKind,
   sealSnapshot,
 } from "@kibo/remote";
+import type { PushedKinds } from "./pushed-kinds";
 import type { BuildResult, SnapshotBlock, SnapshotBuilder } from "./snapshot-builder";
 import type { RemoteTimers } from "./timers";
 
@@ -17,6 +19,7 @@ type PusherDeps = {
   keys(): RemoteKeys | null;
   send(message: MacMessage): boolean;
   projects(): readonly string[];
+  pushed: PushedKinds;
   now(): number;
   log(line: string): void;
   timers: RemoteTimers;
@@ -78,14 +81,32 @@ export function createPusher(deps: PusherDeps): Pusher {
       );
       return;
     }
-    if (deps.send({ type: "snapshot.put", sealed })) lastPushAt = builtAt;
+    if (!deps.send({ type: "snapshot.put", sealed })) return;
+    lastPushAt = builtAt;
+    deps.pushed.add(block.projectId, block.kind);
+  };
+
+  const removeKind = (projectId: string, kind: SnapshotKind) => {
+    if (deps.send({ type: "snapshot.remove", projectId, kind })) deps.pushed.remove(projectId, kind);
   };
 
   const publish = async (result: BuildResult, projectId: string) => {
     const keys = deps.keys();
     if (!keys) return;
     for (const block of result.put) await sendBlock(keys, block);
-    for (const kind of result.removed) deps.send({ type: "snapshot.remove", projectId, kind });
+    const stale = new Set([...result.removed, ...deps.pushed.kinds(projectId)]);
+    for (const kind of result.kinds) stale.delete(kind);
+    for (const kind of stale) removeKind(projectId, kind);
+  };
+
+  const removeFromServer = (projectId: string) => {
+    if (deps.send({ type: "project.remove", projectId })) deps.pushed.forget(projectId);
+  };
+
+  const removeDisabled = () => {
+    const enabledIds = new Set([INDEX_PROJECT_ID, ...deps.projects()]);
+    for (const projectId of deps.pushed.projects())
+      if (!enabledIds.has(projectId)) removeFromServer(projectId);
   };
 
   const enabled = (projectId: string) => deps.projects().includes(projectId);
@@ -137,6 +158,7 @@ export function createPusher(deps: PusherDeps): Pusher {
     pushAll: () =>
       serial(async () => {
         deps.builder.reset();
+        removeDisabled();
         await tryIndex();
         for (const projectId of deps.projects()) await tryOne(projectId);
       }),
@@ -149,7 +171,7 @@ export function createPusher(deps: PusherDeps): Pusher {
       serial(async () => {
         pending.delete(projectId);
         deps.builder.forget(projectId);
-        deps.send({ type: "project.remove", projectId });
+        removeFromServer(projectId);
         await pushIndex();
       }),
     idle: () =>
