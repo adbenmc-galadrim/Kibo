@@ -136,3 +136,19 @@ test("OfflineBand says Mac éteint once the server has said the mac is offline",
   );
   expect(screen.getByRole("status").textContent).toBe("Mac éteint · dernier état à 09:05");
 });
+
+test("OfflineBand goes from Synchronisation… back to Mac éteint when the reconnection gives up", () => {
+  const clock = manualClock();
+  const reconnecting: Presence = {
+    macOnline: false,
+    phoneOnline: true,
+    reconnecting: true,
+    stale: false,
+    lastSnapshotAt: at(9, 5),
+  };
+  const { rerender } = render(<OfflineBand presence={reconnecting} schedule={clock.schedule} />);
+  clock.elapse();
+  expect(screen.getByRole("status").textContent).toBe("Synchronisation…");
+  rerender(<OfflineBand presence={{ ...reconnecting, reconnecting: false }} schedule={clock.schedule} />);
+  expect(screen.getByRole("status").textContent).toBe("Mac éteint · dernier état à 09:05");
+});

@@ -181,3 +181,22 @@ test("a dropped socket is reconnecting until the server says the mac is offline"
   sockets[1]?.receive({ type: "mac.presence", online: false, lastSeenAt: 5 });
   expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true, reconnecting: false });
 });
+
+test("a reconnection still failing after 30 s of waits stops saying it is reconnecting", () => {
+  const presence = start();
+  sockets[0]?.receive({ type: "mac.presence", online: true, lastSeenAt: 5 });
+  sockets[0]?.drop(1006);
+  for (const socket of [1, 2, 3, 4]) {
+    timers[socket - 1]?.run();
+    sockets[socket]?.drop(1006);
+    expect(presence.get().reconnecting).toBe(true);
+  }
+  timers[4]?.run();
+  sockets[5]?.drop(1006);
+  expect(timers.map((t) => t.ms)).toEqual([1_000, 2_000, 4_000, 8_000, 16_000, 30_000]);
+  expect(presence.get()).toEqual({ macOnline: false, phoneOnline: true, reconnecting: false });
+  timers[5]?.run();
+  sockets[6]?.receive({ type: "mac.presence", online: true, lastSeenAt: 9 });
+  sockets[6]?.drop(1006);
+  expect(presence.get().reconnecting).toBe(true);
+});

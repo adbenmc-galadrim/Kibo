@@ -27,6 +27,7 @@ export type PresenceChannel = PresenceSource & { start(): void; stop(): void };
 const CLOSE_REVOKED = 4401;
 const FIRST_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 30_000;
+const RECONNECTING_MAX_MS = MAX_RETRY_MS;
 
 export function browserEnvironment(): PresenceEnvironment {
   return {
@@ -69,6 +70,7 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
   let state: Connectivity = { macOnline: false, phoneOnline: env.isOnline(), reconnecting: true };
   let socket: PresenceSocket | null = null;
   let retryMs = FIRST_RETRY_MS;
+  let waitedMs = 0;
   let cancelRetry: (() => void) | null = null;
   let stopped = true;
   let offs: (() => void)[] = [];
@@ -100,13 +102,16 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
       onMessage: (data) => {
         const event = socket === current ? parseEvent(data) : null;
         if (!event) return;
-        if (event.type === "mac.presence") set({ macOnline: event.online, reconnecting: false });
+        if (event.type === "mac.presence") {
+          waitedMs = 0;
+          set({ macOnline: event.online, reconnecting: false });
+        }
         deps.onEvent(event);
       },
       onClose: (code) => {
         if (socket !== current) return;
         socket = null;
-        set({ macOnline: false, reconnecting: code !== CLOSE_REVOKED });
+        set({ macOnline: false, reconnecting: code !== CLOSE_REVOKED && waitedMs < RECONNECTING_MAX_MS });
         if (code === CLOSE_REVOKED) return deps.onRevoked();
         if (!opened && env.isOnline()) deps.onUnopened();
         retry();
@@ -119,6 +124,7 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
     if (stopped || !env.isOnline() || !env.isVisible() || cancelRetry) return;
     const wait = retryMs;
     retryMs = Math.min(retryMs * 2, MAX_RETRY_MS);
+    waitedMs += wait;
     cancelRetry = env.schedule(() => {
       cancelRetry = null;
       connect();
@@ -127,6 +133,7 @@ export function createPresence(deps: PresenceDeps): PresenceChannel {
 
   const resume = () => {
     retryMs = FIRST_RETRY_MS;
+    waitedMs = 0;
     deps.onResume();
     const previous = socket;
     socket = null;
