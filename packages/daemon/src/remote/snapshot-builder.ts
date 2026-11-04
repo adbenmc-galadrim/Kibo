@@ -9,6 +9,7 @@ import {
   type T3Status,
 } from "@kibo/schema";
 import type { QuestionImageFile } from "../questions/question-images";
+import { folderName } from "./phone-view";
 
 const EVENTS_LIMIT = 200;
 const INDEX_KIND = "projects";
@@ -41,9 +42,9 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return Buffer.from(digest).toString("hex");
 }
 
-const withoutLocalFolder = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
+const withFolderName = (snapshot: ProjectSnapshot): ProjectSnapshot => ({
   ...snapshot,
-  meta: { ...snapshot.meta, folder: null },
+  meta: { ...snapshot.meta, folder: folderName(snapshot.meta.folder) },
 });
 
 function withoutLocalPaths(entry: RunLogEntry): RunLogEntry {
@@ -94,7 +95,7 @@ async function projectContents(deps: BuilderDeps, projectId: string): Promise<Co
   const snapshot = await rpc({ method: "getProject", projectId });
   const events = await rpc({ method: "listProjectEvents", projectId, limit: EVENTS_LIMIT });
   return [
-    { kind: "project", value: withoutLocalFolder(snapshot) },
+    { kind: "project", value: withFolderName(snapshot) },
     { kind: "events", value: events.items },
     { kind: "agent", value: await agentContent(rpc, projectId) },
     { kind: "ci", value: await rpc({ method: "listCiRuns", projectId, ticketId: null }) },

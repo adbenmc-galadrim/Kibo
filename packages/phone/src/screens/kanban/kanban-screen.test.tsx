@@ -141,7 +141,7 @@ test("the sheet moves the card through the relayed setStatus", async () => {
   );
 });
 
-test("Lancer dans T3 from the sheet confirms then relays t3.launch", async () => {
+test("Mac on and T3 available, Lancer dans T3 is active with the folder name the Mac sends, then relays t3.launch", async () => {
   touchDevice();
   const { runtime, api } = await siloFixture();
   api.reply = (req) => {
@@ -149,7 +149,12 @@ test("Lancer dans T3 from the sheet confirms then relays t3.launch", async () =>
     if (kind.includes("t3.preview"))
       return {
         ok: true,
-        result: { argv: [], command: "t3 thread start", folder: "/Users/adam/silo", warning: null },
+        result: {
+          argv: [],
+          command: 't3 thread start silo "/full-delivery SILO-6"',
+          folder: "silo",
+          warning: null,
+        },
       };
     return { ok: true, result: null };
   };
@@ -157,10 +162,14 @@ test("Lancer dans T3 from the sheet confirms then relays t3.launch", async () =>
   const { card, sheet } = await openSheet(/Passage à Expo SDK 54/);
   const key = card.getAttribute("data-key") ?? "";
   const user = userEvent.setup();
-  await user.click(within(sheet).getByRole("button", { name: "Lancer dans T3" }));
+  const launch = within(sheet).getByRole("button", { name: "Lancer dans T3" });
+  expect(launch.hasAttribute("disabled")).toBe(false);
+  await user.click(launch);
   const dialog = await screen.findByRole("dialog", { name: `Lancer ${key} dans T3` });
   const confirm = within(dialog).getByRole("button", { name: "Lancer" });
   await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(false));
+  expect(dialog.textContent).toContain("silo");
+  expect(dialog.textContent).not.toContain("/Users");
   await user.click(confirm);
   await waitFor(() =>
     expect(api.requests).toContainEqual(

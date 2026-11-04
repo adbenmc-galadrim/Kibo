@@ -101,7 +101,7 @@ export const SILO_TICKET_PROJECT: ProjectSnapshot = {
     key: "SILO",
     name: "Silo",
     color: "#14B8A6",
-    folder: "/Users/adam/silo",
+    folder: "silo",
     worktree: null,
     storybook: null,
     delivery: null,

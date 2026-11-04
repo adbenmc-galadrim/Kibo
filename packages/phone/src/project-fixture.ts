@@ -27,7 +27,7 @@ export function projectSnapshot(p: ProjectFixture): ProjectSnapshot {
     seed: p.seed,
     viewer: "adam",
     today: SILO_TODAY,
-    folder: `/Users/adam/${p.id}`,
+    folder: p.id,
   }).snapshot();
   return {
     ...snapshot,

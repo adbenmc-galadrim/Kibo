@@ -59,7 +59,7 @@ test('"Lancer dans T3" opens the confirmation and relays t3.launch', async () =>
     if (method === "t3.preview")
       return {
         ok: true,
-        result: { argv: [], command: "/full-delivery SILO-46", folder: "/Users/adam/silo", warning: null },
+        result: { argv: [], command: "/full-delivery SILO-46", folder: "silo", warning: null },
       };
     if (method === "t3.threadOf") return { ok: true, result: null };
     return {

@@ -3,6 +3,7 @@ import { KiboError, RpcRequest, type RpcResponse } from "@kibo/schema";
 import { HIDDEN } from "../http-response";
 import type { RpcContext } from "../rpc-extensions";
 import { rpcRefusal } from "../rpc-refusal";
+import { answerPhone } from "./phone-view";
 import { REPLAY_WINDOW_MS, type ReplayGuard } from "./replay-guard";
 
 const PHONE_CONTEXT: RpcContext = { sessionHash: "phone", remote: true };
@@ -53,7 +54,8 @@ async function answer(deps: GateDeps, plaintext: Uint8Array, origin: Origin): Pr
     assertFresh(deps, origin);
     const req = parseRequest(plaintext);
     assertRemoteAllowed(req);
-    return { ok: true, result: (await deps.dispatch(req, PHONE_CONTEXT)) ?? null };
+    const ask = (asked: RpcRequest) => deps.dispatch(asked, PHONE_CONTEXT);
+    return { ok: true, result: (await answerPhone(req, ask)) ?? null };
   } catch (e) {
     return failure(e, deps.redact);
   }

@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { basename } from "node:path";
 import type { AgentSnapshot, ImageSnapshot, ProjectsIndex } from "@kibo/remote";
 import type { ProjectAgentView, ProjectEvent, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import { questionImageFiles } from "../questions/question-images-port";
@@ -43,6 +44,14 @@ test("buildAll(projectId) yields project, events, agent, ci, t3 and one image ki
   expect(project.questions.map((q) => q.id)).toContain(silo.openQuestion);
   const image = decode(put.find((b) => b.kind.startsWith("image:"))) as ImageSnapshot;
   expect(image).toEqual({ mime: "image/png", bytes: Buffer.from("png").toString("base64") });
+});
+
+test("the project block names the folder by its last segment only, never by its path", async () => {
+  const { silo, builder } = await setup();
+  const { put } = await builder.buildAll(silo.projectId);
+  const project = decode(put.find((b) => b.kind === "project")) as ProjectSnapshot;
+  expect(project.meta.folder).toBe(basename(silo.folder));
+  expect(project.meta.folder).not.toContain("/");
 });
 
 test("the projects index lists only enabled projects with viewer, name, key, icon, pages", async () => {
