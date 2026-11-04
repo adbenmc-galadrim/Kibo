@@ -18,6 +18,7 @@ function setup(answer: (req: RpcRequest) => unknown = () => ({ id: "p1" })) {
       return answer(req);
     },
     seen: createReplayGuard(),
+    startedAt: T0 - 60_000,
     now: () => T0,
     redact: (text: string) => text.replaceAll("ghp_fakeSecret", "***"),
   };
@@ -123,6 +124,16 @@ test("a request older than the replay window is refused", async () => {
   expect(await s.send(encode({ method: "getSession" }), origin)).toMatchObject({
     ok: false,
     error: { code: "REMOTE_REJECTED" },
+  });
+  expect(s.calls).toEqual([]);
+});
+
+test("a fresh request sent before the daemon started is refused, its id may have been used already", async () => {
+  const s = setup();
+  const origin = { requestId: "req-before-restart", at: T0 - 2 * 60_000 };
+  expect(await s.send(encode({ method: "getSession" }), origin)).toEqual({
+    ok: false,
+    error: { code: "REMOTE_REJECTED", message: "request predates the daemon start" },
   });
   expect(s.calls).toEqual([]);
 });

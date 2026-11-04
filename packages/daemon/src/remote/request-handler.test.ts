@@ -11,6 +11,7 @@ async function setup() {
   const gate = {
     dispatch: async () => ({ id: "silo" }),
     seen: createReplayGuard(),
+    startedAt: 0,
     now: () => T0,
     redact: (text: string) => text,
   };

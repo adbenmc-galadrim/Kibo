@@ -11,6 +11,7 @@ const PHONE_CONTEXT: RpcContext = { sessionHash: "phone", remote: true };
 type GateDeps = {
   dispatch(req: RpcRequest, ctx: RpcContext): Promise<unknown>;
   seen: ReplayGuard;
+  startedAt: number;
   now(): number;
   redact(text: string): string;
 };
@@ -35,6 +36,9 @@ function assertFresh(deps: GateDeps, origin: Origin): void {
   const now = deps.now();
   if (Math.abs(now - origin.at) > REPLAY_WINDOW_MS) {
     throw new KiboError("REMOTE_REJECTED", REQUEST_CLOCK_REFUSAL);
+  }
+  if (origin.at < deps.startedAt) {
+    throw new KiboError("REMOTE_REJECTED", "request predates the daemon start");
   }
   if (deps.seen.seen(origin.requestId, origin.at, now)) {
     throw new KiboError("REMOTE_REJECTED", "request was already received");

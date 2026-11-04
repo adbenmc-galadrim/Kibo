@@ -61,6 +61,7 @@ async function rig(server?: TestServer): Promise<Rig> {
         return { id: "silo" };
       },
       seen: createReplayGuard(),
+      startedAt: 0,
       now: timers.now,
       redact: (text) => text,
     },

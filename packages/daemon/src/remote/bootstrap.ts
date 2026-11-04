@@ -53,7 +53,13 @@ export function startRemote(deps: RemoteDeps): RemoteModule {
   });
   const handleRequest = createRequestHandler({
     keys: () => link.keys(),
-    gate: { dispatch: deps.dispatch, seen: createReplayGuard(), now: deps.now, redact: deps.redact },
+    gate: {
+      dispatch: deps.dispatch,
+      seen: createReplayGuard(),
+      startedAt: deps.now(),
+      now: deps.now,
+      redact: deps.redact,
+    },
   });
   const link = createLink({
     timers,
