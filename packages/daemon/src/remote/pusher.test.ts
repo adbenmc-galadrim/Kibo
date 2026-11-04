@@ -9,8 +9,12 @@ const MIB = 1_048_576;
 
 function fakeBuilder(contents: Map<string, Map<string, string>>) {
   const sent = new Map<string, string>();
+  const failing = new Set<string>();
+  let hang: Promise<never> | null = null;
   let resets = 0;
-  const diff = (projectId: string): BuildResult => {
+  const diff = async (projectId: string): Promise<BuildResult> => {
+    if (hang) await hang;
+    if (failing.has(projectId)) throw new Error(`${projectId} agent is not ready`);
     const put: SnapshotBlock[] = [];
     for (const [kind, text] of contents.get(projectId) ?? []) {
       const key = `${projectId}/${kind}`;
@@ -31,7 +35,14 @@ function fakeBuilder(contents: Map<string, Map<string, string>>) {
       sent.clear();
     },
   };
-  return { builder, resets: () => resets };
+  return {
+    builder,
+    failing,
+    hang: () => {
+      hang = new Promise<never>(() => {});
+    },
+    resets: () => resets,
+  };
 }
 
 const silo = () =>
@@ -46,7 +57,7 @@ const silo = () =>
     ["_", new Map([["projects", '{"projects":[]}']])],
   ]);
 
-async function setup(contents = silo(), projects = ["silo"]) {
+async function setup(contents: Map<string, Map<string, string>> = silo(), projects = ["silo"]) {
   const timers = createFakeTimers();
   const keys = await deriveKeys(generateRootKey(), "acc", 1);
   const messages: MacMessage[] = [];
@@ -158,4 +169,67 @@ test("after a restart the first block sent has a seq greater than the last one s
   s.contents.get("silo")?.set("project", '{"v":4}');
   await restarted.pushProject("silo");
   expect(puts(s.messages)[0]?.header.seq).toBeGreaterThan(last);
+});
+
+const twoProjects = () => {
+  const contents = silo();
+  contents.set("atelier", new Map([["project", '{"name":"Atelier"}']]));
+  return contents;
+};
+
+test("a project whose push throws is logged, the next projects are pushed and it is retried 30 s later", async () => {
+  const s = await setup(twoProjects(), ["atelier", "silo"]);
+  s.fake.failing.add("atelier");
+  await s.pusher.pushAll();
+  expect(keysOf(puts(s.messages))).toEqual(["_/projects", "silo/events", "silo/project"]);
+  expect(s.logs.filter((l) => l.includes("atelier") && l.includes("agent is not ready"))).toHaveLength(1);
+  s.fake.failing.delete("atelier");
+  await s.timers.advance(29_999);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).not.toContain("atelier/project");
+  await s.timers.advance(1);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).toContain("atelier/project");
+});
+
+test("a grouped change whose push throws keeps the project pending until it succeeds", async () => {
+  const s = await setup();
+  s.fake.failing.add("silo");
+  s.pusher.changed("silo");
+  await s.timers.advance(2_000);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).toEqual(["_/projects"]);
+  await s.timers.advance(30_000);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).toEqual(["_/projects"]);
+  s.fake.failing.delete("silo");
+  await s.timers.advance(30_000);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).toEqual(["_/projects", "silo/events", "silo/project"]);
+});
+
+test("idle gives up after 10 s on a push that never ends", async () => {
+  const s = await setup();
+  s.fake.hang();
+  void s.pusher.pushAll();
+  let idle = false;
+  void s.pusher.idle().then(() => {
+    idle = true;
+  });
+  await s.timers.advance(9_999);
+  expect(idle).toBe(false);
+  await s.timers.advance(1);
+  expect(idle).toBe(true);
+});
+
+test("a change during the 30 s retry wait is still pushed within 2 s", async () => {
+  const s = await setup(twoProjects(), ["atelier", "silo"]);
+  s.fake.failing.add("atelier");
+  await s.pusher.pushAll();
+  s.messages.length = 0;
+  s.contents.get("silo")?.set("project", '{"v":2}');
+  s.pusher.changed("silo");
+  await s.timers.advance(2_000);
+  await s.pusher.idle();
+  expect(keysOf(puts(s.messages))).toContain("silo/project");
 });

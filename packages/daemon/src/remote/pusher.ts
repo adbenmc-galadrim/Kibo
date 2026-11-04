@@ -9,6 +9,8 @@ import type { BuildResult, SnapshotBlock, SnapshotBuilder } from "./snapshot-bui
 import type { RemoteTimers } from "./timers";
 
 const PUSH_DELAY_MS = 2_000;
+const RETRY_MS = 30_000;
+const IDLE_MAX_MS = 10_000;
 
 type PusherDeps = {
   builder: SnapshotBuilder;
@@ -32,16 +34,19 @@ export type Pusher = {
 
 const decodedLength = (base64url: string) => Math.floor((base64url.length * 3) / 4);
 
+const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
 export function createPusher(deps: PusherDeps): Pusher {
   const lastSeq = new Map<string, number>();
   const pending = new Set<string>();
   let cancelTimer: (() => void) | null = null;
+  let timerDueAt = 0;
   let lastPushAt: number | null = null;
   let queue: Promise<void> = Promise.resolve();
 
   const serial = (work: () => Promise<void>): Promise<void> => {
     const next = queue.then(work).catch((e: unknown) => {
-      deps.log(`[kibo-daemon] remote push failed: ${e instanceof Error ? e.message : String(e)}`);
+      deps.log(`[kibo-daemon] remote push failed: ${reason(e)}`);
     });
     queue = next;
     return next;
@@ -86,36 +91,59 @@ export function createPusher(deps: PusherDeps): Pusher {
   const enabled = (projectId: string) => deps.projects().includes(projectId);
 
   const pushIndex = async () => publish(await deps.builder.buildIndex(deps.projects()), "_");
-  const pushOne = async (projectId: string) => {
-    if (enabled(projectId)) await publish(await deps.builder.buildAll(projectId), projectId);
+  const schedule = (delayMs: number) => {
+    const dueAt = deps.now() + delayMs;
+    if (cancelTimer && timerDueAt <= dueAt) return;
+    cancelTimer?.();
+    timerDueAt = dueAt;
+    cancelTimer = deps.timers.after(delayMs, flushPending);
   };
 
-  const flushPending = () => {
+  const attempt = async (label: string, work: () => Promise<void>): Promise<boolean> => {
+    try {
+      await work();
+      return true;
+    } catch (e) {
+      deps.log(`[kibo-daemon] remote push of ${label} failed, retried in 30 s: ${reason(e)}`);
+      schedule(RETRY_MS);
+      return false;
+    }
+  };
+
+  const tryIndex = () => attempt("the index", pushIndex);
+  const tryOne = async (projectId: string) => {
+    const pushed = await attempt(projectId, async () => {
+      if (enabled(projectId)) await publish(await deps.builder.buildAll(projectId), projectId);
+    });
+    if (!pushed) pending.add(projectId);
+  };
+
+  function flushPending() {
     cancelTimer = null;
     const projectIds = [...pending];
     pending.clear();
     void serial(async () => {
-      await pushIndex();
-      for (const projectId of projectIds) await pushOne(projectId);
+      await tryIndex();
+      for (const projectId of projectIds) await tryOne(projectId);
     });
-  };
+  }
 
   return {
     changed: (projectId) => {
       const targets = projectId === null ? deps.projects() : [projectId];
       for (const target of targets) if (enabled(target)) pending.add(target);
-      if (pending.size > 0 && !cancelTimer) cancelTimer = deps.timers.after(PUSH_DELAY_MS, flushPending);
+      if (pending.size > 0) schedule(PUSH_DELAY_MS);
     },
     pushAll: () =>
       serial(async () => {
         deps.builder.reset();
-        await pushIndex();
-        for (const projectId of deps.projects()) await pushOne(projectId);
+        await tryIndex();
+        for (const projectId of deps.projects()) await tryOne(projectId);
       }),
     pushProject: (projectId) =>
       serial(async () => {
-        await pushIndex();
-        await pushOne(projectId);
+        await tryIndex();
+        await tryOne(projectId);
       }),
     removeProject: (projectId) =>
       serial(async () => {
@@ -124,7 +152,14 @@ export function createPusher(deps: PusherDeps): Pusher {
         deps.send({ type: "project.remove", projectId });
         await pushIndex();
       }),
-    idle: () => queue,
+    idle: () =>
+      new Promise<void>((resolve) => {
+        const cancel = deps.timers.after(IDLE_MAX_MS, resolve);
+        void queue.then(() => {
+          cancel();
+          resolve();
+        });
+      }),
     lastPushAt: () => lastPushAt,
     stop: () => {
       cancelTimer?.();
