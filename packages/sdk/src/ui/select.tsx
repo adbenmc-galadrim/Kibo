@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "cn"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { Select as SelectPrimitive } from "radix-ui"
+import { styleNonce } from "../lib/style-nonce"
 
 function Select({
   ...props
@@ -72,6 +73,7 @@ function SelectContent({
       >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
+          nonce={styleNonce()}
           className={cn(
             "p-1",
             position === "popper" &&
