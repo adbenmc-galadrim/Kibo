@@ -14,6 +14,7 @@ export type FakeT3State = {
   nextId: string;
   startOutput?: string;
   startDropsThread?: boolean;
+  logsWarnings?: boolean;
 };
 
 export const EMPTY_FAKE_T3: FakeT3State = { mode: "ok", threads: [], nextId: "thr_1" };
