@@ -9,6 +9,7 @@ export type T3Runner = (
 const DEFAULT_TIMEOUT_MS = 15_000;
 const STDERR_EXCERPT = 300;
 const COMMAND_NOT_FOUND = 127;
+const QUIET_LOGS = ["--log-level", "error"];
 
 export class T3Timeout extends KiboError {
   constructor(timeoutMs: number) {
@@ -24,7 +25,7 @@ const isEnoent = (e: unknown): boolean => e instanceof Error && "code" in e && e
 
 function spawnT3(bin: string, args: readonly string[], cwd: string | undefined) {
   try {
-    return Bun.spawn([bin, ...args], {
+    return Bun.spawn([bin, ...QUIET_LOGS, ...args], {
       ...(cwd !== undefined && { cwd }),
       env: process.env,
       stdin: "ignore",

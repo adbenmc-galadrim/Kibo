@@ -15,6 +15,7 @@ type FakeState = {
   nextId: string;
   startOutput?: string;
   startDropsThread?: boolean;
+  logsWarnings?: boolean;
 };
 
 const statePath = process.env.FAKE_T3_STATE;
@@ -23,11 +24,17 @@ if (!statePath || !logPath) {
   process.stderr.write("FAKE_T3_STATE and FAKE_T3_LOG are required\n");
   process.exit(2);
 }
-const args = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const logLevel = argv[0] === "--log-level" ? argv[1] : undefined;
+const args = logLevel === undefined ? argv : argv.slice(2);
 appendFileSync(logPath, `${JSON.stringify(args)}\n`);
 const state: FakeState = existsSync(statePath)
   ? JSON.parse(readFileSync(statePath, "utf8"))
   : { mode: "ok", threads: [], nextId: "thr_1" };
+const QUIET_LEVELS = ["error", "fatal", "none"];
+if (state.logsWarnings && !QUIET_LEVELS.includes(logLevel ?? "")) {
+  process.stdout.write("[13:54:44.275] WARN (#20): Database migration history diverges from this build.\n");
+}
 const flag = (name: string) => {
   const at = args.indexOf(`--${name}`);
   return at === -1 ? undefined : args[at + 1];
