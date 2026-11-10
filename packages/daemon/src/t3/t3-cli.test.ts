@@ -49,7 +49,7 @@ test("t3 warnings never reach stdout", async () => {
 
 test("a command over its timeout raises T3_UNAVAILABLE", async () => {
   const slow = join(mkdtempSync(join(tmpdir(), "kibo-slow-t3-")), "t3");
-  writeFileSync(slow, "#!/bin/sh\nsleep 5\n");
+  writeFileSync(slow, "#!/bin/sh\nexec sleep 5\n");
   chmodSync(slow, 0o755);
   const error = await failure(createT3Runner(slow)(["theme", "show"], { timeoutMs: 20 }));
   expect(error.code).toBe("T3_UNAVAILABLE");
