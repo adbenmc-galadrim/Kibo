@@ -19,7 +19,8 @@
     "budget": "bun packages/ui/scripts/bundle-budget.ts",
     "budget:phone": "bun packages/phone/scripts/bundle-budget.ts",
     "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved,exports,types",
-    "knip:exports": "knip --include exports,types"
+    "knip:exports": "knip --include exports,types",
+    "release:mac-local": "bun apps/desktop/scripts/release-mac-local.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
