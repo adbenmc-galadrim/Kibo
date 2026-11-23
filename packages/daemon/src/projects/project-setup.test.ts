@@ -111,13 +111,27 @@ test("53 sprints are refused before any project is registered", () => {
   expect(service.handle({ method: "listProjects" })).toEqual([]);
 });
 
-test("without a setup a project has no page and no sprint, and is left to the migration", () => {
+test("without a setup a project still gets the five view pages, but no sprint", () => {
   const { settings, create, snapshot } = open();
   const project = create();
   const snap = snapshot(project.id);
-  expect(snap.pages).toEqual([]);
+  expect(snap.pages.map((p) => p.title)).toEqual([
+    "Vue d'ensemble",
+    "Planning",
+    "Kanban",
+    "Graphe",
+    "Questions",
+  ]);
+  expect(snap.instances.map((i) => i.component).sort()).toEqual([
+    "graph@1.0.0",
+    "kanban@1.0.0",
+    "overview@1.0.0",
+    "planning@1.0.0",
+    "questions@1.0.0",
+  ]);
   expect(snap.sprints).toEqual([]);
-  expect(settings.get(project.id, TRACKING_MIGRATED_KEY)).toBeNull();
+  expect(settings.get(project.id, TRACKING_MIGRATED_KEY)).not.toBeNull();
+  expect(settings.get(project.id, OVERVIEW_MIGRATED_KEY)).not.toBeNull();
 });
 
 test("setupProject runs its commands through the given runner and returns what they created", () => {
@@ -150,10 +164,11 @@ test("the seed is built before registration: a refused project leaves no page, s
   const { service, settings, create } = open();
   const first = create();
   const before = service.docs.projectIds();
+  const marked = settings.get(first.id, TRACKING_MIGRATED_KEY);
   expect(() => create(SIX_WEEKS)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
   expect(service.docs.projectIds()).toEqual(before);
   expect(service.handle({ method: "listProjects" })).toEqual([expect.objectContaining({ id: first.id })]);
-  expect(settings.get(first.id, TRACKING_MIGRATED_KEY)).toBeNull();
+  expect(settings.get(first.id, TRACKING_MIGRATED_KEY)).toBe(marked);
 });
 
 test("the seed never goes through the live command path, so a failing command cannot leave a half-seeded project", () => {

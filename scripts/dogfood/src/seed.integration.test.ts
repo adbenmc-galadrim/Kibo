@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DOMAIN_COLORS, Domain, Ticket } from "@kibo/schema";
+import { DOMAIN_COLORS, Domain, SETUP_PAGES, Ticket } from "@kibo/schema";
 import type { Subprocess } from "bun";
 import { connectLocalDaemon, readDaemonAccess, type SeedClient } from "./daemon-client";
 import { resolveOwner } from "./desired";
@@ -67,13 +67,15 @@ async function withClient<T>(run: (c: SeedClient) => Promise<T>, kiboHome = home
 
 test("seeds the Kibo project once, then finds everything on a second run", async () => {
   const desired = loadDesired(REPO, folder);
+  const seeded = new Set(SETUP_PAGES.map((p) => p.title));
+  const fresh = desired.pages.filter((p) => !seeded.has(p.title));
   const first = await withClient((c) => seedKibo(c, desired));
   expect(first.created).toMatchObject({
     project: 1,
     domain: desired.domains.length,
     guideline: desired.guidelines.length,
-    page: desired.pages.length,
-    instance: desired.pages.reduce((n, p) => n + p.instances.length, 0),
+    page: fresh.length,
+    instance: fresh.reduce((n, p) => n + p.instances.length, 0),
     ticket: desired.tickets.length,
     notesDir: 1,
   });
