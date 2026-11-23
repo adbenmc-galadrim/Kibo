@@ -2511,7 +2511,7 @@ Demande : « faire les choses minimales d'abord ». Kibo **suit** le développem
 ### 39.2 Créer un projet
 
 - Dialogue « Nouveau projet » : **Nom** (requis), **Clé** (dérivée du nom, 2 à 6 lettres majuscules, modifiable, unique), **Début** du premier sprint (date, par défaut le lundi qui suit), **Nombre de sprints** (1 à 52, par défaut 6), **Durée d'un sprint** (1 ou 2 semaines, par défaut 1), **Dossier du dépôt** (facultatif ; sans lui, pas de suivi git).
-- À la création, le projet a **exactement** ces pages, dans cet ordre : Vue d'ensemble, Planning, Kanban, Graphe, Questions.
+- À la création, le projet a **exactement** ces pages, dans cet ordre : Vue d'ensemble, Planning, Kanban, Graphe, Questions. C'est vrai par **toute** voie de création (dialogue, `kibo rpc createProject`, agent) : sans `setup`, les pages sont créées quand même, seuls les sprints manquent (décision d'Adam du 2026-11-23).
 - Les sprints sont créés aussitôt : `S1` à `Sn`, nommés « Sprint 1 » à « Sprint n » ; le sprint i commence à `début + (i − 1) × durée` et finit `durée × 7 − 3` jours après son début (du lundi au vendredi quand le début est un lundi). Le Planning les montre dès l'ouverture ; on les modifie ensuite comme avant.
 - Puis on crée les tickets et les fonctionnalités. Les projets existants ne changent pas.
 
