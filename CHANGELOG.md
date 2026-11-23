@@ -2,6 +2,10 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.35.0-alpha.3 — 2026-11-23
+
+- Un nouveau projet a toujours ses cinq pages (Vue d'ensemble, Planning, Kanban, Graphe, Questions), même quand il est créé par la CLI ou par un agent.
+
 ## 0.35.0-alpha.2 — 2026-11-04
 
 - Sur iPhone, l'écran d'appairage du téléphone affiche de nouveau la caméra pour scanner le QR code du Mac.
