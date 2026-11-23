@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
-import { rpc, text } from "./agents-seed";
+import { list, rpc, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 export async function openNewProject(page: Page) {
@@ -41,7 +41,12 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
 export async function openEmptyProject(page: Page, name: string, key: string, folder: string | null) {
   await expect(page.getByRole("button", { name: "Aujourd'hui", exact: true })).toBeVisible();
   const created = await rpc(page, { method: "createProject", name, key, folder, color: "#F97316" });
-  await page.goto(`/#/p/${encodeURIComponent(text(created, "id"))}/`);
+  const projectId = text(created, "id");
+  const seeded = await rpc(page, { method: "getProject", projectId });
+  for (const pageId of list(seeded, "pages").map((p) => text(p, "id")))
+    await rpc(page, { method: "command", projectId, command: { method: "deletePage", pageId } });
+  await page.reload();
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
   await expect(page.getByText(`Projet créé : ${name}`)).toBeVisible();
 }
 

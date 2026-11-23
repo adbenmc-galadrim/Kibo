@@ -200,7 +200,9 @@ async function askQuestions(silo: Silo): Promise<void> {
   }
 }
 
-async function addPages(silo: Silo): Promise<void> {
+async function addPages(silo: Silo, rpc: SeedRpc): Promise<void> {
+  const seeded = listOf(field(await rpc({ method: "getProject", projectId: silo.projectId }), "pages"));
+  for (const page of seeded) await silo.command({ method: "deletePage", pageId: textOf(page, "id") });
   for (const [title, component] of SILO_PAGES) {
     const page = await silo.command({ method: "addPage", title, kind: "view" });
     await silo.command({ method: "addInstance", pageId: textOf(page, "id"), component });
@@ -237,7 +239,7 @@ async function seedSilo(rpc: SeedRpc, projectId: string, user: string, options: 
     projectId,
     patch: { description: SILO_DESCRIPTION, client: SILO_CLIENT },
   });
-  await addPages(silo);
+  await addPages(silo, rpc);
   const deliveries = deliveryOrder([...stepSpecs().values()]);
   const closing = deliveries.find((s) => s.n === SILO_CLOSING.delivery);
   if (closing === undefined) throw new Error(`${siloKey(SILO_CLOSING.delivery)} has no delivery step`);
