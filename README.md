@@ -38,6 +38,7 @@ Kibo est en alpha (`0.<phase>.0-alpha.N`) jusqu'au lancement ; les releases sont
 Ensuite, Kibo vérifie les nouvelles versions au lancement puis toutes les six heures et les propose dans **Paramètres › Général** ; rien ne s'installe sans ton clic (signature minisign vérifiée, spec `docs/superpowers/specs/2026-09-27-kibo-mises-a-jour.md`). Sur Linux, seule l'AppImage se met à jour toute seule.
 
 Publier une version alpha : `bun apps/desktop/scripts/version.ts set 0.N.0-alpha.M`, section `## 0.N.0-alpha.M — AAAA-MM-JJ` dans `CHANGELOG.md` (le tag est refusé sans elle), commit, puis tag `v0.N.0-alpha.M` poussé sur `main` ; le workflow `release` construit, signe, publie une pré-release et met à jour le canal `alpha`.
+Si le build macOS de la CI échoue (runner macOS arm64 introuvable), `bun run release:mac-local` le refait sur un Mac Apple Silicon : depuis le tag extrait, avec la clé de mise à jour de `~/.tauri/`, il construit l'app, l'ajoute à la release en brouillon et à `latest.json`, recalcule `SHA256SUMS` puis publie, comme les jobs `checksums` et `publish` (`--skip-build` pour reprendre sans recompiler).
 
 ## Agent de projet
 
