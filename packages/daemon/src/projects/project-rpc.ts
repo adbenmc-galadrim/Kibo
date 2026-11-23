@@ -51,7 +51,7 @@ function parsedSetup(setup: unknown): ProjectSetup | null {
 function newProjectDoc(meta: ProjectMeta, client: string | null, setup: ProjectSetup | null): LoroDoc {
   const doc = createProjectDoc(meta);
   if (client) setProjectMeta(doc, { client });
-  if (setup) setupProject((command) => executeProjectCommand(doc, command), setup);
+  setupProject((command) => executeProjectCommand(doc, command), setup);
   return doc;
 }
 
@@ -79,7 +79,7 @@ function createProject(
   const doc = newProjectDoc(meta, req.client ?? null, setup);
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, doc);
-  if (setup) markMigrated(deps.settings, meta.id, deps.docs.today());
+  markMigrated(deps.settings, meta.id, deps.docs.today());
   deps.docs.save(meta.id);
   deps.docs.save(null);
   deps.docs.emit({ projectId: null });

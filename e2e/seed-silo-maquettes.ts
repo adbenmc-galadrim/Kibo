@@ -68,8 +68,15 @@ async function findProject(rpc: SeedRpc, key: string): Promise<string | null> {
 
 async function ensureProject(rpc: SeedRpc, spec: ProjectSpec, folder: string | null): Promise<string | null> {
   if ((await findProject(rpc, spec.key)) !== null) return null;
-  const created = await rpc({ method: "createProject", ...spec, folder });
-  return textOf(created, "id");
+  const projectId = textOf(await rpc({ method: "createProject", ...spec, folder }), "id");
+  const seeded = listOf(field(await rpc({ method: "getProject", projectId }), "pages"));
+  for (const page of seeded)
+    await rpc({
+      method: "command",
+      projectId,
+      command: { method: "deletePage", pageId: textOf(page, "id") },
+    });
+  return projectId;
 }
 
 type Silo = {

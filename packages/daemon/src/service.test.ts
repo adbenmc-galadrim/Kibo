@@ -230,7 +230,9 @@ describe("service", () => {
     expect(changes).toEqual([]);
     run({ method: "setInstanceConfig", instanceId: inst.id, config: { a: 1 } });
     const snap = s.handle({ method: "getProject", projectId: p.id }) as ProjectSnapshot;
-    expect(snap.instances).toMatchObject([{ id: inst.id, component: "hello@0.1.0", config: { a: 1 } }]);
+    expect(snap.instances.filter((i) => i.pageId === page.id)).toMatchObject([
+      { id: inst.id, component: "hello@0.1.0", config: { a: 1 } },
+    ]);
     store.close();
   });
 

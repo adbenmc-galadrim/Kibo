@@ -38,13 +38,25 @@ function open(home: string) {
 function seed() {
   const home = mkdtempSync(join(tmpdir(), "kibo-tracking-migration-"));
   homes.push(home);
-  const { store, service } = open(home);
-  const project = (name: string, key: string): ProjectMeta =>
-    service.handle({ method: "createProject", name, key, folder: null, color: "#F97316" }) as ProjectMeta;
-  const silo = project("Silo", "SILO");
-  const client = project("Client", "CLI");
+  const { store, service, snapshot } = open(home);
+  const settings = createProjectSettings(store.db);
   const run = (projectId: string, command: ProjectCommand) =>
     service.handle({ method: "command", projectId, command });
+  const legacyProject = (name: string, key: string): ProjectMeta => {
+    const meta = service.handle({
+      method: "createProject",
+      name,
+      key,
+      folder: null,
+      color: "#F97316",
+    }) as ProjectMeta;
+    for (const page of snapshot(meta.id).pages) run(meta.id, { method: "deletePage", pageId: page.id });
+    settings.unset(meta.id, TRACKING_MIGRATED_KEY);
+    settings.unset(meta.id, OVERVIEW_MIGRATED_KEY);
+    return meta;
+  };
+  const silo = legacyProject("Silo", "SILO");
+  const client = legacyProject("Client", "CLI");
   const root = run(silo.id, { method: "createTicket", title: "Accès" }) as Ticket;
   run(silo.id, {
     method: "upsertExternalRef",
