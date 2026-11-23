@@ -1,6 +1,6 @@
 import { Page, type ProjectCommand, type ProjectSetup, SETUP_PAGES, Sprint, sprintPlan } from "@kibo/schema";
 
-export type SetupRunner = (command: ProjectCommand) => unknown;
+type SetupRunner = (command: ProjectCommand) => unknown;
 
 function seedPage(run: SetupRunner, page: (typeof SETUP_PAGES)[number]): Page {
   const created = Page.parse(run({ method: "addPage", title: page.title, kind: "view" }));
