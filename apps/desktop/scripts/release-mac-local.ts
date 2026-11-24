@@ -2,13 +2,21 @@ import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFile
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { $ } from "bun";
-import { checksumsFile, MAC_TARGET, macAssets, withDarwinPlatform } from "./release-mac";
+import {
+  type CiJob,
+  checksumsFile,
+  ciProgress,
+  MAC_TARGET,
+  macAssets,
+  withDarwinPlatform,
+} from "./release-mac";
 
 const desktop = resolve(import.meta.dir, "..");
 const root = resolve(desktop, "../..");
 const BUNDLE = join(desktop, "src-tauri/target", MAC_TARGET, "release/bundle");
 const KEY_DIR = join(homedir(), ".tauri");
 const ALPHA = "alpha";
+const POLL_MS = 30_000;
 
 const args = process.argv.slice(2);
 const skipBuild = args.includes("--skip-build");
@@ -29,8 +37,53 @@ async function assertReady(): Promise<void> {
   if (head !== tagged) throw new Error(`HEAD is not ${tag}: check out the tag first`);
   if ((await $`git -C ${root} status --porcelain --untracked-files=no`.text()).trim() !== "")
     throw new Error("the working tree has local changes");
+}
+
+async function releaseRun(): Promise<number> {
+  const runs: { databaseId: number; headBranch: string }[] =
+    await $`gh run list --workflow release.yml --json databaseId,headBranch -L 20`.json();
+  const run = runs.find((r) => r.headBranch === tag);
+  if (run === undefined) throw new Error(`no release run for ${tag}: push the tag first`);
+  return run.databaseId;
+}
+
+type RunState = { status: string; jobs: CiJob[] };
+
+async function runState(id: number): Promise<RunState> {
+  const run: { status: string; jobs: { name: string; status: string; conclusion: string | null }[] } =
+    await $`gh run view ${id} --json status,jobs`.json();
+  return { status: run.status, jobs: run.jobs.map((j) => ({ ...j, conclusion: j.conclusion ?? "" })) };
+}
+
+async function takeOverCi(): Promise<boolean> {
+  step("CI");
+  const id = await releaseRun();
+  for (;;) {
+    const run = await runState(id);
+    const progress = ciProgress(run.jobs);
+    if (progress === "linux-failed") throw new Error(`the Linux build of run ${id} failed`);
+    if (progress === "ci-publishes") {
+      console.log(`the CI built macOS itself: run ${id} publishes ${tag}`);
+      return false;
+    }
+    if (progress === "take-over") {
+      if (run.status !== "completed") await cancel(id);
+      await assertDraft();
+      return true;
+    }
+    console.log("waiting for the Linux build of the CI…");
+    await Bun.sleep(POLL_MS);
+  }
+}
+
+async function cancel(id: number): Promise<void> {
+  await $`gh run cancel ${id}`;
+  while ((await runState(id)).status !== "completed") await Bun.sleep(5_000);
+}
+
+async function assertDraft(): Promise<void> {
   const draft = (await $`gh release view ${tag} --json isDraft -q .isDraft`.nothrow().text()).trim();
-  if (draft !== "true") throw new Error(`${tag} has no draft release: push the tag and let the CI create it`);
+  if (draft !== "true") throw new Error(`${tag} has no draft release`);
 }
 
 function signingEnv(): Record<string, string> {
@@ -110,6 +163,7 @@ async function publish(work: string): Promise<void> {
 
 await assertReady();
 if (!skipBuild) await build();
+if (!(await takeOverCi())) process.exit(0);
 const work = mkdtempSync(join(tmpdir(), "kibo-release-mac-"));
 try {
   const signature = await uploadAssets(work);

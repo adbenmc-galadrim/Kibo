@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { checksumsFile, macAssets, withDarwinPlatform } from "./release-mac";
+import { checksumsFile, ciProgress, macAssets, withDarwinPlatform } from "./release-mac";
 
 const REPO = "adbenmc-galadrim/Kibo";
 const BUNDLE = "/k/apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle";
@@ -74,4 +74,31 @@ test("SHA256SUMS has the sha256sum layout, sorted by name, without itself nor in
       "",
     ].join("\n"),
   );
+});
+
+const LINUX_JOB = "build (ubuntu-22.04, x86_64-unknown-linux-gnu)";
+const MAC_JOB = "build (macos-latest, aarch64-apple-darwin)";
+const job = (name: string, status: string, conclusion = "") => ({ name, status, conclusion });
+
+test("the script waits while the Linux build of the CI is running", () => {
+  expect(ciProgress([job(LINUX_JOB, "in_progress"), job(MAC_JOB, "queued")])).toBe("wait");
+  expect(ciProgress([job("version", "in_progress")])).toBe("wait");
+});
+
+test("the script takes over once Linux is built and the mac build has not succeeded", () => {
+  expect(ciProgress([job(LINUX_JOB, "completed", "success"), job(MAC_JOB, "queued")])).toBe("take-over");
+  expect(ciProgress([job(LINUX_JOB, "completed", "success"), job(MAC_JOB, "completed", "failure")])).toBe(
+    "take-over",
+  );
+});
+
+test("the script leaves the release to the CI when its mac build succeeded", () => {
+  expect(ciProgress([job(LINUX_JOB, "completed", "success"), job(MAC_JOB, "completed", "success")])).toBe(
+    "ci-publishes",
+  );
+});
+
+test("the script stops when the Linux build of the CI failed", () => {
+  expect(ciProgress([job(LINUX_JOB, "completed", "failure"), job(MAC_JOB, "queued")])).toBe("linux-failed");
+  expect(ciProgress([job(LINUX_JOB, "completed", "cancelled")])).toBe("linux-failed");
 });
