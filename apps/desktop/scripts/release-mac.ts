@@ -59,3 +59,18 @@ export function checksumsFile(files: readonly { name: string; bytes: Uint8Array 
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return summed.map((f) => `${sha256(f.bytes)}  ${f.name}\n`).join("");
 }
+
+const LINUX_TARGET = "x86_64-unknown-linux-gnu";
+
+export type CiJob = { name: string; status: string; conclusion: string };
+export type CiProgress = "wait" | "take-over" | "ci-publishes" | "linux-failed";
+
+const succeeded = (job: CiJob | undefined): boolean =>
+  job?.status === "completed" && job.conclusion === "success";
+
+export function ciProgress(jobs: readonly CiJob[]): CiProgress {
+  const linux = jobs.find((j) => j.name.includes(LINUX_TARGET));
+  if (linux?.status !== "completed") return "wait";
+  if (!succeeded(linux)) return "linux-failed";
+  return succeeded(jobs.find((j) => j.name.includes(MAC_TARGET))) ? "ci-publishes" : "take-over";
+}
