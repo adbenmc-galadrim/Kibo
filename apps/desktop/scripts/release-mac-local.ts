@@ -39,7 +39,12 @@ function signingEnv(): Record<string, string> {
   const password =
     process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ??
     readFileSync(join(KEY_DIR, "kibo-updater.password"), "utf8").trim();
-  return { TAURI_SIGNING_PRIVATE_KEY: key, TAURI_SIGNING_PRIVATE_KEY_PASSWORD: password, NO_STRIP: "true" };
+  return {
+    TAURI_SIGNING_PRIVATE_KEY: key,
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: password,
+    NO_STRIP: "true",
+    CI: "true",
+  };
 }
 
 async function build(): Promise<void> {
