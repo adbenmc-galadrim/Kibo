@@ -14,12 +14,13 @@
     "@kibo/core": "workspace:*",
     "@kibo/remote": "workspace:*",
     "@kibo/schema": "workspace:*",
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "loro-crdt": "1.16.3",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@kibo/remote-server": "workspace:*",
-    "fast-check": "4.3.0"
+    "fast-check": "4.3.0",
+    "zod-v4": "npm:zod@4.6.7"
   }
 }

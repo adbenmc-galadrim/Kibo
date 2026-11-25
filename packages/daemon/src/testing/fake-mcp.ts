@@ -1,9 +1,9 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { Socket } from "node:net";
 import { join } from "node:path";
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, type RegisteredTool, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from "zod";
+import { z } from "zod-v4";
 
 export const FAKE_MCP_STDIO = join(import.meta.dir, "fake-mcp-stdio.ts");
 export const FAKE_PNG_BASE64 =
@@ -20,51 +20,68 @@ const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 export function buildFakeMcpServer(opts: { omit?: string[] } = {}): McpServer {
   const s = new McpServer({ name: "fake-mcp", version: "1.0.0" });
   const omit = opts.omit ?? [];
-  const tool: McpServer["registerTool"] = (name, config, handler) => {
-    const registered = s.registerTool(name, config, handler);
+  const tool = (name: string, register: (name: string) => RegisteredTool): void => {
+    const registered = register(name);
     if (omit.includes(name)) registered.remove();
-    return registered;
   };
-  tool("echo", { description: "Echo", inputSchema: { text: z.string() } }, async ({ text: t }) => text(t));
-  tool("list_items", { description: "Items" }, async () => text(JSON.stringify(FAKE_ITEMS)));
-  tool(
-    "get_metadata",
-    { description: "Node metadata", inputSchema: { nodeId: z.string() } },
-    async ({ nodeId }) =>
-      text(`<frame id="${nodeId}" name="Kibo › Tickets / Arbre" x="0" y="0" width="1440" height="900" />`),
-  );
-  tool(
-    "get_screenshot",
-    { description: "Node screenshot", inputSchema: { nodeId: z.string() } },
-    async () => ({
-      content: [{ type: "image" as const, data: FAKE_PNG_BASE64, mimeType: "image/png" }],
-    }),
-  );
-  tool("slow", { description: "Slow", inputSchema: { ms: z.number() } }, async ({ ms }) => {
-    await Bun.sleep(ms);
-    return text("late");
-  });
-  tool("fail", { description: "Fails" }, async () => ({ isError: true, ...text("boom") }));
-  tool("big", { description: "Big", inputSchema: { bytes: z.number() } }, async ({ bytes }) =>
-    text("x".repeat(bytes)),
-  );
-  tool("env", { description: "Env" }, async () =>
-    text(
-      JSON.stringify({
-        keys: Object.keys(process.env).sort(),
-        cwd: process.cwd(),
-        hasToken: Boolean(process.env.FAKE_TOKEN),
-      }),
+  tool("echo", (n) =>
+    s.registerTool(n, { description: "Echo", inputSchema: { text: z.string() } }, async ({ text: t }) =>
+      text(t),
     ),
   );
-  tool("echo_env", { description: "Echoes its secret in an error" }, async () => ({
-    isError: true,
-    ...text(`invalid token ${process.env.FAKE_TOKEN ?? ""}`),
-  }));
-  tool("log_env", { description: "Writes its secret on stderr" }, async () => {
-    process.stderr.write(`token ${process.env.FAKE_TOKEN ?? ""}\n`);
-    return text("logged");
-  });
+  tool("list_items", (n) =>
+    s.registerTool(n, { description: "Items" }, async () => text(JSON.stringify(FAKE_ITEMS))),
+  );
+  tool("get_metadata", (n) =>
+    s.registerTool(
+      n,
+      { description: "Node metadata", inputSchema: { nodeId: z.string() } },
+      async ({ nodeId }) =>
+        text(`<frame id="${nodeId}" name="Kibo › Tickets / Arbre" x="0" y="0" width="1440" height="900" />`),
+    ),
+  );
+  tool("get_screenshot", (n) =>
+    s.registerTool(n, { description: "Node screenshot", inputSchema: { nodeId: z.string() } }, async () => ({
+      content: [{ type: "image" as const, data: FAKE_PNG_BASE64, mimeType: "image/png" }],
+    })),
+  );
+  tool("slow", (n) =>
+    s.registerTool(n, { description: "Slow", inputSchema: { ms: z.number() } }, async ({ ms }) => {
+      await Bun.sleep(ms);
+      return text("late");
+    }),
+  );
+  tool("fail", (n) =>
+    s.registerTool(n, { description: "Fails" }, async () => ({ isError: true, ...text("boom") })),
+  );
+  tool("big", (n) =>
+    s.registerTool(n, { description: "Big", inputSchema: { bytes: z.number() } }, async ({ bytes }) =>
+      text("x".repeat(bytes)),
+    ),
+  );
+  tool("env", (n) =>
+    s.registerTool(n, { description: "Env" }, async () =>
+      text(
+        JSON.stringify({
+          keys: Object.keys(process.env).sort(),
+          cwd: process.cwd(),
+          hasToken: Boolean(process.env.FAKE_TOKEN),
+        }),
+      ),
+    ),
+  );
+  tool("echo_env", (n) =>
+    s.registerTool(n, { description: "Echoes its secret in an error" }, async () => ({
+      isError: true,
+      ...text(`invalid token ${process.env.FAKE_TOKEN ?? ""}`),
+    })),
+  );
+  tool("log_env", (n) =>
+    s.registerTool(n, { description: "Writes its secret on stderr" }, async () => {
+      process.stderr.write(`token ${process.env.FAKE_TOKEN ?? ""}\n`);
+      return text("logged");
+    }),
+  );
   s.registerResource(
     "echo",
     new ResourceTemplate("fake://echo/{value}", { list: undefined }),
