@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { KiboError } from "@kibo/schema";
 import { createT3Runner, resolveT3Bin } from "./t3-cli";
 import { type FakeT3, installFakeT3 } from "./testing/t3-kit";
@@ -38,8 +41,17 @@ test("stdout JSON is returned on success", async () => {
   expect(JSON.parse(result.stdout)).toEqual([]);
 });
 
+test("t3 warnings never reach stdout", async () => {
+  fake.set({ logsWarnings: true });
+  const result = await createT3Runner(fake.bin)(["thread", "list", "--project", "/w", "--json"], {});
+  expect(JSON.parse(result.stdout)).toEqual([]);
+});
+
 test("a command over its timeout raises T3_UNAVAILABLE", async () => {
-  const error = await failure(createT3Runner("/bin/sleep")(["5"], { timeoutMs: 20 }));
+  const slow = join(mkdtempSync(join(tmpdir(), "kibo-slow-t3-")), "t3");
+  writeFileSync(slow, "#!/bin/sh\nexec sleep 5\n");
+  chmodSync(slow, 0o755);
+  const error = await failure(createT3Runner(slow)(["theme", "show"], { timeoutMs: 20 }));
   expect(error.code).toBe("T3_UNAVAILABLE");
   expect(error.detail).toContain("timed out");
 });
