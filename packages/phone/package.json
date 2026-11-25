@@ -23,7 +23,7 @@
     "lucide-react": "1.48.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "zod": "4.6.7"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@kibo/remote-server": "workspace:*",
