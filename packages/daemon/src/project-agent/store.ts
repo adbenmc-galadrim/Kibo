@@ -88,7 +88,7 @@ function storedJson(text: string, what: string): unknown {
   }
 }
 
-function parseStored<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, text: string, what: string): T {
+function parseStored<T>(schema: z.ZodType<T, unknown>, text: string, what: string): T {
   const json = storedJson(text, what);
   const parsed = schema.safeParse(json);
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `${what}: ${parsed.error.message}`);

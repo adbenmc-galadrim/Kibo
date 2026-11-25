@@ -24,7 +24,10 @@ const issuePatchBody = z.object({
   body: z.string().nullable().optional(),
   state: z.enum(["open", "closed"]).optional(),
 });
-const graphqlBody = z.object({ query: z.string().optional(), variables: z.record(z.unknown()).optional() });
+const graphqlBody = z.object({
+  query: z.string().optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
+});
 
 const rateHeaders = (gh: FakeGithub): Record<string, string> => ({
   "x-ratelimit-remaining": String(gh.rate.remaining),

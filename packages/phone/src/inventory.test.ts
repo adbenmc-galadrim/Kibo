@@ -15,8 +15,8 @@ const SCANNED = [
   "packages/ui/src/shell/sheet/**/*.{ts,tsx}",
 ];
 const NOT_SHIPPED = /\.test\.|seed|fixture|kit|harness|test-helper/;
-const COMMANDS: ReadonlySet<string> = new Set([...ProjectCommand.innerType().optionsMap.keys()].map(String));
-const METHODS: ReadonlySet<string> = new Set([...RpcRequest.optionsMap.keys()].map(String));
+const COMMANDS: ReadonlySet<string> = new Set(ProjectCommand.options.map((o) => o.shape.method.value));
+const METHODS: ReadonlySet<string> = new Set(RpcRequest.options.map((o) => o.shape.method.value));
 const RELAYED_COMMANDS: ReadonlySet<string> = new Set(REMOTE_COMMAND_KINDS);
 const RELAYED_METHODS: ReadonlySet<string> = new Set(REMOTE_METHODS);
 const LOCAL_METHODS: ReadonlySet<string> = new Set(READ_LOCALLY);

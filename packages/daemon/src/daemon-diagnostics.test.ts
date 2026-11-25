@@ -10,7 +10,7 @@ import { createLogBuffer } from "./log-buffer";
 
 import { FAKE_CLAUDE, scenarioPath } from "./runs/fake-claude-scenario";
 
-const Envelope = z.object({ ok: z.literal(true), result: z.unknown() });
+const Envelope = z.object({ ok: z.literal(true), result: z.unknown().optional() });
 const cleanups: (() => Promise<void> | void)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();

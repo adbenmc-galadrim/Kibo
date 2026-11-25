@@ -68,7 +68,7 @@ const StoredTabs = z.object({
   recents: z.array(z.unknown()),
 });
 
-const keepValid = <T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, items: unknown[]): T[] =>
+const keepValid = <T>(schema: z.ZodType<T, unknown>, items: unknown[]): T[] =>
   items.flatMap((item) => {
     const parsed = schema.safeParse(item);
     return parsed.success ? [parsed.data] : [];

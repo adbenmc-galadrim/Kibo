@@ -7,7 +7,7 @@ import { z } from "zod";
 import { startDaemon } from "./daemon";
 import { questionImagesDir } from "./questions/question-images";
 
-const Answer = z.object({ ok: z.boolean(), result: z.unknown() });
+const Answer = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 const Created = z.object({ id: z.string() });
 const Numbered = z.object({ id: z.string(), number: z.number().nullable() });
 const Snapshot = z.object({ questions: z.array(z.object({ id: z.string() })) });

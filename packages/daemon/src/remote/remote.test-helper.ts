@@ -6,7 +6,7 @@ import { z } from "zod";
 import { type Daemon, type DaemonOptions, startDaemon } from "../daemon";
 import { questionImagesDir } from "../questions/question-images";
 
-const Answer = z.object({ ok: z.boolean(), result: z.unknown(), error: z.unknown().optional() });
+const Answer = z.object({ ok: z.boolean(), result: z.unknown().optional(), error: z.unknown().optional() });
 const Created = z.object({ id: z.string() });
 const ADAM = { kind: "human", ref: "adam" } as const;
 

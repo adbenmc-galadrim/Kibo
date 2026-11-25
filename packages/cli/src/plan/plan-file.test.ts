@@ -119,7 +119,7 @@ describe("parsePlanText", () => {
     expect(e.code).toBe("VALIDATION_FAILED");
     const lines = e.detail.split("\n");
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toBe("action 1: title String must contain at least 1 character(s)");
+    expect(lines[0]).toBe("action 1: title Too small: expected string to have >=1 characters");
     expect(lines[1]).toStartWith("action 3: ");
     expect(lines[1]).toContain("; kind ");
   });

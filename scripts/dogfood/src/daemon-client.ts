@@ -11,7 +11,7 @@ export type DaemonAccess = { port: number; token: string };
 
 const DaemonInfo = z.object({ port: z.number().int().min(1).max(65_535) });
 const RpcReply = z.union([
-  z.object({ ok: z.literal(true), result: z.unknown() }),
+  z.object({ ok: z.literal(true), result: z.unknown().optional() }),
   z.object({ ok: z.literal(false), error: z.object({ code: z.string(), message: z.string() }) }),
 ]);
 

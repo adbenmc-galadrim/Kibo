@@ -6,7 +6,7 @@ import { z } from "zod";
 import { startDaemon } from "./daemon";
 
 const FIXED_NOW = "2026-10-16T14:52:00+02:00";
-const Answer = z.object({ result: z.unknown(), error: z.object({ code: z.string() }).optional() });
+const Answer = z.object({ result: z.unknown().optional(), error: z.object({ code: z.string() }).optional() });
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const clean of cleanups.splice(0).reverse()) await clean();

@@ -19,7 +19,7 @@ import { FAKE_CLAUDE, type FakeCall, fakeCalls, scenarioPath } from "./runs/fake
 
 export const FIXED_NOW = "2026-10-16T14:52:00+02:00";
 
-const Answer = z.object({ ok: z.boolean(), result: z.unknown() });
+const Answer = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 const Created = z.object({ id: z.string() });
 
 export type FakePr = {

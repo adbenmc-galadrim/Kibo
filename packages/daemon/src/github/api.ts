@@ -1,10 +1,10 @@
 import { githubError, KiboError } from "@kibo/schema";
-import { type ZodType, type ZodTypeDef, z } from "zod";
+import { type ZodType, z } from "zod";
 import { GITHUB_API, GITHUB_RULES } from "../integrations/net";
 import type { RateLimitGate } from "../integrations/rate-limit";
 import type { IntegrationFetch, IntegrationResponse, InternalRule } from "../integrations/types";
 
-type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
+type Schema<T> = ZodType<T, unknown>;
 type Method = "GET" | "POST" | "PATCH";
 export type GithubApi = {
   rest<T>(method: Method, path: string, schema: Schema<T>, body?: unknown): Promise<T>;

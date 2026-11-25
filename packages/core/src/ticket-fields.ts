@@ -1,6 +1,6 @@
 import { DeliveryStep, EMPTY_PROGRESS, ExternalRef, Hold, KiboError, TicketProgress } from "@kibo/schema";
 import type { LoroTreeNode } from "loro-crdt";
-import type { ZodType, ZodTypeDef } from "zod";
+import type { ZodType } from "zod";
 
 const RefList = ExternalRef.array();
 
@@ -15,7 +15,7 @@ export function readExternalRefs(node: LoroTreeNode): ExternalRef[] {
 function readField<T>(
   node: LoroTreeNode,
   field: string,
-  schema: ZodType<T, ZodTypeDef, unknown>,
+  schema: ZodType<T, unknown>,
   empty: T,
   what: string,
 ): T {

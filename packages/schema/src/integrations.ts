@@ -58,7 +58,7 @@ export function githubIssueState(ref: GithubIssueRef): "pending" | "linked" | "b
   return ref.url === null ? "broken" : "linked";
 }
 
-export const StatusMap = z.record(StatusId, z.string().min(1));
+export const StatusMap = z.partialRecord(StatusId, z.string().min(1));
 export type StatusMap = z.infer<typeof StatusMap>;
 
 const BindingConfig = z.object({

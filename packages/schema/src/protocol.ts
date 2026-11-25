@@ -137,7 +137,7 @@ export const DaemonToBackend = z.discriminatedUnion("type", [
     instanceId: z.string(),
     config: Json,
     target: InvokeTarget,
-    input: z.unknown(),
+    input: z.unknown().optional(),
   }),
   BackendResult,
 ]);

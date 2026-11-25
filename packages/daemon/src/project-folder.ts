@@ -27,7 +27,7 @@ function localJson<T>(
   settings: Reader,
   projectId: string,
   key: string,
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  schema: z.ZodType<T, unknown>,
 ): T | null {
   const raw = settings.get(projectId, key);
   if (raw === null) return null;

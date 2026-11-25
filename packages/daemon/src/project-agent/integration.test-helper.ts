@@ -33,7 +33,7 @@ export async function stopDaemons(): Promise<void> {
   for (const cleanup of cleanups.splice(0)) await cleanup();
 }
 
-const RpcReply = z.object({ ok: z.boolean(), result: z.unknown() });
+const RpcReply = z.object({ ok: z.boolean(), result: z.unknown().optional() });
 
 async function client(d: Daemon): Promise<Rpc> {
   const headers = { "content-type": "application/json", origin: d.url };

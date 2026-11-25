@@ -18,7 +18,7 @@ type RelayDeps = {
 };
 
 const Answer = z.discriminatedUnion("ok", [
-  z.object({ ok: z.literal(true), result: z.unknown() }),
+  z.object({ ok: z.literal(true), result: z.unknown().optional() }),
   z.object({
     ok: z.literal(false),
     error: z.object({ code: z.enum(KIBO_ERROR_CODES), message: z.string() }),

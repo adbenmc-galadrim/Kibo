@@ -2,7 +2,7 @@ import type { RpcRequest } from "@kibo/schema";
 import { z } from "zod";
 
 const Reply = z.union([
-  z.object({ ok: z.literal(true), result: z.unknown() }),
+  z.object({ ok: z.literal(true), result: z.unknown().optional() }),
   z.object({ ok: z.literal(false), error: z.object({ code: z.string(), message: z.string() }) }),
 ]);
 export type Refusal = { status: number; code: string };

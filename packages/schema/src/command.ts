@@ -125,7 +125,7 @@ export const ProjectCommand = z
       method: z.literal("setInstanceData"),
       instanceId: z.string(),
       key: DataKey,
-      value: z.unknown(),
+      value: z.unknown().optional(),
     }),
     z.object({
       method: z.literal("createQuestion"),
