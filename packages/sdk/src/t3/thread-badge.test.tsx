@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { ThreadBadge, ThreadPill } from "./ThreadBadge";
+import { T3HostProvider } from "./t3-context";
 import { ACTIVE_THREAD } from "./t3-test-kit";
 
 afterEach(cleanup);
@@ -72,4 +73,17 @@ test("waiting carries a clock mark on the pill and the badges, running keeps the
   expect(marks(<ThreadBadge thread={waiting} now={NOW} compact />)).toBe(true);
   expect(marks(<ThreadBadge thread={waiting} now={NOW} />)).toBe(true);
   expect(marks(<ThreadPill thread={ACTIVE_THREAD} now={NOW} />)).toBe(false);
+});
+
+test("a host without links hides Ouvrir dans T3", () => {
+  const unused = () => Promise.reject(new Error("not called"));
+  const api = { status: unused, preview: unused, launch: unused, threadOf: unused };
+  const host = { api: () => api, linkFolder: () => undefined, openLinks: false };
+  render(
+    <T3HostProvider host={host}>
+      <ThreadBadge thread={ACTIVE_THREAD} now={NOW} />
+    </T3HostProvider>,
+  );
+  expect(screen.getByText("T3 · en cours depuis 12 min")).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Ouvrir dans T3" })).toBeNull();
 });

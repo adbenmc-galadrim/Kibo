@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { type Read, useSdkValue, type Watch } from "./sdk-value";
+import { ALWAYS_WRITABLE } from "./signal";
 import type { EntityMap, KiboSdk } from "./types";
 
 const SdkContext = createContext<KiboSdk | null>(null);
@@ -69,6 +70,11 @@ export function useFocusMode(): FocusMode {
     request: sdk.focus.request,
     exit: sdk.focus.exit,
   };
+}
+
+export function useWriteBlock(): string | null {
+  const writes = useOptionalSdk()?.writes ?? ALWAYS_WRITABLE;
+  return useSyncExternalStore(writes.subscribe, writes.blocked, writes.blocked);
 }
 
 export function useSpotlight(): Spotlight | null {

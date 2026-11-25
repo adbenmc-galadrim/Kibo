@@ -1,6 +1,6 @@
 import type { Status, StatusId, TicketView } from "@kibo/schema";
 import { deliveryMenuActions, type KiboSdk } from "@kibo/sdk";
-import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { blockedBy, type MenuAction, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { fr } from "./fr";
 
@@ -16,8 +16,10 @@ export function cardMenuEntries(input: {
   texts: typeof fr;
   sdk: Pick<KiboSdk, "toast">;
   actions: CardMenuActions;
+  blocked?: string | null;
 }): MenuEntry[] {
   const { ticket, statuses, texts, sdk, actions } = input;
+  const lock = blockedBy(input.blocked ?? null);
   const open: MenuAction = { label: texts.open, icon: ExternalLink, onSelect: actions.open };
   const targets: MenuAction[] = [...statuses]
     .sort((a, b) => a.order - b.order)
@@ -25,12 +27,13 @@ export function cardMenuEntries(input: {
     .map((s) => ({
       label: s.id === "blocked" ? `${s.label}…` : s.label,
       onSelect: () => actions.move(s.id),
+      ...lock,
     }));
   return [
     open,
     ...deliveryMenuActions({ ticket, sdk }),
     { label: texts.moveTo, items: targets },
     { separator: true },
-    { label: texts.remove, icon: Trash2, destructive: true, onSelect: actions.remove },
+    { label: texts.remove, icon: Trash2, destructive: true, onSelect: actions.remove, ...lock },
   ];
 }

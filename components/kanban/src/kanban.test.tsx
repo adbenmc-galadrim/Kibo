@@ -261,6 +261,54 @@ test("a column scrolls its cards inside its own background", async () => {
   expect(board.className).toContain("overflow-y-hidden");
 });
 
+test("on a phone-wide board, one column fills the view and snaps, the toolbar scrolls", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  expect(column.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-lg:min-w-[85%]", "@max-lg:snap-start"]),
+  );
+  const board = column.parentElement;
+  expect(board?.className.split(" ")).toContain("@max-lg:snap-x");
+  const root = board?.parentElement;
+  expect(root?.className.split(" ")).toContain("@container");
+  const toolbar = root?.querySelector("header");
+  expect(toolbar?.className.split(" ")).toContain("@max-lg:overflow-x-auto");
+});
+
+const classes = (el: Element | null | undefined) => el?.className.split(" ") ?? [];
+const phoneOnly = (list: string[]) => list.filter((c) => /snap|85%|touch-manipulation/.test(c));
+
+test("at desktop width nothing changes: the phone classes only exist under @max-*", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0];
+  const found = [column, column.parentElement, card].flatMap((el) => phoneOnly(classes(el)));
+  expect(found.length).toBeGreaterThan(0);
+  for (const c of found) expect(c.startsWith("@max-")).toBe(true);
+  expect(classes(column)).toContain("min-w-[180px]");
+  expect(classes(card)).toContain("touch-none");
+});
+
+test("on a phone-wide board a finger can scroll past a card, the press waits for the touch sensor", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0];
+  expect(classes(card)).toEqual(
+    expect.arrayContaining(["@max-lg:touch-manipulation", "@max-lg:select-none"]),
+  );
+});
+
+test("on a phone-wide board the filters and the card actions are 44 px targets", async () => {
+  setup();
+  const column = await screen.findByRole("region", { name: "À faire" });
+  const card = within(column).getAllByRole("article")[0] as HTMLElement;
+  const actions = within(card).getByRole("button", { name: /^Actions / });
+  expect(classes(actions)).toEqual(
+    expect.arrayContaining(["@max-lg:after:absolute", "@max-lg:after:-inset-2.5"]),
+  );
+  expect(classes(screen.getByRole("button", { name: "Tous" }))).toContain("@max-lg:h-11");
+});
+
 test("shared selection: the selected card stands out, the others fade, the chip clears it", async () => {
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
   m.setSelection({ kind: "ticket", ids: [m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? ""] });
@@ -378,4 +426,14 @@ test("with agent execution hidden, the card menu copies the full-delivery comman
   await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-1" }));
   expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
   await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-1"));
+});
+
+test("on a phone-wide board the filter counts stay visible, the toolbar scroll styles are phone only", async () => {
+  setup();
+  const all = await screen.findByRole("button", { name: "Tous" });
+  const count = all.querySelector("span.font-mono");
+  expect(classes(count)).toContain("@max-lg:inline!");
+  const toolbar = all.closest("header");
+  expect(classes(toolbar)).toEqual(expect.arrayContaining(["@max-lg:relative", "@max-lg:scrollbar-none"]));
+  expect(classes(toolbar)).not.toContain("relative");
 });

@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { isActiveT3Status, type ProjectInfo, type Status, type StatusId } from "@kibo/schema";
-import { stepTitle, useSdk } from "@kibo/sdk";
+import { stepTitle, useSdk, useWriteBlock } from "@kibo/sdk";
+import { useTouchHold } from "@kibo/sdk/hooks/use-touch-hold";
 import { cn } from "@kibo/sdk/lib/utils";
 import { LaunchInT3Button } from "@kibo/sdk/t3";
 import { Button } from "@kibo/sdk/ui/button";
@@ -26,13 +27,17 @@ type Props = CardFacts & {
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
+  onHold?: (() => void) | undefined;
 };
 
 export function KanbanCard(props: Props) {
   const { ticket: t, selected, statuses, onOpen, onMove, onRemove, project = null } = props;
   const sdk = useSdk();
-  const sortable = useSortable({ id: t.id, attributes: { role: "article" } });
-  const { attributes, listeners, transform, transition, isDragging } = sortable;
+  const hold = useTouchHold(() => props.onHold?.());
+  const blocked = useWriteBlock();
+  const sortable = useSortable({ id: t.id, attributes: { role: "article" }, disabled: blocked !== null });
+  const { listeners, transform, transition, isDragging } = sortable;
+  const { "aria-disabled": _dragDisabled, ...attributes } = sortable.attributes;
   const ref = (node: HTMLElement | null) => {
     sortable.setNodeRef(node);
     sortable.setActivatorNodeRef(node);
@@ -50,6 +55,7 @@ export function KanbanCard(props: Props) {
     texts: fr,
     sdk,
     actions: { open: onOpen, move: onMove, remove: onRemove },
+    blocked,
   });
   const menu = (
     <DropdownMenu onOpenChange={setMenuOpen}>
@@ -57,7 +63,7 @@ export function KanbanCard(props: Props) {
         <Button
           size="icon"
           variant="ghost"
-          className="size-6"
+          className="size-6 @max-lg:relative @max-lg:after:absolute @max-lg:after:-inset-2.5"
           aria-label={fr.actions(t.keyLabel)}
           data-dnd-ignore="true"
           onPointerDown={stopDrag}
@@ -95,19 +101,20 @@ export function KanbanCard(props: Props) {
   return (
     <ContextMenu>
       <CardTooltip ticket={t} suppressed={sortable.active !== null || menuOpen}>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger asChild disabled={props.onHold !== undefined}>
           <article
             ref={ref}
             style={style}
             {...attributes}
             {...listeners}
+            {...(props.onHold ? hold : {})}
             tabIndex={attributes.tabIndex}
             aria-label={`${t.keyLabel} ${t.title}`}
             data-key={t.keyLabel}
             data-selected={selected === true}
             className={cn(
               CARD_CLASS,
-              "group/card cursor-grab touch-none",
+              "group/card cursor-grab touch-none @max-lg:touch-manipulation @max-lg:select-none",
               launch && "hover:border-foreground/70 focus-within:border-foreground/70",
               isDragging && "opacity-40",
               insertion &&

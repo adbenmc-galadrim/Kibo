@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist-types/sw",
+    "rootDir": "src",
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "tsBuildInfoFile": "dist-types/sw.tsbuildinfo"
+  },
+  "include": ["src/sw.ts", "src/sw-policy.ts"]
+}

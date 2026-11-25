@@ -15,6 +15,7 @@ import { SprintField } from "./SprintField";
 import { StatusSelect } from "./StatusSelect";
 import { TicketHeader } from "./TicketHeader";
 import { TicketTitle } from "./TicketTitle";
+import { DESKTOP_SURFACE, type TicketSurface } from "./ticket-surface";
 import { useTicketCommand } from "./use-ticket-command";
 import { useTicketCiRuns, useTicketJournal } from "./use-ticket-tracking";
 
@@ -24,8 +25,9 @@ type Props = {
   domains?: Domain[];
   viewer: string;
   heading(title: ReactNode, label: string): ReactNode;
-  onOpenFile(ref: FileRef): void;
+  onOpenFile?(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
+  surface?: TicketSurface;
 };
 
 export function TicketBody({
@@ -36,7 +38,9 @@ export function TicketBody({
   heading,
   onOpenFile,
   onOpenTicket,
+  surface = DESKTOP_SURFACE,
 }: Props) {
+  const { editable } = surface;
   const titleCommand = useTicketCommand(project.meta.id);
   const fieldCommand = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
@@ -58,7 +62,7 @@ export function TicketBody({
         <TicketTitle
           title={t.title}
           label={label}
-          editable
+          editable={editable}
           error={titleCommand.error}
           onSave={(title) => titleCommand.run({ method: "updateTicket", ticketId: t.id, title })}
           onCancel={titleCommand.clearError}
@@ -66,9 +70,9 @@ export function TicketBody({
         label,
       )}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <StatusSelect ticket={t} workflow={project.workflow} editable command={fieldCommand} />
-        <AssigneeSelect ticket={t} viewer={viewer} editable command={fieldCommand} />
-        <SprintField ticket={t} sprints={project.sprints} editable command={fieldCommand} />
+        <StatusSelect ticket={t} workflow={project.workflow} editable={editable} command={fieldCommand} />
+        <AssigneeSelect ticket={t} viewer={viewer} editable={editable} command={fieldCommand} />
+        <SprintField ticket={t} sprints={project.sprints} editable={editable} command={fieldCommand} />
       </div>
       {fieldCommand.error && (
         <p role="alert" className="text-sm text-destructive">
@@ -81,13 +85,13 @@ export function TicketBody({
           {t.blockedReason}
         </p>
       )}
-      <LabelsField ticket={t} editable command={labelsCommand} />
+      <LabelsField ticket={t} editable={editable} command={labelsCommand} />
       <GithubLinkNote ticket={t} />
       <HoldBanner
         projectId={project.meta.id}
         ticket={t}
         tickets={project.tickets}
-        editable
+        editable={editable}
         onOpenTicket={onOpenTicket}
       />
       <TicketTabs
@@ -102,6 +106,7 @@ export function TicketBody({
             journal={journal}
             onOpenFile={onOpenFile}
             onOpenTicket={onOpenTicket}
+            surface={surface}
           />
         }
         activity={<TicketTimeline project={project} ticket={t} journal={journal} ciRuns={ciRuns} />}

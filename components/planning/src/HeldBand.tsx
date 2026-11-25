@@ -1,7 +1,8 @@
+import { useWriteBlock } from "@kibo/sdk";
 import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
-import { DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { blockedBy, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import {
   CalendarRange,
   ChevronDown,
@@ -24,12 +25,19 @@ export type HeldHandlers = {
 };
 type Props = HeldHandlers & { projectId: string; groups: readonly HeldGroup[] };
 
-function heldEntries(step: HeldStep, handlers: HeldHandlers): MenuEntry[] {
-  const resume: MenuEntry = { label: fr.held.resume, icon: Play, onSelect: () => handlers.onResume(step) };
+function heldEntries(step: HeldStep, handlers: HeldHandlers, blocked: string | null): MenuEntry[] {
+  const lock = blockedBy(blocked);
+  const resume: MenuEntry = {
+    label: fr.held.resume,
+    icon: Play,
+    onSelect: () => handlers.onResume(step),
+    ...lock,
+  };
   if (step.resumeTargets.length === 0) return [resume];
   const items = step.resumeTargets.map((s) => ({
     label: fr.held.target(s.code, s.name),
     onSelect: () => handlers.onResumeIn(step, s.id),
+    ...lock,
   }));
   return [resume, { label: fr.held.resumeIn, icon: CalendarRange, items }];
 }
@@ -56,6 +64,7 @@ function ChipMenu({ step, entries }: { step: HeldStep; entries: readonly MenuEnt
 const MONO = "font-mono text-(--tracking-mfg) text-[11.5px] leading-[14px]";
 
 function StepChip({ step, handlers }: { step: HeldStep; handlers: HeldHandlers }) {
+  const blocked = useWriteBlock();
   return (
     <article
       aria-label={`${step.key} ${step.title}`}
@@ -74,7 +83,7 @@ function StepChip({ step, handlers }: { step: HeldStep; handlers: HeldHandlers }
       >
         {step.title}
       </button>
-      <ChipMenu step={step} entries={heldEntries(step, handlers)} />
+      <ChipMenu step={step} entries={heldEntries(step, handlers, blocked)} />
     </article>
   );
 }
@@ -105,12 +114,16 @@ function BandHeader({ count, folded }: { count: number; folded: boolean }) {
   return (
     <div className="flex h-4 items-center gap-2">
       <Pause absoluteStrokeWidth size={14} aria-hidden className="text-(--tracking-hold)" />
-      <span className="font-semibold text-(--tracking-fg) text-[13px] leading-[16px]">{fr.held.label}</span>
+      <span className="font-semibold text-(--tracking-fg) @max-xl:whitespace-nowrap text-[13px] leading-[16px]">
+        {fr.held.label}
+      </span>
       <span className="flex h-[13px] items-center rounded-[4px] bg-(--tracking-muted) px-[5px] font-medium font-mono text-(--tracking-mfg) text-[10.5px] leading-[13px]">
         {count}
       </span>
-      <span className="text-(--tracking-dim) text-[12px] leading-[15px]">{fr.held.hint(count)}</span>
-      <CollapsibleTrigger className="ml-auto flex h-[15px] cursor-pointer items-center gap-1 text-(--tracking-mfg) text-[12px] leading-[15px] hover:text-(--tracking-fg)">
+      <span className="text-(--tracking-dim) text-[12px] leading-[15px] @max-xl:hidden">
+        {fr.held.hint(count)}
+      </span>
+      <CollapsibleTrigger className="ml-auto flex h-[15px] @max-xl:-my-3.5 @max-xl:h-11 cursor-pointer items-center gap-1 text-(--tracking-mfg) text-[12px] leading-[15px] hover:text-(--tracking-fg)">
         {folded ? fr.held.unfold : fr.held.fold}
         <Chevron absoluteStrokeWidth size={13} aria-hidden />
       </CollapsibleTrigger>

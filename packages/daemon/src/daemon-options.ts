@@ -33,6 +33,7 @@ export type DaemonOptions = {
   code?: CodeTrackingOptions;
   answerWakeGraceMs?: number;
   t3Bin?: string;
+  remoteUrl?: string;
 } & Partial<Pick<ComponentsDeps, "net" | "installCli" | "cliStatus">>;
 
 export function clockFromEnv(env: Record<string, string | undefined>, log: (line: string) => void): Clock {
@@ -49,4 +50,21 @@ export function answerWakeGraceFromArg(raw: string | undefined): number | undefi
       `--answer-wake-grace-ms must be a whole number of milliseconds, got ${raw}`,
     );
   return Number(raw);
+}
+
+const allowedRemoteUrl = (raw: string): boolean => {
+  if (!URL.canParse(raw)) return false;
+  const url = new URL(raw);
+  return url.protocol === "https:" || (url.protocol === "http:" && url.hostname === "127.0.0.1");
+};
+
+export function remoteUrlFrom(
+  flag: string | undefined,
+  env: Record<string, string | undefined>,
+): string | undefined {
+  const raw = flag ?? env.KIBO_REMOTE_URL;
+  if (raw === undefined) return undefined;
+  if (!allowedRemoteUrl(raw))
+    throw new KiboError("INVALID_INPUT", `--remote-url must be https or http://127.0.0.1, got ${raw}`);
+  return raw;
 }

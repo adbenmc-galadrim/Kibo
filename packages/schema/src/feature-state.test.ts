@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { type FeatureState, featureState, isOpenFeature, nextFeature, openFeatures } from "./feature-state";
+import {
+  type FeatureState,
+  featureState,
+  featureStateOn,
+  isOpenFeature,
+  nextFeature,
+  openFeatures,
+} from "./feature-state";
 import type { StatusId } from "./status";
 
 const steps = (...statuses: StatusId[]) =>
@@ -229,4 +236,25 @@ test("resuming the step on hold of a delivered feature reopens it", () => {
   expect(featureState({ ...base, steps: steps(true) }).status).toBe("delivered");
   expect(featureState({ ...base, steps: steps(false) }).status).toBe("open");
   expect(featureState({ ...base, steps: steps(false), today: "2026-10-17" }).status).toBe("late");
+});
+
+test("a state computed before the end of its sprint becomes late when read after it, and back", () => {
+  const before = featureState({ ...base, steps: steps("done", "todo") });
+  expect(before.status).toBe("open");
+  const after = featureStateOn(before, S42, "2026-10-17");
+  expect(after).toEqual({ ...before, status: "late" });
+  expect(featureStateOn(after, S42, "2026-10-15")).toEqual(before);
+  const fresh = featureState({ ...base, steps: steps("todo", "todo") });
+  expect(featureStateOn(featureStateOn(fresh, S42, "2026-10-17"), S42, "2026-10-16").status).toBe("todo");
+  expect(featureStateOn(before, null, "2026-10-17")).toBe(before);
+});
+
+test("re-dating keeps delivered, blocked and empty features as they are", () => {
+  const later = "2026-10-20";
+  for (const state of [
+    featureState({ ...base, steps: steps("done", "done") }),
+    featureState({ ...base, steps: steps("blocked", "todo") }),
+    featureState({ ...base, steps: [] }),
+  ])
+    expect(featureStateOn(state, S42, later)).toBe(state);
 });

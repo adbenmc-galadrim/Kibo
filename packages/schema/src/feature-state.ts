@@ -31,7 +31,9 @@ function questionedFeature(input: FeatureStateInput, next: FeatureStateInput["st
   return NOT_STARTED_STATUSES.includes(next.statusId);
 }
 
-const isLate = (input: FeatureStateInput): boolean => input.sprint !== null && input.sprint.end < input.today;
+type SprintEnd = FeatureStateInput["sprint"];
+
+const isLate = (sprint: SprintEnd, today: string): boolean => sprint !== null && sprint.end < today;
 
 type Steps = FeatureStateInput["steps"];
 
@@ -46,8 +48,16 @@ function statusOf(input: FeatureStateInput, steps: Steps, remaining: number): Fe
       questionedFeature(input, next))
   )
     return "blocked";
-  if (isLate(input)) return "late";
+  if (isLate(input.sprint, input.today)) return "late";
   return steps.some(isStarted) ? "open" : "todo";
+}
+
+const DATED: ReadonlySet<FeatureStatus> = new Set(["todo", "open", "late"]);
+
+export function featureStateOn(state: FeatureState, sprint: SprintEnd, today: string): FeatureState {
+  if (!DATED.has(state.status) || state.steps.total === 0) return state;
+  const status = isLate(sprint, today) ? "late" : state.started ? "open" : "todo";
+  return status === state.status ? state : { ...state, status };
 }
 
 export function featureState(input: FeatureStateInput): FeatureState {

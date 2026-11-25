@@ -42,7 +42,7 @@ export function ProjectHeading({ project }: { project: ProjectInfo | null }) {
         {project.name}
       </h1>
       {items.length > 0 && (
-        <p className="flex h-[16px] items-center gap-[8px] text-[13px] leading-[16px]">
+        <p className="flex h-[16px] items-center gap-[8px] text-[13px] leading-[16px] @max-2xl:h-auto @max-2xl:flex-wrap @max-2xl:gap-y-[4px]">
           {items.map((item, i) => (
             <Fragment key={item.key}>
               {i > 0 && (

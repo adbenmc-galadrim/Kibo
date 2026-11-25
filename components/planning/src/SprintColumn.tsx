@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import type { SprintPhase } from "@kibo/schema";
 import { STEPS_PER_WEEK } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
@@ -13,6 +14,8 @@ import { mergeSprintAlerts, type SprintAlerts } from "./sprint-alerts";
 
 export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";
+
+export const PHONE_COLUMN_CLASS = "@max-xl:w-[85%] @max-xl:snap-start";
 
 export const CARD_LIST_CLASS = "flex flex-col gap-2.5 empty:hidden";
 
@@ -73,6 +76,7 @@ type HeaderProps = { column: Column; onOpen(): void; onEdit?: (() => void) | und
 
 function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
   const { sprint } = column;
+  const blocked = useWriteBlock();
   const started = column.phase !== "upcoming";
   return (
     <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">
@@ -90,8 +94,9 @@ function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
           <button
             type="button"
             aria-label={fr.editSprint}
-            title={fr.editSprint}
-            className="grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] text-(--tracking-dim) hover:text-(--tracking-fg)"
+            title={blocked ?? fr.editSprint}
+            disabled={blocked !== null}
+            className="grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] text-(--tracking-dim) hover:text-(--tracking-fg) disabled:cursor-not-allowed disabled:opacity-50"
             onClick={onEdit}
           >
             <Pencil absoluteStrokeWidth size={14} aria-hidden className="size-[14px]" />
@@ -165,12 +170,12 @@ export function SprintColumn({ column, dropping, onOpen, onEdit, children, limit
       ref={setNodeRef}
       aria-label={`${column.code} ${column.sprint.name}`}
       data-state={column.sprint.state}
-      className="relative flex shrink-0 flex-col"
+      className={cn("relative flex shrink-0 flex-col", PHONE_COLUMN_CLASS)}
     >
       <div
         className={cn(
           COLUMN_CLASS,
-          "min-h-0 flex-1",
+          "min-h-0 flex-1 @max-xl:w-full",
           current
             ? "border-transparent bg-(--tracking-card)"
             : "border-(--tracking-border) bg-(--tracking-panel)",

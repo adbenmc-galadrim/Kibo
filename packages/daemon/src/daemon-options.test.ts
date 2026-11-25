@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { answerWakeGraceFromArg, clockFromEnv } from "./daemon-options";
+import { answerWakeGraceFromArg, clockFromEnv, remoteUrlFrom } from "./daemon-options";
 
 test("KIBO_FIXED_NOW freezes the daemon clock and says so in the log", () => {
   const lines: string[] = [];
@@ -30,4 +30,19 @@ test("--answer-wake-grace-ms sets the grace of a wake on an answer, in milliseco
 test("an invalid --answer-wake-grace-ms stops the start", () => {
   for (const raw of ["", "-1", "1.5", "30s"])
     expect(() => answerWakeGraceFromArg(raw)).toThrow("INVALID_INPUT");
+});
+
+test("--remote-url wins over KIBO_REMOTE_URL, and neither leaves the default", () => {
+  expect(remoteUrlFrom(undefined, {})).toBeUndefined();
+  expect(remoteUrlFrom(undefined, { KIBO_REMOTE_URL: "http://127.0.0.1:4400" })).toBe(
+    "http://127.0.0.1:4400",
+  );
+  expect(remoteUrlFrom("https://kibo.shinseo.fr", { KIBO_REMOTE_URL: "http://127.0.0.1:4400" })).toBe(
+    "https://kibo.shinseo.fr",
+  );
+});
+
+test("a remote url that is not https nor http://127.0.0.1 stops the start", () => {
+  for (const raw of ["kibo.shinseo.fr", "http://kibo.shinseo.fr", "ftp://127.0.0.1"])
+    expect(() => remoteUrlFrom(raw, {})).toThrow("INVALID_INPUT");
 });

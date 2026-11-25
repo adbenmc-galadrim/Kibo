@@ -3,14 +3,11 @@ import {
   DndContext,
   type DragEndEvent,
   type KeyboardCoordinateGetter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
 import { openLimitOf, type SprintView } from "@kibo/schema";
-import { type EntityMap, useEntities, useSdk } from "@kibo/sdk";
+import { type EntityMap, useEntities, useSdk, useWriteBlock } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useDragSensors } from "@kibo/sdk/hooks/use-drag-sensors";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { bandsTimeline } from "./bands-model";
@@ -76,6 +73,7 @@ export function Planning() {
 
 function PlanningBoard({ today, projectId, data }: { today: string; projectId: string; data: PlanningData }) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const { tickets, links, sprints, questions, events } = data;
   const { tracking } = useComponentSettings();
   const model = planningModel({
@@ -96,7 +94,7 @@ function PlanningBoard({ today, projectId, data }: { today: string; projectId: s
   const [layout, setLayout] = useState<PlanningLayout>(() => initialLayout(sdk.config));
   const chooseLayout = (next: PlanningLayout) => {
     setLayout(next);
-    void sdk.setConfig({ layout: next });
+    if (blocked === null) void sdk.setConfig({ layout: next });
   };
   const bands =
     layout === "bands"
@@ -111,10 +109,7 @@ function PlanningBoard({ today, projectId, data }: { today: string; projectId: s
           slipped: fr.slipped,
         })
       : null;
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: columnSteps }),
-  );
+  const sensors = useDragSensors(columnSteps);
   const cardOf = (id: string | number) => cards.find((c) => c.id === String(id));
   const labelOf = (id: string | number): string => {
     if (id === BACKLOG_ID) return fr.backlog;

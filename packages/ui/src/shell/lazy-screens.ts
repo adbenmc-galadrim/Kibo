@@ -21,6 +21,7 @@ export const WorkspacePage = lazyPanel(
   () => import("../settings/WorkspacePage").then((m) => m.WorkspacePage),
   fr.lazy,
 );
+export const PhonePage = lazyPanel(() => import("../settings/PhonePage").then((m) => m.PhonePage), fr.lazy);
 export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const FileTabView = lazyPanel(

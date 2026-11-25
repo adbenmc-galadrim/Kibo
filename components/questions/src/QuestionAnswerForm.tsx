@@ -1,4 +1,5 @@
 import type { AnswerInput, Question, QuestionAnswer } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Check } from "lucide-react";
@@ -15,6 +16,9 @@ type Props = {
   inlineAction?: ReactNode;
 };
 
+const PHONE_ACTION = "@max-lg:h-11 @max-lg:flex-1 @max-lg:text-[15px]";
+const PHONE_CHOICE = "@max-lg:h-11 @max-lg:text-[15px]";
+
 const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
 
 const formOf = (a: QuestionAnswer | undefined): AnswerForm => {
@@ -28,8 +32,10 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
   const answer = useAnswer();
   const editing = initial !== undefined;
   const [choice, setChoice] = useState<AnswerForm>(() => formOf(initial));
-  const [busy, setBusy] = useState(false);
+  const [sending, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const blocked = useWriteBlock();
+  const busy = sending || blocked !== null;
   const send = async (form: AnswerForm) => {
     const input = answerFrom(form);
     if (input === null) return;
@@ -66,7 +72,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
               variant="outline"
               size="sm"
               aria-pressed={pressed(choice.confirm)}
-              className="h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent"
+              className={`h-7 text-xs aria-pressed:border-foreground aria-pressed:bg-accent ${PHONE_CHOICE}`}
               disabled={busy}
               onClick={() => pick({ ...EMPTY, confirm: true })}
             >
@@ -81,7 +87,7 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
               variant="outline"
               size="sm"
               aria-pressed={pressed(!choice.confirm && choice.option === option)}
-              className="h-7 text-xs font-normal aria-pressed:border-foreground aria-pressed:bg-accent"
+              className={`h-7 text-xs font-normal aria-pressed:border-foreground aria-pressed:bg-accent ${PHONE_CHOICE}`}
               disabled={busy}
               onClick={() => pick({ ...EMPTY, option })}
             >
@@ -90,17 +96,23 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 @max-lg:flex-wrap">
         <Input
           aria-label={freeLabel}
           placeholder={freeLabel}
-          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background"
+          className="h-8.5 flex-1 bg-background text-[13px] md:text-[13px] dark:bg-background @max-lg:h-11 @max-lg:basis-full @max-lg:text-[16px] @max-lg:md:text-[16px]"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
         />
         {editing && (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`h-7 text-xs ${PHONE_ACTION}`}
+            onClick={onCancel}
+          >
             {fr.cancel}
           </Button>
         )}
@@ -108,8 +120,9 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel, inli
         <Button
           type="submit"
           size="sm"
-          className="h-6.5 px-2.5 text-xs font-medium disabled:opacity-100"
+          className={`h-6.5 px-2.5 text-xs font-medium ${blocked === null ? "disabled:opacity-100" : ""} ${PHONE_ACTION}`}
           disabled={busy || !ready}
+          title={blocked ?? undefined}
         >
           {editing ? fr.save : fr.reply}
         </Button>

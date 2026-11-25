@@ -81,3 +81,47 @@ test("auto-animate watches the cards of a column", async () => {
 test("with reduced motion auto-animate leaves the cards of a column alone", async () => {
   expect(await cardListIsWatched(true)).toBe(false);
 });
+
+test("columns are 85 % wide and snap below xl, the backlog stops sticking", async () => {
+  setupPlanning();
+  const backlog = await column("À planifier");
+  const s42 = await column(/^S42 /);
+  const board = s42.parentElement;
+  expect(board?.closest(".\\@container")).not.toBeNull();
+  expect(board?.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-xl:snap-x", "@max-xl:snap-mandatory"]),
+  );
+  for (const c of [backlog, s42])
+    expect(c.className.split(" ")).toEqual(expect.arrayContaining(["@max-xl:w-[85%]", "@max-xl:snap-start"]));
+  expect(backlog.className.split(" ")).toEqual(expect.arrayContaining(["sticky", "@max-xl:static"]));
+  expect(within(s42).getByText("S42").closest("div.flex-1")?.className.split(" ")).toContain("w-[214px]");
+  const card = await cardIn(/^S42 /, "F3");
+  expect(card.className.split(" ")).toEqual(
+    expect.arrayContaining(["touch-none", "@max-xl:touch-manipulation"]),
+  );
+});
+
+test("on a phone the header actions are 44 px targets", async () => {
+  setupPlanning();
+  const add = await screen.findByRole("button", { name: "Fonctionnalité" });
+  expect(add.className.split(" ")).toContain("@max-xl:h-11");
+  expect(screen.getByRole("button", { name: "Sprint" }).className.split(" ")).toContain("@max-xl:h-11");
+});
+
+test("on a phone the title is left to the app header, the actions hold on one row", async () => {
+  setupPlanning();
+  const title = await screen.findByRole("heading", { name: "Planning" });
+  expect(title.className.split(" ")).toContain("@max-xl:sr-only");
+  const row = screen.getByRole("button", { name: "Fonctionnalité" }).parentElement;
+  expect(row?.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-xl:flex-nowrap", "@max-xl:overflow-x-auto", "@max-xl:-ml-4"]),
+  );
+});
+
+test("on a phone the En attente band reads on one line", async () => {
+  setupPlanning(TODAY, { seedWith: seedPlanningHeld });
+  const band = await screen.findByRole("region", { name: "En attente (3)" });
+  const hint = within(band).getByText(/mises? de côté/);
+  expect(hint.className.split(" ")).toContain("@max-xl:hidden");
+  expect(within(band).getByText("En attente").className.split(" ")).toContain("@max-xl:whitespace-nowrap");
+});

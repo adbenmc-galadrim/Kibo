@@ -1,4 +1,5 @@
 import type { SprintView } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
@@ -55,16 +56,17 @@ const limitHolder = (model: PlanningModel): string | null =>
 
 export function PlanningView(props: PlanningViewProps) {
   const { model, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
+  const blocked = useWriteBlock();
   const dropsIn = (columnId: string, own: string | null) =>
     dragged !== null && target === columnId && (own ?? BACKLOG_ID) !== columnId;
   const sprints = model.sprints.map((c) => c.sprint);
-  const menuOf = (c: Card) => cardEntries(c, sprints, props.onPlan);
+  const menuOf = (c: Card) => cardEntries(c, sprints, props.onPlan, blocked);
   const cards = (list: readonly Card[]) =>
     list.map((c) => <FeatureCard key={c.id} card={c} menu={menuOf(c)} onOpen={() => onOpen(c.id)} />);
   const holder = limitHolder(model);
   const limit = model.overLimit ? fr.overLimit(model.open, model.limit) : null;
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3.5 bg-(--tracking-bg) px-6 py-[18px] font-sans">
+    <div className="@container flex h-full min-h-0 flex-col gap-3.5 bg-(--tracking-bg) px-6 py-[18px] font-sans @max-xl:px-4 @max-xl:py-3">
       <PlanningHeader
         model={model}
         layout={props.layout}
@@ -85,7 +87,7 @@ export function PlanningView(props: PlanningViewProps) {
             onResume={props.onResume}
             onResumeIn={props.onResumeIn}
           />
-          <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
+          <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px @max-xl:snap-x @max-xl:snap-mandatory">
             <BacklogColumn
               dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
               empty={model.backlog.length === 0}

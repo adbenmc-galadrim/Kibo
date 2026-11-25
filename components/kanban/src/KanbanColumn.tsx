@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 import type { Status } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import { StatusDot, useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useAutoAnimate } from "@kibo/sdk/ui/auto-animate";
 import { Button } from "@kibo/sdk/ui/button";
@@ -24,6 +24,7 @@ export function KanbanColumn(props: Props) {
   const { status, ids, targeted, collapsed, forbidden = false, children, onAdd } = props;
   const { setNodeRef } = useDroppable({ id: status.id });
   const [cards] = useAutoAnimate<HTMLDivElement>();
+  const blocked = useWriteBlock();
   if (collapsed)
     return <CollapsedColumn ref={setNodeRef} status={status} forbidden={forbidden} onAdd={onAdd} />;
   return (
@@ -32,7 +33,7 @@ export function KanbanColumn(props: Props) {
       aria-label={status.label}
       data-forbidden={forbidden || undefined}
       className={cn(
-        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2 transition-opacity",
+        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2 transition-opacity @max-lg:min-w-[85%] @max-lg:snap-start",
         targeted && "ring-2 ring-ring",
         forbidden && "cursor-not-allowed opacity-50",
         forbidden && targeted && "ring-destructive/60",
@@ -51,6 +52,8 @@ export function KanbanColumn(props: Props) {
             variant="ghost"
             className="size-6"
             aria-label={fr.newTicketIn(status.label)}
+            disabled={blocked !== null}
+            title={blocked ?? undefined}
             onClick={onAdd}
           >
             <Plus absoluteStrokeWidth size={14} className="size-3.5" />

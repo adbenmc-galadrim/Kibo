@@ -56,6 +56,9 @@ function StartCard({
   );
 }
 
+const COLUMNS = "flex items-start gap-[16px] @max-2xl:flex-col @max-2xl:items-stretch";
+const SIDE = "flex w-[300px] shrink-0 flex-col gap-[14px] @max-2xl:w-full";
+
 function EmptyProject({
   project,
   model,
@@ -63,11 +66,11 @@ function EmptyProject({
   handlers,
 }: Props & { project: ProjectInfo; start: GettingStartedModel }) {
   return (
-    <div className="flex items-start gap-[16px]">
+    <div data-slot="overview-columns" className={COLUMNS}>
       <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
         <StartCard project={project} start={start} handlers={handlers} />
       </div>
-      <div className="flex w-[300px] shrink-0 flex-col gap-[14px]">
+      <div className={SIDE}>
         <SprintsCard
           sprints={model.sprints}
           current={model.sprint?.sprint.id ?? null}
@@ -85,7 +88,7 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
         <StartCard project={project} start={start} handlers={handlers} />
       )}
       <LateCard rows={model.late} onOpenTicket={handlers.onOpenTicket} />
-      <div className="flex items-start gap-[16px]">
+      <div data-slot="overview-columns" className={COLUMNS}>
         <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
           <HeldCard rows={model.held} onOpenPlanning={handlers.onOpenPlanning} />
           <CurrentSprintCard
@@ -95,7 +98,7 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
           />
           <NextFeatureCard card={model.next} actions={handlers} />
         </div>
-        <div className="flex w-[300px] shrink-0 flex-col gap-[14px]">
+        <div className={SIDE}>
           <QuestionsCard
             rows={model.questions}
             onOpenQuestion={handlers.onOpenQuestion}
@@ -115,8 +118,8 @@ export function OverviewView(props: Props) {
   const { project, model, start, handlers } = props;
   const empty = project !== null && start !== null && !start.done.feature;
   return (
-    <div className="h-full overflow-y-auto bg-(--tracking-bg)">
-      <div className="flex min-w-0 flex-col gap-[14px] px-[24px] pt-[18px] pb-[24px]">
+    <div className="@container h-full overflow-y-auto bg-(--tracking-bg)">
+      <div className="flex min-w-0 flex-col gap-[14px] px-[24px] pt-[18px] pb-[24px] @max-2xl:px-[16px]">
         <ProjectHeading project={project} />
         <Indicators indicators={model.indicators} onOpenHeld={handlers.onOpenPlanning} />
         <DeliveredTodayLines

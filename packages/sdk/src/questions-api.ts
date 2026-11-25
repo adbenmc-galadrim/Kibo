@@ -14,6 +14,6 @@ export function questionsApi(needs: Needs, call: Call, backend: ProjectBackend, 
       if (mode === "gated") return call<QuestionRecipient[]>({ kind: "questions.recipients" });
       return (await backend.snapshot()).questionRecipients;
     },
-    imageUrl: questionImageUrl,
+    imageUrl: backend.imageUrl ?? questionImageUrl,
   };
 }

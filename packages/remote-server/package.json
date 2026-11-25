@@ -1,0 +1,16 @@
+{
+  "name": "@kibo/remote-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/server.ts",
+    "./testing": "./src/testing/test-server.ts"
+  },
+  "dependencies": {
+    "@kibo/remote": "workspace:*",
+    "@kibo/schema": "workspace:*",
+    "@simplewebauthn/server": "13.3.3",
+    "zod": "3.25.76"
+  }
+}

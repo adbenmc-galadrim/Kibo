@@ -29,5 +29,8 @@ export function displayFolder(folder: string, home: string): string {
 const quoteFolder = (folder: string): string =>
   folder.startsWith("~/") ? `~/${quoteArg(folder.slice(2))}` : quoteArg(folder);
 
+export const threadStartIn = (shownFolder: string, key: string): string =>
+  `t3 thread start ${quoteFolder(shownFolder)} ${quoteArg(deliveryBrief(key))}`;
+
 export const displayThreadStart = (input: { folder: string; key: string; home: string }): string =>
-  `t3 thread start ${quoteFolder(displayFolder(input.folder, input.home))} ${quoteArg(deliveryBrief(input.key))}`;
+  threadStartIn(displayFolder(input.folder, input.home), input.key);

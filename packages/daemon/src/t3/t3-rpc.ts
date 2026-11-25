@@ -13,7 +13,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { z } from "zod";
-import { type RpcExtension, requireLocal } from "../rpc-extensions";
+import type { RpcExtension } from "../rpc-extensions";
 import { composeThreadStart, displayFolder, displayThreadStart } from "./compose-command";
 import { type T3Runner, T3Timeout } from "./t3-cli";
 import { threadEvent } from "./thread-events";
@@ -226,9 +226,8 @@ const isT3Request = (req: { method: string }): req is T3RpcRequest =>
 export function t3Rpc(api: T3Api): RpcExtension {
   return {
     methods: T3_RPC_METHODS,
-    async handle(req, ctx) {
+    async handle(req) {
       if (!isT3Request(req)) throw new KiboError("INTERNAL", `${req.method} is not a T3 method`);
-      requireLocal(ctx);
       return handle(api, req);
     },
   };

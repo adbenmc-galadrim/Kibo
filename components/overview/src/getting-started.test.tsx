@@ -103,3 +103,18 @@ test("with a feature and a folder the list is gone", async () => {
   await screen.findByRole("region", { name: "Échéances" });
   expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
 });
+
+test("on a phone-wide card a step wraps its action under its text and keeps the command whole", async () => {
+  setup({ seed: withFeature });
+  const card = await start();
+  const copyRow = row(card, "Copier");
+  expect(copyRow.className.split(" ")).toContain("@max-2xl:flex-wrap");
+  const command = within(copyRow).getByText(/^\/full-delivery /);
+  expect(command.className.split(" ")).toContain("@max-2xl:whitespace-nowrap");
+  expect(command.parentElement?.className.split(" ")).toEqual(
+    expect.arrayContaining(["@max-2xl:h-auto", "@max-2xl:flex-wrap"]),
+  );
+  expect(within(copyRow).getByRole("button", { name: "Copier" }).className.split(" ")).toContain(
+    "@max-2xl:h-11",
+  );
+});

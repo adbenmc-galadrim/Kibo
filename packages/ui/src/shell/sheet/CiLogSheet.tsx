@@ -1,4 +1,4 @@
-import type { CiJobSummary, CiLog, CiRun } from "@kibo/schema";
+import { type CiJobSummary, type CiLog, type CiRun, KiboError } from "@kibo/schema";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
@@ -16,9 +16,14 @@ const subtitleOf = (run: CiRun) => [
   ...(run.prNumber === null ? [] : [t.ciPr([run.prNumber])]),
   ...(run.ticketKey === null ? [] : [run.ticketKey]),
 ];
-type Props = { projectId: string; run: CiRun; job: CiJobSummary; onClose(): void };
+type Props = { projectId: string; run: CiRun; job: CiJobSummary; offlineText?: string; onClose(): void };
 
-export function CiLogSheet({ projectId, run, job, onClose }: Props) {
+const errorText = (e: unknown, offlineText: string | undefined): string =>
+  offlineText !== undefined && e instanceof KiboError && e.code === "REMOTE_UNAVAILABLE"
+    ? offlineText
+    : failureText(e);
+
+export function CiLogSheet({ projectId, run, job, offlineText, onClose }: Props) {
   const [log, setLog] = useState<CiLog | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -33,12 +38,12 @@ export function CiLogSheet({ projectId, run, job, onClose }: Props) {
         if (live) setLog(l);
       })
       .catch((e: unknown) => {
-        if (live) setError(failureText(e));
+        if (live) setError(errorText(e, offlineText));
       });
     return () => {
       live = false;
     };
-  }, [projectId, run.runId, job.jobId]);
+  }, [projectId, run.runId, job.jobId, offlineText]);
   const lines = log ? visibleLines(log, query, errorsOnly) : [];
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>

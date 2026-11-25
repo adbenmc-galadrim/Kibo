@@ -9,7 +9,7 @@ const SEGMENT_GAP = 3;
 
 const TITLE_CLAMP: Record<TitleLines, string> = { 1: "truncate", 2: "line-clamp-2", 3: "line-clamp-3" };
 
-const SEGMENT_BG: Record<StepTone, string> = {
+export const SEGMENT_BG: Record<StepTone, string> = {
   done: "bg-(--tracking-fg)",
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
@@ -38,7 +38,7 @@ export function Segments({ segments, inner }: { segments: readonly FrameSegment[
   );
 }
 
-function Footer({ footer }: { footer: FrameFooter }) {
+export function FrameFooterLine({ footer }: { footer: FrameFooter }) {
   const Icon = footer.kind === "blocked" ? Lock : ClockAlert;
   const text =
     footer.kind === "blocked" ? fr.sprints.blockedBy(footer.question) : fr.sprints.late(footer.slipTo);
@@ -113,7 +113,7 @@ export function FeatureFrame({ frame, onOpen, onToggle, project }: Props) {
           ))}
         </ul>
       )}
-      {frame.footer !== null && <Footer footer={frame.footer} />}
+      {frame.footer !== null && <FrameFooterLine footer={frame.footer} />}
     </article>
   );
 }

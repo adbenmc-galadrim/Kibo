@@ -1,5 +1,5 @@
 import { isAnswered, isArchived, isOpen, type Question, type TicketView } from "@kibo/schema";
-import { AgentBadge, useSdk } from "@kibo/sdk";
+import { AgentBadge, useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Archive, ArchiveRestore, ClipboardPaste, History, Send } from "lucide-react";
@@ -76,6 +76,7 @@ function ArchivedLine({ question: q, now }: { question: Question; now: number })
 
 function RestoreButton({ questionId }: { questionId: string }) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [failed, setFailed] = useState(false);
   const restore = async () => {
     setFailed(false);
@@ -93,7 +94,14 @@ function RestoreButton({ questionId }: { questionId: string }) {
           {fr.restoreFailed}
         </span>
       )}
-      <Button variant="outline" size="sm" className="h-6 px-2 text-2xs" onClick={() => void restore()}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-6 px-2 text-2xs @max-lg:h-11 @max-lg:px-3.5 @max-lg:text-[15px]"
+        disabled={blocked !== null}
+        title={blocked ?? undefined}
+        onClick={() => void restore()}
+      >
         <ArchiveRestore aria-hidden />
         {fr.restore}
       </Button>
@@ -124,6 +132,7 @@ function HistoryEntry(props: { question: Question; open: boolean; onToggle(): vo
 
 export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const [dialog, setDialog] = useState<"archive" | "remove" | "edit" | null>(null);
   const [editingAnswer, setEditingAnswer] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -140,7 +149,9 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
       type="button"
       variant="outline"
       size="sm"
-      className="h-6.5 px-2.5 text-xs font-medium"
+      className="h-6.5 px-2.5 text-xs font-medium @max-lg:h-11 @max-lg:flex-1 @max-lg:text-[15px]"
+      disabled={blocked !== null}
+      title={blocked ?? undefined}
       onClick={() => setPasting(true)}
     >
       <ClipboardPaste aria-hidden />
@@ -148,8 +159,8 @@ export function QuestionRowDetail({ question: q, ticket, data, now }: Props) {
     </Button>
   );
   return (
-    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px]">
-      <div className="grid gap-1.5 text-[13px]">{context ?? <p>{q.title}</p>}</div>
+    <div className="grid gap-2.5 pt-0.5 pr-[15px] pb-3.5 pl-[83px] @max-lg:gap-3 @max-lg:px-3.5 @max-lg:pt-2">
+      <div className="grid gap-1.5 text-[13px] @max-lg:text-[15px]">{context ?? <p>{q.title}</p>}</div>
       <div className="flex flex-wrap items-center gap-2.5">
         <RecipientMenu
           question={q}

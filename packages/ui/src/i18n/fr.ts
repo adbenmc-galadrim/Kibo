@@ -155,6 +155,7 @@ export const fr = {
     appearance: "Apparence",
     integrations: "Intégrations",
     shortcuts: "Raccourcis",
+    phone: "Téléphone",
     generalSubtitle: "Mises à jour et outils en ligne de commande.",
   },
   marketSources: { title: "Sources de composants" },

@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@import "../../sdk/src/theme.css";
+@import "./screens/agent/agent.css";
+@source "./";
+@source "../../../components/graph/src";
+@source "../../sdk/src";
+@source "../../../components/questions/src";
+@source "../../ui/src/ticket";
+@source "../../ui/src/shell";
+@source "../../ui/src/project-agent";
+@source "../../../components/kanban/src";
+@source "../../../components/planning/src";
+@source "../../../components/overview/src";
+
+@font-face {
+  font-family: "Geist";
+  src: url("../../ui/public/fonts/Geist[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../../ui/public/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --tracking-bg: #ffffff;
+  --tracking-panel: #fafafa;
+  --tracking-card: #ffffff;
+  --tracking-muted: #f4f4f5;
+  --tracking-hover: #f4f4f5;
+  --tracking-border: #e4e4e7;
+  --tracking-soft: #eeeef0;
+  --tracking-fg: #09090b;
+  --tracking-mfg: #52525b;
+  --tracking-dim: #71717a;
+  --tracking-faint: #a1a1aa;
+  --tracking-brand: #ea580c;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #fff7ed;
+  --tracking-brand-line: #fdba74;
+  --tracking-brand-text: #c2410c;
+  --tracking-red: #dc2626;
+  --tracking-hold-soft: #ecfeff;
+  --tracking-blue-soft: #eff6ff;
+  --tracking-amber: #d97706;
+  --tracking-blue: #2563eb;
+  --tracking-purple: #9333ea;
+  --tracking-green: #16a34a;
+  --tracking-amber-soft: #fffbeb;
+  --tracking-hold: #0e7490;
+  --tracking-canvas: #fafafa;
+  --tracking-frame: #ffffff;
+  --tracking-green-soft: #f0fdf4;
+  --tracking-red-soft: #fef2f2;
+}
+
+.dark {
+  color-scheme: dark;
+  --tracking-bg: #212124;
+  --tracking-panel: #26262a;
+  --tracking-card: #2d2d31;
+  --tracking-muted: #343439;
+  --tracking-hover: #3a3a3f;
+  --tracking-border: #47474d;
+  --tracking-soft: #38383d;
+  --tracking-fg: #fafafa;
+  --tracking-mfg: #cfcfd6;
+  --tracking-dim: #ababb4;
+  --tracking-faint: #7a7a83;
+  --tracking-brand: #f97316;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #4e382d;
+  --tracking-brand-line: #935024;
+  --tracking-brand-text: #fb923c;
+  --tracking-red: #fc9494;
+  --tracking-hold-soft: #2c3a40;
+  --tracking-blue-soft: #343841;
+  --tracking-amber: #fbbf24;
+  --tracking-blue: #7fb5fb;
+  --tracking-purple: #cfa1fd;
+  --tracking-green: #4ade80;
+  --tracking-amber-soft: #3d3930;
+  --tracking-hold: #22d3ee;
+  --tracking-canvas: #242427;
+  --tracking-frame: #2a2a2e;
+  --tracking-green-soft: #2f3b37;
+  --tracking-red-soft: #3e3539;
+}
+
+html,
+body {
+  background: var(--tracking-bg);
+  color: var(--tracking-fg);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+.phone-ticket
+  :where(
+    [data-slot="button"],
+    [data-slot="select-trigger"],
+    [data-slot="dropdown-menu-trigger"],
+    [data-slot="tabs-trigger"],
+    [data-slot="popover-trigger"]
+  ) {
+  min-height: 2.75rem;
+}
+
+.phone-ticket :where([data-slot="button"][data-size^="icon"], [data-slot="dropdown-menu-trigger"]) {
+  min-width: 2.75rem;
+}
+
+:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+  max-width: min(32rem, calc(100vw - 24px));
+}
+
+@layer components {
+  :is(
+      [data-slot="context-menu-item"],
+      [data-slot="context-menu-sub-trigger"],
+      [data-slot="dropdown-menu-item"],
+      [data-slot="dropdown-menu-radio-item"],
+      [data-slot="dropdown-menu-sub-trigger"]
+    ) {
+    min-height: 44px;
+  }
+
+  [data-slot="context-menu-content"] {
+    max-width: var(--radix-context-menu-content-available-width);
+  }
+
+  [data-slot="dropdown-menu-content"] {
+    max-width: var(--radix-dropdown-menu-content-available-width);
+  }
+}

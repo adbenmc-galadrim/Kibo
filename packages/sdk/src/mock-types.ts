@@ -42,6 +42,7 @@ export type MockSdk = {
   setSelection(selection: Selection | null): void;
   setSpotlight(spotlight: Spotlight | null): void;
   setTracking(tracking: TrackingSettings | null): void;
+  setWriteBlock(reason: string | null): void;
 };
 export type MockSdkOptions = {
   today?: string;
@@ -66,4 +67,5 @@ export type MockSdkOptions = {
   focus?: boolean;
   selection?: Selection | null;
   spotlight?: Spotlight | null;
+  writeBlock?: string | null;
 };

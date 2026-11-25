@@ -1,13 +1,4 @@
-import {
-  DndContext,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent } from "@dnd-kit/core";
 import {
   blockingQuestion,
   isBlocked,
@@ -26,6 +17,7 @@ import {
   useSelection,
   withoutAgentAssignee,
 } from "@kibo/sdk";
+import { useDragSensors } from "@kibo/sdk/hooks/use-drag-sensors";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { announce } from "./announcements";
@@ -48,6 +40,7 @@ import { RemoveDialog } from "./RemoveDialog";
 import { ToolbarAlerts } from "./ToolbarAlerts";
 import { useBoardView } from "./use-board-view";
 import { useCardMoves } from "./use-card-moves";
+import { useCardSheet } from "./use-card-sheet";
 import { useColumnOrder } from "./use-column-order";
 import { useHeldToast } from "./use-held-toast";
 import { useLabelFilter } from "./use-label-filter";
@@ -67,10 +60,7 @@ export function Kanban() {
   const labelFilter = useLabelFilter(sdk);
   const [selection, setSelection] = useSelection();
   const selected = selection ? new Set(selection.ids) : null;
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
-  );
+  const sensors = useDragSensors(cardSteps);
   const scope: KanbanFilter =
     source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);
@@ -136,6 +126,13 @@ export function Kanban() {
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
     else void setStatus(t, statusId);
   };
+  const sheet = useCardSheet({
+    statuses: ordered,
+    project,
+    open: (t) => sdk.openTicket(t.id),
+    move,
+    remove: setRemoving,
+  });
   const onDragStart = (e: DragStartEvent) => setDragged(String(e.active.id));
   const endDrag = () => {
     setDragged(null);
@@ -157,7 +154,7 @@ export function Kanban() {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="@container flex h-full flex-col">
       <KanbanToolbar
         mine={scope === "all" ? null : fr.filter.mine}
         filters={board.filters}
@@ -199,7 +196,7 @@ export function Kanban() {
           announcements: announce(keyOf, refusalOf),
         }}
       >
-        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3 @max-lg:snap-x @max-lg:snap-mandatory @max-lg:scroll-px-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}
@@ -220,6 +217,7 @@ export function Kanban() {
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}
+                  onHold={sheet.onHold && (() => sheet.onHold?.(t))}
                 />
               ))}
             </KanbanColumn>
@@ -249,6 +247,7 @@ export function Kanban() {
         />
       )}
       {held.toast}
+      {sheet.element}
       {removing && (
         <RemoveDialog
           ticket={removing}

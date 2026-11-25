@@ -32,7 +32,8 @@ type Props = {
 
 const ALL = "all";
 
-const COUNT = "font-mono text-[11px] font-normal text-muted-foreground @max-[36rem]/toolbar:hidden";
+const COUNT =
+  "font-mono text-[11px] font-normal text-muted-foreground @max-[36rem]/toolbar:hidden @max-lg:inline!";
 
 const isFilter = (value: string): value is KanbanFilterKey => KANBAN_FILTERS.some((f) => f === value);
 
@@ -48,7 +49,7 @@ function counterText(shown: number, filters: readonly KanbanFilterKey[], mine: s
 }
 
 const SEGMENT =
-  "h-[23px] gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
+  "h-[23px] @max-lg:h-11 gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
 
 type LabelMenuProps = Pick<Props, "label" | "labels" | "onLabel">;
 
@@ -61,7 +62,7 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
           size="sm"
           title={fr.labelFilter.label}
           disabled={labels.length === 0 && label === null}
-          className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium"
+          className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium @max-lg:h-11"
         >
           <Tag absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
           <span className="@max-[48rem]/toolbar:sr-only">
@@ -137,11 +138,11 @@ export function KanbanToolbar(props: Props) {
   const { filters, label, onShowAll, shown, hidden, children } = props;
   const counter = counterText(shown, filters, props.mine);
   return (
-    <header className="@container/toolbar flex h-12 items-center gap-2 border-b px-4 text-sm">
+    <header className="@container/toolbar flex h-12 items-center @max-lg:h-16 gap-2 border-b px-4 text-sm @max-lg:relative @max-lg:overflow-x-auto @max-lg:px-3 @max-lg:scrollbar-none">
       <BoardFilters {...props} />
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}
-      <span title={counter} className="ml-auto min-w-0 truncate text-xs text-muted-foreground">
+      <span title={counter} className="ml-auto min-w-0 truncate text-xs text-muted-foreground @max-lg:hidden">
         {counter}
       </span>
       {(filters.length > 0 || label !== null) && hidden > 0 && (

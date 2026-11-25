@@ -7,7 +7,7 @@ const writeListeners = new Set<(projectId: string | null) => void>();
 const writeDoneListeners = new Set<(projectId: string | null) => void>();
 const rpcListeners = new Set<(method: string) => void>();
 
-const raw = createClient({
+let raw: KiboClient = createClient({
   baseUrl: "",
   onUnauthorized: () => {
     for (const l of unauthorizedListeners) l();
@@ -24,8 +24,19 @@ const announceDone = (req: RpcRequest) => {
   for (const l of writeDoneListeners) l(projectId);
 };
 
+export function installClient(impl: KiboClient): void {
+  raw = impl;
+}
+
 export const client: KiboClient = {
-  ...raw,
+  pair: (token) => raw.pair(token),
+  subscribe: (listener) => raw.subscribe(listener),
+  subscribeTopic: (topic, listener) => raw.subscribeTopic(topic, listener),
+  subscribeCode: (listener) => raw.subscribeCode(listener),
+  subscribeIntegrations: (listener) => raw.subscribeIntegrations(listener),
+  subscribeEvents: (listener) => raw.subscribeEvents(listener),
+  online: () => raw.online(),
+  onConnection: (listener) => raw.onConnection(listener),
   rpc: (req) => {
     for (const l of rpcListeners) l(req.method);
     if (!isProjectWrite(req)) return raw.rpc(req);

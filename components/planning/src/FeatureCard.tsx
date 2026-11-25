@@ -1,4 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
+import { useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
@@ -101,7 +102,10 @@ function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyProps) {
 type Props = { card: Card; onOpen: () => void; menu: readonly MenuEntry[] };
 
 export function FeatureCard({ card, onOpen, menu }: Props) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id });
+  const blocked = useWriteBlock();
+  const draggable = useDraggable({ id: card.id, disabled: blocked !== null });
+  const { listeners, setNodeRef, isDragging } = draggable;
+  const { "aria-disabled": _dragDisabled, ...attributes } = draggable.attributes;
   const article = (
     <article
       ref={setNodeRef}
@@ -113,7 +117,7 @@ export function FeatureCard({ card, onOpen, menu }: Props) {
         CARD_CLASS,
         "group relative",
         card.late ? "border-transparent" : "border-(--tracking-border)",
-        "cursor-grab touch-none",
+        "cursor-grab touch-none @max-xl:touch-manipulation @max-xl:select-none",
         isDragging && "opacity-40",
       )}
     >

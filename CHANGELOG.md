@@ -2,6 +2,29 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
+## 0.35.0-alpha.4 — 2026-11-24
+
+- Le build macOS d'une version peut se faire sur un Mac quand la CI n'a pas de machine macOS disponible ; rien ne change dans l'application.
+
+## 0.35.0-alpha.3 — 2026-11-23
+
+- Un nouveau projet a toujours ses cinq pages (Vue d'ensemble, Planning, Kanban, Graphe, Questions), même quand il est créé par la CLI ou par un agent.
+
+## 0.35.0-alpha.2 — 2026-11-04
+
+- Sur iPhone, l'écran d'appairage du téléphone affiche de nouveau la caméra pour scanner le QR code du Mac.
+
+## 0.35.0-alpha.1 — 2026-11-04
+
+Kibo s'ouvre sur ton téléphone, à kibo.shinseo.fr, sans exposer le Mac : le Mac se connecte au serveur, chiffre tout de bout en bout, et le serveur ne voit jamais rien en clair.
+
+- Réglages › Téléphone : active l'accès distant avec le code d'installation, choisis les projets visibles (aucun par défaut), puis appaire le téléphone en scannant le QR code ; une passkey le protège ensuite.
+- Sur le téléphone : Graphe, Kanban, Planning, Questions et Dashboard en onglets, l'agent de projet dans l'en-tête, la fiche ticket complète ; « Lancer dans T3 » démarre la livraison sur le Mac.
+- Répondre aux questions, déplacer un ticket, parler à l'agent de projet : les écritures partent vers le Mac et s'appliquent comme sur le bureau.
+- Mac éteint ou hors connexion : le téléphone montre le dernier état connu avec son heure, en lecture seule ; une écriture est refusée tout de suite, jamais mise en attente.
+- L'application téléphone s'installe sur l'écran d'accueil et garde ses données chiffrées sur l'appareil.
+- Révoquer le téléphone ou couper l'accès distant efface la session sur le serveur, même si le Mac était hors ligne au moment du clic.
+
 ## 0.34.0-alpha.4 — 2026-11-02
 
 Le thème se choisit et se personnalise directement dans Kibo, dans Paramètres → Apparence.

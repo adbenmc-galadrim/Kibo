@@ -21,7 +21,7 @@ import {
 } from "@kibo/schema";
 import { assetsApi, designApi } from "./capability-apis";
 import { questionsApi } from "./questions-api";
-import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
+import { ALWAYS_VISIBLE, ALWAYS_WRITABLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import { NO_SPOTLIGHT } from "./spotlight";
 import { openSprintOf, sprintsApi } from "./sprints-api";
 import { emitToast } from "./toast-bus";
@@ -178,6 +178,7 @@ export function createSdk(
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,
     spotlight: ctx.spotlight ?? NO_SPOTLIGHT,
+    writes: ctx.writes ?? ALWAYS_WRITABLE,
   };
   return sdk;
 }

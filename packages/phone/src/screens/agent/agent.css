@@ -1,0 +1,57 @@
+.phone-agent [data-slot="button"] {
+  min-height: 44px;
+}
+
+.phone-agent section [data-slot="button"] {
+  padding-inline: 16px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.phone-agent [data-slot="checkbox"] {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.phone-agent [data-slot="checkbox"]::after {
+  content: "";
+  position: absolute;
+  inset: -13px;
+}
+
+.phone-agent-compose > div {
+  padding: 12px 16px;
+}
+
+.phone-agent-compose div:has(> [data-slot="textarea"]) {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 5px 5px 5px 16px;
+  border-radius: 22px;
+}
+
+.phone-agent-compose [data-slot="textarea"] {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.phone-agent-compose [data-slot="textarea"] + button {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--tracking-brand-btn);
+  color: #ffffff;
+}
+
+.phone-agent-compose [data-slot="textarea"] + button::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}

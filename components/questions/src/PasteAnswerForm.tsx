@@ -1,4 +1,5 @@
 import type { Question } from "@kibo/schema";
+import { useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { type FormEvent, useId, useState } from "react";
@@ -10,8 +11,10 @@ export function PasteAnswerForm({ question, onClose }: { question: Question; onC
   const answer = useAnswer();
   const fieldId = useId();
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [sending, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const blocked = useWriteBlock();
+  const busy = sending || blocked !== null;
   const input = answerFrom({ option: null, text, confirm: false });
   const submit = async (e: FormEvent) => {
     e.preventDefault();

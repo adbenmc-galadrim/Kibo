@@ -10,6 +10,7 @@ export const apiMock = (overrides: ApiMock) => ({
   onWrite: unsubscribe,
   onWriteDone: unsubscribe,
   onRpc: unsubscribe,
+  installClient: () => undefined,
   ...overrides,
   client: { subscribe: unsubscribe, online: () => false, onConnection: unsubscribe, ...overrides.client },
 });

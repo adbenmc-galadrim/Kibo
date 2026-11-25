@@ -20,6 +20,7 @@
     "./t3": "./src/t3/index.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "6.3.1",
     "@formkit/auto-animate": "0.8.4",
     "@kibo/core": "workspace:*",
     "@kibo/schema": "workspace:*",

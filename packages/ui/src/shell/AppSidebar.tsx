@@ -53,6 +53,7 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "integrations",
   "shortcuts",
   "workspace",
+  "phone",
 ]);
 
 function SearchButton({ onSearch }: { onSearch(): void }) {

@@ -312,6 +312,13 @@ test("projectBackend.snapshot uses snapshotSource when given", async () => {
   expect(bodies).toEqual([{ method: "getProject", projectId: "p1" }]);
 });
 
+test("projectBackend forwards imageUrl from its options and has none by default", () => {
+  const client = createClient({ baseUrl: "http://127.0.0.1:1" });
+  const imageUrl = (questionId: string, imageId: string) => `blob:${questionId}/${imageId}`;
+  expect(projectBackend(client, "p1", "i1", { imageUrl }).imageUrl?.("q1", "img1")).toBe("blob:q1/img1");
+  expect(projectBackend(client, "p1", "i1").imageUrl).toBeUndefined();
+});
+
 test("no reconnection is left pending once the last listener is gone", async () => {
   const serve = (port: number, onUpgrade: () => void) =>
     Bun.serve({

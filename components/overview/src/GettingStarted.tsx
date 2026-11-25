@@ -1,3 +1,4 @@
+import { useWriteBlock } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Check, Copy, Flag, FolderOpen, type LucideIcon, Plus } from "lucide-react";
@@ -15,12 +16,22 @@ type Props = {
 };
 
 const BUTTON =
-  "h-[25px] shrink-0 gap-[6px] rounded-[6px] px-[10px] py-[5px] font-medium text-[12px] shadow-none has-[>svg]:px-[10px]";
+  "h-[25px] @max-2xl:ml-[30px] @max-2xl:h-11 shrink-0 gap-[6px] rounded-[6px] px-[10px] py-[5px] font-medium text-[12px] shadow-none has-[>svg]:px-[10px]";
 const t = fr.start;
 
-function Action({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick(): void }) {
+type ActionProps = { icon: LucideIcon; label: string; writes?: boolean; onClick(): void };
+
+function Action({ icon: Icon, label, writes = false, onClick }: ActionProps) {
+  const block = useWriteBlock();
+  const blocked = writes ? block : null;
   return (
-    <Button variant="outline" className={BUTTON} onClick={onClick}>
+    <Button
+      variant="outline"
+      className={BUTTON}
+      disabled={blocked !== null}
+      title={blocked ?? undefined}
+      onClick={onClick}
+    >
       <Icon absoluteStrokeWidth size={13} />
       {label}
     </Button>
@@ -44,7 +55,10 @@ function Step({
     <li
       data-step={step}
       data-done={String(done)}
-      className={cn("flex items-start gap-[12px] px-[16px] py-[14px]", ROW_LINE)}
+      className={cn(
+        "flex items-start gap-[12px] px-[16px] py-[14px] @max-2xl:flex-wrap @max-2xl:gap-y-[10px]",
+        ROW_LINE,
+      )}
     >
       <span
         aria-hidden
@@ -57,8 +71,8 @@ function Step({
       >
         {done && <Check absoluteStrokeWidth size={12} />}
       </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
-        <span className="flex h-[17px] items-center gap-[6px] font-medium text-(--tracking-fg) text-[13.5px] leading-[17px]">
+      <div className="flex min-w-0 flex-1 flex-col gap-[4px] @max-2xl:basis-[calc(100%-30px)]">
+        <span className="flex h-[17px] items-center gap-[6px] @max-2xl:h-auto @max-2xl:flex-wrap @max-2xl:gap-y-[2px] font-medium text-(--tracking-fg) text-[13.5px] leading-[17px]">
           {title}
         </span>
         <span className="text-(--tracking-mfg) text-[12.5px] leading-[18px]">{text}</span>
@@ -90,14 +104,14 @@ export function GettingStarted({ model, projectKey, onNewFeature, onChooseFolder
           done={model.done.folder}
           title={t.folder.title}
           text={t.folder.text}
-          aside={<Action icon={FolderOpen} label={t.folder.choose} onClick={onChooseFolder} />}
+          aside={<Action icon={FolderOpen} label={t.folder.choose} writes onClick={onChooseFolder} />}
         />
         <Step
           step="feature"
           done={model.done.feature}
           title={t.feature.title}
           text={t.feature.text(projectKey)}
-          aside={<Action icon={Plus} label={t.feature.open} onClick={onNewFeature} />}
+          aside={<Action icon={Plus} label={t.feature.open} writes onClick={onNewFeature} />}
         />
         {target !== null && (
           <Step
@@ -106,7 +120,9 @@ export function GettingStarted({ model, projectKey, onNewFeature, onChooseFolder
             title={
               <>
                 {t.copy.title}
-                <code className="font-mono font-normal text-[13px] leading-[16px]">{model.command}</code>
+                <code className="font-mono @max-2xl:whitespace-nowrap font-normal text-[13px] leading-[16px]">
+                  {model.command}
+                </code>
               </>
             }
             text={t.copy.text}

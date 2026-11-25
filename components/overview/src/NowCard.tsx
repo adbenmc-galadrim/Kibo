@@ -27,12 +27,12 @@ function SessionRow({ row, onOpenTicket }: { row: NowRow; onOpenTicket(id: strin
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] text-left"
         onClick={() => onOpenTicket(row.ticketId)}
       >
-        <span className={MONO_KEY}>{row.key}</span>
+        <span className={cn(MONO_KEY, "@max-2xl:hidden")}>{row.key}</span>
         <span className="truncate font-medium text-(--tracking-fg) text-[13px] leading-[16px]">
           {row.title}
         </span>
       </button>
-      <span className="flex w-[210px] shrink-0 items-center gap-[10px]">
+      <span className="flex w-[210px] shrink-0 items-center gap-[10px] @max-2xl:w-auto">
         <span data-slot="delivery-bar" className="flex items-center gap-[2px]">
           {row.segments.map((s, i) => (
             <span
@@ -43,10 +43,12 @@ function SessionRow({ row, onOpenTicket }: { row: NowRow; onOpenTicket(id: strin
           ))}
         </span>
         {row.step !== null && (
-          <span className="truncate text-(--tracking-fg) text-[12.5px] leading-[15px]">{row.step}</span>
+          <span className="truncate text-(--tracking-fg) text-[12.5px] leading-[15px] @max-2xl:hidden">
+            {row.step}
+          </span>
         )}
       </span>
-      <span className="w-[70px] shrink-0 text-right text-(--tracking-mfg) text-[12px] leading-[15px]">
+      <span className="w-[70px] shrink-0 text-right text-(--tracking-mfg) text-[12px] leading-[15px] @max-2xl:w-auto">
         {row.duration}
       </span>
     </li>
@@ -57,9 +59,9 @@ export function NowCard({ rows, onOpenTicket }: Props) {
   return (
     <section
       aria-label={fr.now.title}
-      className="flex min-h-[86px] w-full shrink-0 rounded-[10px] border border-(--tracking-brand-line) bg-(--tracking-brand-soft)"
+      className="flex min-h-[86px] w-full shrink-0 rounded-[10px] border border-(--tracking-brand-line) bg-(--tracking-brand-soft) @max-2xl:flex-col"
     >
-      <div className="flex w-[150px] shrink-0 flex-col justify-center gap-[4px] border-(--tracking-brand-line) border-r px-[16px]">
+      <div className="flex w-[150px] shrink-0 flex-col justify-center gap-[4px] border-(--tracking-brand-line) border-r px-[16px] @max-2xl:w-auto @max-2xl:border-r-0 @max-2xl:border-b @max-2xl:py-[10px]">
         <span className="flex items-center gap-[8px]">
           <span
             aria-hidden

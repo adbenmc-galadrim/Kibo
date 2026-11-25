@@ -91,6 +91,7 @@ test("onglet fermé : aucun toast, ⌘⇧T, et Backspace ne ferme rien", async (
 });
 
 test("onglet d'aperçu : navigation, double-clic, modification, rechargement", async ({ page }, info) => {
+  test.setTimeout(60_000);
   const key = projectKey("APR", info);
   await pairAndCreateProject(page, info, key);
   const name = `Kibo ${key}`;

@@ -1,5 +1,5 @@
 import type { Question } from "@kibo/schema";
-import { PageActions, useSdk } from "@kibo/sdk";
+import { PageActions, useSdk, useWriteBlock } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -51,6 +51,7 @@ function exportEntries(data: QuestionsData, ticketId: string | null, recipient: 
 
 export function QuestionsView() {
   const sdk = useSdk();
+  const blocked = useWriteBlock();
   const data = useQuestions();
   const [scope, setScope] = useState<Scope>(() => configScope(sdk.config.scope));
   const [ticketId, setTicketId] = useState<string | null>(null);
@@ -88,7 +89,7 @@ export function QuestionsView() {
     );
   }
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="@container flex h-full min-h-0 flex-col">
       <QuestionsToolbar
         scope={scope}
         ticket={ticketId === null ? null : data.ticketOf(ticketId)}
@@ -108,7 +109,7 @@ export function QuestionsView() {
         summary={<Summary scope={scope} shown={shown} />}
         actions={
           <PageActions inline>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 @max-lg:gap-2">
               {toExport.length > 0 && (
                 <ExportButton
                   label={exportText.label}
@@ -117,15 +118,20 @@ export function QuestionsView() {
                   entries={toExport}
                 />
               )}
-              <Button className={PAGE_ACTION} onClick={() => setCreating("")}>
+              <Button
+                className={PAGE_ACTION}
+                disabled={blocked !== null}
+                title={blocked ?? undefined}
+                onClick={() => setCreating("")}
+              >
                 <Plus aria-hidden />
-                {fr.newQuestion}
+                <span className="@max-lg:sr-only">{fr.newQuestion}</span>
               </Button>
             </div>
           </PageActions>
         }
       />
-      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5">
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5 @max-lg:gap-3 @max-lg:px-4 @max-lg:py-3">
         {!data.loading && data.questions.length === 0 ? (
           <EmptyPage onNew={() => setCreating("")} />
         ) : (
